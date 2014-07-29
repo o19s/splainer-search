@@ -1,0 +1,29 @@
+{
+	"name": "splainer-search",
+	"version": "1.0.0",
+	"authors": [
+		"Doug Turnbull <dturnbull@opensourceconnections.com>"
+	],
+	"description": "AngularJS search core for Splainer and Quepid",
+	"keywords": [
+		"angular",
+		"AngularJS",
+		"service",
+		"solr",
+		"search",
+		"elasticsearch"
+	],
+	"license": "MIT",
+	"ignore": [
+		"**/.*",
+		"node_modules",
+		"bower_components",
+		"test",
+		"tests"
+	],
+	"dependencies": {
+		"angular":"~1.2.0"
+	},
+	"devDependencies": {
+	}
+}
