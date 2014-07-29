@@ -19,7 +19,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
-
+  grunt.loadNpmTasks('grunt-karma');
 	/**
 	Function that wraps everything to allow dynamically setting/changing grunt options and config later by grunt task. This init function is called once immediately (for using the default grunt options, config, and setup) and then may be called again AFTER updating grunt (command line) options.
 	@toc 3.
@@ -81,17 +81,17 @@ module.exports = function(grunt) {
 				},
 				build: {
 					files:  {},
-					src:    'r-search.js',
-					dest:   'r-search.min.js'
+					src:    'services/*.js',
+					dest:   'splainer-search.min.js'
 				}
-			}/*,
+			},
 			karma: {
 				unit: {
-					configFile: publicPathRelativeRoot+'config/karma.conf.js',
+					configFile: 'karma.conf.js',
 					singleRun: true,
 					browsers: ['PhantomJS']
 				}
-			}*/
+			}
 		});
 		
 		
@@ -100,7 +100,7 @@ module.exports = function(grunt) {
 		@toc 6.
 		*/
 		// Default task(s).
-		grunt.registerTask('default', ['jshint:beforeconcatQ', 'uglify:build']);
+		grunt.registerTask('default', ['jshint:beforeconcatQ', 'karma:unit', 'uglify:build']);
 	
 	}
 	init({});		//initialize here for defaults (init may be called again later within a task)
