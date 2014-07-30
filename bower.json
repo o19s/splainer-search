@@ -1,29 +1,27 @@
 {
-	"name": "splainer-search",
-	"version": "1.0.0",
-	"authors": [
-		"Doug Turnbull <dturnbull@opensourceconnections.com>"
-	],
-	"description": "AngularJS search core for Splainer and Quepid",
-	"keywords": [
-		"angular",
-		"AngularJS",
-		"service",
-		"solr",
-		"search",
-		"elasticsearch"
-	],
-	"license": "MIT",
-	"ignore": [
-		"**/.*",
-		"node_modules",
-		"bower_components",
-		"test",
-		"tests"
-	],
-	"dependencies": {
-		"angular":"~1.2.0"
-	},
-	"devDependencies": {
-	}
+  "name": "splainer-search",
+  "version": "0.0.1",
+  "main": "splainer-search.min.js",
+  "authors": [
+    "Doug Turnbull <dturnbull@opensourceconnections.com>"
+  ],
+  "description": "Demo",
+  "keywords": [],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "~1.2.0",
+    "angular-sanitize": "~1.2.0",
+    "angular-route": "~1.2.0",
+    "angular-touch": "~1.2.0"
+  },
+  "devDependencies": {
+    "angular-mocks": "~1.2.21"
+  }
 }
