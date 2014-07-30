@@ -31,12 +31,6 @@ module.exports = function(grunt) {
 		@toc 5.
 		*/
 		grunt.initConfig({
-			concat: {
-				devCss: {
-					src:    [],
-					dest:   []
-				}
-			},
 			jshint: {
 				options: {
 					//force:          true,
@@ -75,6 +69,12 @@ module.exports = function(grunt) {
 					}
 				}
 			},
+      concat: {
+        dist: {
+					src:    ['module.js', 'services/*.js'],
+					dest:   'splainer-search.js'
+        }
+      },
 			uglify: {
 				options: {
 					mangle: false
@@ -100,7 +100,7 @@ module.exports = function(grunt) {
 		@toc 6.
 		*/
 		// Default task(s).
-		grunt.registerTask('default', ['jshint:beforeconcatQ', 'karma:unit', 'uglify:build']);
+		grunt.registerTask('default', ['jshint:beforeconcatQ', 'karma:unit', 'concat:dist']);
 	
 	}
 	init({});		//initialize here for defaults (init may be called again later within a task)
