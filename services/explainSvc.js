@@ -24,34 +24,28 @@ angular.module('o19s.splainer-search')
       }
       var tieMatch = description.match(tieRegex);
       if (description.startsWith('MatchAllDocsQuery')) {
-        console.log('Match all docs query');
         MatchAllDocsExplain.prototype = base;
         return new MatchAllDocsExplain(explJson);
       }
       else if (description.startsWith('weight(')) {
         WeightExplain.prototype = base;
-        console.log('weight');
         return new WeightExplain(explJson);
       }
       else if (description.startsWith('FunctionQuery')) {
-        console.log('func query');
         FunctionQueryExplain.prototype = base;
         return new FunctionQueryExplain(explJson);
       }
       else if (tieMatch && tieMatch.length > 1) {
-        console.log('dismax tie expl');
         var tie = parseFloat(tieMatch[1]);
         DismaxTieExplain.prototype = base;
         return new DismaxTieExplain(explJson, tie);
       }
       else if (description.hasSubstr('max of')) {
-        console.log('dismax expl');
         DismaxExplain.prototype = base;
         return meOrOnlyChild(new DismaxExplain(explJson));
       }
       else if (description.hasSubstr('sum of')) {
         SumExplain.prototype = base;
-        console.log('sum or product expl');
         return meOrOnlyChild(new SumExplain(explJson));
       }
       else if (description.hasSubstr('product of')) {
@@ -64,16 +58,12 @@ angular.module('o19s.splainer-search')
             }
           });
         }
-        console.log('product expl');
         if (coordExpl !== null) {
           return coordExpl;
         } else {
           ProductExplain.prototype = base;
           return meOrOnlyChild(new ProductExplain(explJson));
         }
-      }
-      else {
-        console.log('regular explain');
       }
       return base;
 
