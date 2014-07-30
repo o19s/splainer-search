@@ -65,7 +65,7 @@ module.exports = function(grunt) {
 						ignores: ['**.min.js']
 					},
 					files: {
-						src: ['**.js']
+						src: ['module.js, services/*.js']
 					}
 				}
 			},

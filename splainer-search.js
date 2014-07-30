@@ -151,22 +151,30 @@ angular.module('o19s.splainer-search')
       /* A friendly, hiererarchical view
        * of all the influencers
        * */
+      var asStr = '';
+      var asRawStr = '';
       this.toStr = function(depth) {
-        if (depth === undefined) {
-          depth = 0;
+        if (asStr === '') {
+          if (depth === undefined) {
+            depth = 0;
+          }
+          var prefix = new Array(2 * depth).join(' ');
+          var me = prefix + this.contribution() + ' ' + this.explanation() + '\n';
+          var childStrs = [];
+          angular.forEach(this.influencers(), function(child) {
+            childStrs.push(child.toStr(depth+1));
+          });
+          asStr = me + childStrs.join('\n');
         }
-        var prefix = new Array(2 * depth).join(' ');
-        var me = prefix + this.contribution() + ' ' + this.explanation() + '\n';
-        var childStrs = [];
-        angular.forEach(this.influencers(), function(child) {
-          childStrs.push(child.toStr(depth+1));
-        });
-        return me + childStrs.join('\n');
+        return asStr;
       };
 
       this.rawStr = function() {
         /* global JSON */
-        return JSON.stringify(this.asJson);
+        if (asRawStr === '') {
+          asRawStr = JSON.stringify(this.asJson);
+        }
+        return asRawStr;
       };
     };
 
@@ -487,14 +495,12 @@ angular.module('o19s.splainer-search')
 
       var explainJson = this.solrDoc.explain(this.id);
       var simplerExplain = explainSvc.createExplain(explainJson);
-      var explSummary = simplerExplain.toStr();
-      var hotMatches = simplerExplain.vectorize().toStr();
+      var hotMatches = simplerExplain.vectorize();
+
       this.explain = function() {
         return simplerExplain;
       };
-      this.explainSummary = function() {
-        return explSummary;
-      };
+      
       this.hotMatches = function() {
         return hotMatches;
       };
@@ -824,8 +830,14 @@ angular.module('o19s.splainer-search')
     var SparseVector = function() {
       this.vecObj = {};
 
+      var asStr = '';
+      var setDirty = function() {
+        asStr = '';
+      };
+
       this.set = function(key, value) {
         this.vecObj[key] = value;
+        setDirty();
       };
 
       this.get = function(key) {
@@ -836,17 +848,19 @@ angular.module('o19s.splainer-search')
       };
 
       this.toStr = function() {
-        var rVal = '';
-        // sort
-        var sortedL = [];
-        angular.forEach(this.vecObj, function(value, key) {
-          sortedL.push([key, value]);
-        });
-        sortedL.sort(function(lhs, rhs) {return rhs[1] - lhs[1];});
-        angular.forEach(sortedL, function(keyVal) {
-          rVal += (keyVal[1] + ' ' + keyVal[0] + '\n');
-        });
-        return rVal;
+        // memoize the toStr conversion
+        if (asStr === '') {
+          // sort
+          var sortedL = [];
+          angular.forEach(this.vecObj, function(value, key) {
+            sortedL.push([key, value]);
+          });
+          sortedL.sort(function(lhs, rhs) {return rhs[1] - lhs[1];});
+          angular.forEach(sortedL, function(keyVal) {
+            asStr += (keyVal[1] + ' ' + keyVal[0] + '\n');
+          });
+        }
+        return asStr;
       };
 
     };

@@ -10,8 +10,14 @@ angular.module('o19s.splainer-search')
     var SparseVector = function() {
       this.vecObj = {};
 
+      var asStr = '';
+      var setDirty = function() {
+        asStr = '';
+      };
+
       this.set = function(key, value) {
         this.vecObj[key] = value;
+        setDirty();
       };
 
       this.get = function(key) {
@@ -22,17 +28,19 @@ angular.module('o19s.splainer-search')
       };
 
       this.toStr = function() {
-        var rVal = '';
-        // sort
-        var sortedL = [];
-        angular.forEach(this.vecObj, function(value, key) {
-          sortedL.push([key, value]);
-        });
-        sortedL.sort(function(lhs, rhs) {return rhs[1] - lhs[1];});
-        angular.forEach(sortedL, function(keyVal) {
-          rVal += (keyVal[1] + ' ' + keyVal[0] + '\n');
-        });
-        return rVal;
+        // memoize the toStr conversion
+        if (asStr === '') {
+          // sort
+          var sortedL = [];
+          angular.forEach(this.vecObj, function(value, key) {
+            sortedL.push([key, value]);
+          });
+          sortedL.sort(function(lhs, rhs) {return rhs[1] - lhs[1];});
+          angular.forEach(sortedL, function(keyVal) {
+            asStr += (keyVal[1] + ' ' + keyVal[0] + '\n');
+          });
+        }
+        return asStr;
       };
 
     };

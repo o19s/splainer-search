@@ -53,14 +53,12 @@ angular.module('o19s.splainer-search')
 
       var explainJson = this.solrDoc.explain(this.id);
       var simplerExplain = explainSvc.createExplain(explainJson);
-      var explSummary = simplerExplain.toStr();
-      var hotMatches = simplerExplain.vectorize().toStr();
+      var hotMatches = simplerExplain.vectorize();
+
       this.explain = function() {
         return simplerExplain;
       };
-      this.explainSummary = function() {
-        return explSummary;
-      };
+      
       this.hotMatches = function() {
         return hotMatches;
       };

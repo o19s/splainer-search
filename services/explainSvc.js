@@ -118,22 +118,30 @@ angular.module('o19s.splainer-search')
       /* A friendly, hiererarchical view
        * of all the influencers
        * */
+      var asStr = '';
+      var asRawStr = '';
       this.toStr = function(depth) {
-        if (depth === undefined) {
-          depth = 0;
+        if (asStr === '') {
+          if (depth === undefined) {
+            depth = 0;
+          }
+          var prefix = new Array(2 * depth).join(' ');
+          var me = prefix + this.contribution() + ' ' + this.explanation() + '\n';
+          var childStrs = [];
+          angular.forEach(this.influencers(), function(child) {
+            childStrs.push(child.toStr(depth+1));
+          });
+          asStr = me + childStrs.join('\n');
         }
-        var prefix = new Array(2 * depth).join(' ');
-        var me = prefix + this.contribution() + ' ' + this.explanation() + '\n';
-        var childStrs = [];
-        angular.forEach(this.influencers(), function(child) {
-          childStrs.push(child.toStr(depth+1));
-        });
-        return me + childStrs.join('\n');
+        return asStr;
       };
 
       this.rawStr = function() {
         /* global JSON */
-        return JSON.stringify(this.asJson);
+        if (asRawStr === '') {
+          asRawStr = JSON.stringify(this.asJson);
+        }
+        return asRawStr;
       };
     };
 
