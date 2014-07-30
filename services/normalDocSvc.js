@@ -73,7 +73,7 @@ angular.module('o19s.splainer-search')
         if (hotOutOf.length === 0) {
           angular.forEach(hotMatches.vecObj, function(value, key) {
             var percentage = ((0.0 + value) / maxScore) * 100.0;
-            hotOutOf.push({description: key, value: percentage});
+            hotOutOf.push({description: key, percentage: percentage});
           });
           hotOutOf.sort(function(a,b) {return a.percentage - b.percentage;});
         }
