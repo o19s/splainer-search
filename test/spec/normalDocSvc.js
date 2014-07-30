@@ -41,4 +41,47 @@ describe('Service: normalDocsSvc', function () {
 
   });
 
+  describe('explain tests', function() {
+    var solrDoc = null;
+    beforeEach(function() {
+      var basicExplain1 = {
+        match: true,
+        value: 1.5,
+        description: 'weight(text:law in 1234)',
+        details: []
+      };
+      var basicExplain2 = {
+        match: true,
+        value: 0.5,
+        description: 'weight(text:order in 1234)',
+        details: []
+      };
+
+      var sumExplain = {
+        match: true,
+        value: 1.0,
+        description: 'sum of',
+        details: [basicExplain1, basicExplain2]
+      };
+
+      solrDoc = {'id_field': '1234',
+                 'title_field': 'a title',
+                 url: function() {return 'http://127.0.0.1';},
+                 explain: function() {return sumExplain;} };
+    });
+
+    it('hot matches by max sorted by percentage', function() {
+      var fieldSpec = {id: 'id_field', title: 'title_field'};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+
+      var hmOutOf = normalDoc.hotMatchesOutOf(2.0);
+      expect(hmOutOf.length).toBe(2);
+      expect(hmOutOf[0].percentage).toBe(75.0);
+      expect(hmOutOf[0].description).toContain('law');
+      expect(hmOutOf[1].percentage).toBe(25.0);
+      expect(hmOutOf[1].description).toContain('order');
+
+    });
+  });
+
 });

@@ -507,7 +507,7 @@ angular.module('o19s.splainer-search')
             var percentage = ((0.0 + value) / maxScore) * 100.0;
             hotOutOf.push({description: key, percentage: percentage});
           });
-          hotOutOf.sort(function(a,b) {return a.percentage - b.percentage;});
+          hotOutOf.sort(function(a,b) {return b.percentage - a.percentage;});
         }
         return hotOutOf;
       };
