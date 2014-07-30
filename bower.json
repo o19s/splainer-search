@@ -1,24 +1,24 @@
 {
-  'name': 'splainer-search',
-  'version': '0.0.2',
-  'main': 'splainer-search.js',
-  'authors': [
-    'Doug Turnbull <dturnbull@opensourceconnections.com>'
+  "name": "splainer-search",
+  "version": "0.0.2",
+  "main": "splainer-search.js",
+  "authors": [
+    "Doug Turnbull <dturnbull@opensourceconnections.com>"
   ],
-  'description': 'Demo',
-  'keywords': [],
-  'license': 'MIT',
-  'ignore': [
-    '**/.*',
-    'node_modules',
-    'bower_components',
-    'test',
-    'tests'
+  "description": "Demo",
+  "keywords": [],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
   ],
-  'dependencies': {
-    'angular': '~1.2.0'
+  "dependencies": {
+    "angular": "~1.2.0"
   },
-  'devDependencies': {
-    'angular-mocks': '~1.2.21'
+  "devDependencies": {
+    "angular-mocks": "~1.2.21"
   }
 }
