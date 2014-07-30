@@ -81,7 +81,7 @@ module.exports = function(grunt) {
 				},
 				build: {
 					files:  {},
-					src:    'services/*.js',
+					src:    ['module.js', 'services/*.js'],
 					dest:   'splainer-search.min.js'
 				}
 			},
