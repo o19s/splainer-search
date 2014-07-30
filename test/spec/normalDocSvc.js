@@ -41,20 +41,4 @@ describe('Service: normalDocsSvc', function () {
 
   });
 
-  describe('hot match tests', function() {
-    it('converts hot matches to percentage of max', function() {
-      var hot = vectorSvc.create();
-      hot.set('foo', 5);
-      hot.set('bar', 3);
-
-      var hotMatches = normalDocsSvc.hotMatchesToPercentage(hot, 10);
-      expect(hotMatches[0].description).toEqual('foo');
-      expect(hotMatches[0].value).toEqual(50.0);
-      expect(hotMatches[1].description).toEqual('bar');
-      expect(hotMatches[1].value).toEqual(30.0);
-      expect(hotMatches.length).toBe(2);
-
-    });
-  });
-
 });

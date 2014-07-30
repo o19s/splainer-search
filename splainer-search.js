@@ -57,34 +57,28 @@ angular.module('o19s.splainer-search')
       }
       var tieMatch = description.match(tieRegex);
       if (description.startsWith('MatchAllDocsQuery')) {
-        console.log('Match all docs query');
         MatchAllDocsExplain.prototype = base;
         return new MatchAllDocsExplain(explJson);
       }
       else if (description.startsWith('weight(')) {
         WeightExplain.prototype = base;
-        console.log('weight');
         return new WeightExplain(explJson);
       }
       else if (description.startsWith('FunctionQuery')) {
-        console.log('func query');
         FunctionQueryExplain.prototype = base;
         return new FunctionQueryExplain(explJson);
       }
       else if (tieMatch && tieMatch.length > 1) {
-        console.log('dismax tie expl');
         var tie = parseFloat(tieMatch[1]);
         DismaxTieExplain.prototype = base;
         return new DismaxTieExplain(explJson, tie);
       }
       else if (description.hasSubstr('max of')) {
-        console.log('dismax expl');
         DismaxExplain.prototype = base;
         return meOrOnlyChild(new DismaxExplain(explJson));
       }
       else if (description.hasSubstr('sum of')) {
         SumExplain.prototype = base;
-        console.log('sum or product expl');
         return meOrOnlyChild(new SumExplain(explJson));
       }
       else if (description.hasSubstr('product of')) {
@@ -97,16 +91,12 @@ angular.module('o19s.splainer-search')
             }
           });
         }
-        console.log('product expl');
         if (coordExpl !== null) {
           return coordExpl;
         } else {
           ProductExplain.prototype = base;
           return meOrOnlyChild(new ProductExplain(explJson));
         }
-      }
-      else {
-        console.log('regular explain');
       }
       return base;
 
@@ -505,24 +495,23 @@ angular.module('o19s.splainer-search')
         return hotMatches;
       };
 
+      var hotOutOf = [];
+      this.hotMatchesOutOf = function(maxScore) {
+        if (hotOutOf.length === 0) {
+          angular.forEach(hotMatches.vecObj, function(value, key) {
+            var percentage = ((0.0 + value) / maxScore) * 100.0;
+            hotOutOf.push({description: key, value: percentage});
+          });
+          hotOutOf.sort(function(a,b) {return a.percentage - b.percentage;});
+        }
+        return hotOutOf;
+      };
+
       this.score = simplerExplain.contribution();
     };
 
     this.createNormalDoc = function(fieldSpec, doc) {
       return new NormalDoc(fieldSpec, doc);
-    };
-
-    var rVal = [];
-    this.hotMatchesToPercentage = function(hotMatches, maxScore) {
-      if (rVal.length === 0) {
-        angular.forEach(hotMatches.vecObj, function(value, key) {
-          var percentage = ((0.0 + value) / maxScore) * 100.0;
-          rVal.push({description: key, value: percentage});
-        });
-        rVal.sort(function(a,b) {return a.percentage - b.percentage;});
-      }
-      return rVal;
-              
     };
 
     // A stub, used to display a result that we expected 
