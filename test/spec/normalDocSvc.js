@@ -1,5 +1,7 @@
 'use strict';
 
+/*global describe,beforeEach,inject,it,expect*/
+
 describe('Service: normalDocsSvc', function () {
 
   // load the service's module
@@ -7,8 +9,10 @@ describe('Service: normalDocsSvc', function () {
  
   /*jshint camelcase: false */
   var normalDocsSvc = null;
-  beforeEach(inject(function (_normalDocsSvc_) {
+  var vectorSvc = null;
+  beforeEach(inject(function (_normalDocsSvc_, _vectorSvc_) {
     normalDocsSvc = _normalDocsSvc_;
+    vectorSvc = _vectorSvc_;
   }));
 
   /* global mockExplain */
@@ -35,6 +39,22 @@ describe('Service: normalDocsSvc', function () {
       expect(lastFieldValue).toEqual('1234');
     });
 
+  });
+
+  describe('hot match tests', function() {
+    it('converts hot matches to percentage of max', function() {
+      var hot = vectorSvc.create();
+      hot.set('foo', 5);
+      hot.set('bar', 3);
+
+      var hotMatches = normalDocsSvc.hotMatchesToPercentage(hot, 10);
+      expect(hotMatches[0].description).toEqual('foo');
+      expect(hotMatches[0].value).toEqual(50.0);
+      expect(hotMatches[1].description).toEqual('bar');
+      expect(hotMatches[1].value).toEqual(30.0);
+      expect(hotMatches.length).toBe(2);
+
+    });
   });
 
 });

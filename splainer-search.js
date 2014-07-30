@@ -504,11 +504,25 @@ angular.module('o19s.splainer-search')
       this.hotMatches = function() {
         return hotMatches;
       };
+
       this.score = simplerExplain.contribution();
     };
 
     this.createNormalDoc = function(fieldSpec, doc) {
       return new NormalDoc(fieldSpec, doc);
+    };
+
+    var rVal = [];
+    this.hotMatchesToPercentage = function(hotMatches, maxScore) {
+      if (rVal.length === 0) {
+        angular.forEach(hotMatches.vecObj, function(value, key) {
+          var percentage = ((0.0 + value) / maxScore) * 100.0;
+          rVal.push({description: key, value: percentage});
+        });
+        rVal.sort(function(a,b) {return a.percentage - b.percentage;});
+      }
+      return rVal;
+              
     };
 
     // A stub, used to display a result that we expected 

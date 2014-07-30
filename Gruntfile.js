@@ -90,6 +90,11 @@ module.exports = function(grunt) {
 					configFile: 'karma.conf.js',
 					singleRun: true,
 					browsers: ['PhantomJS']
+				},
+				debug: {
+					configFile: 'karma.debug.conf.js',
+					singleRun: false,
+					browsers: ['Chrome']
 				}
 			}
 		});
