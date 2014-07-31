@@ -535,12 +535,12 @@ angular.module('o19s.splainer-search')
 
     this.createNormalDoc = function(fieldSpec, solrDoc) {
       var nDoc = new NormalDoc(fieldSpec, solrDoc);
-      return explainable(nDoc, solrDoc.explain(nDoc.id));
+      return this.explainDoc(nDoc, solrDoc.explain(nDoc.id));
     };
 
     // Decorate doc with an explain/field values/etc other
     // than what came back from Solr
-    this.decorateDoc = function(doc, explainJson) {
+    this.explainDoc = function(doc, explainJson) {
       var decorated = angular.copy(doc);
       return explainable(decorated, explainJson);
     };
