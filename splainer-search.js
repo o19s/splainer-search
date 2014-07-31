@@ -497,22 +497,24 @@ angular.module('o19s.splainer-search')
       this.url = function() {
         return this.solrDoc.url(fieldSpec.id, this.id);
       };
+    };
 
-      var explainJson = this.solrDoc.explain(this.id);
+    var explainable = function(doc, explainJson) {
+
       var simplerExplain = explainSvc.createExplain(explainJson);
       var hotMatches = simplerExplain.vectorize();
 
-      this.explain = function() {
+      doc.explain = function() {
         return simplerExplain;
       };
       
-      this.hotMatches = function() {
+      doc.hotMatches = function() {
         return hotMatches;
       };
 
       var hotOutOf = [];
       var lastMaxScore = -1;
-      this.hotMatchesOutOf = function(maxScore) {
+      doc.hotMatchesOutOf = function(maxScore) {
         if (maxScore !== lastMaxScore) {
           hotOutOf.length = 0;
         }
@@ -527,11 +529,20 @@ angular.module('o19s.splainer-search')
         return hotOutOf;
       };
 
-      this.score = simplerExplain.contribution();
+      doc.score = simplerExplain.contribution();
+      return doc;
     };
 
-    this.createNormalDoc = function(fieldSpec, doc) {
-      return new NormalDoc(fieldSpec, doc);
+    this.createNormalDoc = function(fieldSpec, solrDoc) {
+      var nDoc = new NormalDoc(fieldSpec, solrDoc);
+      return explainable(nDoc, solrDoc.explain(nDoc.id));
+    };
+
+    // Decorate doc with an explain/field values/etc other
+    // than what came back from Solr
+    this.decorateDoc = function(doc, explainJson) {
+      var decorated = angular.copy(doc);
+      return explainable(decorated, explainJson);
     };
 
     // A stub, used to display a result that we expected 

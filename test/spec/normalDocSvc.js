@@ -44,6 +44,7 @@ describe('Service: normalDocsSvc', function () {
   describe('explain tests', function() {
     var solrDoc = null;
     var solrDocNoExpl = null;
+    var basicExplain2 = null;
     beforeEach(function() {
       var basicExplain1 = {
         match: true,
@@ -51,7 +52,7 @@ describe('Service: normalDocsSvc', function () {
         description: 'weight(text:law in 1234)',
         details: []
       };
-      var basicExplain2 = {
+      basicExplain2 = {
         match: true,
         value: 0.5,
         description: 'weight(text:order in 1234)',
@@ -88,9 +89,32 @@ describe('Service: normalDocsSvc', function () {
 
     });
 
-    it('handles no explain returned', function() {
+    it('uses stub if no explain returned', function() {
       var fieldSpec = {id: 'id_field', title: 'title_field'};
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDocNoExpl);
+      expect(normalDoc.explain().explanation()).toContain('no explain');
+      expect(normalDoc.explain().contribution()).toBe(0.0);
+    });
+
+    it('decorates with external explain', function() {
+      var fieldSpec = {id: 'id_field', title: 'title_field'};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDocNoExpl);
+      var decoratedDoc = normalDocsSvc.explainDoc(normalDoc, basicExplain2);
+      var hmOutOf = decoratedDoc.hotMatchesOutOf(1.0);
+      expect(hmOutOf.length).toBe(1);
+      expect(hmOutOf[0].description).toContain('order');
+      expect(hmOutOf[0].percentage).toBe(50.0);
+      
+      var expl = decoratedDoc.explain();
+      expect(expl.explanation()).toContain('order');
+    });
+    
+    it('decorates and leaves alone original', function() {
+      var fieldSpec = {id: 'id_field', title: 'title_field'};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDocNoExpl);
+      var explBefore = normalDoc.explain();
+      normalDocsSvc.explainDoc(normalDoc, basicExplain2);
+      expect(explBefore).toEqual(normalDoc.explain());
     });
   });
 
