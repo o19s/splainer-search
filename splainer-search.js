@@ -47,8 +47,23 @@ angular.module('o19s.splainer-search')
       }
     };
 
+    var replaceBadJson = function(explJson) {
+      var explJsonIfBad = {
+        details: [],
+        description: 'no explain for doc',
+        value: 0.0,
+        match: true
+      };
+      if (!explJson) {
+        return explJsonIfBad;
+      } else {
+        return explJson;
+      }
+    };
+
     var tieRegex = /max plus ([0-9.]+) times/;
     var createExplain = function(explJson) {
+      explJson = replaceBadJson(explJson);
       var base = new Explain(explJson);
       var description = explJson.description;
       var details = [];
@@ -673,7 +688,7 @@ angular.module('o19s.splainer-search')
               if (explDict.hasOwnProperty(docId)) {
                 return explDict[docId];
               } else {
-                return '';
+                return null;
               }
             };
             that.docs.push(solrDoc);

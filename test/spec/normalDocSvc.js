@@ -43,6 +43,7 @@ describe('Service: normalDocsSvc', function () {
 
   describe('explain tests', function() {
     var solrDoc = null;
+    var solrDocNoExpl = null;
     beforeEach(function() {
       var basicExplain1 = {
         match: true,
@@ -68,6 +69,10 @@ describe('Service: normalDocsSvc', function () {
                  'title_field': 'a title',
                  url: function() {return 'http://127.0.0.1';},
                  explain: function() {return sumExplain;} };
+      solrDocNoExpl = {'id_field': '1234',
+                 'title_field': 'a title',
+                 url: function() {return 'http://127.0.0.1';},
+                 explain: function() {return null;} };
     });
 
     it('hot matches by max sorted by percentage', function() {
@@ -81,6 +86,11 @@ describe('Service: normalDocsSvc', function () {
       expect(hmOutOf[1].percentage).toBe(25.0);
       expect(hmOutOf[1].description).toContain('order');
 
+    });
+
+    it('handles no explain returned', function() {
+      var fieldSpec = {id: 'id_field', title: 'title_field'};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDocNoExpl);
     });
   });
 

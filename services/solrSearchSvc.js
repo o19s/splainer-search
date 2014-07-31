@@ -89,7 +89,7 @@ angular.module('o19s.splainer-search')
               if (explDict.hasOwnProperty(docId)) {
                 return explDict[docId];
               } else {
-                return '';
+                return null;
               }
             };
             that.docs.push(solrDoc);

@@ -168,6 +168,20 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
     });
+
+    it('returns null on no explain', function() {
+      var copiedResp = angular.copy(fullSolrResp);
+      delete copiedResp.debug;
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, copiedResp);
+      searcher.search().then(function() {
+        var solrDocs = searcher.docs;
+        expect(solrDocs[0].explain('http://larkin.com/index/')).toBe(null);
+        expect(solrDocs[1].explain('http://www.rogahnbins.com/main.html')).toBe(null);
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
   });
  
   // For tests where "id" is not the id field 
