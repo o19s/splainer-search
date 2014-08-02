@@ -466,7 +466,11 @@ angular.module('o19s.splainer-search')
       assignSingleField(queryDoc, solrDoc, fieldSpec.thumb, 'thumb');
       queryDoc.subs = {};
       angular.forEach(fieldSpec.subs, function(subFieldName) {
-        if (solrDoc.hasOwnProperty(subFieldName)) {
+        var hl = solrDoc.highlight(queryDoc.id, subFieldName);
+        if (hl !== null) {
+          queryDoc.subs[subFieldName] = hl;
+        }
+        else if (solrDoc.hasOwnProperty(subFieldName)) {
           queryDoc.subs[subFieldName] = solrDoc[subFieldName];
         }
       });
@@ -615,6 +619,11 @@ angular.module('o19s.splainer-search')
 angular.module('o19s.splainer-search')
   .service('solrSearchSvc', function solrSearchSvc($http) {
     // AngularJS will instantiate a singleton by calling 'new' on this function
+    
+    this.HIGHLIGHTING_PRE = 'aouaoeuCRAZY_STRING!';
+    this.HIGHLIGHTING_POST = '62362iueaiCRAZY_POST_STRING!';
+    var svc = this;
+
     var activeQueries = 0;
 
     var buildUrl = function(url, urlArgs) {
@@ -654,6 +663,9 @@ angular.module('o19s.splainer-search')
       solrArgs.wt = ['json'];
       solrArgs.debug = ['true'];
       solrArgs['debug.explain.structured'] = ['true'];
+      solrArgs.hl = ['true'];
+      solrArgs['hl.simple.pre'] = [svc.HIGHLIGHTING_PRE];
+      solrArgs['hl.simple.post'] = [svc.HIGHLIGHTING_POST];
       var baseUrl = buildUrl(solrUrl, solrArgs);
       baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
       return baseUrl;
@@ -686,11 +698,19 @@ angular.module('o19s.splainer-search')
           return {};
         };
 
+        var getHlData = function(data) {
+          if (data.hasOwnProperty('highlighting')) {
+            return data.highlighting;
+          }
+          return {};
+        };
+
         activeQueries++;
         $http.jsonp(url).success(function(data) {
           activeQueries--;
           that.numFound = data.response.numFound;
           var explDict = getExplData(data);
+          var hlDict = getHlData(data);
           angular.forEach(data.response.docs, function(solrDoc) {
             solrDoc.url = function(idField, docId) {
               return buildTokensUrl(fieldList, solrUrl, idField, docId);
@@ -701,6 +721,15 @@ angular.module('o19s.splainer-search')
               } else {
                 return null;
               }
+            };
+            solrDoc.highlight = function(docId, fieldName) {
+              if (hlDict.hasOwnProperty(docId)) {
+                var docHls = hlDict[docId];
+                if (docHls.hasOwnProperty(fieldName)) {
+                  return docHls[fieldName];
+                }
+              }
+              return null;
             };
             that.docs.push(solrDoc);
           });
