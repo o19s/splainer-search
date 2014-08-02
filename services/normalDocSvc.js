@@ -19,7 +19,11 @@ angular.module('o19s.splainer-search')
       assignSingleField(queryDoc, solrDoc, fieldSpec.thumb, 'thumb');
       queryDoc.subs = {};
       angular.forEach(fieldSpec.subs, function(subFieldName) {
-        if (solrDoc.hasOwnProperty(subFieldName)) {
+        var hl = solrDoc.highlight(queryDoc.id, subFieldName);
+        if (hl !== null) {
+          queryDoc.subs[subFieldName] = hl;
+        }
+        else if (solrDoc.hasOwnProperty(subFieldName)) {
           queryDoc.subs[subFieldName] = solrDoc[subFieldName];
         }
       });

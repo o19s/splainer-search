@@ -40,6 +40,45 @@ describe('Service: normalDocsSvc', function () {
     });
 
   });
+  
+  describe('highlight tests', function() {
+    var availableHighlight = null;
+    var solrDoc = null;
+    beforeEach(function() {
+      availableHighlight = null;
+      solrDoc = {'id_field': '1234',
+                 'title_field': 'a title',
+                 'another_field': 'another_value',
+                 url: function() {
+                   return '';
+                  },
+                 explain: function() {return mockExplain;},
+                 highlight: function() {return availableHighlight;} };
+    });
+
+    it('ignores highlights for title', function() {
+      availableHighlight = 'something';
+      var fieldSpec = {id: 'id_field', title: 'title_field'};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.title).toEqual(solrDoc.title_field);
+    });
+    
+    it('uses highlights for sub fileds', function() {
+      availableHighlight = 'something';
+      var fieldSpec = {id: 'id_field', title: 'title_field', subs: ['another_field']};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.subs.another_field).toEqual(availableHighlight);
+    });
+    
+    it('uses orig value on no hl', function() {
+      availableHighlight = null;
+      var anotherFieldValue =solrDoc.another_field;
+      var fieldSpec = {id: 'id_field', title: 'title_field', subs: ['another_field']};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.subs.another_field).toEqual(anotherFieldValue);
+    });
+  });
+
 
   describe('explain tests', function() {
     var solrDoc = null;
