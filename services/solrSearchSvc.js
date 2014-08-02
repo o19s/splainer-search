@@ -76,11 +76,19 @@ angular.module('o19s.splainer-search')
           return {};
         };
 
+        var getHlData = function(data) {
+          if (data.hasOwnProperty('highlighting')) {
+            return data.highlighting;
+          }
+          return {};
+        };
+
         activeQueries++;
         $http.jsonp(url).success(function(data) {
           activeQueries--;
           that.numFound = data.response.numFound;
           var explDict = getExplData(data);
+          var hlDict = getHlData(data);
           angular.forEach(data.response.docs, function(solrDoc) {
             solrDoc.url = function(idField, docId) {
               return buildTokensUrl(fieldList, solrUrl, idField, docId);
@@ -91,6 +99,15 @@ angular.module('o19s.splainer-search')
               } else {
                 return null;
               }
+            };
+            solrDoc.highlight = function(docId, fieldName) {
+              if (hlDict.hasOwnProperty(docId)) {
+                var docHls = hlDict[docId];
+                if (docHls.hasOwnProperty(fieldName)) {
+                  return docHls[fieldName];
+                }
+              }
+              return null;
             };
             that.docs.push(solrDoc);
           });

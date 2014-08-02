@@ -62,6 +62,116 @@ describe('Service: solrSearchSvc', function () {
     expect(solrSearchSvc.activeQueries()).toEqual(0);
   });
 
+  describe('highlights', function() {
+    var fullSolrResp = {'responseHeader':{
+      'status':0,
+      'QTime':1,
+      'params':{
+          'df':'content',
+          'echoParams':'all',
+          'rows':'2',
+          'debugQuery':'true',
+          'fl':'path content',
+          'indent':['true',
+            'true'],
+          'q':'*:*',
+          'wt':'json',
+        }
+      },
+      'response':{'numFound':100,'start':0,'docs':[
+          {
+            'content':'stuff',
+            'path':'http://larkin.com/index/'
+          },
+          {
+            'content':'more stuff',
+            'path':'http://www.rogahnbins.com/main.html'
+          }
+        ]
+      }
+    };
+
+    // optional highlighting part
+    var highlighting = {
+      'http://larkin.com/index/': {
+        content: 'highlighted larkin'
+      },
+      'http://www.rogahnbins.com/main.html': {
+        content: 'highlighted rogah'
+      }
+    };
+
+    var searcher = null;
+
+    beforeEach(function() {
+      var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
+      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+    });
+    
+    it('gets highlight field values if returned', function() {
+      var copiedResp = angular.copy(fullSolrResp);
+      copiedResp.highlighting = highlighting;
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, copiedResp);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var solrDocs = searcher.docs;
+        var docId = fullSolrResp.response.docs[0].path;
+        var expectedHl = highlighting[docId].content;
+        expect(solrDocs[0].highlight(docId, 'content')).toEqual(expectedHl);
+        docId = fullSolrResp.response.docs[1].path;
+        expectedHl = highlighting[docId].content;
+        expect(solrDocs[1].highlight(docId, 'content')).toEqual(expectedHl);
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
+    
+    it('gets null if no highlights for field', function() {
+      var copiedResp = angular.copy(fullSolrResp);
+      copiedResp.highlighting = highlighting;
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, copiedResp);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var solrDocs = searcher.docs;
+        var docId = fullSolrResp.response.docs[0].path;
+        var expectedHl = null;
+        expect(solrDocs[0].highlight(docId, 'some_other_field')).toEqual(expectedHl);
+        docId = fullSolrResp.response.docs[1].path;
+        expectedHl = null;
+        expect(solrDocs[1].highlight(docId, 'yet_another_field')).toEqual(expectedHl);
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
+    
+    it('gets null if no highlights', function() {
+      var copiedResp = angular.copy(fullSolrResp);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, copiedResp);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var solrDocs = searcher.docs;
+        var docId = fullSolrResp.response.docs[0].path;
+        var expectedHl = null; 
+        expect(solrDocs[0].highlight(docId, 'content')).toEqual(expectedHl);
+        docId = fullSolrResp.response.docs[1].path;
+        expectedHl = null;
+        expect(solrDocs[1].highlight(docId, 'content')).toEqual(expectedHl);
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
+  });
+
   describe('explain info ', function() {
 
 
