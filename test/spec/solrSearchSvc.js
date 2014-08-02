@@ -1,5 +1,6 @@
 'use strict';
 /* global urlContainsParams*/
+/*global describe,beforeEach,inject,it,expect*/
 describe('Service: solrSearchSvc', function () {
 
   // load the service's module
@@ -107,6 +108,26 @@ describe('Service: solrSearchSvc', function () {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
       searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
+    });
+    
+    it('asks for highlights', function() {
+      var copiedResp = angular.copy(fullSolrResp);
+      copiedResp.highlighting = highlighting;
+
+      var expectedHlParams = {'hl': ['true'],
+                              'hl.simple.pre': [solrSearchSvc.HIGHLIGHTING_PRE],
+                              'hl.simple.post': [solrSearchSvc.HIGHLIGHTING_POST]};
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedHlParams))
+                              .respond(200, copiedResp);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+
     });
     
     it('gets highlight field values if returned', function() {

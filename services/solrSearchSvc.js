@@ -5,6 +5,11 @@
 angular.module('o19s.splainer-search')
   .service('solrSearchSvc', function solrSearchSvc($http) {
     // AngularJS will instantiate a singleton by calling 'new' on this function
+    
+    this.HIGHLIGHTING_PRE = 'aouaoeuCRAZY_STRING!';
+    this.HIGHLIGHTING_POST = '62362iueaiCRAZY_POST_STRING!';
+    var svc = this;
+
     var activeQueries = 0;
 
     var buildUrl = function(url, urlArgs) {
@@ -44,6 +49,9 @@ angular.module('o19s.splainer-search')
       solrArgs.wt = ['json'];
       solrArgs.debug = ['true'];
       solrArgs['debug.explain.structured'] = ['true'];
+      solrArgs.hl = ['true'];
+      solrArgs['hl.simple.pre'] = [svc.HIGHLIGHTING_PRE];
+      solrArgs['hl.simple.post'] = [svc.HIGHLIGHTING_POST];
       var baseUrl = buildUrl(solrUrl, solrArgs);
       baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
       return baseUrl;
