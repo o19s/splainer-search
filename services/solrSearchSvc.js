@@ -12,6 +12,7 @@ angular.module('o19s.splainer-search')
 
     var activeQueries = 0;
 
+
     var buildUrl = function(url, urlArgs) {
       var baseUrl = url + '?';
       angular.forEach(urlArgs, function(values, param) {
@@ -198,19 +199,14 @@ angular.module('o19s.splainer-search')
       if (pathStr.startsWith('/')) {
         pathStr = pathStr.slice(1);
       }
-      var solrPrefix = 'solr/';
-      if (pathStr.startsWith(solrPrefix)) {
-        pathStr = pathStr.slice(solrPrefix.length);
-        var colAndHandler = pathStr.split('/');
-        if (colAndHandler.length === 2) {
-          var collectionName = colAndHandler[0];
-          var requestHandler = colAndHandler[1];
-          if (requestHandler.endsWith('/')) {
-            requestHandler = requestHandler.slice(0, requestHandler.length - 1);
-          }
-          return {'collectionName': collectionName,
-                  'requestHandler': requestHandler};
-        }
+
+      var pathComponents = pathStr.split('/');
+      var pcLen = pathComponents.length;
+      if (pcLen >= 2) {
+
+        var reqHandler = pathComponents[pcLen - 1];
+        var collection = pathComponents[pcLen - 2];
+        return {requestHandler: reqHandler, collectionName: collection};
       }
       return null;
     };
@@ -244,4 +240,27 @@ angular.module('o19s.splainer-search')
 
     };
 
+    var entityMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '\"': '&quot;',
+      '\'': '&#39;',
+      '/': '&#x2F;'
+    };
+
+    var escapeHtml = function(string) {
+      return String(string).replace(/[&<>"'\/]/g, function (s) {
+        return entityMap[s];
+      });
+    };
+
+    this.markedUpFieldValue = function(fieldValue, pre, post) {
+      var esc = escapeHtml(fieldValue);
+      
+      var preRegex = new RegExp(svc.HIGHLIGHTING_PRE, 'g');
+      var hlPre = esc.replace(preRegex, pre);
+      var postRegex = new RegExp(svc.HIGHLIGHTING_POST, 'g');
+      return hlPre.replace(postRegex, post);
+    };
   });

@@ -497,6 +497,16 @@ describe('Service: solrSearchSvc', function () {
     expect(parsedSolrUrl.solrArgs.q).toContain('*:*');
   });
 
+  it('parses Renes Solr URL', function() {
+    var urlStr = 'http://localhost:8080/la-solr/tt/select?q=*:*';
+    var parsedSolrUrl = solrSearchSvc.parseSolrUrl(urlStr);
+    expect(parsedSolrUrl.protocol).toEqual('http:');
+    expect(parsedSolrUrl.host).toEqual('localhost:8080');
+    expect(parsedSolrUrl.collectionName).toEqual('tt');
+    expect(parsedSolrUrl.requestHandler).toEqual('select');
+    expect(parsedSolrUrl.solrArgs.q).toContain('*:*');
+  });
+
   describe('solr args parse/format', function() {
   
     var formatThenParse = function(solrArgs) {
