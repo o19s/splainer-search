@@ -62,7 +62,8 @@ describe('Service: elasticSearchSvc', function() {
     var searcher = esSearchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
                                               mockEsParams, mockQueryText);
     $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-      return (data.query.term.text === mockQueryText);
+      var esQuery = angular.fromJson(data);
+      return (esQuery.query.term.text === mockQueryText);
     }).
     respond(200, mockResults);
     searcher.search();
@@ -84,6 +85,7 @@ describe('Service: elasticSearchSvc', function() {
       expect(docs[0].field1).toEqual(mockResults.hits.hits[0]._source.field1);
       expect(docs[1].field).toEqual(mockResults.hits.hits[1]._source.field);
       expect(docs[1].field1).toEqual(mockResults.hits.hits[1]._source.field1);
+      called++;
     });
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
