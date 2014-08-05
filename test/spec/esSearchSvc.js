@@ -43,7 +43,8 @@ describe('Service: elasticSearchSvc', function() {
         '_source': {
           'field': '1--field value',
           'field1': '1--field1 value'
-        }
+        },
+
       },
        {'_index': 'statedecoded',
         '_type': 'law',
@@ -90,6 +91,64 @@ describe('Service: elasticSearchSvc', function() {
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(called).toEqual(1);
+  });
+
+
+  describe('explain info', function() {
+    var basicExplain1 = {
+      match: true,
+      value: 1.5,
+      description: 'weight(text:law in 1234)',
+      details: []
+    };
+    var basicExplain2 = {
+      match: true,
+      value: 0.5,
+      description: 'weight(text:order in 1234)',
+      details: []
+    };
+
+    var sumExplain = {
+      match: true,
+      value: 1.0,
+      description: 'sum of',
+      details: [basicExplain1, basicExplain2]
+    };
+    
+    it('asks for explain', function() {
+      var searcher = esSearchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
+                                                mockEsParams, mockQueryText);
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        return (esQuery.hasOwnProperty('explain') && esQuery.explain === true);
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('it populates explain', function() {
+      var searcher = esSearchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
+                                                mockEsParams, mockQueryText);
+      var mockResultsWithExpl = angular.copy(mockResults);
+      mockResultsWithExpl.hits.hits[0]._explanation = sumExplain;
+      var called = 0;
+      $httpBackend.expectPOST(mockEsUrl).
+        respond(200, mockResultsWithExpl);
+      searcher.search()
+      .then(function() {
+        var docs = searcher.docs;
+        expect(docs[0].explain()).toEqual(sumExplain);
+        expect(docs[1].explain()).toBe(null);
+        called++;
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+
+    });
+    
   });
 
 

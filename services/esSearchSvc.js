@@ -28,6 +28,7 @@ angular.module('o19s.splainer-search')
 
       var queryDsl = replaceQuery(esArgs, queryText);
       queryDsl.fields = fieldList;
+      queryDsl.explain = true;
 
       this.search = function() {
         this.inError = false;
@@ -40,6 +41,20 @@ angular.module('o19s.splainer-search')
           angular.forEach(data.hits.hits, function(hit) {
             var doc = hit._source; 
             // TODO doc.url, doc.explain, doc.highlight
+            doc.explain = function() {
+              if (hit.hasOwnProperty('_explanation')) {
+                return hit._explanation;
+              }
+              else {
+                return null;
+              }
+            };
+            doc.url = function() {
+              return '#';
+            };
+            doc.highlight = function() {
+              return null;
+            };
             that.docs.push(doc);
           });
           promise.complete();
