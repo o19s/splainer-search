@@ -40,9 +40,9 @@ describe('Service: elasticSearchSvc', function() {
         '_type': 'law',
         '_id': 'l_1',
         '_score': 5.0,
-        '_source': {
-          'field': '1--field value',
-          'field1': '1--field1 value'
+        'fields': {
+          'field': ['1--field value'],
+          'field1': ['1--field1 value']
         },
 
       },
@@ -50,9 +50,9 @@ describe('Service: elasticSearchSvc', function() {
         '_type': 'law',
         '_id': 'l_1',
         '_score': 3.0,
-        '_source': {
-          'field': '2--field value',
-          'field1': '2--field1 value'
+        'fields': {
+          'field': ['2--field value'],
+          'field1': ['2--field1 value']
         }
        }
       ]
@@ -82,10 +82,10 @@ describe('Service: elasticSearchSvc', function() {
     .then(function() {
       var docs = searcher.docs;
       expect(docs.length === 2);
-      expect(docs[0].field).toEqual(mockResults.hits.hits[0]._source.field);
-      expect(docs[0].field1).toEqual(mockResults.hits.hits[0]._source.field1);
-      expect(docs[1].field).toEqual(mockResults.hits.hits[1]._source.field);
-      expect(docs[1].field1).toEqual(mockResults.hits.hits[1]._source.field1);
+      expect(docs[0].field).toEqual(mockResults.hits.hits[0].fields.field[0]);
+      expect(docs[0].field1).toEqual(mockResults.hits.hits[0].fields.field1[0]);
+      expect(docs[1].field).toEqual(mockResults.hits.hits[1].fields.field[0]);
+      expect(docs[1].field1).toEqual(mockResults.hits.hits[1].fields.field1[0]);
       called++;
     });
     $httpBackend.flush();

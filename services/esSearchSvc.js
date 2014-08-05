@@ -39,7 +39,16 @@ angular.module('o19s.splainer-search')
           that.numFound = data.hits.total;
 
           angular.forEach(data.hits.hits, function(hit) {
-            var doc = hit._source; 
+            var doc = {};
+            // stringify fields
+            angular.forEach(hit.fields, function(fieldValue, fieldName) {
+              if (fieldValue.length === 1 && typeof(fieldValue) === 'object') {
+                doc[fieldName] = fieldValue[0];
+              } else {
+                doc[fieldName] = fieldValue;
+              }
+            });
+
             // TODO doc.url, doc.explain, doc.highlight
             doc.explain = function() {
               if (hit.hasOwnProperty('_explanation')) {
