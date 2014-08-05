@@ -38,6 +38,10 @@ angular.module('o19s.splainer-search')
         details = explJson.details;
       }
       var tieMatch = description.match(tieRegex);
+      if (description.startsWith('ConstantScore')) {
+        ConstantScoreExplain.prototype = base;
+        return new ConstantScoreExplain(explJson);
+      }
       if (description.startsWith('MatchAllDocsQuery')) {
         MatchAllDocsExplain.prototype = base;
         return new MatchAllDocsExplain(explJson);
@@ -152,6 +156,10 @@ angular.module('o19s.splainer-search')
 
     var MatchAllDocsExplain = function() {
       this.realExplanation = 'You queried *:* (all docs returned w/ score of 1)';
+    };
+    
+    var ConstantScoreExplain = function() {
+      this.realExplanation = 'Constant Scored Query';
     };
 
     var WeightExplain = function(explJson) {

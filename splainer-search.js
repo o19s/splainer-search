@@ -72,7 +72,16 @@ angular.module('o19s.splainer-search')
           that.numFound = data.hits.total;
 
           angular.forEach(data.hits.hits, function(hit) {
-            var doc = hit._source; 
+            var doc = {};
+            // stringify fields
+            angular.forEach(hit.fields, function(fieldValue, fieldName) {
+              if (fieldValue.length === 1 && typeof(fieldValue) === 'object') {
+                doc[fieldName] = fieldValue[0];
+              } else {
+                doc[fieldName] = fieldValue;
+              }
+            });
+
             // TODO doc.url, doc.explain, doc.highlight
             doc.explain = function() {
               if (hit.hasOwnProperty('_explanation')) {
@@ -148,6 +157,10 @@ angular.module('o19s.splainer-search')
         details = explJson.details;
       }
       var tieMatch = description.match(tieRegex);
+      if (description.startsWith('ConstantScore')) {
+        ConstantScoreExplain.prototype = base;
+        return new ConstantScoreExplain(explJson);
+      }
       if (description.startsWith('MatchAllDocsQuery')) {
         MatchAllDocsExplain.prototype = base;
         return new MatchAllDocsExplain(explJson);
@@ -262,6 +275,10 @@ angular.module('o19s.splainer-search')
 
     var MatchAllDocsExplain = function() {
       this.realExplanation = 'You queried *:* (all docs returned w/ score of 1)';
+    };
+    
+    var ConstantScoreExplain = function() {
+      this.realExplanation = 'Constant Scored Query';
     };
 
     var WeightExplain = function(explJson) {
