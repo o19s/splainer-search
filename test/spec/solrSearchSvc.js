@@ -530,5 +530,73 @@ describe('Service: solrSearchSvc', function () {
   
   });
 
+  describe('paging', function() {
+    var fullSolrResp = {'responseHeader':{
+      'status':0,
+      'QTime':1,
+      'params':{
+          'df':'content',
+          'echoParams':'all',
+          'rows':'2',
+          'debugQuery':'true',
+          'fl':'path content',
+          'indent':['true',
+            'true'],
+          'q':'*:*',
+          'wt':'json',
+        }
+      },
+      'response':{'numFound':21,'start':0,'docs':[
+          {
+            'content':'stuff',
+            'path':'http://larkin.com/index/'
+          },
+          {
+            'content':'more stuff',
+            'path':'http://www.rogahnbins.com/main.html'
+          }
+        ]
+      }};
+  
+    var fieldSpec = null;
+    var searcher = null;
+    
+    beforeEach(function() {
+      fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
+      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+    });
+
+    it('pages on page', function() {
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, fullSolrResp);
+      searcher.search();
+      $httpBackend.flush();
+
+      // get page 2
+      var nextSearcher = searcher.pager();
+      var expectedPageParams = angular.copy(expectedParams);
+      expectedPageParams.rows = ['10'];
+      expectedPageParams.start = ['10'];
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+                              .respond(200, fullSolrResp);
+      nextSearcher.search();
+      $httpBackend.flush();
+     
+      // get page 3 
+      nextSearcher = nextSearcher.pager();
+      expectedPageParams.rows = ['1'];
+      expectedPageParams.start =['20'];
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+                              .respond(200, fullSolrResp);
+      nextSearcher.search();
+      $httpBackend.flush();
+      
+      // done
+      nextSearcher = nextSearcher.pager();
+      expect(nextSearcher).toBe(null);
+    });
+  });
+
 
 });

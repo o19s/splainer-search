@@ -60,14 +60,35 @@ angular.module('o19s.splainer-search')
 
     var SolrSearcher = function(fieldList, solrUrl, solrArgs, queryText) {
       this.callUrl = this.linkUrl = '';
-      this.callUrl = buildSolrUrl(fieldList, solrUrl, solrArgs, queryText);
+      this.callUrl = buildSolrUrl(fieldList, solrUrl, angular.copy(solrArgs), queryText);
       this.linkUrl = this.callUrl.replace('wt=json', 'wt=xml');
       this.linkUrl = this.linkUrl + '&indent=true&echoParams=all';
       this.docs = [];
       this.numFound = 0;
       this.inError = false;
 
+      // return a new searcher that will give you
+      // the next page upon search(). To get the subsequent
+      // page, call pager on that searcher ad infinidum
+      this.pager = function() {
+        var start = 0;
+        var nextArgs = angular.copy(solrArgs);
+        if (nextArgs.hasOwnProperty('start')) {
+          start = parseInt(nextArgs.start) + 10;
+          if (start >= this.numFound) {
+            return null; // no more results
+          }
+        } else {
+          start = 10;
+        }
+        var remaining = this.numFound - start;
+        nextArgs.rows = ['' + Math.min(10, remaining)];
+        nextArgs.start = ['' + start];
+        return new SolrSearcher(fieldList, solrUrl, nextArgs, queryText);
+      };
 
+
+      // search and get results
       this.search = function() {
         var url = this.callUrl + '&json.wrf=JSON_CALLBACK';
         this.inError = false;
