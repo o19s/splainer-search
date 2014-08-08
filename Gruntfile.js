@@ -38,11 +38,11 @@ module.exports = function(grunt) {
 					//sub:            true,
 					node: true,
 					loopfunc: true,
-					browser:        true,
-					devel:          true,
+					browser:     true,
+					devel:       true,
 					globals: {
-						angular:    false,
-						$:          false,
+						angular:    true,
+						$:          true,
 						moment:		false,
 						Pikaday: false,
 						module: false,
@@ -55,7 +55,7 @@ module.exports = function(grunt) {
 						ignores: ['**.min.js']
 					},
 					files: {
-						src: []
+						src: ['services/*.js']
 					}
 				},
 				//quick version - will not fail entire grunt process if there are lint errors

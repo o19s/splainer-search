@@ -1,34 +1,22 @@
 'use strict';
 
 // Executes a solr search and returns
-// a set of queryDocs
+// a set of solr documents
 angular.module('o19s.splainer-search')
-  .service('solrSearchSvc', function solrSearchSvc($http) {
-    // AngularJS will instantiate a singleton by calling 'new' on this function
-    
-    this.HIGHLIGHTING_PRE = 'aouaoeuCRAZY_STRING!';
-    this.HIGHLIGHTING_POST = '62362iueaiCRAZY_POST_STRING!';
+  .service('solrSearchSvc', function solrSearchSvc($http, solrUrlSvc) {
+   
+    // PRE and POST strings, can't just use HTML
+    // because Solr doesn't appear to support escaping 
+    // XML/HTML tags in the content. So we do this stupid thing 
+    this.HIGHLIGHTING_PRE = 'aouaoeuCRAZY_STRING!8_______';
+    this.HIGHLIGHTING_POST = '62362iueaiCRAZY_POST_STRING!_______';
     var svc = this;
 
     var activeQueries = 0;
 
-
-    var buildUrl = function(url, urlArgs) {
-      var baseUrl = url + '?';
-      angular.forEach(urlArgs, function(values, param) {
-        angular.forEach(values, function(value) {
-          baseUrl += param + '=' + value + '&';
-        });
-      });
-      // percentages need to be escaped before
-      // url escaping
-      baseUrl = baseUrl.replace(/%/g, '%25');
-      return baseUrl.slice(0, -1); // take out last & or trailing ? if no args
-    };
-
-    var searchSvc = this;
+    // a URL to access a the specified docId 
     var buildTokensUrl = function(fieldList, solrUrl, idField, docId) {
-      var escId = encodeURIComponent(searchSvc.escapeUserQuery(docId));
+      var escId = encodeURIComponent(solrUrlSvc.escapeUserQuery(docId));
       var tokensArgs = {
         'indent': ['true'],
         'wt': ['xml'],
@@ -42,10 +30,11 @@ angular.module('o19s.splainer-search')
           tokensArgs['facet.field'].push(fieldName);
         }
       });
-      return buildUrl(solrUrl, tokensArgs) + '&q=' + idField + ':'  + escId;
+      return solrUrlSvc.buildUrl(solrUrl, tokensArgs) + '&q=' + idField + ':'  + escId;
     };
 
-    var buildSolrUrl = function(fieldList, solrUrl, solrArgs, queryText) {
+    // the full URL we'll use to call Solr
+    var buildCallUrl = function(fieldList, solrUrl, solrArgs, queryText) {
       solrArgs.fl = [fieldList.join(' ')];
       solrArgs.wt = ['json'];
       solrArgs.debug = ['true'];
@@ -53,14 +42,14 @@ angular.module('o19s.splainer-search')
       solrArgs.hl = ['true'];
       solrArgs['hl.simple.pre'] = [svc.HIGHLIGHTING_PRE];
       solrArgs['hl.simple.post'] = [svc.HIGHLIGHTING_POST];
-      var baseUrl = buildUrl(solrUrl, solrArgs);
+      var baseUrl = solrUrlSvc.buildUrl(solrUrl, solrArgs);
       baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
       return baseUrl;
     };
 
     var SolrSearcher = function(fieldList, solrUrl, solrArgs, queryText) {
       this.callUrl = this.linkUrl = '';
-      this.callUrl = buildSolrUrl(fieldList, solrUrl, angular.copy(solrArgs), queryText);
+      this.callUrl = buildCallUrl(fieldList, solrUrl, angular.copy(solrArgs), queryText);
       this.linkUrl = this.callUrl.replace('wt=json', 'wt=xml');
       this.linkUrl = this.linkUrl + '&indent=true&echoParams=all';
       this.docs = [];
@@ -87,8 +76,8 @@ angular.module('o19s.splainer-search')
         return new SolrSearcher(fieldList, solrUrl, nextArgs, queryText);
       };
 
-
-      // search and get results
+      // search (execute the query) and produce results
+      // to the returned future
       this.search = function() {
         var url = this.callUrl + '&json.wrf=JSON_CALLBACK';
         this.inError = false;
@@ -120,6 +109,8 @@ angular.module('o19s.splainer-search')
           var explDict = getExplData(data);
           var hlDict = getHlData(data);
           angular.forEach(data.response.docs, function(solrDoc) {
+            
+            // annotate the doc with several methods
             solrDoc.url = function(idField, docId) {
               return buildTokensUrl(fieldList, solrUrl, idField, docId);
             };
@@ -164,101 +155,12 @@ angular.module('o19s.splainer-search')
     this.activeQueries = function() {
       return activeQueries;
     };
-    
-    this.escapeUserQuery = function(queryText) {
-      var escapeChars = ['+', '-', '&', '!', '(', ')', '[', ']',
-                         '{', '}', '^', '"', '~', '*', '?', ':', '\\'];
-      var regexp = new RegExp('(\\' + escapeChars.join('|\\') + ')', 'g');
-      return queryText.replace(regexp, '\\$1');
-    };
-
-    this.parseSolrArgs = function(argsStr) {
-      var splitUp = argsStr.split('?');
-      if (splitUp.length === 2) {
-        argsStr = splitUp[1];
-      }
-      var vars = argsStr.split('&');
-      var rVal = {};
-      angular.forEach(vars, function(qVar) {
-        var nameAndValue = qVar.split('=');
-        if (nameAndValue.length === 2) {
-          var name = nameAndValue[0];
-          var value = nameAndValue[1];
-          var decodedValue = decodeURIComponent(value);
-          if (!rVal.hasOwnProperty(name)) {
-            rVal[name] = [decodedValue];
-          } else {
-            rVal[name].push(decodedValue);
-          }
-        }
-      });
-      return rVal;
-    };
-
-    /* Given arguments of the form {q: ['*:*'], fq: ['title:foo', 'text:bar']}
-     * turn into string suitable for URL query param q=*:*&fq=title:foo&fq=text:bar
-     *
-     * */
-    this.formatSolrArgs = function(argsObj) {
-      var rVal = '';
-      angular.forEach(argsObj, function(values, param) {
-        angular.forEach(values, function(value) {
-          rVal += param + '=' + value + '&';
-        });
-      });
-      // percentages need to be escaped before
-      // url escaping
-      rVal = rVal.replace(/%/g, '%25');
-      return rVal.slice(0, -1); // take out last & or trailing ? if no args
-    };
-
-    /* Parse a Solr URL of the form [/]solr/[collectionName]/[requestHandler]
-     * return object with {collectionName: <collectionName>, requestHandler: <requestHandler>} 
-     * return null on failure to parse as above solr url
-     * */
-    this.parseSolrPath = function(pathStr) {
-      if (pathStr.startsWith('/')) {
-        pathStr = pathStr.slice(1);
-      }
-
-      var pathComponents = pathStr.split('/');
-      var pcLen = pathComponents.length;
-      if (pcLen >= 2) {
-
-        var reqHandler = pathComponents[pcLen - 1];
-        var collection = pathComponents[pcLen - 2];
-        return {requestHandler: reqHandler, collectionName: collection};
-      }
-      return null;
-    };
-
-    /* Parse a Sor URL of the form [http|https]://[host]/solr/[collectionName]/[requestHandler]?[args]
-     * return null on failure to parse
-     * */
-    this.parseSolrUrl = function(solrReq) {
-
-      var parseUrl = function(url) {
-        var a = document.createElement('a');
-        a.href = url;
-        return a;
-      };
-
-      var parsedUrl = parseUrl(solrReq);
-      parsedUrl.solrArgs = this.parseSolrArgs(parsedUrl.search);
-      var pathParsed = this.parseSolrPath(parsedUrl.pathname);
-      if (pathParsed) {
-        parsedUrl.collectionName = pathParsed.collectionName;
-        parsedUrl.requestHandler = pathParsed.requestHandler;
-      } else {
-        return null;
-      }
-      var solrEndpoint = function() {
-        return parsedUrl.protocol + '//' + parsedUrl.host + parsedUrl.pathname;
-      };
-
-      parsedUrl.solrEndpoint = solrEndpoint;
-      return parsedUrl;
-
+   
+    this.removeUnsupportedArgs = function(argsToUse) {
+        delete argsToUse.fl;
+        delete argsToUse.wt;
+        delete argsToUse.rows;
+        delete argsToUse.debug;
     };
 
     var entityMap = {
