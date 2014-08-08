@@ -117,6 +117,21 @@ angular.module('o19s.splainer-search')
       return queryText.replace(regexp, '\\$1');
     };
 
-
+    /* This method is a bit tied to how the solrSearchSvc behaves, but 
+     * as this module is probably what you're using to chop up a user's SolrURL
+     * its placed here
+     * 
+     * It strips arguments out that are not supported by solrSearchSvc and
+     * generally interfere with its operation (ie fl, rows, etc). solrSearchSvc
+     * removes these itself, but this is placed here for convenience to remove
+     * from user input (ie an fl may confuse the user when fl is actually supplied
+     * elsewhere)
+     * */
+    this.removeUnsupported = function(solrArgs) {
+        delete solrArgs.fl;
+        delete solrArgs.wt;
+        delete solrArgs.rows;
+        delete solrArgs.debug;
+    };
 
   });

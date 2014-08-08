@@ -49,16 +49,10 @@ angular.module('o19s.splainer-search')
     
     var withoutUnsupported = function(argsToUse, dontSanitize) {
       var argsRemoved = angular.copy(argsToUse);
-      if (dontSanitize === true) {
-        return argsRemoved;
+      if (dontSanitize !== true) {
+        solrUrlSvc.removeUnsupported(argsRemoved);
       }
-      else {
-        delete argsRemoved.fl;
-        delete argsRemoved.wt;
-        delete argsRemoved.rows;
-        delete argsRemoved.debug;
-        return argsRemoved;
-      }
+      return argsRemoved;
     };
 
 
