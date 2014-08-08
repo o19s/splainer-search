@@ -460,6 +460,22 @@ describe('Service: solrSearchSvc', function () {
     expect(searcher.linkUrl.indexOf('wt=xml')).toNotBe(-1);
 
   });
+  
+  it('sanitizes solr arguments', function() {
+    var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
+    var mockUncleanSolrParams = angular.copy(mockSolrParams);
+    // make it filthy with these params we need to strip out!
+    mockUncleanSolrParams.wt = ['xml'];
+    mockUncleanSolrParams.rows = ['20'];
+    mockUncleanSolrParams.debug = ['true'];
+    var searcher = solrSearchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
+                                                mockSolrParams, mockQueryText);
+    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                            .respond(200, mockResults);
+    searcher.search();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+  });
 
 
   describe('paging', function() {

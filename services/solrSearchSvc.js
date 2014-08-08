@@ -46,10 +46,25 @@ angular.module('o19s.splainer-search')
       baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
       return baseUrl;
     };
+    
+    var withoutUnsupported = function(argsToUse, dontSanitize) {
+      var argsRemoved = angular.copy(argsToUse);
+      if (dontSanitize === true) {
+        return argsRemoved;
+      }
+      else {
+        delete argsRemoved.fl;
+        delete argsRemoved.wt;
+        delete argsRemoved.rows;
+        delete argsRemoved.debug;
+        return argsRemoved;
+      }
+    };
 
-    var SolrSearcher = function(fieldList, solrUrl, solrArgs, queryText) {
+
+    var SolrSearcher = function(fieldList, solrUrl, solrArgs, queryText, dontSanitize) {
       this.callUrl = this.linkUrl = '';
-      this.callUrl = buildCallUrl(fieldList, solrUrl, angular.copy(solrArgs), queryText);
+      this.callUrl = buildCallUrl(fieldList, solrUrl, withoutUnsupported(solrArgs, dontSanitize), queryText);
       this.linkUrl = this.callUrl.replace('wt=json', 'wt=xml');
       this.linkUrl = this.linkUrl + '&indent=true&echoParams=all';
       this.docs = [];
@@ -73,7 +88,7 @@ angular.module('o19s.splainer-search')
         var remaining = this.numFound - start;
         nextArgs.rows = ['' + Math.min(10, remaining)];
         nextArgs.start = ['' + start];
-        return new SolrSearcher(fieldList, solrUrl, nextArgs, queryText);
+        return new SolrSearcher(fieldList, solrUrl, nextArgs, queryText, /*dont sanitize away rows, start, etc*/true);
       };
 
       // search (execute the query) and produce results
@@ -156,13 +171,6 @@ angular.module('o19s.splainer-search')
       return activeQueries;
     };
    
-    this.removeUnsupportedArgs = function(argsToUse) {
-        delete argsToUse.fl;
-        delete argsToUse.wt;
-        delete argsToUse.rows;
-        delete argsToUse.debug;
-    };
-
     var entityMap = {
       '&': '&amp;',
       '<': '&lt;',
