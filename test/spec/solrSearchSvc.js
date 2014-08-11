@@ -469,12 +469,27 @@ describe('Service: solrSearchSvc', function () {
     mockUncleanSolrParams.rows = ['20'];
     mockUncleanSolrParams.debug = ['true'];
     var searcher = solrSearchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
-                                                mockSolrParams, mockQueryText);
+                                                mockUncleanSolrParams, mockQueryText);
     $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                             .respond(200, mockResults);
     searcher.search();
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
+  });
+
+  it('doesnt sanitize solr arguments when told not to', function() {
+    var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
+    var mockUncleanSolrParams = {};
+    // make it filthy with these params we need to strip out!
+    mockUncleanSolrParams.rows = ['20'];
+    var searcher = solrSearchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
+                                                mockUncleanSolrParams, mockQueryText, true);
+    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, mockUncleanSolrParams))
+                            .respond(200, mockResults);
+    searcher.search();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+    
   });
 
 
