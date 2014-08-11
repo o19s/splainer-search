@@ -41,6 +41,7 @@ window.urlContainsParams = function(url, params) {
         if (values instanceof Array) {
           angular.forEach(values, function(value) {
             if (!arrayContains(parsedParams[param], value)) {
+              console.log('Expected param: ' + param + ' missing');
               missingParam = true;
             }
           });

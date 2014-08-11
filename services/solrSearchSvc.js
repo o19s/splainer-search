@@ -157,8 +157,8 @@ angular.module('o19s.splainer-search')
                               settings.selectedTry.solrArgs, queryText);
     };
 
-    this.createSearcher = function (fieldList, solrUrl, solrArgs, queryText) {
-      return new SolrSearcher(fieldList, solrUrl, solrArgs, queryText);
+    this.createSearcher = function (fieldList, solrUrl, solrArgs, queryText, dontSanitize) {
+      return new SolrSearcher(fieldList, solrUrl, solrArgs, queryText, dontSanitize);
     };
 
     this.activeQueries = function() {
