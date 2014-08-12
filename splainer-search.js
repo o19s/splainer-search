@@ -1028,10 +1028,32 @@ angular.module('o19s.splainer-search')
      * elsewhere)
      * */
     this.removeUnsupported = function(solrArgs) {
+        var warnings = {};
+        var deleteThenWarn = function(arg, warning) {
+          if (solrArgs.hasOwnProperty(arg)) {
+            warnings[arg] = warning;
+            delete solrArgs.arg;
+          }
+        };
+        
+        var deleteThenWarnPrefix = function(argPrefix, warning) {
+          var argsCpy = angular.copy(solrArgs);
+          angular.forEach(argsCpy, function(value, key) {
+            if (key.startsWith(argPrefix)) {
+              deleteThenWarn(key, warning);
+            }
+          });
+        };
+       
+        // Stuff I think we can safely remove without warning the user 
         delete solrArgs.fl;
         delete solrArgs.wt;
-        delete solrArgs.rows;
         delete solrArgs.debug;
+
+        // Unsupported stuff to remove and provide a friendly warning
+        deleteThenWarn('rows', 'We removed \'rows\' from your query as we\'ll show you results 10 at a time with paging');
+        deleteThenWarnPrefix('group', 'We don\'t support group queries, so those arguments were stripped from your arguments');
+        return warnings;
     };
 
   });
