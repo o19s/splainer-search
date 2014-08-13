@@ -44,8 +44,15 @@ describe('Service: solrUrlSvc', function () {
     var urlStr = 'http://localhost:8983/solr/collection1/select?group=true&group.main=true&group.field=text&q=*:*';
     var parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);
     var warnings = solrUrlSvc.removeUnsupported(parsedSolrUrl.solrArgs);
-    console.log(warnings);
     expect(warnings.group.length).toBeGreaterThan(1);
+  });
+  
+  it('removes group arguments', function() {
+    var urlStr = 'http://localhost:8983/solr/collection1/select?group=true&group.main=true&group.field=text&q=*:*';
+    var parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);
+    solrUrlSvc.removeUnsupported(parsedSolrUrl.solrArgs);
+    expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('group');
+    expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('group.main');
   });
   
   it('parses Renes Solr URL', function() {

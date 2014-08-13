@@ -132,7 +132,7 @@ angular.module('o19s.splainer-search')
         var deleteThenWarn = function(arg, warning) {
           if (solrArgs.hasOwnProperty(arg)) {
             warnings[arg] = warning;
-            delete solrArgs.arg;
+            delete solrArgs[arg];
           }
         };
         
