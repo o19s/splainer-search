@@ -1032,7 +1032,7 @@ angular.module('o19s.splainer-search')
         var deleteThenWarn = function(arg, warning) {
           if (solrArgs.hasOwnProperty(arg)) {
             warnings[arg] = warning;
-            delete solrArgs.arg;
+            delete solrArgs[arg];
           }
         };
         
@@ -1048,11 +1048,11 @@ angular.module('o19s.splainer-search')
         // Stuff I think we can safely remove without warning the user 
         delete solrArgs.fl;
         delete solrArgs.wt;
+        delete solrArgs.rows;
         delete solrArgs.debug;
 
         // Unsupported stuff to remove and provide a friendly warning
-        deleteThenWarn('rows', 'We removed \'rows\' from your query as we\'ll show you results 10 at a time with paging');
-        deleteThenWarnPrefix('group', 'We don\'t support group queries, so those arguments were stripped from your arguments');
+        deleteThenWarnPrefix('group', 'Group queries/field collapsing not supported');
         return warnings;
     };
 
