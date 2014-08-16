@@ -85,6 +85,7 @@ describe('Service: normalDocsSvc', function () {
     var solrDocNoExpl = null;
     var basicExplain2 = null;
     beforeEach(function() {
+
       var basicExplain1 = {
         match: true,
         value: 1.5,
