@@ -58,20 +58,30 @@ angular.module('o19s.splainer-search')
 
     var explainable = function(doc, explainJson) {
 
-      var simplerExplain = explainSvc.createExplain(explainJson);
-      var hotMatches = simplerExplain.vectorize();
+      var simplerExplain = null;// explainSvc.createExplain(explainJson);
+      var hotMatches = null;//simplerExplain.vectorize();
+
+      var initExplain = function() {
+        if (!simplerExplain) {
+          simplerExplain = explainSvc.createExplain(explainJson);
+          hotMatches = simplerExplain.vectorize();
+        }
+      };
 
       doc.explain = function() {
+        initExplain();
         return simplerExplain;
       };
       
       doc.hotMatches = function() {
+        initExplain();
         return hotMatches;
       };
 
       var hotOutOf = [];
       var lastMaxScore = -1;
       doc.hotMatchesOutOf = function(maxScore) {
+        initExplain();
         if (maxScore !== lastMaxScore) {
           hotOutOf.length = 0;
         }
@@ -86,7 +96,10 @@ angular.module('o19s.splainer-search')
         return hotOutOf;
       };
 
-      doc.score = simplerExplain.contribution();
+      doc.score = function() {
+        initExplain();
+        return simplerExplain.contribution();
+      };
       return doc;
     };
 

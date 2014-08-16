@@ -155,6 +155,12 @@ describe('Service: normalDocsSvc', function () {
       normalDocsSvc.explainDoc(normalDoc, basicExplain2);
       expect(explBefore).toEqual(normalDoc.explain());
     });
+
+    it('gets score', function() {
+      var fieldSpec = {id: 'id_field', title: 'title_field'};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.score()).toEqual(1.0);
+    });
   });
 
 });

@@ -561,5 +561,311 @@ describe('Service: solrSearchSvc', function () {
     });
   });
 
+  var lizsResp = {
+
+  "responseHeader": {
+
+    "status": 0,
+
+    "QTime": 3,
+
+    "params": {
+
+      "df": "text_all",
+
+      "echoParams": "all",
+
+      "rows": "10",
+
+      "debugQuery": "true",
+
+      "fl": "id pageName",
+
+      "indent": "true",
+
+      "q": "sed",
+
+      "wt": "json",
+
+      "fq": "ip:9781565922259"
+
+    }
+
+  },
+
+  "response": {
+
+    "numFound": 133,
+
+    "start": 0,
+
+    "docs": [
+
+      {
+
+        "pageName": [
+
+          "Appendix A. Quick Reference for sed"
+
+        ],
+
+        "id": "ip-9781565922259/440"
+
+      },
+
+      {
+
+        "pageName": [
+
+          "Syntax of sed Commands"
+
+        ],
+
+        "id": "ip-9781565922259/444"
+
+      },
+
+      {
+
+        "pageName": [
+
+          "Availability of sed and awk"
+
+        ],
+
+        "id": "ip-9781565922259/12"
+
+      },
+
+      {
+
+        "pageName": [
+
+          "sed & awk, 2nd Edition"
+
+        ],
+
+        "id": "ip-9781565922259/2"
+
+      },
+
+      {
+
+        "pageName": [
+
+          "Advanced Flow Control Commands"
+
+        ],
+
+        "id": "ip-9781565922259/174"
+
+      },
+
+      {
+
+        "pageName": [
+
+          "Index"
+
+        ],
+
+        "id": "ip-9781565922259/487"
+
+      },
+
+      {
+
+        "pageName": [
+
+          "Using sed"
+
+        ],
+
+        "id": "ip-9781565922259/41"
+
+      },
+
+      {
+
+        "pageName": [
+
+          "Chapter 5. Basic sed Commands"
+
+        ],
+
+        "id": "ip-9781565922259/123"
+
+      },
+
+      {
+
+        "pageName": [
+
+          "Index"
+
+        ],
+
+        "id": "ip-9781565922259/490"
+
+      },
+
+      {
+
+        "pageName": [
+
+          "Command-Line Syntax"
+
+        ],
+
+        "id": "ip-9781565922259/441"
+
+      }
+
+    ]
+
+  },
+
+  "debug": {
+
+    "rawquerystring": "sed",
+
+    "querystring": "sed",
+
+    "parsedquery": "text_all:sed",
+
+    "parsedquery_toString": "text_all:sed",
+
+    "explain": {
+
+      "ip-9781565922259/440": "\n0.7696601 = (MATCH) weight(text_all:sed in 441) [LucidMultiLenNormSimilarity], result of:\n  0.7696601 = fieldWeight in 441, product of:\n    1.0 = tf(freq=1.0), with freq of:\n      1.0 = termFreq=1.0\n    2.4629123 = idf(docFreq=134, maxDocs=583)\n    0.3125 = fieldNorm(doc=441)\n",
+
+      "ip-9781565922259/444": "\n0.7696601 = (MATCH) weight(text_all:sed in 445) [LucidMultiLenNormSimilarity], result of:\n  0.7696601 = fieldWeight in 445, product of:\n    1.0 = tf(freq=1.0), with freq of:\n      1.0 = termFreq=1.0\n    2.4629123 = idf(docFreq=134, maxDocs=583)\n    0.3125 = fieldNorm(doc=445)\n",
+
+      "ip-9781565922259/12": "\n0.6157281 = (MATCH) weight(text_all:sed in 13) [LucidMultiLenNormSimilarity], result of:\n  0.6157281 = fieldWeight in 13, product of:\n    1.0 = tf(freq=1.0), with freq of:\n      1.0 = termFreq=1.0\n    2.4629123 = idf(docFreq=134, maxDocs=583)\n    0.25 = fieldNorm(doc=13)\n",
+
+      "ip-9781565922259/2": "\n0.5387621 = (MATCH) weight(text_all:sed in 3) [LucidMultiLenNormSimilarity], result of:\n  0.5387621 = fieldWeight in 3, product of:\n    1.0 = tf(freq=1.0), with freq of:\n      1.0 = termFreq=1.0\n    2.4629123 = idf(docFreq=134, maxDocs=583)\n    0.21875 = fieldNorm(doc=3)\n",
+
+      "ip-9781565922259/174": "\n0.46179605 = (MATCH) weight(text_all:sed in 175) [LucidMultiLenNormSimilarity], result of:\n  0.46179605 = fieldWeight in 175, product of:\n    1.0 = tf(freq=1.0), with freq of:\n      1.0 = termFreq=1.0\n    2.4629123 = idf(docFreq=134, maxDocs=583)\n    0.1875 = fieldNorm(doc=175)\n",
+
+      "ip-9781565922259/487": "\n0.44087824 = (MATCH) weight(text_all:sed in 488) [LucidMultiLenNormSimilarity], result of:\n  0.44087824 = fieldWeight in 488, product of:\n    4.582576 = tf(freq=21.0), with freq of:\n      21.0 = termFreq=21.0\n    2.4629123 = idf(docFreq=134, maxDocs=583)\n    0.0390625 = fieldNorm(doc=488)\n",
+
+      "ip-9781565922259/41": "\n0.4353855 = (MATCH) weight(text_all:sed in 42) [LucidMultiLenNormSimilarity], result of:\n  0.4353855 = fieldWeight in 42, product of:\n    1.4142135 = tf(freq=2.0), with freq of:\n      2.0 = termFreq=2.0\n    2.4629123 = idf(docFreq=134, maxDocs=583)\n    0.125 = fieldNorm(doc=42)\n",
+
+      "ip-9781565922259/123": "\n0.4353855 = (MATCH) weight(text_all:sed in 124) [LucidMultiLenNormSimilarity], result of:\n  0.4353855 = fieldWeight in 124, product of:\n    1.4142135 = tf(freq=2.0), with freq of:\n      2.0 = termFreq=2.0\n    2.4629123 = idf(docFreq=134, maxDocs=583)\n    0.125 = fieldNorm(doc=124)\n",
+
+      "ip-9781565922259/490": "\n0.4259288 = (MATCH) weight(text_all:sed in 491) [LucidMultiLenNormSimilarity], result of:\n  0.4259288 = fieldWeight in 491, product of:\n    6.3245554 = tf(freq=40.0), with freq of:\n      40.0 = termFreq=40.0\n    2.4629123 = idf(docFreq=134, maxDocs=583)\n    0.02734375 = fieldNorm(doc=491)\n",
+
+      "ip-9781565922259/441": "\n0.40726584 = (MATCH) weight(text_all:sed in 442) [LucidMultiLenNormSimilarity], result of:\n  0.40726584 = fieldWeight in 442, product of:\n    2.6457512 = tf(freq=7.0), with freq of:\n      7.0 = termFreq=7.0\n    2.4629123 = idf(docFreq=134, maxDocs=583)\n    0.0625 = fieldNorm(doc=442)\n"
+
+    },
+
+    "QParser": "LuceneQParser",
+
+    "filter_queries": [
+
+      "ip:9781565922259"
+
+    ],
+
+    "parsed_filter_queries": [
+
+      "ip:9781565922259"
+
+    ],
+
+    "timing": {
+
+      "time": 3.0,
+
+      "prepare": {
+
+        "time": 1.0,
+
+        "query": {
+
+          "time": 0.0
+
+        },
+
+        "facet": {
+
+          "time": 0.0
+
+        },
+
+        "mlt": {
+
+          "time": 1.0
+
+        },
+
+        "highlight": {
+
+          "time": 0.0
+
+        },
+
+        "stats": {
+
+          "time": 0.0
+
+        },
+
+        "debug": {
+
+          "time": 0.0
+
+        }
+
+      },
+
+      "process": {
+
+        "time": 2.0,
+
+        "query": {
+
+          "time": 0.0
+
+        },
+
+        "facet": {
+
+          "time": 0.0
+
+        },
+
+        "mlt": {
+
+          "time": 0.0
+
+        },
+
+        "highlight": {
+
+          "time": 0.0
+
+        },
+
+        "stats": {
+
+          "time": 0.0
+
+        },
+
+        "debug": {
+
+          "time": 2.0
+
+        }
+
+      }
+
+    }
+
+  }
+
+}
+
 
 });
