@@ -25,17 +25,19 @@ angular.module('o19s.splainer-search')
         'facet.field': [],
         'facet.mincount': ['1'],
       };
-      angular.forEach(fieldList, function(fieldName) {
-        if (fieldName !== 'score') {
-          tokensArgs['facet.field'].push(fieldName);
-        }
-      });
+      if (fieldList !== '*') {
+        angular.forEach(fieldList, function(fieldName) {
+          if (fieldName !== 'score') {
+            tokensArgs['facet.field'].push(fieldName);
+          }
+        });
+      }
       return solrUrlSvc.buildUrl(solrUrl, tokensArgs) + '&q=' + idField + ':'  + escId;
     };
 
     // the full URL we'll use to call Solr
     var buildCallUrl = function(fieldList, solrUrl, solrArgs, queryText) {
-      solrArgs.fl = [fieldList.join(' ')];
+      solrArgs.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
       solrArgs.wt = ['json'];
       solrArgs.debug = ['true'];
       solrArgs['debug.explain.structured'] = ['true'];

@@ -164,4 +164,44 @@ describe('Service: normalDocsSvc', function () {
     });
   });
 
+  describe('* subs test', function() {
+    var solrDoc = null;
+    var availableHighlights = {};
+    beforeEach(function() {
+      availableHighlights = {};
+      solrDoc = {'id_field': '1234',
+                 'title_field': 'a title',
+                 'sub1': 'sub1_val',
+                 'sub2': 'sub2_val',
+                 url: function() {
+                   return '';
+                  },
+                 explain: function() {return mockExplain;},
+                 highlight: function(docId, field) {
+                   if (availableHighlights.hasOwnProperty(field)) {
+                     return availableHighlights[field];
+                   }
+                   return null;
+                 } };
+    });
+
+    it('captures sub values no highlights', function() {
+      var fieldSpec = {id: 'id_field', title: 'title_field', subs: '*'};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(Object.keys(normalDoc.subs).length).toEqual(2);
+      expect(normalDoc.subs.sub1).toEqual('sub1_val');
+      expect(normalDoc.subs.sub2).toEqual('sub2_val');
+    });
+    
+    it('captures sub values w/ highlight', function() {
+      var fieldSpec = {id: 'id_field', title: 'title_field', subs: '*'};
+      availableHighlights.sub1 = 'sub1_hl';
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(Object.keys(normalDoc.subs).length).toEqual(2);
+      expect(normalDoc.subs.sub1).toEqual('sub1_hl');
+      expect(normalDoc.subs.sub2).toEqual('sub2_val');
+    });
+
+  });
+
 });

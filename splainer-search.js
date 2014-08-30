@@ -462,7 +462,12 @@ angular.module('o19s.splainer-search')
         if (!fieldSpec.hasOwnProperty('subs')) {
           fieldSpec.subs = [];
         }
-        fieldSpec.subs.push(fieldName);
+        if (fieldSpec.subs !== '*') {
+          fieldSpec.subs.push(fieldName);
+        } 
+        if (fieldName === '*') {
+          fieldSpec.subs = '*';
+        }
       }
       else if (!fieldSpec.hasOwnProperty(fieldType)) {
         fieldSpec[fieldType] = fieldName;
@@ -511,6 +516,9 @@ angular.module('o19s.splainer-search')
       }
 
       this.fieldList = function() {
+        if (this.hasOwnProperty('subs') && this.subs === '*') {
+          return '*';
+        }
         var rVal = [this.id];
         this.forEachField(function(fieldName) {
           rVal.push(fieldName);
@@ -530,10 +538,22 @@ angular.module('o19s.splainer-search')
           innerBody(sub);
         });
       };
-      
+    };
+
+    var transformFieldSpec = function(fieldSpecStr) {
+      var defFieldSpec = 'id:id title:id *';
+      var fieldSpecs = fieldSpecStr.split(/[\s,]+/);
+      if (fieldSpecStr.trim().length === 0) {
+        return defFieldSpec;
+      }
+      if (fieldSpecs[0] === '*') {
+        return defFieldSpec;
+      }
+      return fieldSpecStr;
     };
 
     this.createFieldSpec = function(fieldSpecStr) {
+      fieldSpecStr = transformFieldSpec(fieldSpecStr);
       return new FieldSpec(fieldSpecStr);
     };
 
@@ -548,26 +568,42 @@ angular.module('o19s.splainer-search')
 angular.module('o19s.splainer-search')
   .service('normalDocsSvc', function normalDocsSvc(explainSvc) {
 
-    var assignSingleField = function(queryDoc, solrDoc, solrField, toProperty) {
+    var assignSingleField = function(normalDoc, solrDoc, solrField, toProperty) {
       if (solrDoc.hasOwnProperty(solrField)) {
-        queryDoc[toProperty] = solrDoc[solrField].slice(0, 200);
+        normalDoc[toProperty] = solrDoc[solrField].slice(0, 200);
       }
     };
 
-    var assignFields = function(queryDoc, solrDoc, fieldSpec) {
-      assignSingleField(queryDoc, solrDoc, fieldSpec.id, 'id');
-      assignSingleField(queryDoc, solrDoc, fieldSpec.title, 'title');
-      assignSingleField(queryDoc, solrDoc, fieldSpec.thumb, 'thumb');
-      queryDoc.subs = {};
-      angular.forEach(fieldSpec.subs, function(subFieldName) {
-        var hl = solrDoc.highlight(queryDoc.id, subFieldName);
+    var assignSubField = function(normalDoc, solrDoc, subFieldName) {
+        var hl = solrDoc.highlight(normalDoc.id, subFieldName);
         if (hl !== null) {
-          queryDoc.subs[subFieldName] = hl;
+          normalDoc.subs[subFieldName] = hl;
         }
         else if (solrDoc.hasOwnProperty(subFieldName)) {
-          queryDoc.subs[subFieldName] = solrDoc[subFieldName];
+          normalDoc.subs[subFieldName] = solrDoc[subFieldName];
         }
-      });
+    };
+
+    var assignFields = function(normalDoc, solrDoc, fieldSpec) {
+      assignSingleField(normalDoc, solrDoc, fieldSpec.id, 'id');
+      assignSingleField(normalDoc, solrDoc, fieldSpec.title, 'title');
+      assignSingleField(normalDoc, solrDoc, fieldSpec.thumb, 'thumb');
+      normalDoc.subs = {};
+      if (fieldSpec.subs === '*') {
+        angular.forEach(solrDoc, function(value, fieldName) {
+          if (typeof(value) !== 'function') {
+            if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
+                fieldName !== fieldSpec.thumb) {
+              assignSubField(normalDoc, solrDoc, fieldName);
+            }
+          }
+        });
+      }
+      else {
+        angular.forEach(fieldSpec.subs, function(subFieldName) {
+          assignSubField(normalDoc, solrDoc, subFieldName);
+        });
+      }
     };
 
     // A document within a query
@@ -746,17 +782,19 @@ angular.module('o19s.splainer-search')
         'facet.field': [],
         'facet.mincount': ['1'],
       };
-      angular.forEach(fieldList, function(fieldName) {
-        if (fieldName !== 'score') {
-          tokensArgs['facet.field'].push(fieldName);
-        }
-      });
+      if (fieldList !== '*') {
+        angular.forEach(fieldList, function(fieldName) {
+          if (fieldName !== 'score') {
+            tokensArgs['facet.field'].push(fieldName);
+          }
+        });
+      }
       return solrUrlSvc.buildUrl(solrUrl, tokensArgs) + '&q=' + idField + ':'  + escId;
     };
 
     // the full URL we'll use to call Solr
     var buildCallUrl = function(fieldList, solrUrl, solrArgs, queryText) {
-      solrArgs.fl = [fieldList.join(' ')];
+      solrArgs.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
       solrArgs.wt = ['json'];
       solrArgs.debug = ['true'];
       solrArgs['debug.explain.structured'] = ['true'];

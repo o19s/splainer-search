@@ -94,4 +94,34 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.thumb).toEqual('foo_img');
   });
 
+  it('understands * for sub fields', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id, atitlefield, *');
+    expect(fieldSpec.subs).toEqual('*');
+    expect(fieldSpec.fieldList()).toEqual('*');
+  });
+
+  it('correctly transforms *', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('*');
+    expect(fieldSpec.subs).toEqual('*');
+    expect(fieldSpec.id).toEqual('id');
+    expect(fieldSpec.title).toEqual('id');
+    expect(fieldSpec.fieldList()).toEqual('*');
+  });
+  
+  it('correctly transforms *,score', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('*,score');
+    expect(fieldSpec.subs).toEqual('*');
+    expect(fieldSpec.id).toEqual('id');
+    expect(fieldSpec.title).toEqual('id');
+    expect(fieldSpec.fieldList()).toEqual('*');
+  });
+  
+  it('correctly transforms empty', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec(' \t ');
+    expect(fieldSpec.subs).toEqual('*');
+    expect(fieldSpec.id).toEqual('id');
+    expect(fieldSpec.title).toEqual('id');
+    expect(fieldSpec.fieldList()).toEqual('*');
+  });
+
 });

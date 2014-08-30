@@ -9,7 +9,12 @@ angular.module('o19s.splainer-search')
         if (!fieldSpec.hasOwnProperty('subs')) {
           fieldSpec.subs = [];
         }
-        fieldSpec.subs.push(fieldName);
+        if (fieldSpec.subs !== '*') {
+          fieldSpec.subs.push(fieldName);
+        } 
+        if (fieldName === '*') {
+          fieldSpec.subs = '*';
+        }
       }
       else if (!fieldSpec.hasOwnProperty(fieldType)) {
         fieldSpec[fieldType] = fieldName;
@@ -58,6 +63,9 @@ angular.module('o19s.splainer-search')
       }
 
       this.fieldList = function() {
+        if (this.hasOwnProperty('subs') && this.subs === '*') {
+          return '*';
+        }
         var rVal = [this.id];
         this.forEachField(function(fieldName) {
           rVal.push(fieldName);
@@ -77,10 +85,22 @@ angular.module('o19s.splainer-search')
           innerBody(sub);
         });
       };
-      
+    };
+
+    var transformFieldSpec = function(fieldSpecStr) {
+      var defFieldSpec = 'id:id title:id *';
+      var fieldSpecs = fieldSpecStr.split(/[\s,]+/);
+      if (fieldSpecStr.trim().length === 0) {
+        return defFieldSpec;
+      }
+      if (fieldSpecs[0] === '*') {
+        return defFieldSpec;
+      }
+      return fieldSpecStr;
     };
 
     this.createFieldSpec = function(fieldSpecStr) {
+      fieldSpecStr = transformFieldSpec(fieldSpecStr);
       return new FieldSpec(fieldSpecStr);
     };
 

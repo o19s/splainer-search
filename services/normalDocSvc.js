@@ -7,26 +7,42 @@
 angular.module('o19s.splainer-search')
   .service('normalDocsSvc', function normalDocsSvc(explainSvc) {
 
-    var assignSingleField = function(queryDoc, solrDoc, solrField, toProperty) {
+    var assignSingleField = function(normalDoc, solrDoc, solrField, toProperty) {
       if (solrDoc.hasOwnProperty(solrField)) {
-        queryDoc[toProperty] = solrDoc[solrField].slice(0, 200);
+        normalDoc[toProperty] = solrDoc[solrField].slice(0, 200);
       }
     };
 
-    var assignFields = function(queryDoc, solrDoc, fieldSpec) {
-      assignSingleField(queryDoc, solrDoc, fieldSpec.id, 'id');
-      assignSingleField(queryDoc, solrDoc, fieldSpec.title, 'title');
-      assignSingleField(queryDoc, solrDoc, fieldSpec.thumb, 'thumb');
-      queryDoc.subs = {};
-      angular.forEach(fieldSpec.subs, function(subFieldName) {
-        var hl = solrDoc.highlight(queryDoc.id, subFieldName);
+    var assignSubField = function(normalDoc, solrDoc, subFieldName) {
+        var hl = solrDoc.highlight(normalDoc.id, subFieldName);
         if (hl !== null) {
-          queryDoc.subs[subFieldName] = hl;
+          normalDoc.subs[subFieldName] = hl;
         }
         else if (solrDoc.hasOwnProperty(subFieldName)) {
-          queryDoc.subs[subFieldName] = solrDoc[subFieldName];
+          normalDoc.subs[subFieldName] = solrDoc[subFieldName];
         }
-      });
+    };
+
+    var assignFields = function(normalDoc, solrDoc, fieldSpec) {
+      assignSingleField(normalDoc, solrDoc, fieldSpec.id, 'id');
+      assignSingleField(normalDoc, solrDoc, fieldSpec.title, 'title');
+      assignSingleField(normalDoc, solrDoc, fieldSpec.thumb, 'thumb');
+      normalDoc.subs = {};
+      if (fieldSpec.subs === '*') {
+        angular.forEach(solrDoc, function(value, fieldName) {
+          if (typeof(value) !== 'function') {
+            if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
+                fieldName !== fieldSpec.thumb) {
+              assignSubField(normalDoc, solrDoc, fieldName);
+            }
+          }
+        });
+      }
+      else {
+        angular.forEach(fieldSpec.subs, function(subFieldName) {
+          assignSubField(normalDoc, solrDoc, subFieldName);
+        });
+      }
     };
 
     // A document within a query
