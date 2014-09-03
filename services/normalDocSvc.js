@@ -9,7 +9,7 @@ angular.module('o19s.splainer-search')
 
     var assignSingleField = function(normalDoc, solrDoc, solrField, toProperty) {
       if (solrDoc.hasOwnProperty(solrField)) {
-        normalDoc[toProperty] = solrDoc[solrField].slice(0, 200);
+        normalDoc[toProperty] = ('' + solrDoc[solrField]).slice(0, 200);
       }
     };
 

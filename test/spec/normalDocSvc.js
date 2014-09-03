@@ -40,6 +40,27 @@ describe('Service: normalDocsSvc', function () {
     });
 
   });
+
+  describe('integer field tests', function() {
+    var solrDoc = null;
+    var normalDoc = null;
+    beforeEach(function() {
+      solrDoc = {'id_field': '1234',
+                 'title_field': 'a title',
+                 'int_field': 1234,
+                 url: function() {
+                   return '';
+                 },
+                 explain: function() {return mockExplain;} };
+    });
+
+    it('requests url correctly', function() {
+      var fieldSpec = {id: 'id_field', title: 'int_field'};
+      normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.title).toEqual('1234');
+    });
+
+  });
   
   describe('highlight tests', function() {
     var availableHighlight = null;
