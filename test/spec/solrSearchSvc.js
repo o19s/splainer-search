@@ -112,7 +112,7 @@ describe('Service: solrSearchSvc', function () {
 
     var createSearcherHlOff = function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      var noHlConfig = solrSearchSvc.defaultConfig;
+      var noHlConfig = solrSearchSvc.configFromDefault();
       noHlConfig.highlight = false;
       searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText,
@@ -337,7 +337,7 @@ describe('Service: solrSearchSvc', function () {
     
     var createSearcherDebugOff = function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      var noHlConfig = solrSearchSvc.defaultConfig;
+      var noHlConfig = solrSearchSvc.configFromDefault();
       noHlConfig.debug = false;
       searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText,
