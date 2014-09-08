@@ -73,6 +73,9 @@ angular.module('o19s.splainer-search')
 
 
     var SolrSearcher = function(fieldList, solrUrl, solrArgs, queryText, config) {
+      if (config === undefined) {
+        config = defaultConfig;
+      }
       this.callUrl = this.linkUrl = '';
       this.callUrl = buildCallUrl(fieldList, solrUrl, withoutUnsupported(solrArgs, !config.sanitize), queryText, config);
       this.linkUrl = this.callUrl.replace('wt=json', 'wt=xml');
@@ -176,9 +179,6 @@ angular.module('o19s.splainer-search')
     };
 
     this.createSearcher = function (fieldList, solrUrl, solrArgs, queryText, config) {
-      if (config === undefined) {
-        config = defaultConfig;
-      }
       return new SolrSearcher(fieldList, solrUrl, solrArgs, queryText, config);
     };
 

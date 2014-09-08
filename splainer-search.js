@@ -818,14 +818,21 @@ angular.module('o19s.splainer-search')
       return argsRemoved;
     };
 
-    this.defaultConfig = {
+    var defaultConfig = {
       sanitize: true,
       highlight: true,
       debug: true
     };
 
+    this.configFromDefault = function() {
+      return angular.copy(defaultConfig);
+    };
+
 
     var SolrSearcher = function(fieldList, solrUrl, solrArgs, queryText, config) {
+      if (config === undefined) {
+        config = defaultConfig;
+      }
       this.callUrl = this.linkUrl = '';
       this.callUrl = buildCallUrl(fieldList, solrUrl, withoutUnsupported(solrArgs, !config.sanitize), queryText, config);
       this.linkUrl = this.callUrl.replace('wt=json', 'wt=xml');
@@ -851,7 +858,7 @@ angular.module('o19s.splainer-search')
         var remaining = this.numFound - start;
         nextArgs.rows = ['' + Math.min(10, remaining)];
         nextArgs.start = ['' + start];
-        var pageConfig = svc.defaultConfig;
+        var pageConfig = defaultConfig;
         pageConfig.sanitize = false;
         return new SolrSearcher(fieldList, solrUrl, nextArgs, queryText, pageConfig);
       };
@@ -929,9 +936,6 @@ angular.module('o19s.splainer-search')
     };
 
     this.createSearcher = function (fieldList, solrUrl, solrArgs, queryText, config) {
-      if (config === undefined) {
-        config = this.defaultConfig;
-      }
       return new SolrSearcher(fieldList, solrUrl, solrArgs, queryText, config);
     };
 
