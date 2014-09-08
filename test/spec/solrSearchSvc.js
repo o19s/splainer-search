@@ -1,5 +1,5 @@
 'use strict';
-/* global urlContainsParams*/
+/* global urlContainsParams, urlMissingParams*/
 /*global describe,beforeEach,inject,it,expect*/
 describe('Service: solrSearchSvc', function () {
 
@@ -104,19 +104,35 @@ describe('Service: solrSearchSvc', function () {
 
     var searcher = null;
 
-    beforeEach(function() {
+    var createSearcherHlOn = function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
       searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
+    };
+
+    var createSearcherHlOff = function() {
+      var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
+      var noHlConfig = solrSearchSvc.defaultConfig;
+      noHlConfig.highlight = false;
+      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText,
+                                                  noHlConfig);
+    };
+
+    var expectedHlParams = null;
+
+    beforeEach(function() {
+
+      expectedHlParams = {'hl': ['true'],
+                          'hl.simple.pre': [solrSearchSvc.HIGHLIGHTING_PRE],
+                          'hl.simple.post': [solrSearchSvc.HIGHLIGHTING_POST]};
     });
+
     
     it('asks for highlights', function() {
+      createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
       copiedResp.highlighting = highlighting;
-
-      var expectedHlParams = {'hl': ['true'],
-                              'hl.simple.pre': [solrSearchSvc.HIGHLIGHTING_PRE],
-                              'hl.simple.post': [solrSearchSvc.HIGHLIGHTING_POST]};
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedHlParams))
                               .respond(200, copiedResp);
@@ -131,6 +147,7 @@ describe('Service: solrSearchSvc', function () {
     });
     
     it('gets highlight field values if returned', function() {
+      createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
       copiedResp.highlighting = highlighting;
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
@@ -152,6 +169,7 @@ describe('Service: solrSearchSvc', function () {
     });
     
     it('gets null if no highlights for field', function() {
+      createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
       copiedResp.highlighting = highlighting;
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
@@ -173,6 +191,7 @@ describe('Service: solrSearchSvc', function () {
     });
     
     it('gets null if no highlights', function() {
+      createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
@@ -191,6 +210,28 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
     });
+
+    it('doesnt request hls if hls off', function() {
+      createSearcherHlOff();
+      var copiedResp = angular.copy(fullSolrResp);
+      $httpBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedHlParams))
+                              .respond(200, copiedResp);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var solrDocs = searcher.docs;
+        var docId = fullSolrResp.response.docs[0].path;
+        var expectedHl = null; 
+        expect(solrDocs[0].highlight(docId, 'content')).toEqual(expectedHl);
+        docId = fullSolrResp.response.docs[1].path;
+        expectedHl = null;
+        expect(solrDocs[1].highlight(docId, 'content')).toEqual(expectedHl);
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
+    
   });
 
   describe('explain info ', function() {
@@ -281,15 +322,31 @@ describe('Service: solrSearchSvc', function () {
     };
     var fieldSpec = null;
     var searcher = null;
-    
+    var expectedDebugParams = null;
+
     beforeEach(function() {
+      expectedDebugParams = {'debug': ['true'],
+                             'debug.explain.structured': ['true']};
+    });
+    
+    var createSearcherWithDebug = function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
       searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-    });
+    };
+    
+    var createSearcherDebugOff = function() {
+      var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
+      var noHlConfig = solrSearchSvc.defaultConfig;
+      noHlConfig.debug = false;
+      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText,
+                                                  noHlConfig);
+    };
 
     it('populates explain()', function() {
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      createSearcherWithDebug();
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, fullSolrResp);
       searcher.search().then(function() {
         var solrDocs = searcher.docs;
@@ -301,9 +358,25 @@ describe('Service: solrSearchSvc', function () {
     });
 
     it('returns null on no explain', function() {
+      createSearcherWithDebug();
       var copiedResp = angular.copy(fullSolrResp);
       delete copiedResp.debug;
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, copiedResp);
+      searcher.search().then(function() {
+        var solrDocs = searcher.docs;
+        expect(solrDocs[0].explain('http://larkin.com/index/')).toBe(null);
+        expect(solrDocs[1].explain('http://www.rogahnbins.com/main.html')).toBe(null);
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('doesnt request debug info when configured not to', function() {
+      createSearcherDebugOff();
+      var copiedResp = angular.copy(fullSolrResp);
+      delete copiedResp.debug;
+      $httpBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, copiedResp);
       searcher.search().then(function() {
         var solrDocs = searcher.docs;

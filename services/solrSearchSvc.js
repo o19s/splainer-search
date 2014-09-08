@@ -36,14 +36,18 @@ angular.module('o19s.splainer-search')
     };
 
     // the full URL we'll use to call Solr
-    var buildCallUrl = function(fieldList, solrUrl, solrArgs, queryText) {
+    var buildCallUrl = function(fieldList, solrUrl, solrArgs, queryText, config) {
       solrArgs.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
       solrArgs.wt = ['json'];
-      solrArgs.debug = ['true'];
-      solrArgs['debug.explain.structured'] = ['true'];
-      solrArgs.hl = ['true'];
-      solrArgs['hl.simple.pre'] = [svc.HIGHLIGHTING_PRE];
-      solrArgs['hl.simple.post'] = [svc.HIGHLIGHTING_POST];
+      if (config.debug) {
+        solrArgs.debug = ['true'];
+        solrArgs['debug.explain.structured'] = ['true'];
+      }
+      if (config.highlight) {
+        solrArgs.hl = ['true'];
+        solrArgs['hl.simple.pre'] = [svc.HIGHLIGHTING_PRE];
+        solrArgs['hl.simple.post'] = [svc.HIGHLIGHTING_POST];
+      }
       var baseUrl = solrUrlSvc.buildUrl(solrUrl, solrArgs);
       baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
       return baseUrl;
@@ -57,10 +61,16 @@ angular.module('o19s.splainer-search')
       return argsRemoved;
     };
 
+    this.defaultConfig = {
+      sanitize: true,
+      highlight: true,
+      debug: true
+    };
 
-    var SolrSearcher = function(fieldList, solrUrl, solrArgs, queryText, dontSanitize) {
+
+    var SolrSearcher = function(fieldList, solrUrl, solrArgs, queryText, config) {
       this.callUrl = this.linkUrl = '';
-      this.callUrl = buildCallUrl(fieldList, solrUrl, withoutUnsupported(solrArgs, dontSanitize), queryText);
+      this.callUrl = buildCallUrl(fieldList, solrUrl, withoutUnsupported(solrArgs, !config.sanitize), queryText, config);
       this.linkUrl = this.callUrl.replace('wt=json', 'wt=xml');
       this.linkUrl = this.linkUrl + '&indent=true&echoParams=all';
       this.docs = [];
@@ -84,7 +94,9 @@ angular.module('o19s.splainer-search')
         var remaining = this.numFound - start;
         nextArgs.rows = ['' + Math.min(10, remaining)];
         nextArgs.start = ['' + start];
-        return new SolrSearcher(fieldList, solrUrl, nextArgs, queryText, /*dont sanitize away rows, start, etc*/true);
+        var pageConfig = svc.defaultConfig;
+        pageConfig.sanitize = false;
+        return new SolrSearcher(fieldList, solrUrl, nextArgs, queryText, pageConfig);
       };
 
       // search (execute the query) and produce results
@@ -159,8 +171,11 @@ angular.module('o19s.splainer-search')
                               settings.selectedTry.solrArgs, queryText);
     };
 
-    this.createSearcher = function (fieldList, solrUrl, solrArgs, queryText, dontSanitize) {
-      return new SolrSearcher(fieldList, solrUrl, solrArgs, queryText, dontSanitize);
+    this.createSearcher = function (fieldList, solrUrl, solrArgs, queryText, config) {
+      if (config === undefined) {
+        config = this.defaultConfig;
+      }
+      return new SolrSearcher(fieldList, solrUrl, solrArgs, queryText, config);
     };
 
     this.activeQueries = function() {

@@ -54,6 +54,30 @@ window.urlContainsParams = function(url, params) {
   };
 };
 
+window.urlMissingParams = function(url, params) {
+  return {
+    test: function(requestedUrl) {
+      if (requestedUrl.indexOf(url) !== 0) {
+        return false;
+      }
+      var found = false;
+      var urlEncodedArgs = requestedUrl.substr(url.length);
+      var parsedParams = parseUrlParams(urlEncodedArgs);
+      angular.forEach(params, function(values, param) {
+        if (values instanceof Array) {
+          angular.forEach(values, function(value) {
+            if (arrayContains(parsedParams[param], value)) {
+              console.log('Param: ' + param + ' should be missing, but found');
+              found = true;
+            }
+          });
+        } 
+      });
+      return !found;
+    }
+  };
+}
+
 window.mockSolrUrl =  "http://example.com:1234/solr/example";
 
 window.expectedSolrUrl = function(expected) {
