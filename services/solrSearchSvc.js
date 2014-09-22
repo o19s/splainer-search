@@ -151,7 +151,8 @@ angular.module('o19s.splainer-search')
                 return null;
               }
             };
-            solrDoc.highlight = function(docId, fieldName) {
+
+            solrDoc.snippet = function(docId, fieldName) {
               if (hlDict.hasOwnProperty(docId)) {
                 var docHls = hlDict[docId];
                 if (docHls.hasOwnProperty(fieldName)) {
@@ -159,6 +160,20 @@ angular.module('o19s.splainer-search')
                 }
               }
               return null;
+            };
+
+            solrDoc.highlight = function(docId, fieldName, preText, postText) {
+              var fieldValue = this.snippet(docId, fieldName);
+              if (fieldValue) {
+                var esc = escapeHtml(fieldValue);
+                
+                var preRegex = new RegExp(svc.HIGHLIGHTING_PRE, 'g');
+                var hlPre = esc.replace(preRegex, preText);
+                var postRegex = new RegExp(svc.HIGHLIGHTING_POST, 'g');
+                return hlPre.replace(postRegex, postText);
+              } else {
+                return null;
+              }
             };
             that.docs.push(solrDoc);
           });
@@ -199,14 +214,5 @@ angular.module('o19s.splainer-search')
       return String(string).replace(/[&<>"'\/]/g, function (s) {
         return entityMap[s];
       });
-    };
-
-    this.markedUpFieldValue = function(fieldValue, pre, post) {
-      var esc = escapeHtml(fieldValue);
-      
-      var preRegex = new RegExp(svc.HIGHLIGHTING_PRE, 'g');
-      var hlPre = esc.replace(preRegex, pre);
-      var postRegex = new RegExp(svc.HIGHLIGHTING_POST, 'g');
-      return hlPre.replace(postRegex, post);
     };
   });

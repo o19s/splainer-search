@@ -93,15 +93,8 @@ describe('Service: solrSearchSvc', function () {
     };
 
     // optional highlighting part
-    var highlighting = {
-      'http://larkin.com/index/': {
-        content: 'highlighted larkin'
-      },
-      'http://www.rogahnbins.com/main.html': {
-        content: 'highlighted rogah'
-      }
-    };
-
+    var highlighting = null;
+    
     var searcher = null;
 
     var createSearcherHlOn = function() {
@@ -122,6 +115,17 @@ describe('Service: solrSearchSvc', function () {
     var expectedHlParams = null;
 
     beforeEach(function() {
+      highlighting ={
+        'http://larkin.com/index/': {
+          content: solrSearchSvc.HIGHLIGHTING_PRE + 'highlighted larkin' + solrSearchSvc.HIGHLIGHTING_POST,
+          contentHlBold: '<b>highlighted larkin</b>'
+        },
+        'http://www.rogahnbins.com/main.html': {
+          content: solrSearchSvc.HIGHLIGHTING_PRE + 'highlighted rogah' + solrSearchSvc.HIGHLIGHTING_POST,
+          contentHlBold: '<b>highlighted rogah</b>'
+        }
+      };
+
 
       expectedHlParams = {'hl': ['true'],
                           'hl.simple.pre': [solrSearchSvc.HIGHLIGHTING_PRE],
@@ -146,7 +150,7 @@ describe('Service: solrSearchSvc', function () {
 
     });
     
-    it('gets highlight field values if returned', function() {
+    it('gets highlight snippet field values if returned', function() {
       createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
       copiedResp.highlighting = highlighting;
@@ -157,11 +161,16 @@ describe('Service: solrSearchSvc', function () {
         called++;
         var solrDocs = searcher.docs;
         var docId = fullSolrResp.response.docs[0].path;
-        var expectedHl = highlighting[docId].content;
-        expect(solrDocs[0].highlight(docId, 'content')).toEqual(expectedHl);
+        var expectedSnip = highlighting[docId].content;
+        var expectedHl = highlighting[docId].contentHlBold;
+        expect(solrDocs[0].snippet(docId, 'content')).toEqual(expectedSnip);
+        expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
+        
         docId = fullSolrResp.response.docs[1].path;
-        expectedHl = highlighting[docId].content;
-        expect(solrDocs[1].highlight(docId, 'content')).toEqual(expectedHl);
+        expectedSnip = highlighting[docId].content;
+        expectedHl = highlighting[docId].contentHlBold;
+        expect(solrDocs[1].snippet(docId, 'content')).toEqual(expectedSnip);
+        expect(solrDocs[1].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
       });
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -179,11 +188,15 @@ describe('Service: solrSearchSvc', function () {
         called++;
         var solrDocs = searcher.docs;
         var docId = fullSolrResp.response.docs[0].path;
+        var expectedSnip = null;
         var expectedHl = null;
-        expect(solrDocs[0].highlight(docId, 'some_other_field')).toEqual(expectedHl);
+        expect(solrDocs[0].snippet(docId, 'some_other_field')).toEqual(expectedSnip);
+        expect(solrDocs[0].highlight(docId, 'some_other_field', '<b>', '</b>')).toEqual(expectedHl);
         docId = fullSolrResp.response.docs[1].path;
+        expectedSnip = null;
         expectedHl = null;
-        expect(solrDocs[1].highlight(docId, 'yet_another_field')).toEqual(expectedHl);
+        expect(solrDocs[1].snippet(docId, 'yet_another_field')).toEqual(expectedSnip);
+        expect(solrDocs[1].highlight(docId, 'yet_another_field', '<b>', '</b>')).toEqual(expectedHl);
       });
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -200,11 +213,15 @@ describe('Service: solrSearchSvc', function () {
         called++;
         var solrDocs = searcher.docs;
         var docId = fullSolrResp.response.docs[0].path;
-        var expectedHl = null; 
-        expect(solrDocs[0].highlight(docId, 'content')).toEqual(expectedHl);
+        var expectedSnip = null; 
+        var expectedHl = null;
+        expect(solrDocs[0].snippet(docId, 'content')).toEqual(expectedSnip);
+        expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
         docId = fullSolrResp.response.docs[1].path;
+        expectedSnip = null;
         expectedHl = null;
-        expect(solrDocs[1].highlight(docId, 'content')).toEqual(expectedHl);
+        expect(solrDocs[1].snippet(docId, 'content')).toEqual(expectedSnip);
+        expect(solrDocs[1].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
       });
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -221,11 +238,15 @@ describe('Service: solrSearchSvc', function () {
         called++;
         var solrDocs = searcher.docs;
         var docId = fullSolrResp.response.docs[0].path;
-        var expectedHl = null; 
-        expect(solrDocs[0].highlight(docId, 'content')).toEqual(expectedHl);
+        var expectedSnip = null; 
+        var expectedHl = null;
+        expect(solrDocs[0].snippet(docId, 'content')).toEqual(expectedSnip);
+        expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
         docId = fullSolrResp.response.docs[1].path;
+        expectedSnip = null;
         expectedHl = null;
-        expect(solrDocs[1].highlight(docId, 'content')).toEqual(expectedHl);
+        expect(solrDocs[1].snippet(docId, 'content')).toEqual(expectedSnip);
+        expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
       });
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
