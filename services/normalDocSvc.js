@@ -23,7 +23,7 @@ angular.module('o19s.splainer-search')
           if (typeof(value) !== 'function') {
             if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
                 fieldName !== fieldSpec.thumb) {
-              normalDoc.subs[fieldName] = value;
+              normalDoc.subs[fieldName] = '' + value;
             }
           }
         });
@@ -31,7 +31,7 @@ angular.module('o19s.splainer-search')
       else {
         angular.forEach(fieldSpec.subs, function(subFieldName) {
           if (solrDoc.hasOwnProperty(subFieldName)) {
-            normalDoc.subs[subFieldName] = solrDoc[subFieldName];
+            normalDoc.subs[subFieldName] = '' + solrDoc[subFieldName];
           }
         });
       }

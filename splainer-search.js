@@ -570,18 +570,8 @@ angular.module('o19s.splainer-search')
 
     var assignSingleField = function(normalDoc, solrDoc, solrField, toProperty) {
       if (solrDoc.hasOwnProperty(solrField)) {
-        normalDoc[toProperty] = ('' + solrDoc[solrField]).slice(0, 200);
+        normalDoc[toProperty] = ('' + solrDoc[solrField]);
       }
-    };
-
-    var assignSubField = function(normalDoc, solrDoc, subFieldName) {
-        var hl = solrDoc.highlight(normalDoc.id, subFieldName);
-        if (hl !== null) {
-          normalDoc.subs[subFieldName] = hl;
-        }
-        else if (solrDoc.hasOwnProperty(subFieldName)) {
-          normalDoc.subs[subFieldName] = solrDoc[subFieldName];
-        }
     };
 
     var assignFields = function(normalDoc, solrDoc, fieldSpec) {
@@ -594,34 +584,33 @@ angular.module('o19s.splainer-search')
           if (typeof(value) !== 'function') {
             if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
                 fieldName !== fieldSpec.thumb) {
-              assignSubField(normalDoc, solrDoc, fieldName);
+              normalDoc.subs[fieldName] = '' + value;
             }
           }
         });
       }
       else {
         angular.forEach(fieldSpec.subs, function(subFieldName) {
-          assignSubField(normalDoc, solrDoc, subFieldName);
+          if (solrDoc.hasOwnProperty(subFieldName)) {
+            normalDoc.subs[subFieldName] = '' + solrDoc[subFieldName];
+          }
         });
       }
     };
 
     // A document within a query
-    var NormalDoc = function(fieldSpec, doc) {
-      this.solrDoc = doc;
-      assignFields(this, doc, fieldSpec);
+    var NormalDoc = function(fieldSpec, solrDoc) {
+      this.solrDoc = solrDoc;
+      assignFields(this, this.solrDoc, fieldSpec);
       var hasThumb = false;
       if (this.hasOwnProperty('thumb')) {
         hasThumb = true;
       }
       this.subsList = [];
-      var that = this;
+      var thisNormalDoc = this;
       angular.forEach(this.subs, function(subValue, subField) {
-        if (typeof(subValue) === 'string') {
-          subValue = subValue.slice(0,200);
-        }
         var expanded = {field: subField, value: subValue};
-        that.subsList.push(expanded);
+        thisNormalDoc.subsList.push(expanded);
       });
 
       this.hasThumb = function() {
@@ -631,8 +620,32 @@ angular.module('o19s.splainer-search')
       this.url = function() {
         return this.solrDoc.url(fieldSpec.id, this.id);
       };
+
     };
 
+    // layer on highlighting features
+    var snippitable = function(doc) {
+      var solrDoc = doc.solrDoc;
+      
+      var lastSubSnips = {};
+      var lastHlPre = null;
+      var lastHlPost = null;
+      doc.subSnippets = function(hlPre, hlPost) {
+        if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
+          angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
+            var snip = solrDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
+            if (snip === null) {
+              snip = subFieldValue.slice(0, 200);
+            }
+            lastSubSnips[subFieldName] = snip;
+          });
+        }
+        return lastSubSnips;
+      };
+      return doc;
+    };
+
+    // layer on explain features
     var explainable = function(doc, explainJson) {
 
       var simplerExplain = null;// explainSvc.createExplain(explainJson);
@@ -682,7 +695,7 @@ angular.module('o19s.splainer-search')
 
     this.createNormalDoc = function(fieldSpec, solrDoc) {
       var nDoc = new NormalDoc(fieldSpec, solrDoc);
-      return this.explainDoc(nDoc, solrDoc.explain(nDoc.id));
+      return this.snippetDoc(this.explainDoc(nDoc, solrDoc.explain(nDoc.id)));
     };
 
     // Decorate doc with an explain/field values/etc other
@@ -692,11 +705,21 @@ angular.module('o19s.splainer-search')
       return explainable(decorated, explainJson);
     };
 
+    this.snippetDoc = function(doc) {
+      var decorated = angular.copy(doc);
+      return snippitable(decorated);
+    };
+
     // A stub, used to display a result that we expected 
     // to find in Solr, but isn't there
-    this.createPlaceholderDoc = function(docId, stubTitle) {
-      return {id: docId,
-              title: stubTitle};
+    this.createPlaceholderDoc = function(docId, stubTitle, explainJson) {
+      var placeHolder = {id: docId,
+                         title: stubTitle};
+      if (explainJson) {
+        return explainable(placeHolder, explainJson);
+      } else {
+        return placeHolder;
+      }
     };
 
   
@@ -908,7 +931,8 @@ angular.module('o19s.splainer-search')
                 return null;
               }
             };
-            solrDoc.highlight = function(docId, fieldName) {
+
+            solrDoc.snippet = function(docId, fieldName) {
               if (hlDict.hasOwnProperty(docId)) {
                 var docHls = hlDict[docId];
                 if (docHls.hasOwnProperty(fieldName)) {
@@ -916,6 +940,20 @@ angular.module('o19s.splainer-search')
                 }
               }
               return null;
+            };
+
+            solrDoc.highlight = function(docId, fieldName, preText, postText) {
+              var fieldValue = this.snippet(docId, fieldName);
+              if (fieldValue) {
+                var esc = escapeHtml(fieldValue);
+                
+                var preRegex = new RegExp(svc.HIGHLIGHTING_PRE, 'g');
+                var hlPre = esc.replace(preRegex, preText);
+                var postRegex = new RegExp(svc.HIGHLIGHTING_POST, 'g');
+                return hlPre.replace(postRegex, postText);
+              } else {
+                return null;
+              }
             };
             that.docs.push(solrDoc);
           });
@@ -956,15 +994,6 @@ angular.module('o19s.splainer-search')
       return String(string).replace(/[&<>"'\/]/g, function (s) {
         return entityMap[s];
       });
-    };
-
-    this.markedUpFieldValue = function(fieldValue, pre, post) {
-      var esc = escapeHtml(fieldValue);
-      
-      var preRegex = new RegExp(svc.HIGHLIGHTING_PRE, 'g');
-      var hlPre = esc.replace(preRegex, pre);
-      var postRegex = new RegExp(svc.HIGHLIGHTING_POST, 'g');
-      return hlPre.replace(postRegex, post);
     };
   });
 

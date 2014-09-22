@@ -60,6 +60,12 @@ describe('Service: normalDocsSvc', function () {
       expect(normalDoc.title).toEqual('1234');
     });
 
+    it('gets back as sub a string', function() {
+      var fieldSpec = {id: 'id_field', title: 'int_field', subs: ['int_field']};
+      normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.subs.int_field).toEqual('1234');
+    });
+
   });
   
   describe('highlight tests', function() {
