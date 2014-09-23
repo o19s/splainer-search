@@ -3,7 +3,7 @@
 // Explains that exist before you get to the match level
 angular.module('o19s.splainer-search')
   .service('queryExplainSvc', function explainSvc(baseExplainSvc, vectorSvc, simExplainSvc) {
-    var DefaultSimilarityMatch = simExplainSvc.DefalutSimilarityMatch;
+    var DefaultSimilarityMatch = simExplainSvc.DefaultSimilarityMatch;
 
     this.MatchAllDocsExplain = function() {
       this.realExplanation = 'You queried *:* (all docs returned w/ score of 1)';
@@ -39,6 +39,16 @@ angular.module('o19s.splainer-search')
         if (this.description.hasSubstr('DefaultSimilarity')) {
           return new DefaultSimilarityMatch(this.children);
         }
+        return null;
+      };
+
+      this.explanation = function() {
+        var match = this.getMatch();
+        var matchStr = '';
+        if (match !== null) {
+          matchStr = '\n' + match.formulaStr();
+        }
+        return this.realExplanation + matchStr;
       };
     };
 

@@ -9,20 +9,25 @@ angular.module('o19s.splainer-search')
 
     this.DefaultSimilarityMatch = function(children) {
       var infl = children;
-      if (children.length === 1 && children[0].explanation().startsWith('score')) {
+      if (children.length === 1 && children[0].explanation().startsWith('Score')) {
         infl = children[0].children;
       }
 
       this.fieldWeight = null;
       this.queryWeight = null;
       var match = this;
-      angular.forEach(children, function(child) {
+      angular.forEach(infl, function(child) {
         if (child.explanation() === 'Field Weight') {
           match.fieldWeight = child;
         } else if (child.explanation() === 'Query Weight') {
           match.queryWeight = child;
         }
       });
+
+      this.formulaStr = function() {
+        return 'TF=' + this.fieldWeight.tf() + 
+               ' * IDF=' + this.fieldWeight.idf();
+      };
     };
 
     var tfIdfable = function(explain) {
@@ -44,6 +49,10 @@ angular.module('o19s.splainer-search')
         return idfExpl;
       };
       return explain;
+    };
+
+    this.ScoreExplain = function() {
+      this.realExplanation = 'Score';
     };
 
     this.FieldWeightExplain = function() {

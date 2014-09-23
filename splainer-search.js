@@ -244,6 +244,7 @@ angular.module('o19s.splainer-search')
     var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
     var DefaultSimTfExplain = simExplainSvc.DefaultSimTfExplain;
     var DefaultSimIdfExplain = simExplainSvc.DefaultSimIdfExplain;
+    var ScoreExplain = simExplainSvc.ScoreExplain;
 
     var meOrOnlyChild = function(explain) {
       var infl = explain.influencers();
@@ -274,10 +275,14 @@ angular.module('o19s.splainer-search')
       var base = new Explain(explJson, createExplain);
       var description = explJson.description;
       var details = [];
+      var tieMatch = description.match(tieRegex);
       if (explJson.hasOwnProperty('details')) {
         details = explJson.details;
       }
-      var tieMatch = description.match(tieRegex);
+      if (description.startsWith('score(')) {
+        ScoreExplain.prototype = base;
+        return new ScoreExplain(explJson);
+      }
       if (description.startsWith('tf(')) {
         DefaultSimTfExplain.prototype = base;
         return new DefaultSimTfExplain(explJson);
@@ -683,7 +688,7 @@ angular.module('o19s.splainer-search')
 // Explains that exist before you get to the match level
 angular.module('o19s.splainer-search')
   .service('queryExplainSvc', function explainSvc(baseExplainSvc, vectorSvc, simExplainSvc) {
-    var DefaultSimilarityMatch = simExplainSvc.DefalutSimilarityMatch;
+    var DefaultSimilarityMatch = simExplainSvc.DefaultSimilarityMatch;
 
     this.MatchAllDocsExplain = function() {
       this.realExplanation = 'You queried *:* (all docs returned w/ score of 1)';
@@ -719,6 +724,16 @@ angular.module('o19s.splainer-search')
         if (this.description.hasSubstr('DefaultSimilarity')) {
           return new DefaultSimilarityMatch(this.children);
         }
+        return null;
+      };
+
+      this.explanation = function() {
+        var match = this.getMatch();
+        var matchStr = '';
+        if (match !== null) {
+          matchStr = '\n' + match.formulaStr();
+        }
+        return this.realExplanation + matchStr;
       };
     };
 
@@ -886,20 +901,25 @@ angular.module('o19s.splainer-search')
 
     this.DefaultSimilarityMatch = function(children) {
       var infl = children;
-      if (children.length === 1 && children[0].explanation().startsWith('score')) {
+      if (children.length === 1 && children[0].explanation().startsWith('Score')) {
         infl = children[0].children;
       }
 
       this.fieldWeight = null;
       this.queryWeight = null;
       var match = this;
-      angular.forEach(children, function(child) {
+      angular.forEach(infl, function(child) {
         if (child.explanation() === 'Field Weight') {
           match.fieldWeight = child;
         } else if (child.explanation() === 'Query Weight') {
           match.queryWeight = child;
         }
       });
+
+      this.formulaStr = function() {
+        return 'TF=' + this.fieldWeight.tf() + 
+               ' * IDF=' + this.fieldWeight.idf();
+      };
     };
 
     var tfIdfable = function(explain) {
@@ -921,6 +941,10 @@ angular.module('o19s.splainer-search')
         return idfExpl;
       };
       return explain;
+    };
+
+    this.ScoreExplain = function() {
+      this.realExplanation = 'Score';
     };
 
     this.FieldWeightExplain = function() {

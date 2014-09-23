@@ -20,6 +20,7 @@ angular.module('o19s.splainer-search')
     var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
     var DefaultSimTfExplain = simExplainSvc.DefaultSimTfExplain;
     var DefaultSimIdfExplain = simExplainSvc.DefaultSimIdfExplain;
+    var ScoreExplain = simExplainSvc.ScoreExplain;
 
     var meOrOnlyChild = function(explain) {
       var infl = explain.influencers();
@@ -50,10 +51,14 @@ angular.module('o19s.splainer-search')
       var base = new Explain(explJson, createExplain);
       var description = explJson.description;
       var details = [];
+      var tieMatch = description.match(tieRegex);
       if (explJson.hasOwnProperty('details')) {
         details = explJson.details;
       }
-      var tieMatch = description.match(tieRegex);
+      if (description.startsWith('score(')) {
+        ScoreExplain.prototype = base;
+        return new ScoreExplain(explJson);
+      }
       if (description.startsWith('tf(')) {
         DefaultSimTfExplain.prototype = base;
         return new DefaultSimTfExplain(explJson);
