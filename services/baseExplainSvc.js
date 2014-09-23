@@ -42,6 +42,15 @@ angular.module('o19s.splainer-search')
         return this.realExplanation;
       };
 
+      /* Once we get to "matches" we intend to 
+       * stop, and the level below becomes heavily related to 
+       * similarity implementations (how does the tf * idf calculation work)
+       * we'll call that out seperately to keep things sane
+       * */
+      this.hasMatch = function() {
+        return false;
+      };
+
       /* Return my influencers as a vector
        * where magnitude of each dimension is how 
        * much I am influenced by that influencer
@@ -58,6 +67,7 @@ angular.module('o19s.splainer-search')
       this.vectorize = function() {
         var rVal = vectorSvc.create();
         // base vector is just a, no expansion farther down
+        // so any children's expansion will get ignored
         rVal.set(this.explanation(), this.contribution());
         return rVal;
       };

@@ -3,7 +3,7 @@
 // Factory for explains
 // really ties the room together
 angular.module('o19s.splainer-search')
-  .service('explainSvc', function explainSvc(baseExplainSvc, queryExplainSvc) {
+  .service('explainSvc', function explainSvc(baseExplainSvc, queryExplainSvc, simExplainSvc) {
 
     var Explain = baseExplainSvc.Explain;
     var ConstantScoreExplain = queryExplainSvc.ConstantScoreExplain;
@@ -15,6 +15,11 @@ angular.module('o19s.splainer-search')
     var SumExplain = queryExplainSvc.SumExplain;
     var CoordExplain = queryExplainSvc.CoordExplain;
     var ProductExplain = queryExplainSvc.ProductExplain;
+
+    var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
+    var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
+    var DefaultSimTfExplain = simExplainSvc.DefaultSimTfExplain;
+    var DefaultSimIdfExplain = simExplainSvc.DefaultSimIdfExplain;
 
     var meOrOnlyChild = function(explain) {
       var infl = explain.influencers();
@@ -49,11 +54,27 @@ angular.module('o19s.splainer-search')
         details = explJson.details;
       }
       var tieMatch = description.match(tieRegex);
+      if (description.startsWith('tf(')) {
+        DefaultSimTfExplain.prototype = base;
+        return new DefaultSimTfExplain(explJson);
+      }
+      else if (description.startsWith('idf(')) {
+        DefaultSimIdfExplain.prototype = base;
+        return new DefaultSimIdfExplain(explJson);
+      }
+      else if (description.startsWith('fieldWeight')) {
+        FieldWeightExplain.prototype = base;
+        return new FieldWeightExplain(explJson);
+      }
+      else if (description.startsWith('queryWeight')) {
+        QueryWeightExplain.prototype = base;
+        return new QueryWeightExplain(explJson);
+      }
       if (description.startsWith('ConstantScore')) {
         ConstantScoreExplain.prototype = base;
         return new ConstantScoreExplain(explJson);
       }
-      if (description.startsWith('MatchAllDocsQuery')) {
+      else if (description.startsWith('MatchAllDocsQuery')) {
         MatchAllDocsExplain.prototype = base;
         return new MatchAllDocsExplain(explJson);
       }

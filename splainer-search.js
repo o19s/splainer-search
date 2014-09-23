@@ -2,6 +2,111 @@ angular.module('o19s.splainer-search', []);
 
 'use strict';
 
+// Executes a solr search and returns
+// a set of queryDocs
+angular.module('o19s.splainer-search')
+  .service('baseExplainSvc', function explainSvc(vectorSvc) {
+
+    this.Explain = function(explJson, explFactory) {
+      var datExplain = this;
+      this.asJson = explJson;
+      this.realContribution = this.score = parseFloat(explJson.value);
+      this.realExplanation = this.description = explJson.description;
+      var details = [];
+      if (explJson.hasOwnProperty('details')) {
+        details = explJson.details;
+      }
+      this.children = [];
+      angular.forEach(details, function(detail) {
+        datExplain.children.push(explFactory(detail));
+      });
+
+      /* Each explain defines influencers, 
+       *
+       * whatever this explain feels should be
+       * plucked out of the explJson passed in as a list
+       * of things that explain it
+       * */
+      this.influencers = function() {
+        return [];
+      };
+
+      /* Each explain reports its contribution
+       * */
+      this.contribution = function() {
+        return this.realContribution;
+      };
+
+      /* Each explain reports a more human-readable form
+       * of the explain text that hopefully is less search geeky
+       * */
+      this.explanation = function() {
+        return this.realExplanation;
+      };
+
+      /* Once we get to "matches" we intend to 
+       * stop, and the level below becomes heavily related to 
+       * similarity implementations (how does the tf * idf calculation work)
+       * we'll call that out seperately to keep things sane
+       * */
+      this.hasMatch = function() {
+        return false;
+      };
+
+      /* Return my influencers as a vector
+       * where magnitude of each dimension is how 
+       * much I am influenced by that influencer
+       *
+       * IE if I am a SumExplain, my vector is likely to be
+       * for matches x and y with scores a and y respectively
+       *
+       *  a * x + b * y
+       *
+       *  here a and b are constants, x and y are other 
+       *  matches to be recursively expanded
+       *
+       * */
+      this.vectorize = function() {
+        var rVal = vectorSvc.create();
+        // base vector is just a, no expansion farther down
+        // so any children's expansion will get ignored
+        rVal.set(this.explanation(), this.contribution());
+        return rVal;
+      };
+
+      /* A friendly, hiererarchical view
+       * of all the influencers
+       * */
+      var asStr = '';
+      var asRawStr = '';
+      this.toStr = function(depth) {
+        if (asStr === '') {
+          if (depth === undefined) {
+            depth = 0;
+          }
+          var prefix = new Array(2 * depth).join(' ');
+          var me = prefix + this.contribution() + ' ' + this.explanation() + '\n';
+          var childStrs = [];
+          angular.forEach(this.influencers(), function(child) {
+            childStrs.push(child.toStr(depth+1));
+          });
+          asStr = me + childStrs.join('\n');
+        }
+        return asStr;
+      };
+
+      this.rawStr = function() {
+        /* global JSON */
+        if (asRawStr === '') {
+          asRawStr = JSON.stringify(this.asJson);
+        }
+        return asRawStr;
+      };
+    };
+  });
+
+'use strict';
+
 /* Some browsers and PhantomJS don't support bind, mozilla provides
  * this implementation as a monkey patch on Function.prototype
  *
@@ -119,10 +224,26 @@ angular.module('o19s.splainer-search')
 
 'use strict';
 
-// Executes a solr search and returns
-// a set of queryDocs
+// Factory for explains
+// really ties the room together
 angular.module('o19s.splainer-search')
-  .service('explainSvc', function explainSvc(vectorSvc) {
+  .service('explainSvc', function explainSvc(baseExplainSvc, queryExplainSvc, simExplainSvc) {
+
+    var Explain = baseExplainSvc.Explain;
+    var ConstantScoreExplain = queryExplainSvc.ConstantScoreExplain;
+    var MatchAllDocsExplain = queryExplainSvc.MatchAllDocsExplain;
+    var WeightExplain = queryExplainSvc.WeightExplain;
+    var FunctionQueryExplain = queryExplainSvc.FunctionQueryExplain;
+    var DismaxTieExplain = queryExplainSvc.DismaxTieExplain;
+    var DismaxExplain = queryExplainSvc.DismaxExplain;
+    var SumExplain = queryExplainSvc.SumExplain;
+    var CoordExplain = queryExplainSvc.CoordExplain;
+    var ProductExplain = queryExplainSvc.ProductExplain;
+
+    var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
+    var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
+    var DefaultSimTfExplain = simExplainSvc.DefaultSimTfExplain;
+    var DefaultSimIdfExplain = simExplainSvc.DefaultSimIdfExplain;
 
     var meOrOnlyChild = function(explain) {
       var infl = explain.influencers();
@@ -150,18 +271,34 @@ angular.module('o19s.splainer-search')
     var tieRegex = /max plus ([0-9.]+) times/;
     var createExplain = function(explJson) {
       explJson = replaceBadJson(explJson);
-      var base = new Explain(explJson);
+      var base = new Explain(explJson, createExplain);
       var description = explJson.description;
       var details = [];
       if (explJson.hasOwnProperty('details')) {
         details = explJson.details;
       }
       var tieMatch = description.match(tieRegex);
+      if (description.startsWith('tf(')) {
+        DefaultSimTfExplain.prototype = base;
+        return new DefaultSimTfExplain(explJson);
+      }
+      else if (description.startsWith('idf(')) {
+        DefaultSimIdfExplain.prototype = base;
+        return new DefaultSimIdfExplain(explJson);
+      }
+      else if (description.startsWith('fieldWeight')) {
+        FieldWeightExplain.prototype = base;
+        return new FieldWeightExplain(explJson);
+      }
+      else if (description.startsWith('queryWeight')) {
+        QueryWeightExplain.prototype = base;
+        return new QueryWeightExplain(explJson);
+      }
       if (description.startsWith('ConstantScore')) {
         ConstantScoreExplain.prototype = base;
         return new ConstantScoreExplain(explJson);
       }
-      if (description.startsWith('MatchAllDocsQuery')) {
+      else if (description.startsWith('MatchAllDocsQuery')) {
         MatchAllDocsExplain.prototype = base;
         return new MatchAllDocsExplain(explJson);
       }
@@ -206,248 +343,11 @@ angular.module('o19s.splainer-search')
       return base;
 
     };
-
-    var Explain = function(explJson) {
-      var datExplain = this;
-      this.asJson = explJson;
-      this.realContribution = this.score = parseFloat(explJson.value);
-      this.realExplanation = this.description = explJson.description;
-      var details = [];
-      if (explJson.hasOwnProperty('details')) {
-        details = explJson.details;
-      }
-      this.children = [];
-      angular.forEach(details, function(detail) {
-        datExplain.children.push(createExplain(detail));
-      });
-
-      this.influencers = function() {
-        return [];
-      };
-
-      this.contribution = function() {
-        return this.realContribution;
-      };
-
-      this.explanation = function() {
-        return this.realExplanation;
-      };
-
-      /* Return my influencers as a vector
-       * where magnitude of each dimension is how 
-       * much I am influenced
-       * */
-      this.vectorize = function() {
-        var rVal = vectorSvc.create();
-        rVal.set(this.explanation(), this.contribution());
-        return rVal;
-      };
-
-      /* A friendly, hiererarchical view
-       * of all the influencers
-       * */
-      var asStr = '';
-      var asRawStr = '';
-      this.toStr = function(depth) {
-        if (asStr === '') {
-          if (depth === undefined) {
-            depth = 0;
-          }
-          var prefix = new Array(2 * depth).join(' ');
-          var me = prefix + this.contribution() + ' ' + this.explanation() + '\n';
-          var childStrs = [];
-          angular.forEach(this.influencers(), function(child) {
-            childStrs.push(child.toStr(depth+1));
-          });
-          asStr = me + childStrs.join('\n');
-        }
-        return asStr;
-      };
-
-      this.rawStr = function() {
-        /* global JSON */
-        if (asRawStr === '') {
-          asRawStr = JSON.stringify(this.asJson);
-        }
-        return asRawStr;
-      };
-    };
-
-    var MatchAllDocsExplain = function() {
-      this.realExplanation = 'You queried *:* (all docs returned w/ score of 1)';
-    };
     
-    var ConstantScoreExplain = function() {
-      this.realExplanation = 'Constant Scored Query';
-    };
-
-    var WeightExplain = function(explJson) {
-      // take weight(text:foo in 1234), extract text:foo
-      var weightRegex = /weight\((.*?)\s+in\s+\d+?\)/;
-      var description = explJson.description;
-      
-      var match = description.match(weightRegex);
-      if (match !== null && match.length > 1) {
-        this.realExplanation = match[1];
-      } else {
-        this.realExplanation = description;
-      }
-    };
-
-    var FunctionQueryExplain = function(explJson) {
-      var funcQueryRegex = /FunctionQuery\((.*)\)/;
-      var description = explJson.description;
-      var match = description.match(funcQueryRegex);
-      if (match !== null && match.length > 1) {
-        this.realExplanation = match[1];
-      } else {
-        this.realExplanation = description;
-      }
-    };
-
-    var CoordExplain = function(explJson, coordFactor) {
-      if (coordFactor < 1.0) {
-        this.realExplanation = 'Matches Punished by ' + coordFactor + ' (not all query terms matched)';
-
-        this.influencers = function() {
-          var infl = [];
-          for (var i = 0; i < this.children.length; i++) {
-            if (this.children[i].description.hasSubstr('coord')) {
-              continue;
-            } else {
-              infl.push(this.children[i]);
-            }
-          }
-          return infl;
-        };
-
-        this.vectorize = function() {
-          // scale the others by coord factor
-          var rVal = vectorSvc.create();
-          angular.forEach(this.influencers(), function(infl) {
-            rVal = vectorSvc.add(rVal, infl.vectorize());
-          });
-          rVal = vectorSvc.scale(rVal, coordFactor);
-          return rVal;
-        };
-      }
-    };
-
-    var DismaxTieExplain = function(explJson, tie) {
-      this.realExplanation = 'Dismax (max plus:' + tie + ' times others';
-
-      this.influencers = function() {
-        var infl = angular.copy(this.children);
-        infl.sort(function(a, b) {return b.score - a.score;});
-        return infl;
-      };
-
-      this.vectorize = function() {
-        var infl = this.influencers();
-        // infl[0] is the winner of the dismax competition
-        var rVal = infl[0].vectorize();
-        angular.forEach(infl.slice(1), function(currInfl) {
-          var vInfl = currInfl.vectorize();
-          var vInflScaled = vectorSvc.scale(vInfl, tie);
-          rVal = vectorSvc.add(rVal, vInflScaled);
-        });
-        return rVal;
-      };
-    };
-
-
-    var DismaxExplain = function() {
-      this.realExplanation = 'Dismax (take winner of below)';
-      
-      this.influencers = function() {
-        var infl = angular.copy(this.children);
-        infl.sort(function(a, b) {return b.score - a.score;});
-        return infl;
-      };
-
-      this.vectorize = function() {
-        var infl = this.influencers();
-        // Dismax, winner takes all, influencers
-        // are sorted by influence
-        return infl[0].vectorize();
-      };
-    };
-
-    var SumExplain = function() {
-      this.realExplanation = 'Sum of the following:';
-      this.isSumExplain = true;
-      
-      this.influencers = function() {
-        var preInfl = angular.copy(this.children);
-        // Well then the child is the real influencer, we're taking sum
-        // of one thing
-        preInfl.sort(function(a, b) {return b.score - a.score;});
-        var infl = [];
-        angular.forEach(preInfl, function(child) {
-          // take advantage of commutative property
-          if (child.hasOwnProperty('isSumExplain') && child.isSumExplain) {
-            angular.forEach(child.influencers(), function(grandchild) {
-              infl.push(grandchild);
-            });
-          } else {
-            infl.push(child);
-          }
-        });
-        return infl;
-      };
-
-      this.vectorize = function() {
-        // vector sum all the components
-        var rVal = vectorSvc.create();
-        angular.forEach(this.influencers(), function(infl) {
-          rVal = vectorSvc.add(rVal, infl.vectorize());
-        });
-        return rVal;
-      };
-    };
-
-    var ProductExplain = function() {
-      this.realExplanation = 'Product of following:';
-
-      var oneFilled = function(length) {
-        return Array.apply(null, new Array(length)).map(Number.prototype.valueOf,1);
-      };
-      
-      this.influencers = function() {
-        var infl = angular.copy(this.children);
-        infl.sort(function(a, b) {return b.score - a.score;});
-        return infl;
-      };
-      this.vectorize = function() {
-        // vector sum all the components
-        var rVal = vectorSvc.create();
-
-        var infl = this.influencers();
-
-        var inflFactors = oneFilled(infl.length);
-
-        for (var factorInfl = 0; factorInfl < infl.length; factorInfl++) {
-          for (var currMult = 0; currMult < infl.length; currMult++) {
-            if (currMult !== factorInfl) {
-              inflFactors[factorInfl] = (inflFactors[factorInfl] * infl[currMult].contribution());
-            }
-          }
-        }
-
-        for (var currInfl = 0; currInfl < infl.length; currInfl++) {
-          var i = infl[currInfl];
-          var thisVec = i.vectorize();
-          var thisScaledByOthers = vectorSvc.scale(thisVec, inflFactors[currInfl]);
-          rVal = vectorSvc.add(rVal, thisScaledByOthers);
-        }
-
-        return rVal;
-      };
-    };
-
     this.createExplain = function(explJson) {
       return createExplain(explJson);
     };
+
 
   });
 
@@ -777,6 +677,321 @@ angular.module('o19s.splainer-search')
 // I have an easier time thinking as an implementor
 // in terms of a sequence of asynchronous tasks to be
 // chained
+
+'use strict';
+
+// Explains that exist before you get to the match level
+angular.module('o19s.splainer-search')
+  .service('queryExplainSvc', function explainSvc(baseExplainSvc, vectorSvc, simExplainSvc) {
+    var DefaultSimilarityMatch = simExplainSvc.DefalutSimilarityMatch;
+
+    this.MatchAllDocsExplain = function() {
+      this.realExplanation = 'You queried *:* (all docs returned w/ score of 1)';
+    };
+    
+    this.ConstantScoreExplain = function() {
+      this.realExplanation = 'Constant Scored Query';
+    };
+
+    this.WeightExplain = function(explJson) {
+      // take weight(text:foo in 1234), extract text:foo,
+      // this actually deliniates a "match" so the stuff 
+      // underneath this level in the explain is search nerd trivia
+      // tf, idf, norms, etc. 
+      // We break that out separately, not part of the main explain
+      // tree, but as a different hiererarchy
+      var weightRegex = /weight\((.*?)\s+in\s+\d+?\)/;
+      var description = explJson.description;
+      
+      var match = description.match(weightRegex);
+      if (match !== null && match.length > 1) {
+        this.realExplanation = match[1];
+      } else {
+        this.realExplanation = description;
+      }
+
+      this.hasMatch = function() {
+        return true;
+      };
+
+      this.getMatch = function() {
+        // Match has lots of goodies based on similarity used
+        if (this.description.hasSubstr('DefaultSimilarity')) {
+          return new DefaultSimilarityMatch(this.children);
+        }
+      };
+    };
+
+    this.FunctionQueryExplain = function(explJson) {
+      var funcQueryRegex = /FunctionQuery\((.*)\)/;
+      var description = explJson.description;
+      var match = description.match(funcQueryRegex);
+      if (match !== null && match.length > 1) {
+        this.realExplanation = match[1];
+      } else {
+        this.realExplanation = description;
+      }
+    };
+
+    this.CoordExplain = function(explJson, coordFactor) {
+      if (coordFactor < 1.0) {
+        this.realExplanation = 'Matches Punished by ' + coordFactor + ' (not all query terms matched)';
+
+        this.influencers = function() {
+          var infl = [];
+          for (var i = 0; i < this.children.length; i++) {
+            if (this.children[i].description.hasSubstr('coord')) {
+              continue;
+            } else {
+              infl.push(this.children[i]);
+            }
+          }
+          return infl;
+        };
+
+        this.vectorize = function() {
+          // scale the others by coord factor
+          var rVal = vectorSvc.create();
+          angular.forEach(this.influencers(), function(infl) {
+            rVal = vectorSvc.add(rVal, infl.vectorize());
+          });
+          rVal = vectorSvc.scale(rVal, coordFactor);
+          return rVal;
+        };
+      }
+    };
+
+    this.DismaxTieExplain = function(explJson, tie) {
+      this.realExplanation = 'Dismax (max plus:' + tie + ' times others';
+
+      this.influencers = function() {
+        var infl = angular.copy(this.children);
+        infl.sort(function(a, b) {return b.score - a.score;});
+        return infl;
+      };
+
+      this.vectorize = function() {
+        var infl = this.influencers();
+        // infl[0] is the winner of the dismax competition
+        var rVal = infl[0].vectorize();
+        angular.forEach(infl.slice(1), function(currInfl) {
+          var vInfl = currInfl.vectorize();
+          var vInflScaled = vectorSvc.scale(vInfl, tie);
+          rVal = vectorSvc.add(rVal, vInflScaled);
+        });
+        return rVal;
+      };
+    };
+
+
+    this.DismaxExplain = function() {
+      this.realExplanation = 'Dismax (take winner of below)';
+      
+      this.influencers = function() {
+        var infl = angular.copy(this.children);
+        infl.sort(function(a, b) {return b.score - a.score;});
+        return infl;
+      };
+
+      this.vectorize = function() {
+        var infl = this.influencers();
+        // Dismax, winner takes all, influencers
+        // are sorted by influence
+        return infl[0].vectorize();
+      };
+    };
+
+    this.SumExplain = function() {
+      this.realExplanation = 'Sum of the following:';
+      this.isSumExplain = true;
+      
+      this.influencers = function() {
+        var preInfl = angular.copy(this.children);
+        // Well then the child is the real influencer, we're taking sum
+        // of one thing
+        preInfl.sort(function(a, b) {return b.score - a.score;});
+        var infl = [];
+        angular.forEach(preInfl, function(child) {
+          // take advantage of commutative property
+          if (child.hasOwnProperty('isSumExplain') && child.isSumExplain) {
+            angular.forEach(child.influencers(), function(grandchild) {
+              infl.push(grandchild);
+            });
+          } else {
+            infl.push(child);
+          }
+        });
+        return infl;
+      };
+
+      this.vectorize = function() {
+        // vector sum all the components
+        var rVal = vectorSvc.create();
+        angular.forEach(this.influencers(), function(infl) {
+          rVal = vectorSvc.add(rVal, infl.vectorize());
+        });
+        return rVal;
+      };
+    };
+
+    this.ProductExplain = function() {
+      this.realExplanation = 'Product of following:';
+
+      var oneFilled = function(length) {
+        return Array.apply(null, new Array(length)).map(Number.prototype.valueOf,1);
+      };
+      
+      this.influencers = function() {
+        var infl = angular.copy(this.children);
+        infl.sort(function(a, b) {return b.score - a.score;});
+        return infl;
+      };
+      this.vectorize = function() {
+        // vector sum all the components
+        var rVal = vectorSvc.create();
+
+        var infl = this.influencers();
+
+        var inflFactors = oneFilled(infl.length);
+
+        for (var factorInfl = 0; factorInfl < infl.length; factorInfl++) {
+          for (var currMult = 0; currMult < infl.length; currMult++) {
+            if (currMult !== factorInfl) {
+              inflFactors[factorInfl] = (inflFactors[factorInfl] * infl[currMult].contribution());
+            }
+          }
+        }
+
+        for (var currInfl = 0; currInfl < infl.length; currInfl++) {
+          var i = infl[currInfl];
+          var thisVec = i.vectorize();
+          var thisScaledByOthers = vectorSvc.scale(thisVec, inflFactors[currInfl]);
+          rVal = vectorSvc.add(rVal, thisScaledByOthers);
+        }
+
+        return rVal;
+      };
+    };
+
+  });
+
+'use strict';
+
+// Explains that exist below the match level
+// these have a lot to do with the similarity implementation used by Solr/Lucene
+// Here we implement default similarity, we will need to split this out for
+// more similarity types (ie sweet spot, bm25) as needed
+angular.module('o19s.splainer-search')
+  .service('simExplainSvc', function explainSvc() {
+
+    this.DefaultSimilarityMatch = function(children) {
+      var infl = children;
+      if (children.length === 1 && children[0].explanation().startsWith('score')) {
+        infl = children[0].children;
+      }
+
+      this.fieldWeight = null;
+      this.queryWeight = null;
+      var match = this;
+      angular.forEach(children, function(child) {
+        if (child.explanation() === 'Field Weight') {
+          match.fieldWeight = child;
+        } else if (child.explanation() === 'Query Weight') {
+          match.queryWeight = child;
+        }
+      });
+    };
+
+    var tfIdfable = function(explain) {
+      var tfExpl = null;
+      var idfExpl = null;
+      angular.forEach(explain.children, function(child) {
+        if (child.explanation().startsWith('Term')) {
+          tfExpl = child;
+        } else if (child.explanation().startsWith('IDF')) {
+          idfExpl = child;
+        }
+      });
+
+      explain.tf = function() {
+        return tfExpl;
+      };
+      
+      explain.idf = function() {
+        return idfExpl;
+      };
+      return explain;
+    };
+
+    this.FieldWeightExplain = function() {
+      this.realExplanation = 'Field Weight';
+      tfIdfable(this);
+
+      /*this.fieldNorm = function() {
+      };*/
+    };
+    
+    this.QueryWeightExplain = function() {
+      this.realExplanation = 'Query Weight';
+      tfIdfable(this);
+    };
+
+    // For default similarity, tf in the score is actually
+    // is sqrt(termFreq) where termFreq is the frequency of
+    // a term in a document.
+    this.DefaultSimTfExplain = function() {
+
+      // Should have a single child with actual term frequency
+      // Notes TODO:
+      // 1. For strict phrase queries, ie "one two" this is
+      //    phraseFreq, not a big deal just labeling
+      // 2. For sloppy phrase queries gets more complicated,
+      //     sloppyFreq is (1 / (distance + 1))
+      //      where distance min distance in doc between "one ... two"
+      //      for every set of phrases in document
+      var termFreq = this.children[0].contribution();
+      this.realExplanation = 'Term Freq Score (' + termFreq + ')';
+    };
+
+    // For default similarity, IDF of the term being searched
+    // in the case of phrase queries, this is a sum of
+    // all the members of the phrase. 
+    //
+    // TODO -- the underlying idf for each member of a phrase
+    // does not identify the term corresponding to that idf,
+    // Lucene patch?
+    //
+    // The formula for IDF in default similarity is
+    //  1 + log( numDocs / (docFreq + 1))
+    //
+    // or taken the idf explanation:
+    //   idf(docFreq=4743, maxDocs=20148)
+    // in python:
+    // >> 1 + log(20148.0 / (4753 + 1))
+    //
+    this.DefaultSimIdfExplain = function(explJson) {
+      var desc = explJson.description;
+      if (this.children.length > 1 && desc.hasSubstr('sum of:')) {
+        // then each child is an idf explain
+        this.realExplanation = 'IDF Score';
+        this.influencers = function() {
+          return this.children;
+        };
+      }
+      else {
+        var idfRegex = /idf\(docFreq=(\d+),.*maxDocs=(\d+)\)/;
+        var matches = desc.match(idfRegex);
+        if (matches !== null && matches.length > 1) {
+          /*var docFreq = parseInt(matches[1], 10);
+          var maxDocs = parseInt(matches[2], 10);*/
+          this.realExplanation = 'IDF Score';
+        }
+        else {
+          this.realExplanation = desc;
+        }
+      }
+    };
+});
 
 'use strict';
 
