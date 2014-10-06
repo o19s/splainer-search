@@ -94,7 +94,7 @@ module.exports = function(grunt) {
 				debug: {
 					configFile: 'karma.debug.conf.js',
 					singleRun: false,
-					browsers: ['Chrome']
+          autoWatch: true          
 				}
 			}
 		});
