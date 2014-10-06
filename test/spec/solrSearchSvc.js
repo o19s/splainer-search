@@ -409,7 +409,7 @@ describe('Service: solrSearchSvc', function () {
     });
   });
  
-  // For tests where "id" is not the id field 
+  // For tests where 'id' is not the id field 
   
   describe('alt id field tests', function() {
     var mockResultsAltId = {
@@ -596,6 +596,202 @@ describe('Service: solrSearchSvc', function () {
     searcher.search();
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
+  });
+  
+  
+  describe('group-by', function() {
+    var groupedSolrResp = { responseHeader:{
+          'status':0,
+          'QTime':3},
+        'grouped':{
+          'catch_line':{
+            'matches':20148,
+            'groups':[{
+                'groupValue':'would',
+                'doclist':{'numFound':547,'start':0,'docs':[
+                    {
+                      'id':'l_510',
+                      'catch_line':'doug put this here'}]
+                }}]},
+          'text':{
+            'matches':20148,
+            'groups':[{
+                'groupValue':'would',
+                'doclist':{'numFound':547,'start':0,'docs':[
+                    {
+                      'id':'l_11730',
+                      'catch_line':'Definitions.'},
+                    {
+                      'id':'l_22002',
+                      'catch_line':'(Effective until October 1, 2012) Frequency of inspection; scope of inspection.'},
+                    {
+                      'id':'l_3845',
+                      'catch_line':'Alternate procedure for sale of real estate of person under disability.'}]
+                }},
+              {
+                'groupValue':'within',
+                'doclist':{'numFound':1471,'start':0,'docs':[
+                    {
+                      'id':'l_5780',
+                      'catch_line':'Approved plan required for issuance of grading, building, or other permits; security for performance.'},
+                    {
+                      'id':'l_16271',
+                      'catch_line':'Consultation with health regulatory boards.'},
+                    {
+                      'id':'l_20837',
+                      'catch_line':'Powers, duties and responsibilities of the Inspector.'}]
+                }}]}},
+        'highlighting':{
+          'l_11730':{},
+          'l_22002':{},
+          'l_3845':{},
+          'l_5780':{},
+          'l_16271':{},
+          'l_20837':{}},
+        'debug':{
+          'rawquerystring':'*:*',
+          'querystring':'*:*',
+          'parsedquery':'MatchAllDocsQuery(*:*)',
+          'parsedquery_toString':'*:*',
+          'explain':{
+            'l_11730':{
+              'match':true,
+              'value':1.0,
+              'description':'MatchAllDocsQuery, product of:',
+              'details':[{
+                  'match':true,
+                  'value':1.0,
+                  'description':'queryNorm'}]},
+            'l_22002':{
+              'match':true,
+              'value':1.0,
+              'description':'MatchAllDocsQuery, product of:',
+              'details':[{
+                  'match':true,
+                  'value':1.0,
+                  'description':'queryNorm'}]},
+            'l_3845':{
+              'match':true,
+              'value':1.0,
+              'description':'MatchAllDocsQuery, product of:',
+              'details':[{
+                  'match':true,
+                  'value':1.0,
+                  'description':'queryNorm'}]},
+            'l_5780':{
+              'match':true,
+              'value':1.0,
+              'description':'MatchAllDocsQuery, product of:',
+              'details':[{
+                  'match':true,
+                  'value':1.0,
+                  'description':'queryNorm'}]},
+            'l_16271':{
+              'match':true,
+              'value':1.0,
+              'description':'MatchAllDocsQuery, product of:',
+              'details':[{
+                  'match':true,
+                  'value':1.0,
+                  'description':'queryNorm'}]},
+            'l_20837':{
+              'match':true,
+              'value':1.0,
+              'description':'MatchAllDocsQuery, product of:',
+              'details':[{
+                  'match':true,
+                  'value':1.0,
+                  'description':'queryNorm'}]}},
+          'QParser':'LuceneQParser',
+          'timing':{
+            'time':3.0,
+            'prepare':{
+              'time':0.0,
+              'query':{
+                'time':0.0},
+              'facet':{
+                'time':0.0},
+              'mlt':{
+                'time':0.0},
+              'highlight':{
+                'time':0.0},
+              'stats':{
+                'time':0.0},
+              'expand':{
+                'time':0.0},
+              'debug':{
+                'time':0.0}},
+            'process':{
+              'time':3.0,
+              'query':{
+                'time':1.0},
+              'facet':{
+                'time':0.0},
+              'mlt':{
+                'time':0.0},
+              'highlight':{
+                'time':2.0},
+              'stats':{
+                'time':0.0},
+              'expand':{
+                'time':0.0},
+              'debug':{
+                'time':0.0}}}}};
+    
+    var fieldSpec = null;
+    var searcher = null;
+    
+    beforeEach(function() {
+      fieldSpec = fieldSpecSvc.createFieldSpec('id catch_line');
+      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+                                              mockSolrParams, mockQueryText);
+    });
+    
+    it('parses a grouped response', function() {
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, groupedSolrResp);
+      var called = 0;
+      searcher.search()
+      .then(function() {
+        expect(searcher.docs.length).toEqual(7);
+        expect(searcher.grouped.hasOwnProperty('text')).toBeTruthy();
+        expect(searcher.grouped.hasOwnProperty('catch_line')).toBeTruthy();
+        var gpd = searcher.grouped;
+        expect(gpd.text[0].value).toEqual('would');
+        expect(gpd.text[0].docs.length).toEqual(3);
+        expect(gpd.text[0].docs[0].source().id).toEqual('l_11730');
+        expect(gpd.text[0].docs[0].group()).toEqual('would');
+        expect(gpd.text[0].docs[1].source().id).toEqual('l_22002');
+        expect(gpd.text[0].docs[1].group()).toEqual('would');
+        expect(gpd.text[0].docs[2].source().id).toEqual('l_3845');
+        expect(gpd.text[0].docs[2].group()).toEqual('would');
+        angular.forEach(gpd.text[0].docs, function(doc) {
+          expect(doc.group()).toEqual('would');
+          expect(doc.groupedBy()).toEqual('text');
+        });
+
+        expect(gpd.text[1].value).toEqual('within');
+        expect(gpd.text[1].docs.length).toEqual(3);
+        expect(gpd.text[1].docs[0].source().id).toEqual('l_5780');
+        expect(gpd.text[1].docs[1].source().id).toEqual('l_16271');
+        expect(gpd.text[1].docs[2].source().id).toEqual('l_20837');
+        angular.forEach(gpd.text[1].docs, function(doc) {
+          expect(doc.group()).toEqual('within');
+          expect(doc.groupedBy()).toEqual('text');
+        });
+       
+        /*jshint camelcase: false */ 
+        angular.forEach(gpd.catch_line[0].docs, function(doc) {
+          expect(doc.group()).toEqual('would');
+          expect(doc.groupedBy()).toEqual('catch_line');
+        });
+        called++;
+      });
+      $httpBackend.flush();
+      expect(called).toBe(1);
+    });
+
+
   });
 
 
