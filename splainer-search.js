@@ -1100,8 +1100,26 @@ angular.module('o19s.splainer-search')
       this.linkUrl = this.callUrl.replace('wt=json', 'wt=xml');
       this.linkUrl = this.linkUrl + '&indent=true&echoParams=all';
       this.docs = [];
+      this.grouped = {};
       this.numFound = 0;
       this.inError = false;
+
+      this.addDocToGroup = function(groupedBy, group, solrDoc) {
+        if (!this.grouped.hasOwnProperty(groupedBy)) {
+          this.grouped[groupedBy] = [];
+        }
+        var found = null;
+        angular.forEach(this.grouped[groupedBy], function(groupedDocs) {
+          if (groupedDocs.value === group && !found) {
+            found = groupedDocs;
+          }
+        });
+        if (!found) {
+          found = {docs:[], value:group};
+          this.grouped[groupedBy].push(found);
+        }
+        found.docs.push(solrDoc);
+      };
 
       // return a new searcher that will give you
       // the next page upon search(). To get the subsequent
@@ -1154,12 +1172,31 @@ angular.module('o19s.splainer-search')
         activeQueries++;
         $http.jsonp(url).success(function(data) {
           activeQueries--;
-          that.numFound = data.response.numFound;
           var explDict = getExplData(data);
           var hlDict = getHlData(data);
-          angular.forEach(data.response.docs, function(solrDoc) {
-            
+         
+          var parseSolrDoc = function(solrDoc, groupedBy, group) {
             // annotate the doc with several methods
+            var source = angular.copy(solrDoc);
+            if (groupedBy === undefined) {
+              groupedBy = null;
+            }
+            if (group === undefined) {
+              group = null;
+            }
+
+            solrDoc.groupedBy = function() {
+              return groupedBy;
+            };
+
+            solrDoc.group = function() {
+              return group;
+            };
+
+            solrDoc.source = function() {
+              return source;
+            };
+
             solrDoc.url = function(idField, docId) {
               return buildTokensUrl(fieldList, solrUrl, idField, docId);
             };
@@ -1194,8 +1231,29 @@ angular.module('o19s.splainer-search')
                 return null;
               }
             };
-            that.docs.push(solrDoc);
-          });
+          };
+
+
+          if (data.hasOwnProperty('response')) {
+            angular.forEach(data.response.docs, function(solrDoc) {
+              parseSolrDoc(solrDoc); 
+              that.numFound = data.response.numFound;
+              that.docs.push(solrDoc);
+            });
+          } else if (data.hasOwnProperty('grouped')) {
+            angular.forEach(data.grouped, function(groupedBy, groupedByName) {
+              that.numFound = groupedBy.matches;
+              angular.forEach(groupedBy.groups, function(groupResp) {
+                var groupValue = groupResp.groupValue;
+                angular.forEach(groupResp.doclist.docs, function(solrDoc) {
+                  parseSolrDoc(solrDoc, groupedByName, groupValue);
+                  that.docs.push(solrDoc);
+                  that.addDocToGroup(groupedByName, groupValue, solrDoc);
+                });
+              });
+            });
+          }
+          
           promise.complete();
         }).error(function() {
           activeQueries--;
