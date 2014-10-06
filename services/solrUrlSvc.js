@@ -152,7 +152,7 @@ angular.module('o19s.splainer-search')
         delete solrArgs.debug;
 
         // Unsupported stuff to remove and provide a friendly warning
-        deleteThenWarnPrefix('group', 'Group queries/field collapsing not supported');
+        // deleteThenWarnPrefix('group', 'Group queries/field collapsing not supported');
         return warnings;
     };
 

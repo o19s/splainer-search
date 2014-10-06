@@ -40,19 +40,19 @@ describe('Service: solrUrlSvc', function () {
     expect(parsedSolrUrl.solrArgs.q).toContain('*:*');
   });
   
-  it('warns on group arguments', function() {
+  it('doesnt warn on group arguments', function() {
     var urlStr = 'http://localhost:8983/solr/collection1/select?group=true&group.main=true&group.field=text&q=*:*';
     var parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);
     var warnings = solrUrlSvc.removeUnsupported(parsedSolrUrl.solrArgs);
-    expect(warnings.group.length).toBeGreaterThan(1);
+    expect(warnings.hasOwnProperty('group')).toBeFalsy();
   });
   
-  it('removes group arguments', function() {
+  it('keeps group arguments', function() {
     var urlStr = 'http://localhost:8983/solr/collection1/select?group=true&group.main=true&group.field=text&q=*:*';
     var parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);
     solrUrlSvc.removeUnsupported(parsedSolrUrl.solrArgs);
-    expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('group');
-    expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('group.main');
+    expect(Object.keys(parsedSolrUrl.solrArgs)).toContain('group');
+    expect(Object.keys(parsedSolrUrl.solrArgs)).toContain('group.main');
   });
   
   it('parses Renes Solr URL', function() {
