@@ -74,6 +74,18 @@ angular.module('o19s.splainer-search')
         return rVal;
       };
 
+      var mergeInto = function(sink, source) {
+        for (var attrname in source) { sink[attrname] = source[attrname]; }
+        return sink;
+      };
+      this.matchDetails = function() {
+        var rVal = {};
+        angular.forEach(this.children, function(child) {
+          mergeInto(rVal, child.matchDetails);
+        });
+        return rVal;
+      };
+
       /* A friendly, hiererarchical view
        * of all the influencers
        * */
@@ -555,11 +567,13 @@ angular.module('o19s.splainer-search')
 
       var simplerExplain = null;// explainSvc.createExplain(explainJson);
       var hotMatches = null;//simplerExplain.vectorize();
+      var matchDetails = null;
 
       var initExplain = function() {
         if (!simplerExplain) {
           simplerExplain = explainSvc.createExplain(explainJson);
           hotMatches = simplerExplain.vectorize();
+          matchDetails = simplerExplain.matchDetails();
         }
       };
 
@@ -573,6 +587,11 @@ angular.module('o19s.splainer-search')
         return hotMatches;
       };
 
+      doc.matchDetails = function() {
+        initExplain();
+        return matchDetails;
+      };
+
       var hotOutOf = [];
       var lastMaxScore = -1;
       doc.hotMatchesOutOf = function(maxScore) {
@@ -584,7 +603,7 @@ angular.module('o19s.splainer-search')
         if (hotOutOf.length === 0) {
           angular.forEach(hotMatches.vecObj, function(value, key) {
             var percentage = ((0.0 + value) / maxScore) * 100.0;
-            hotOutOf.push({description: key, percentage: percentage});
+            hotOutOf.push({description: key, metadata: matchDetails[key], percentage: percentage});
           });
           hotOutOf.sort(function(a,b) {return b.percentage - a.percentage;});
         }
@@ -734,6 +753,17 @@ angular.module('o19s.splainer-search')
           matchStr = '\n' + match.formulaStr();
         }
         return this.realExplanation;
+      };
+
+      this.matchDetails = function() {
+        var rVal = {};
+        var match = this.getMatch();
+        if (match !== null) {
+          rVal[this.explanation()] = match.formulaStr();
+        } else {
+          rVal[this.explanation()] = 'no match';
+        }
+        return rVal;
       };
     };
 

@@ -50,6 +50,17 @@ angular.module('o19s.splainer-search')
         }
         return this.realExplanation;
       };
+
+      this.matchDetails = function() {
+        var rVal = {};
+        var match = this.getMatch();
+        if (match !== null) {
+          rVal[this.explanation()] = match.formulaStr();
+        } else {
+          rVal[this.explanation()] = 'no match';
+        }
+        return rVal;
+      };
     };
 
     this.FunctionQueryExplain = function(explJson) {

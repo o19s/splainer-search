@@ -72,6 +72,18 @@ angular.module('o19s.splainer-search')
         return rVal;
       };
 
+      var mergeInto = function(sink, source) {
+        for (var attrname in source) { sink[attrname] = source[attrname]; }
+        return sink;
+      };
+      this.matchDetails = function() {
+        var rVal = {};
+        angular.forEach(this.children, function(child) {
+          mergeInto(rVal, child.matchDetails);
+        });
+        return rVal;
+      };
+
       /* A friendly, hiererarchical view
        * of all the influencers
        * */
