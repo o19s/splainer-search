@@ -733,7 +733,7 @@ angular.module('o19s.splainer-search')
         if (match !== null) {
           matchStr = '\n' + match.formulaStr();
         }
-        return this.realExplanation + matchStr;
+        return this.realExplanation;
       };
     };
 
