@@ -24,7 +24,7 @@ angular.module('o19s.splainer-search')
 
     // Populate field spec from a field spec string
     var populateFieldSpec = function(fieldSpec, fieldSpecStr) {
-      var fieldSpecs = fieldSpecStr.split(/[\s,]+/);
+      var fieldSpecs = fieldSpecStr.split('+').join(' ').split(/[\s,]+/);
       angular.forEach(fieldSpecs, function(aField) {
         var typeAndField = aField.split(':');
         var fieldType = null;

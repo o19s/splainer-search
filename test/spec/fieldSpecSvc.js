@@ -1,5 +1,6 @@
 'use strict';
 
+/*global describe,beforeEach,inject,it,expect*/
 describe('Service: fieldSpecSvc', function () {
 
   // load the service's module
@@ -89,6 +90,13 @@ describe('Service: fieldSpecSvc', function () {
 
   it('allows commas', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id, atitlefield,thumb:foo_img');
+    expect(fieldSpec.id).toEqual('foo_id');
+    expect(fieldSpec.title).toEqual('atitlefield');
+    expect(fieldSpec.thumb).toEqual('foo_img');
+  });
+  
+  it('ignores +', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id,+atitlefield,+thumb:foo_img');
     expect(fieldSpec.id).toEqual('foo_id');
     expect(fieldSpec.title).toEqual('atitlefield');
     expect(fieldSpec.thumb).toEqual('foo_img');
