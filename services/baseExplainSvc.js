@@ -79,7 +79,7 @@ angular.module('o19s.splainer-search')
       this.matchDetails = function() {
         var rVal = {};
         angular.forEach(this.children, function(child) {
-          mergeInto(rVal, child.matchDetails);
+          mergeInto(rVal, child.matchDetails());
         });
         return rVal;
       };

@@ -25,8 +25,8 @@ angular.module('o19s.splainer-search')
       });
 
       this.formulaStr = function() {
-        return 'TF=' + this.fieldWeight.tf() + 
-               ' * IDF=' + this.fieldWeight.idf();
+        return 'TF=' + this.fieldWeight.tf().contribution() + 
+               ' * IDF=' + this.fieldWeight.idf().contribution();
       };
     };
 

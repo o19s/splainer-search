@@ -81,7 +81,7 @@ angular.module('o19s.splainer-search')
       this.matchDetails = function() {
         var rVal = {};
         angular.forEach(this.children, function(child) {
-          mergeInto(rVal, child.matchDetails);
+          mergeInto(rVal, child.matchDetails());
         });
         return rVal;
       };
@@ -518,7 +518,7 @@ angular.module('o19s.splainer-search')
     // A document within a query
     var NormalDoc = function(fieldSpec, solrDoc) {
       this.solrDoc = solrDoc;
-      assignFields(this, this.solrDoc, fieldSpec);
+      assignFields(this, this.solrDoc.source(), fieldSpec);
       var hasThumb = false;
       if (this.hasOwnProperty('thumb')) {
         hasThumb = true;
@@ -757,12 +757,7 @@ angular.module('o19s.splainer-search')
 
       this.matchDetails = function() {
         var rVal = {};
-        var match = this.getMatch();
-        if (match !== null) {
-          rVal[this.explanation()] = match.formulaStr();
-        } else {
-          rVal[this.explanation()] = 'no match';
-        }
+        rVal[this.explanation()] = this.rawStr(); //match.formulaStr();
         return rVal;
       };
     };
@@ -947,8 +942,8 @@ angular.module('o19s.splainer-search')
       });
 
       this.formulaStr = function() {
-        return 'TF=' + this.fieldWeight.tf() + 
-               ' * IDF=' + this.fieldWeight.idf();
+        return 'TF=' + this.fieldWeight.tf().contribution() + 
+               ' * IDF=' + this.fieldWeight.idf().contribution();
       };
     };
 

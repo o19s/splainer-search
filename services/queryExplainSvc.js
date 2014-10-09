@@ -53,12 +53,7 @@ angular.module('o19s.splainer-search')
 
       this.matchDetails = function() {
         var rVal = {};
-        var match = this.getMatch();
-        if (match !== null) {
-          rVal[this.explanation()] = match.formulaStr();
-        } else {
-          rVal[this.explanation()] = 'no match';
-        }
+        rVal[this.explanation()] = this.rawStr(); //match.formulaStr();
         return rVal;
       };
     };
