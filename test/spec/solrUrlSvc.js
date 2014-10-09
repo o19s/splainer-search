@@ -28,6 +28,23 @@ describe('Service: solrUrlSvc', function () {
     
     expect(parsedArgs.q).toContain('1234 foo');
   });
+
+  it('removes illegal options', function() {
+   var urlStr =  'http://localhost:8983/solr/collection1/select?json.wrf=jQuery1111019348984491080046_1412820011486&facet=true&facet.field=title&facet.limit=10&q=blah&fq=data_source_name:radar&start=0&defType=edismax&qf=title^1&qf=subtitle^.1&qf=keys&qf=desc&qf=author&qf=body&qf=url&mm=2%3C-1+5%3C80%25&ps=1&qs=5&ps2=5&ps3=5&pf=title^10&bq=((*:*+-title:%22Four+short+links%22)^1)&dateboost=recip(ms(NOW,searchDate),3.16e-13,1,1)&fl=id%20search_title%20+desc%20+url%20+author%20+searchDate%20+score&wt=xml&debug=true&debug.explain.structured=true&hl=true&hl.simple.pre=aouaoeuCRAZY_STRING!8_______&hl.simple.post=62362iueaiCRAZY_POST_STRING!_______&indent=true&echoParams=all';
+
+   var parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);
+   solrUrlSvc.removeUnsupported(parsedSolrUrl.solrArgs);
+   expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('json.wrf');
+   expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('facet');
+   expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('facet.field');
+   expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('rows');
+   expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('debug');
+   expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('fl');
+   expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('hl');
+   expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('hl.simple.pre');
+   expect(Object.keys(parsedSolrUrl.solrArgs)).not.toContain('hl.simple.post');
+  
+  });
   
   it('parses solr url', function() {
     var urlStr = 'http://localhost:8983/solr/collection1/select?q=*:*';

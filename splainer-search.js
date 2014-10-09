@@ -1467,7 +1467,13 @@ angular.module('o19s.splainer-search')
         };
        
         // Stuff I think we can safely remove without warning the user 
+        delete solrArgs['json.wrf'];
+        delete solrArgs.facet;
+        delete solrArgs['facet.field'];
         delete solrArgs.fl;
+        delete solrArgs.hl;
+        delete solrArgs['hl.simple.pre'];
+        delete solrArgs['hl.simple.post'];
         delete solrArgs.wt;
         delete solrArgs.rows;
         delete solrArgs.debug;
