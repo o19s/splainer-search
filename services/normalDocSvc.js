@@ -40,7 +40,7 @@ angular.module('o19s.splainer-search')
     // A document within a query
     var NormalDoc = function(fieldSpec, solrDoc) {
       this.solrDoc = solrDoc;
-      assignFields(this, this.solrDoc, fieldSpec);
+      assignFields(this, this.solrDoc.source(), fieldSpec);
       var hasThumb = false;
       if (this.hasOwnProperty('thumb')) {
         hasThumb = true;

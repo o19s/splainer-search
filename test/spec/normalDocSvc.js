@@ -24,6 +24,9 @@ describe('Service: normalDocsSvc', function () {
     beforeEach(function() {
       solrDoc = {'id_field': '1234',
                  'title_field': 'a title',
+                 source: function() {
+                   return this;
+                 },
                  url: function(fieldName, fieldValue) {
                     lastFieldName = fieldName;
                     lastFieldValue = fieldValue;
@@ -48,6 +51,9 @@ describe('Service: normalDocsSvc', function () {
       solrDoc = {'id_field': '1234',
                  'title_field': 'a title',
                  'int_field': 1234,
+                 source: function() {
+                   return this;
+                 },
                  url: function() {
                    return '';
                  },
@@ -76,6 +82,9 @@ describe('Service: normalDocsSvc', function () {
       solrDoc = {'id_field': '1234',
                  'title_field': 'a title',
                  'another_field': 'another_value',
+                 source: function() {
+                   return this;
+                 },
                  url: function() {
                    return '';
                   },
@@ -139,10 +148,14 @@ describe('Service: normalDocsSvc', function () {
 
       solrDoc = {'id_field': '1234',
                  'title_field': 'a title',
+                 source: function() {
+                   return this;
+                 },
                  url: function() {return 'http://127.0.0.1';},
                  explain: function() {return sumExplain;} };
       solrDocNoExpl = {'id_field': '1234',
                  'title_field': 'a title',
+                 source: function() {return this;},
                  url: function() {return 'http://127.0.0.1';},
                  explain: function() {return null;} };
     });
@@ -195,6 +208,50 @@ describe('Service: normalDocsSvc', function () {
     });
     
   });
+  
+  describe('uses source(), not fields on doc', function() {
+    var solrDoc = null;
+    var availableHighlights = {};
+    var idFromSrc = '5555';
+    var titleFromSrc = 'src title';
+    var sub1FromSrc = 'srcsub1_val';
+    var sub2FromSrc = 'srcsub1_val';
+
+    beforeEach(function() {
+      availableHighlights = {};
+      solrDoc = {'id_field': '1234',
+                 'title_field': 'a title',
+                 'sub1': 'sub1_val',
+                 'sub2': 'sub2_val',
+                 source: function() {
+                   return {'id_field': idFromSrc,
+                           'title_field': titleFromSrc,
+                           'sub1': sub1FromSrc,
+                           'sub2': sub2FromSrc};
+                 },
+                 url: function() {
+                   return '';
+                  },
+                 explain: function() {return mockExplain;},
+                 highlight: function(docId, field, pre, post) {
+                   if (availableHighlights.hasOwnProperty(field)) {
+                     return pre + availableHighlights[field] + post;
+                   }
+                   return null;
+                 } };
+    });
+      
+    it('reads fields', function() {
+      var fieldSpec = {id: 'id_field', title: 'title_field', subs: '*'};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(Object.keys(normalDoc.subs).length).toEqual(2);
+      expect(normalDoc.id).toEqual(idFromSrc);
+      expect(normalDoc.title).toEqual(titleFromSrc);
+      expect(normalDoc.subs.sub1).toEqual(sub1FromSrc);
+      expect(normalDoc.subs.sub2).toEqual(sub1FromSrc);
+    });
+
+  });
 
   describe('* subs test', function() {
     var solrDoc = null;
@@ -205,6 +262,9 @@ describe('Service: normalDocsSvc', function () {
                  'title_field': 'a title',
                  'sub1': 'sub1_val',
                  'sub2': 'sub2_val',
+                 source: function() {
+                   return this;
+                 },
                  url: function() {
                    return '';
                   },
