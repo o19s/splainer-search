@@ -6,7 +6,7 @@ angular.module('o19s.splainer-search')
     var DefaultSimilarityMatch = simExplainSvc.DefaultSimilarityMatch;
 
     this.MatchAllDocsExplain = function() {
-      this.realExplanation = 'You queried *:* (all docs returned w/ score of 1)';
+      this.realExplanation = 'Match All Docs (*:*)';
     };
     
     this.ConstantScoreExplain = function() {
