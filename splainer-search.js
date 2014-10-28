@@ -656,6 +656,7 @@ angular.module('o19s.splainer-search')
       if (explainJson) {
         return snippitable(explainable(placeHolder, explainJson));
       } else {
+        placeHolder.subSnippets = function() {return '';};
         return placeHolder;
       }
     };
