@@ -484,6 +484,20 @@ angular.module('o19s.splainer-search')
 // and possibly a list of sub fields
 angular.module('o19s.splainer-search')
   .service('normalDocsSvc', function normalDocsSvc(explainSvc) {
+    var entityMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '\"': '&quot;',
+      '\'': '&#39;',
+      '/': '&#x2F;'
+    };
+
+    var escapeHtml = function(string) {
+      return String(string).replace(/[&<>"'\/]/g, function (s) {
+        return entityMap[s];
+      });
+    };
 
     var assignSingleField = function(normalDoc, solrDoc, solrField, toProperty) {
       if (solrDoc.hasOwnProperty(solrField)) {
@@ -552,7 +566,7 @@ angular.module('o19s.splainer-search')
           angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
             var snip = solrDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
             if (snip === null) {
-              snip = subFieldValue.slice(0, 200);
+              snip = escapeHtml(subFieldValue.slice(0, 200));
             }
             lastSubSnips[subFieldName] = snip;
           });
@@ -1048,7 +1062,8 @@ angular.module('o19s.splainer-search')
 // a set of solr documents
 angular.module('o19s.splainer-search')
   .service('solrSearchSvc', function solrSearchSvc($http, solrUrlSvc) {
-   
+
+
     // PRE and POST strings, can't just use HTML
     // because Solr doesn't appear to support escaping 
     // XML/HTML tags in the content. So we do this stupid thing 

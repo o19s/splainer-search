@@ -4,7 +4,8 @@
 // a set of solr documents
 angular.module('o19s.splainer-search')
   .service('solrSearchSvc', function solrSearchSvc($http, solrUrlSvc) {
-   
+
+
     // PRE and POST strings, can't just use HTML
     // because Solr doesn't appear to support escaping 
     // XML/HTML tags in the content. So we do this stupid thing 

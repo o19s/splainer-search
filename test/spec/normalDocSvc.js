@@ -73,6 +73,24 @@ describe('Service: normalDocsSvc', function () {
     });
 
   });
+
+  it('escapes when no highlights', function() {
+    var solrDoc = {'id_field': '1234',
+                   'title_field': 'a title',
+                   'another_field': '<blah>another_value</blah>',
+                   source: function() {
+                     return this;
+                   },
+                   url: function() {
+                     return '';
+                    },
+                   explain: function() {return mockExplain;},
+                   highlight: function() {return null;} };
+      var fieldSpec = {id: 'id_field', title: 'title_field', subs: ['another_field']};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.subSnippets().another_field).toContain('&gt;');
+      expect(normalDoc.subSnippets().another_field).toContain('&lt;');
+  });
   
   describe('highlight tests', function() {
     var availableHighlight = null;
