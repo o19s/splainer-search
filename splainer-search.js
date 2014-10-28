@@ -654,7 +654,7 @@ angular.module('o19s.splainer-search')
       var placeHolder = {id: docId,
                          title: stubTitle};
       if (explainJson) {
-        return explainable(placeHolder, explainJson);
+        return snippitable(explainable(placeHolder, explainJson));
       } else {
         return placeHolder;
       }
