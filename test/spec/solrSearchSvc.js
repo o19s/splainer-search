@@ -129,7 +129,8 @@ describe('Service: solrSearchSvc', function () {
 
       expectedHlParams = {'hl': ['true'],
                           'hl.simple.pre': [solrSearchSvc.HIGHLIGHTING_PRE],
-                          'hl.simple.post': [solrSearchSvc.HIGHLIGHTING_POST]};
+                          'hl.simple.post': [solrSearchSvc.HIGHLIGHTING_POST],
+                          'hl.fl': ['path content']};
     });
 
     

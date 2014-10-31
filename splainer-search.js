@@ -1105,6 +1105,7 @@ angular.module('o19s.splainer-search')
       }
       if (config.highlight) {
         solrArgs.hl = ['true'];
+        solrArgs['hl.fl'] = solrArgs.fl;
         solrArgs['hl.simple.pre'] = [svc.HIGHLIGHTING_PRE];
         solrArgs['hl.simple.post'] = [svc.HIGHLIGHTING_POST];
       }
