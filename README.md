@@ -56,7 +56,7 @@ searcher.search()
 ```
 
 
-## Using a field spec
+## Normalizing docs with normalDocs/fieldSpec
 
 This library was originally written for dealing with debug tools such as [Quepid](http://quepid.com) and [Splainer](http://splainer.io). As such, it provides a lot of help taking a user specified list of fields and associated roles, then once search is done turning the raw docs out of the Solr searcher into something more normalized based on that config (a normalDoc).
 
