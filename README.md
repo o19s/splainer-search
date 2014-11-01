@@ -2,9 +2,9 @@
 
 [![Build Status](https://travis-ci.org/o19s/splainer-search.svg?branch=master)](https://travis-ci.org/o19s/splainer-search)
 
-Splainer-search will perform the specified search against Solr attempting to highlight and extract explain info.
-
 ## Basic usage
+
+Splainer-search will perform the specified search against Solr attempting to highlight and extract explain info.
 
     // searcher that searches body, type
     var searcher = solrSearchSvc.createSearcher(['id', 'title', 'body', 'author']',
@@ -26,6 +26,8 @@ Splainer-search will perform the specified search against Solr attempting to hig
     
 
 ## Paging
+
+Paging is done by asking the original searcher for another searcher. This searcher is already setup to get the next page for the current search results. Tell that searcher to search() just like you did above.
 
 ```
 var results = [];
@@ -50,7 +52,9 @@ searcher.search()
 
 ## Using a field spec
 
-This library was originally written for dealing with debug tools such as [Quepid](http://quepid.com) and [Splainer](http://splainer.io). As such, it provides a lot of help taking a user specified list of fields and associated roles, then once search is done turning the raw docs out of the Solr searcher into something more normalized (a normalDoc):
+This library was originally written for dealing with debug tools such as [Quepid](http://quepid.com) and [Splainer](http://splainer.io). As such, it provides a lot of help taking a user specified list of fields and associated roles, then once search is done turning the raw docs out of the Solr searcher into something more normalized based on that config (a normalDoc).
+
+The normalDoc provides a friendlier, more standard interface. This includes friendlier parsing of explain information as needed.
 
 ```
 var userFieldSpec = "id:uuid, title, body, authors"
@@ -81,7 +85,7 @@ searcher.search()
         console.log(normalDoc.explain());
         
         // hot matches contains the most important matches
-        // for this doc
+        // this drives the horizontal graph bars in Quepid/Splainer
         var matches = normalDoc.hotMatches();
         
         // Give hotMatchesOutOf a maximum score (for all docs returned) and you'll 
