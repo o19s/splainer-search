@@ -13,6 +13,11 @@ angular.module('o19s.splainer-search')
       this.realExplanation = 'Constant Scored Query';
     };
 
+    var shallowArrayCopy = function(src) {
+      return src.slice(0);
+    };
+
+
     this.WeightExplain = function(explJson) {
       // take weight(text:foo in 1234), extract text:foo,
       // this actually deliniates a "match" so the stuff 
@@ -101,7 +106,7 @@ angular.module('o19s.splainer-search')
       this.realExplanation = 'Dismax (max plus:' + tie + ' times others';
 
       this.influencers = function() {
-        var infl = angular.copy(this.children);
+        var infl = shallowArrayCopy(this.children);
         infl.sort(function(a, b) {return b.score - a.score;});
         return infl;
       };
@@ -124,7 +129,7 @@ angular.module('o19s.splainer-search')
       this.realExplanation = 'Dismax (take winner of below)';
       
       this.influencers = function() {
-        var infl = angular.copy(this.children);
+        var infl = shallowArrayCopy(this.children);
         infl.sort(function(a, b) {return b.score - a.score;});
         return infl;
       };
@@ -142,12 +147,10 @@ angular.module('o19s.splainer-search')
       this.isSumExplain = true;
       
       this.influencers = function() {
-        var preInfl = angular.copy(this.children);
         // Well then the child is the real influencer, we're taking sum
         // of one thing
-        preInfl.sort(function(a, b) {return b.score - a.score;});
         var infl = [];
-        angular.forEach(preInfl, function(child) {
+        angular.forEach(this.children, function(child) {
           // take advantage of commutative property
           if (child.hasOwnProperty('isSumExplain') && child.isSumExplain) {
             angular.forEach(child.influencers(), function(grandchild) {
@@ -157,7 +160,7 @@ angular.module('o19s.splainer-search')
             infl.push(child);
           }
         });
-        return infl;
+        return infl.sort(function(a, b) {return b.score - a.score;});
       };
 
       this.vectorize = function() {
@@ -178,7 +181,7 @@ angular.module('o19s.splainer-search')
       };
       
       this.influencers = function() {
-        var infl = angular.copy(this.children);
+        var infl = shallowArrayCopy(this.children);
         infl.sort(function(a, b) {return b.score - a.score;});
         return infl;
       };

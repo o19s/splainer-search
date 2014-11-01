@@ -23,6 +23,106 @@ describe('Service: explainSvc', function () {
     expect(exp.explanation()).toContain('no explain');
   });
 
+  it('how does it perform', function() {
+    var d = new Date();
+    var start = d.getTime();
+    
+    /*global bigHonkinExplain*/
+    for (var i = 0; i <10; i++) {
+      var simplerExplain = explainSvc.createExplain(bigHonkinExplain);
+      simplerExplain.vectorize();
+      simplerExplain.matchDetails();
+    }
+
+
+    d = new Date();
+    var stop = d.getTime();
+    console.log('Parsing Big Explain takes: ' + ((stop - start) / 10.0) + ' ms ' );
+  });
+
+
+  it('handles sum explains', function() {
+    var sumExplain = {
+      match: true,
+      value: 1.5,
+      description: 'sum of',
+      details: [
+        {
+          match: true,
+          value: 0.5,
+          description: 'part 1 is 0.5',
+          details: []
+        },    
+        {
+          match: true,
+          value: 0.3,
+          description: 'part 2 is 0.3',
+          details: []
+        },    
+        {
+          match: true,
+          value: 0.7,
+          description: 'part 3 is 0.7',
+          details: []
+        }    
+      ]
+    };
+    var simplerExplain = explainSvc.createExplain(sumExplain);
+    var infl = simplerExplain.influencers();
+    expect(infl.length).toEqual(3);
+    expect(infl[0].description).toEqual('part 3 is 0.7');
+    expect(infl[1].description).toEqual('part 1 is 0.5');
+    expect(infl[2].description).toEqual('part 2 is 0.3');
+  });
+
+  it('collapses sums with sum children', function() {
+    var sumOfSumExplain = {
+      match: true,
+      value: 1.5,
+      description: 'sum of',
+      details: [
+        {
+          match: true,
+          value: 0.5,
+          description: 'part 1 is 0.5 sum of',
+          details: [
+            {
+              match: true,
+              value: 0.2,
+              description: 'part 1a is 0.2',
+              details: []
+            },    
+            {
+              match: true,
+              value: 0.3,
+              description: 'part 1b is 0.3',
+              details: []
+            }    
+          ]
+        },    
+        {
+          match: true,
+          value: 0.1,
+          description: 'part 2 is 0.1',
+          details: []
+        },    
+        {
+          match: true,
+          value: 0.7,
+          description: 'part 3 is 0.7',
+          details: []
+        }    
+      ]
+    };
+    var simplerExplain = explainSvc.createExplain(sumOfSumExplain);
+    var infl = simplerExplain.influencers();
+    expect(infl.length).toEqual(4);
+    expect(infl[0].description).toEqual('part 3 is 0.7');
+    expect(infl[1].description).toEqual('part 1b is 0.3');
+    expect(infl[2].description).toEqual('part 1a is 0.2');
+    expect(infl[3].description).toEqual('part 2 is 0.1');
+  });
+
   describe('weird explains', function() {
     // explains, from say a custom search that might
     // not line up to traditional looking explain stuff
@@ -59,4 +159,7 @@ describe('Service: explainSvc', function () {
     });
 
   });
+
+
+
 });

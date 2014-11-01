@@ -19,7 +19,7 @@
   },
   "scripts": {
     "test": "grunt karma:unit"
-  }
+  },
   "repository": "",
   "engines": {
     "node": "0.10.10"
