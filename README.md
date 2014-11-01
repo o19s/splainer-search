@@ -1,12 +1,16 @@
 # AngularJS Search Service
 
+Splainer Search is an Angular Solr Search library used in Solr relevancy tools [Quepid](http://quepid.com) and [Splainer](http://splainer.io). Its available for anyone to use (see [license](LICENSE.txt))
+
 [![Build Status](https://travis-ci.org/o19s/splainer-search.svg?branch=master)](https://travis-ci.org/o19s/splainer-search)
+
+Splainer Search calls out to Solr via JSONP, asking Solr by default to try to explain and highlight all passed in fields. A friendly interface is provided to specify the Solr args in terms of a Javascript object. See below for basic examples
 
 ## Basic usage
 
 Splainer-search will perform the specified search against Solr attempting to highlight and extract explain info.
 
-    // searcher that searches body, type
+    // searcher that searches id, title, body, author
     var searcher = solrSearchSvc.createSearcher(['id', 'title', 'body', 'author']',
                                                 'http://localhost:8983/solr/select',
                                                 {
@@ -17,7 +21,9 @@ Splainer-search will perform the specified search against Solr attempting to hig
     .then(function() {
        angular.forEach(searcher.docs, function(doc) {
           console.log(doc.source().title);
-          // highlights
+          // highlights. You need to pass id as that's how Solr
+          // organizes the explain. See below for a friendlier/higher-level
+          // interface with normalDocs
           console.log(doc.highlight(doc.source().id, 'title', '<b>', '</b>');
           // explain info
           console.log(doc.explain(doc.source().id);
