@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/o19s/splainer-search.svg?branch=master)](https://travis-ci.org/o19s/splainer-search)
 
+Splainer-search will perform the specified search against Solr attempting to highlight and extract explain info.
+
 ## Basic usage
 
     // searcher that searches body, type
