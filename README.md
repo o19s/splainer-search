@@ -63,7 +63,7 @@ searcher.search()
 .then(function() {
    var  bestScore = 0;
    angular.forEach(searcher.docs, function(doc) {
-        var normalDoc = normalDocSvc.createNormalDoc(doc);
+        var normalDoc = normalDocSvc.createNormalDoc(fs, doc);
         // access unique id and title
         // (above specified to be uuid and title)
         console.log("ID is:" + normalDoc.id);
