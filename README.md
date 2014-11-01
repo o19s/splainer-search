@@ -107,3 +107,9 @@ searcher.search()
 });
 
 ```
+
+### Thanks to...
+
+Development for this library is done primarilly by [OpenSource Connections](http://opensourceconnections.com) for search relevance tools [Splainer](http://splainer.io) and [Quepid](http://quepid.com)
+
+Primary author is [Doug Turnbull](http://softwaredoug.com)
