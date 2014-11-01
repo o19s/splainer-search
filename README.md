@@ -57,7 +57,7 @@ var searcher = solrSearchSvc.createSearcher(fs.fieldList(),
                                             'http://localhost:8983/solr/select',
                                             {
                                                'q': ['*:*'],
-                                               'fq': ['title:Moby*', 'author:Herman']
+                                               'fq': ['title:Moby*', 'authors:Herman']
                                              });
 searcher.search()
 .then(function() {
