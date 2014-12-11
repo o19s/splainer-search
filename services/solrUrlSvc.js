@@ -40,9 +40,9 @@ angular.module('o19s.splainer-search')
       var rVal = {};
       angular.forEach(vars, function(qVar) {
         var nameAndValue = qVar.split('=');
-        if (nameAndValue.length === 2) {
+        if (nameAndValue.length >= 2) {
           var name = nameAndValue[0];
-          var value = nameAndValue[1];
+          var value = nameAndValue.slice(1).join('=');
           var decodedValue = decodeURIComponent(value);
           if (!rVal.hasOwnProperty(name)) {
             rVal[name] = [decodedValue];

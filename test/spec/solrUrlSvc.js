@@ -71,6 +71,18 @@ describe('Service: solrUrlSvc', function () {
     expect(Object.keys(parsedSolrUrl.solrArgs)).toContain('group');
     expect(Object.keys(parsedSolrUrl.solrArgs)).toContain('group.main');
   });
+
+  it('parses local params', function() {
+    var urlStr = 'http://localhost:8983/solr/collection1/select?q={!term%20f=title}java';
+    var parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);
+    expect(parsedSolrUrl.solrArgs.q).toContain('{!term f=title}java');
+    expect(parsedSolrUrl.solrArgs.q.length).toBe(1);
+    
+    urlStr = 'http://localhost:8983/solr/collection1/select?q={!term%20f=title bf=\'\'}java';
+    parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);
+    expect(parsedSolrUrl.solrArgs.q).toContain('{!term f=title bf=\'\'}java');
+    expect(parsedSolrUrl.solrArgs.q.length).toBe(1);
+  });
   
   it('parses Renes Solr URL', function() {
     var urlStr = 'http://localhost:8080/la-solr/tt/select?q=*:*';
