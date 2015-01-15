@@ -93,6 +93,30 @@ describe('Service: solrUrlSvc', function () {
     expect(parsedSolrUrl.requestHandler).toEqual('select');
     expect(parsedSolrUrl.solrArgs.q).toContain('*:*');
   });
+
+  it('escapes user queries', function() {
+    var escaped = solrUrlSvc.escapeUserQuery('+-&!()[]{}^"~?:\\'); 
+    expect(escaped).toBe('\\+\\-\\&\\!\\(\\)\\[\\]\\{\\}\\^\\"\\~\\?\\:\\\\');
+  });
+
+  it('escapes boolean operators', function() {
+    var escaped = solrUrlSvc.escapeUserQuery('the best and or the worst'); 
+    expect(escaped).toBe('the best \\\\and \\\\or the worst');
+    escaped = solrUrlSvc.escapeUserQuery('the bestand orthe worst'); 
+    expect(escaped).toBe('the bestand orthe worst');
+    escaped = solrUrlSvc.escapeUserQuery('and the bestand orthe worst'); 
+    expect(escaped).toBe('\\\\and the bestand orthe worst');
+    escaped = solrUrlSvc.escapeUserQuery('or the bestand orthe worst'); 
+    expect(escaped).toBe('\\\\or the bestand orthe worst');
+    escaped = solrUrlSvc.escapeUserQuery('or the bestand orthe worst and'); 
+    expect(escaped).toBe('\\\\or the bestand orthe worst \\\\and');
+    escaped = solrUrlSvc.escapeUserQuery('or the bestand orthe worst or'); 
+    expect(escaped).toBe('\\\\or the bestand orthe worst \\\\or');
+    escaped = solrUrlSvc.escapeUserQuery('o+r the bestand orthe worst or'); 
+    expect(escaped).toBe('o\\+r the bestand orthe worst \\\\or');
+    escaped = solrUrlSvc.escapeUserQuery('and          or       '); 
+    expect(escaped).toBe('\\\\and          \\\\or       ');
+  });
   
   
   describe('solr args parse/format', function() {

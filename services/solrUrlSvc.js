@@ -114,7 +114,12 @@ angular.module('o19s.splainer-search')
       var escapeChars = ['+', '-', '&', '!', '(', ')', '[', ']',
                          '{', '}', '^', '"', '~', '*', '?', ':', '\\'];
       var regexp = new RegExp('(\\' + escapeChars.join('|\\') + ')', 'g');
-      return queryText.replace(regexp, '\\$1');
+      var symsRepl = queryText.replace(regexp, '\\$1');
+      var regexpAnd = new RegExp('(^|\\s+)(and)($|\\s+)', 'g');
+      var andRepl = symsRepl.replace(regexpAnd, '$1\\\\$2$3');
+      var regexOr = new RegExp('(^|\\s+)(or)($|\\s+)', 'g');
+      var orRepl = andRepl.replace(regexOr, '$1\\\\$2$3');
+      return orRepl;
     };
 
     /* This method is a bit tied to how the solrSearchSvc behaves, but 
