@@ -1,5 +1,5 @@
 'use strict';
-/* global urlContainsParams, urlMissingParams*/
+/* global urlContainsParams, urlMissingParams, mockExplainOther*/
 /*global describe,beforeEach,inject,it,expect*/
 describe('Service: solrSearchSvc', function () {
 
@@ -294,6 +294,10 @@ describe('Service: solrSearchSvc', function () {
             'http://larkin.com/index/':'\n1.0 = (MATCH) MatchAllDocsQuery, product of:\n  1.0 = queryNorm\n',
             'http://www.rogahnbins.com/main.html':'\n1.0 = (MATCH) MatchAllDucksQuery, product of:\n  1.0 = queryNorm\n'
           },
+          'explainOther': {
+            'http://snarkin.com/index/': mockExplainOther.l514,
+            'http://ploppers.com/main.html':mockExplainOther.l71
+          },
           'QParser':'LuceneQParser',
           'timing':{
             'time':1.0,
@@ -379,6 +383,25 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
+    it('populates others explained', function() {
+      createSearcherWithDebug();
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+                              .respond(200, fullSolrResp);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var othersExplained = searcher.othersExplained;
+        expect(Object.keys(othersExplained).length).toBe(2);
+        expect(othersExplained.hasOwnProperty('http://snarkin.com/index/')).toBeTruthy();
+        expect(othersExplained['http://snarkin.com/index/']).toEqual(mockExplainOther.l514);
+        expect(othersExplained.hasOwnProperty('http://ploppers.com/main.html')).toBeTruthy();
+        expect(othersExplained['http://ploppers.com/main.html']).toEqual(mockExplainOther.l71);
+      });
+      $httpBackend.flush();
+      expect(called).toBe(1);
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
     it('returns null on no explain', function() {
       createSearcherWithDebug();
       var copiedResp = angular.copy(fullSolrResp);
@@ -393,6 +416,7 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
     });
+
 
     it('doesnt request debug info when configured not to', function() {
       createSearcherDebugOff();
@@ -409,6 +433,7 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
   });
+
  
   // For tests where 'id' is not the id field 
   
