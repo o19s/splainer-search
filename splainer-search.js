@@ -631,9 +631,15 @@ angular.module('o19s.splainer-search')
       return doc;
     };
 
-    this.createNormalDoc = function(fieldSpec, solrDoc) {
+    this.createNormalDoc = function(fieldSpec, solrDoc, altExplainJson) {
       var nDoc = new NormalDoc(fieldSpec, solrDoc);
-      return this.snippetDoc(this.explainDoc(nDoc, solrDoc.explain(nDoc.id)));
+      var explJson;
+      if (altExplainJson) {
+        explJson = altExplainJson;
+      } else {
+        explJson = solrDoc.explain(nDoc.id);
+      }
+      return this.snippetDoc(this.explainDoc(nDoc, explJson));
     };
 
     // Decorate doc with an explain/field values/etc other
@@ -1148,6 +1154,7 @@ angular.module('o19s.splainer-search')
       this.grouped = {};
       this.numFound = 0;
       this.inError = false;
+      this.othersExplained = {};
 
       this.addDocToGroup = function(groupedBy, group, solrDoc) {
         if (!this.grouped.hasOwnProperty(groupedBy)) {
@@ -1195,11 +1202,11 @@ angular.module('o19s.splainer-search')
         this.inError = false;
         
         var promise = Promise.create(this.search);
-        var that = this;
+        var thisSearcher = this;
 
-        var getExplData = function(data) {
-          if (data.hasOwnProperty('debug')) {
-            var dbg = data.debug;
+        var getExplData = function(solrResp) {
+          if (solrResp.hasOwnProperty('debug')) {
+            var dbg = solrResp.debug;
             if (dbg.hasOwnProperty('explain')) {
               return dbg.explain;
             }
@@ -1207,18 +1214,28 @@ angular.module('o19s.splainer-search')
           return {};
         };
 
-        var getHlData = function(data) {
-          if (data.hasOwnProperty('highlighting')) {
-            return data.highlighting;
+        var getOthersExplained = function(solrResp) {
+          if (solrResp.hasOwnProperty('debug')) {
+            var dbg = solrResp.debug;
+            if (dbg.hasOwnProperty('explainOther')) {
+              return dbg.explainOther;
+            }
+          }
+        };
+
+        var getHlData = function(solrResp) {
+          if (solrResp.hasOwnProperty('highlighting')) {
+            return solrResp.highlighting;
           }
           return {};
         };
 
         activeQueries++;
-        $http.jsonp(url).success(function(data) {
+        $http.jsonp(url).success(function(solrResp) {
           activeQueries--;
-          var explDict = getExplData(data);
-          var hlDict = getHlData(data);
+          var explDict = getExplData(solrResp);
+          var hlDict = getHlData(solrResp);
+          thisSearcher.othersExplained = getOthersExplained(solrResp);
          
           var parseSolrDoc = function(solrDoc, groupedBy, group) {
             // annotate the doc with several methods
@@ -1279,21 +1296,21 @@ angular.module('o19s.splainer-search')
           };
 
 
-          if (data.hasOwnProperty('response')) {
-            angular.forEach(data.response.docs, function(solrDoc) {
+          if (solrResp.hasOwnProperty('response')) {
+            angular.forEach(solrResp.response.docs, function(solrDoc) {
               parseSolrDoc(solrDoc); 
-              that.numFound = data.response.numFound;
-              that.docs.push(solrDoc);
+              thisSearcher.numFound = solrResp.response.numFound;
+              thisSearcher.docs.push(solrDoc);
             });
-          } else if (data.hasOwnProperty('grouped')) {
-            angular.forEach(data.grouped, function(groupedBy, groupedByName) {
-              that.numFound = groupedBy.matches;
+          } else if (solrResp.hasOwnProperty('grouped')) {
+            angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
+              thisSearcher.numFound = groupedBy.matches;
               angular.forEach(groupedBy.groups, function(groupResp) {
                 var groupValue = groupResp.groupValue;
                 angular.forEach(groupResp.doclist.docs, function(solrDoc) {
                   parseSolrDoc(solrDoc, groupedByName, groupValue);
-                  that.docs.push(solrDoc);
-                  that.addDocToGroup(groupedByName, groupValue, solrDoc);
+                  thisSearcher.docs.push(solrDoc);
+                  thisSearcher.addDocToGroup(groupedByName, groupValue, solrDoc);
                 });
               });
             });
@@ -1302,7 +1319,7 @@ angular.module('o19s.splainer-search')
           promise.complete();
         }).error(function() {
           activeQueries--;
-          that.inError = true;
+          thisSearcher.inError = true;
           promise.complete();
         });
         return promise;

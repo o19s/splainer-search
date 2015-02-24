@@ -153,9 +153,15 @@ angular.module('o19s.splainer-search')
       return doc;
     };
 
-    this.createNormalDoc = function(fieldSpec, solrDoc) {
+    this.createNormalDoc = function(fieldSpec, solrDoc, altExplainJson) {
       var nDoc = new NormalDoc(fieldSpec, solrDoc);
-      return this.snippetDoc(this.explainDoc(nDoc, solrDoc.explain(nDoc.id)));
+      var explJson;
+      if (altExplainJson) {
+        explJson = altExplainJson;
+      } else {
+        explJson = solrDoc.explain(nDoc.id);
+      }
+      return this.snippetDoc(this.explainDoc(nDoc, explJson));
     };
 
     // Decorate doc with an explain/field values/etc other

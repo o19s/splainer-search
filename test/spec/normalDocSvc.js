@@ -219,6 +219,18 @@ describe('Service: normalDocsSvc', function () {
       expect(explBefore).toEqual(normalDoc.explain());
     });
 
+    it('uses alt explain if available', function() {
+      var fieldSpec = {id: 'id_field', title: 'title_field'};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDocNoExpl, basicExplain2);
+      var hmOutOf = normalDoc.hotMatchesOutOf(1.0);
+      expect(hmOutOf.length).toBe(1);
+      expect(hmOutOf[0].description).toContain('order');
+      expect(hmOutOf[0].percentage).toBe(50.0);
+      
+      var expl = normalDoc.explain();
+      expect(expl.explanation()).toContain('order');
+    });
+
     it('gets score', function() {
       var fieldSpec = {id: 'id_field', title: 'title_field'};
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
