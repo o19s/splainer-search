@@ -244,10 +244,15 @@ describe('Service: normalDocsSvc', function () {
     it('backs up to looking up with field id when custom id field not present', function() {
       var fieldSpec = {id: 'custom_id_field', title: 'title_field'};
       var idVals = [];
+      var sumExplain = solrDoc.explain();
+      solrDoc.id = 'solrs_actual_id';
       solrDoc.explain = function(idVal) {
         idVals.push(idVal);
+        if (idVal === 'solrs_actual_id') {
+          return sumExplain;
+        }
+        return null;
       }; 
-      solrDoc.id = '1234';
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
       expect(idVals.length).toBe(2); // 2 lookups
       expect(idVals[0]).toEqual(solrDoc.source().custom_id_field);
