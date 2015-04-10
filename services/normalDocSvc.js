@@ -153,13 +153,23 @@ angular.module('o19s.splainer-search')
       return doc;
     };
 
+    var getSolrDocExplain = function(solrDoc, nDoc) {
+      var explJson = solrDoc.explain(nDoc.id);
+      if (explJson === null) {
+        if (solrDoc.source().hasOwnProperty('id')) {
+          return solrDoc.explain(solrDoc.source().id);
+        }
+      }
+      return explJson; 
+    };
+
     this.createNormalDoc = function(fieldSpec, solrDoc, altExplainJson) {
       var nDoc = new NormalDoc(fieldSpec, solrDoc);
       var explJson;
       if (altExplainJson) {
         explJson = altExplainJson;
       } else {
-        explJson = solrDoc.explain(nDoc.id);
+        explJson = getSolrDocExplain(solrDoc, nDoc);
       }
       return this.snippetDoc(this.explainDoc(nDoc, explJson));
     };
