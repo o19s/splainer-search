@@ -635,10 +635,7 @@ angular.module('o19s.splainer-search')
       var explJson = solrDoc.explain(nDoc.id);
       if (explJson === null) {
         if (solrDoc.source().hasOwnProperty('id')) {
-          console.log('for id');
           return solrDoc.explain(solrDoc.source().id);
-        } else {
-          console.log('no id');
         }
       }
       return explJson; 
