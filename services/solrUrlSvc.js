@@ -74,11 +74,22 @@ angular.module('o19s.splainer-search')
       return null;
     };
 
+    /* private method fixURLProtocol
+     * add 'http://' to the begining of the url if no protocol was
+     * specified
+     * */
+    var protocolRegex = /^https{0,1}\:/;
+    function fixURLProtocol(url) {
+      if (!protocolRegex.test(url)) {
+        url = 'http://' + url;
+      }
+      return url;
+    }
     /* Parse a Sor URL of the form [http|https]://[host]/solr/[collectionName]/[requestHandler]?[args]
      * return null on failure to parse
      * */
     this.parseSolrUrl = function(solrReq) {
-
+      solrReq = fixURLProtocol(solrReq);
       var parseUrl = function(url) {
         // this is the crazy way you parse URLs in JS who am I to question the wisdom
         var a = document.createElement('a');
