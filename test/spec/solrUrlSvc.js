@@ -57,6 +57,17 @@ describe('Service: solrUrlSvc', function () {
     expect(parsedSolrUrl.solrArgs.q).toContain('*:*');
   });
   
+  it('adds a missing protocol to solr url', function() {
+    var urlStr = 'localhost:8983/solr/collection1/select?q=*:*';
+
+    var parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);
+    expect(parsedSolrUrl.protocol).toEqual('http:');
+    expect(parsedSolrUrl.host).toEqual('localhost:8983');
+    expect(parsedSolrUrl.collectionName).toEqual('collection1');
+    expect(parsedSolrUrl.requestHandler).toEqual('select');
+    expect(parsedSolrUrl.solrArgs.q).toContain('*:*');
+  });
+
   it('doesnt warn on group arguments', function() {
     var urlStr = 'http://localhost:8983/solr/collection1/select?group=true&group.main=true&group.field=text&q=*:*';
     var parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);

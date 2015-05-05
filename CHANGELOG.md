@@ -1,9 +1,6 @@
 Version numbers correspond to `bower.json` version
-
-# 1.0.0
-
-## Features
+# 0.1.10
 
 ## Bug Fixes
 
-## Breaking Changes
+- Support for Solr URL's without a protocol
