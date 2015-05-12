@@ -3,7 +3,19 @@
 angular.module('o19s.splainer-search')
   .service('solrUrlSvc', function solrUrlSvc() {
 
+    /* private method fixURLProtocol
+     * add 'http://' to the begining of the url if no protocol was
+     * specified
+     * */
+    var protocolRegex = /^https{0,1}\:/;
+    function fixURLProtocol(url) {
+      if (!protocolRegex.test(url)) {
+        url = 'http://' + url;
+      }
+      return url;
+    }
     this.buildUrl = function(url, urlArgs) {
+      url = fixURLProtocol(url);
       var baseUrl = url + '?';
       baseUrl += this.formatSolrArgs(urlArgs);
       return baseUrl;
@@ -74,17 +86,6 @@ angular.module('o19s.splainer-search')
       return null;
     };
 
-    /* private method fixURLProtocol
-     * add 'http://' to the begining of the url if no protocol was
-     * specified
-     * */
-    var protocolRegex = /^https{0,1}\:/;
-    function fixURLProtocol(url) {
-      if (!protocolRegex.test(url)) {
-        url = 'http://' + url;
-      }
-      return url;
-    }
     /* Parse a Sor URL of the form [http|https]://[host]/solr/[collectionName]/[requestHandler]?[args]
      * return null on failure to parse
      * */
