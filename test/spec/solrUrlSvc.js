@@ -67,6 +67,10 @@ describe('Service: solrUrlSvc', function () {
     expect(parsedSolrUrl.requestHandler).toEqual('select');
     expect(parsedSolrUrl.solrArgs.q).toContain('*:*');
   });
+  it('adds a missing protocol when building asolr url', function() {
+    var url = solrUrlSvc.buildUrl('www.example.com', {a: 'b', c: 'd'});
+    expect(url).toEqual('http://www.example.com?a=b&c=d');
+  });
 
   it('doesnt warn on group arguments', function() {
     var urlStr = 'http://localhost:8983/solr/collection1/select?group=true&group.main=true&group.field=text&q=*:*';
