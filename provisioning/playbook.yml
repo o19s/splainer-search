@@ -1,0 +1,75 @@
+---
+- hosts: all
+  user: vagrant
+  vars:
+    phantom_js_file: phantomjs-1.9.8-linux-x86_64
+    phantom_js_ext: .tar.bz2
+    phantom_js_md5: 4ea7aa79e45fbc487a63ef4788a18ef7
+    phantom_js_sha256: a1d9628118e270f26c4ddd1d7f3502a93b48ede334b8585d11c1c3ae7bc7163a
+
+  tasks:
+    - name : Update APT package cache
+      command: apt-get update
+      sudo: yes
+
+    - name: Install python-apt  (Required by ANSIBLE)
+      command: apt-get -y install python-apt
+      sudo: yes
+
+    - name: Remove Apache2
+      apt: name={{ item }} state=absent purge=yes force=yes
+      with_items:
+        - apache2
+        - apache2-utils
+      sudo: yes
+
+    - name: Install packages
+      apt: name={{ item }} state=installed update_cache=yes cache_valid_time=3600
+      with_items:
+        - git-core
+        - postfix
+        - mailutils
+        - vim
+        - nginx
+        - curl
+        - nodejs
+        - npm
+        - build-essential
+        - redis-server
+        - libqt4-dev
+        - libqtwebkit-dev
+        - imagemagick
+        - qt4-dev-tools
+        - libqt4-dev
+        - libqt4-core
+        - libqt4-gui
+        - python-dev
+        - python-virtualenv
+        - libmysqlclient-dev
+        - nodejs-legacy
+      sudo: yes
+
+    # Install PhantomJS
+    - stat: path=/usr/local/bin/{{ phantom_js_file }}/bin/phantomjs
+      register: phantomjs_exists
+
+    - include: setup_phantom_js.yml
+      when: phantomjs_exists|failed
+
+    # Install specified node requirements.
+    - name: Install global node packages
+      npm: name={{ item }} global=yes
+      with_items:
+        - grunt-cli
+        - bower
+      sudo: yes
+
+    - file: path=~/provision/node state=directory
+      sudo: no
+
+    - copy: src=./node/dependencies.sh dest=~/provision/node/dependencies.sh mode=775
+      sudo: no
+
+    - name: Installing Node dependencies
+      shell: /usr/bin/env bash ~/provision/node/dependencies.sh
+      sudo: no

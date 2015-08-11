@@ -19,3 +19,6 @@ bower_components
 
 #vim
 *.swp
+
+# Vagrant
+.vagrant
