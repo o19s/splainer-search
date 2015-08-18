@@ -55,7 +55,7 @@ module.exports = function(grunt) {
 						ignores: ['**.min.js']
 					},
 					files: {
-						src: ['services/*.js']
+						src: ['services/*.js', 'factories/*.js']
 					}
 				},
 				//quick version - will not fail entire grunt process if there are lint errors
@@ -65,13 +65,13 @@ module.exports = function(grunt) {
 						ignores: ['**.min.js']
 					},
 					files: {
-						src: ['module.js, services/*.js']
+						src: ['module.js, services/*.js', 'factories/*.js']
 					}
 				}
 			},
       concat: {
         dist: {
-					src:    ['module.js', 'services/*.js'],
+					src:    ['module.js', 'services/*.js', 'factories/*.js'],
 					dest:   'splainer-search.js'
         }
       },
@@ -81,7 +81,7 @@ module.exports = function(grunt) {
 				},
 				build: {
 					files:  {},
-					src:    ['module.js', 'services/*.js'],
+					src:    ['module.js', 'services/*.js', 'factories/*.js'],
 					dest:   'splainer-search.min.js'
 				}
 			},
@@ -94,19 +94,19 @@ module.exports = function(grunt) {
 				debug: {
 					configFile: 'karma.debug.conf.js',
 					singleRun: false,
-          autoWatch: true          
+          autoWatch: true
 				}
 			}
 		});
-		
-		
+
+
 		/**
 		register/define grunt tasks
 		@toc 6.
 		*/
 		// Default task(s).
 		grunt.registerTask('default', ['jshint:beforeconcatQ', 'karma:unit', 'concat:dist']);
-	
+
 	}
 	init({});		//initialize here for defaults (init may be called again later within a task)
 

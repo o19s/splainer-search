@@ -2,7 +2,7 @@
 
 /*global describe,beforeEach,inject,it,expect*/
 describe('Service: elasticSearchSvc', function() {
-  
+
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
@@ -20,11 +20,10 @@ describe('Service: elasticSearchSvc', function() {
     }
   };
 
-
   beforeEach(inject(function($injector) {
     $httpBackend = $injector.get('$httpBackend');
   }));
-  
+
   beforeEach(inject(function (_esSearchSvc_, _fieldSpecSvc_) {
     esSearchSvc = _esSearchSvc_;
     fieldSpecSvc = _fieldSpecSvc_;
@@ -71,7 +70,7 @@ describe('Service: elasticSearchSvc', function() {
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
   });
-  
+
   it('returns docs (they should look just like solrDocs)', function() {
     var searcher = esSearchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
                                               mockEsParams, mockQueryText);
@@ -114,7 +113,7 @@ describe('Service: elasticSearchSvc', function() {
       description: 'sum of',
       details: [basicExplain1, basicExplain2]
     };
-    
+
     it('asks for explain', function() {
       var searcher = esSearchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
                                                 mockEsParams, mockQueryText);

@@ -3,19 +3,19 @@
 // Executes a solr search and returns
 // a set of solr documents
 angular.module('o19s.splainer-search')
-  .service('solrSearchSvc', function solrSearchSvc($http, solrUrlSvc) {
+  .service('solrSearchSvc', function solrSearchSvc($http, solrUrlSvc, DocFactory) {
 
 
     // PRE and POST strings, can't just use HTML
-    // because Solr doesn't appear to support escaping 
-    // XML/HTML tags in the content. So we do this stupid thing 
+    // because Solr doesn't appear to support escaping
+    // XML/HTML tags in the content. So we do this stupid thing
     this.HIGHLIGHTING_PRE = 'aouaoeuCRAZY_STRING!8_______';
     this.HIGHLIGHTING_POST = '62362iueaiCRAZY_POST_STRING!_______';
     var svc = this;
 
     var activeQueries = 0;
 
-    // a URL to access a the specified docId 
+    // a URL to access a the specified docId
     var buildTokensUrl = function(fieldList, solrUrl, idField, docId) {
       var escId = encodeURIComponent(solrUrlSvc.escapeUserQuery(docId));
       var tokensArgs = {
@@ -54,7 +54,7 @@ angular.module('o19s.splainer-search')
       baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
       return baseUrl;
     };
-    
+
     var withoutUnsupported = function(argsToUse, dontSanitize) {
       var argsRemoved = angular.copy(argsToUse);
       if (dontSanitize !== true) {
@@ -132,7 +132,7 @@ angular.module('o19s.splainer-search')
       this.search = function() {
         var url = this.callUrl + '&json.wrf=JSON_CALLBACK';
         this.inError = false;
-        
+
         var promise = Promise.create(this.search);
         var thisSearcher = this;
 
@@ -168,71 +168,28 @@ angular.module('o19s.splainer-search')
           var explDict = getExplData(solrResp);
           var hlDict = getHlData(solrResp);
           thisSearcher.othersExplained = getOthersExplained(solrResp);
-         
+
           var parseSolrDoc = function(solrDoc, groupedBy, group) {
-            // annotate the doc with several methods
-            var source = angular.copy(solrDoc);
-            if (groupedBy === undefined) {
-              groupedBy = null;
-            }
-            if (group === undefined) {
-              group = null;
-            }
-
-            solrDoc.groupedBy = function() {
-              return groupedBy;
+            var options = {
+              groupedBy:          groupedBy,
+              group:              group,
+              fieldList:          fieldList,
+              url:                solrUrl,
+              explDict:           explDict,
+              hlDict:             hlDict,
+              highlightingPre:    svc.HIGHLIGHTING_PRE,
+              highlightingPost:   svc.HIGHLIGHTING_POST
             };
 
-            solrDoc.group = function() {
-              return group;
-            };
-
-            solrDoc.source = function() {
-              return source;
-            };
-
-            solrDoc.url = function(idField, docId) {
-              return buildTokensUrl(fieldList, solrUrl, idField, docId);
-            };
-            solrDoc.explain = function(docId) {
-              if (explDict.hasOwnProperty(docId)) {
-                return explDict[docId];
-              } else {
-                return null;
-              }
-            };
-
-            solrDoc.snippet = function(docId, fieldName) {
-              if (hlDict.hasOwnProperty(docId)) {
-                var docHls = hlDict[docId];
-                if (docHls.hasOwnProperty(fieldName)) {
-                  return docHls[fieldName];
-                }
-              }
-              return null;
-            };
-
-            solrDoc.highlight = function(docId, fieldName, preText, postText) {
-              var fieldValue = this.snippet(docId, fieldName);
-              if (fieldValue) {
-                var esc = escapeHtml(fieldValue);
-                
-                var preRegex = new RegExp(svc.HIGHLIGHTING_PRE, 'g');
-                var hlPre = esc.replace(preRegex, preText);
-                var postRegex = new RegExp(svc.HIGHLIGHTING_POST, 'g');
-                return hlPre.replace(postRegex, postText);
-              } else {
-                return null;
-              }
-            };
+            return new DocFactory(solrDoc, options);
           };
 
 
           if (solrResp.hasOwnProperty('response')) {
             angular.forEach(solrResp.response.docs, function(solrDoc) {
-              parseSolrDoc(solrDoc); 
+              var doc = parseSolrDoc(solrDoc);
               thisSearcher.numFound = solrResp.response.numFound;
-              thisSearcher.docs.push(solrDoc);
+              thisSearcher.docs.push(doc);
             });
           } else if (solrResp.hasOwnProperty('grouped')) {
             angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
@@ -240,14 +197,14 @@ angular.module('o19s.splainer-search')
               angular.forEach(groupedBy.groups, function(groupResp) {
                 var groupValue = groupResp.groupValue;
                 angular.forEach(groupResp.doclist.docs, function(solrDoc) {
-                  parseSolrDoc(solrDoc, groupedByName, groupValue);
-                  thisSearcher.docs.push(solrDoc);
-                  thisSearcher.addDocToGroup(groupedByName, groupValue, solrDoc);
+                  var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
+                  thisSearcher.docs.push(doc);
+                  thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
                 });
               });
             });
           }
-          
+
           promise.complete();
         }).error(function() {
           activeQueries--;
@@ -271,7 +228,7 @@ angular.module('o19s.splainer-search')
     this.activeQueries = function() {
       return activeQueries;
     };
-   
+
     var entityMap = {
       '&': '&amp;',
       '<': '&lt;',
