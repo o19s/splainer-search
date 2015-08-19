@@ -24,8 +24,8 @@ angular.module('o19s.splainer-search')
     this.createSearcherFromSettings = function(settings, queryText, searchEngine) {
       return this.createSearcher(
         settings.createFieldSpec().fieldList(),
-        settings.solrUrl,
-        settings.selectedTry.solrArgs,
+        settings.url,
+        settings.selectedTry.args,
         queryText,
         searchEngine
       );

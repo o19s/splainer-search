@@ -919,8 +919,8 @@ angular.module('o19s.splainer-search')
     this.createSearcherFromSettings = function(settings, queryText, searchEngine) {
       return this.createSearcher(
         settings.createFieldSpec().fieldList(),
-        settings.solrUrl,
-        settings.selectedTry.solrArgs,
+        settings.url,
+        settings.selectedTry.args,
         queryText,
         searchEngine
       );
@@ -1758,7 +1758,7 @@ angular.module('o19s.splainer-search')
     };
 
     // a URL to access a the specified docId
-    var buildTokensUrl = function(fieldList, solrUrl, idField, docId) {
+    var buildTokensUrl = function(fieldList, url, idField, docId) {
       var escId = encodeURIComponent(solrUrlSvc.escapeUserQuery(docId));
 
       var tokensArgs = {
@@ -1777,7 +1777,7 @@ angular.module('o19s.splainer-search')
           }
         });
       }
-      return solrUrlSvc.buildUrl(solrUrl, tokensArgs) + '&q=' + idField + ':'  + escId;
+      return solrUrlSvc.buildUrl(url, tokensArgs) + '&q=' + idField + ':'  + escId;
     };
 
     function url (idField, docId) {

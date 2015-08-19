@@ -40,7 +40,7 @@
     };
 
     // a URL to access a the specified docId
-    var buildTokensUrl = function(fieldList, solrUrl, idField, docId) {
+    var buildTokensUrl = function(fieldList, url, idField, docId) {
       var escId = encodeURIComponent(solrUrlSvc.escapeUserQuery(docId));
 
       var tokensArgs = {
@@ -59,7 +59,7 @@
           }
         });
       }
-      return solrUrlSvc.buildUrl(solrUrl, tokensArgs) + '&q=' + idField + ':'  + escId;
+      return solrUrlSvc.buildUrl(url, tokensArgs) + '&q=' + idField + ':'  + escId;
     };
 
     function url (idField, docId) {
