@@ -11,7 +11,7 @@ Splainer Search calls out to Solr via JSONP, asking Solr by default to try to ex
 Splainer-search will perform the specified search against Solr attempting to highlight and extract explain info.
 
     // searcher that searches id, title, body, author
-    var searcher = solrSearchSvc.createSearcher(['id', 'title', 'body', 'author']',
+    var searcher = searchSvc.createSearcher(['id', 'title', 'body', 'author']',
                                                 'http://localhost:8983/solr/select',
                                                 {
                                                    'q': ['*:*'],
@@ -65,7 +65,7 @@ The normalDoc provides a friendlier, more standard interface. This includes frie
 ```
 var userFieldSpec = "id:uuid, title, body, authors"
 var fs = fieldSpecSvc.createFieldSpec(userFieldSpec)
-var searcher = solrSearchSvc.createSearcher(fs.fieldList(),
+var searcher = searchSvc.createSearcher(fs.fieldList(),
                                             'http://localhost:8983/solr/select',
                                             {
                                                'q': ['*:*'],

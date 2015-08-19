@@ -1,12 +1,12 @@
 'use strict';
 
 /*global describe,beforeEach,inject,it,expect*/
-describe('Service: elasticSearchSvc', function() {
+describe('Service: searchSvc: ElasticSearch', function() {
 
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
-  var esSearchSvc = null;
+  var searchSvc = null;
   var $httpBackend = null;
   var fieldSpecSvc = null;
   var mockEsUrl = 'http://localhost:9200/statedecoded/_search';
@@ -24,9 +24,9 @@ describe('Service: elasticSearchSvc', function() {
     $httpBackend = $injector.get('$httpBackend');
   }));
 
-  beforeEach(inject(function (_esSearchSvc_, _fieldSpecSvc_) {
-    esSearchSvc = _esSearchSvc_;
-    fieldSpecSvc = _fieldSpecSvc_;
+  beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_) {
+    searchSvc     = _searchSvc_;
+    fieldSpecSvc  = _fieldSpecSvc_;
     mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1');
   }));
 
@@ -59,8 +59,8 @@ describe('Service: elasticSearchSvc', function() {
   };
 
   it('accesses es with mock es params', function() {
-    var searcher = esSearchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
-                                              mockEsParams, mockQueryText);
+    var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
+                                              mockEsParams, mockQueryText, {}, 'es');
     $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
       var esQuery = angular.fromJson(data);
       return (esQuery.query.term.text === mockQueryText);
@@ -72,8 +72,8 @@ describe('Service: elasticSearchSvc', function() {
   });
 
   it('returns docs (they should look just like solrDocs)', function() {
-    var searcher = esSearchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
-                                              mockEsParams, mockQueryText);
+    var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
+                                              mockEsParams, mockQueryText, {}, 'es');
     $httpBackend.expectPOST(mockEsUrl).
     respond(200, mockResults);
     var called = 0;
@@ -115,8 +115,8 @@ describe('Service: elasticSearchSvc', function() {
     };
 
     it('asks for explain', function() {
-      var searcher = esSearchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
-                                                mockEsParams, mockQueryText);
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
+                                                mockEsParams, mockQueryText, {}, 'es');
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
         var esQuery = angular.fromJson(data);
         return (esQuery.hasOwnProperty('explain') && esQuery.explain === true);
@@ -128,8 +128,8 @@ describe('Service: elasticSearchSvc', function() {
     });
 
     it('it populates explain', function() {
-      var searcher = esSearchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
-                                                mockEsParams, mockQueryText);
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
+                                                mockEsParams, mockQueryText, {}, 'es');
       var mockResultsWithExpl = angular.copy(mockResults);
       mockResultsWithExpl.hits.hits[0]._explanation = sumExplain;
       var called = 0;

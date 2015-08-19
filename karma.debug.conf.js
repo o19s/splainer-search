@@ -23,6 +23,7 @@ module.exports = function(config) {
       'module.js',
       'services/**/*.js',
       'factories/**/*.js',
+      'values/**/*.js',
       'test/mock/**/*.js',
       'test/spec/**/*.js'
     ],

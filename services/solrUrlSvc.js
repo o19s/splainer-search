@@ -20,7 +20,7 @@ angular.module('o19s.splainer-search')
       baseUrl += this.formatSolrArgs(urlArgs);
       return baseUrl;
     };
-   
+
     /* Given arguments of the form {q: ['*:*'], fq: ['title:foo', 'text:bar']}
      * turn into string suitable for URL query param q=*:*&fq=title:foo&fq=text:bar
      *
@@ -65,9 +65,9 @@ angular.module('o19s.splainer-search')
       });
       return rVal;
     };
-    
+
     /* Parse a Solr URL of the form [/]solr/[collectionName]/[requestHandler]
-     * return object with {collectionName: <collectionName>, requestHandler: <requestHandler>} 
+     * return object with {collectionName: <collectionName>, requestHandler: <requestHandler>}
      * return null on failure to parse as above solr url
      * */
     this.parseSolrPath = function(pathStr) {
@@ -115,13 +115,13 @@ angular.module('o19s.splainer-search')
       return parsedUrl;
 
     };
-    
-    /*optionally escape user query text, ie 
-     * q=punctuation:: clearly can't search for the 
+
+    /*optionally escape user query text, ie
+     * q=punctuation:: clearly can't search for the
      * term ":" (colon) because colon has meaning in the query syntax
      * so instead, you've got to search for
-     * q=punctuation:\: 
-     * */ 
+     * q=punctuation:\:
+     * */
     this.escapeUserQuery = function(queryText) {
       var escapeChars = ['+', '-', '&', '!', '(', ')', '[', ']',
                          '{', '}', '^', '"', '~', '*', '?', ':', '\\'];
@@ -134,12 +134,12 @@ angular.module('o19s.splainer-search')
       return orRepl;
     };
 
-    /* This method is a bit tied to how the solrSearchSvc behaves, but 
+    /* This method is a bit tied to how the searchSvc behaves, but
      * as this module is probably what you're using to chop up a user's SolrURL
      * its placed here
-     * 
-     * It strips arguments out that are not supported by solrSearchSvc and
-     * generally interfere with its operation (ie fl, rows, etc). solrSearchSvc
+     *
+     * It strips arguments out that are not supported by searchSvc and
+     * generally interfere with its operation (ie fl, rows, etc). searchSvc
      * removes these itself, but this is placed here for convenience to remove
      * from user input (ie an fl may confuse the user when fl is actually supplied
      * elsewhere)
@@ -152,7 +152,7 @@ angular.module('o19s.splainer-search')
             delete solrArgs[arg];
           }
         };
-        
+
         var deleteThenWarnPrefix = function(argPrefix, warning) {
           var argsCpy = angular.copy(solrArgs);
           angular.forEach(argsCpy, function(value, key) {
@@ -161,8 +161,8 @@ angular.module('o19s.splainer-search')
             }
           });
         };
-       
-        // Stuff I think we can safely remove without warning the user 
+
+        // Stuff I think we can safely remove without warning the user
         delete solrArgs['json.wrf'];
         delete solrArgs.facet;
         delete solrArgs['facet.field'];

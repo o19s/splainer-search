@@ -55,7 +55,7 @@ module.exports = function(grunt) {
 						ignores: ['**.min.js']
 					},
 					files: {
-						src: ['services/*.js', 'factories/*.js']
+						src: ['services/*.js', 'factories/*.js', 'values/*.js']
 					}
 				},
 				//quick version - will not fail entire grunt process if there are lint errors
@@ -65,13 +65,13 @@ module.exports = function(grunt) {
 						ignores: ['**.min.js']
 					},
 					files: {
-						src: ['module.js, services/*.js', 'factories/*.js']
+						src: ['module.js, services/*.js', 'factories/*.js', 'values/*.js']
 					}
 				}
 			},
       concat: {
         dist: {
-					src:    ['module.js', 'services/*.js', 'factories/*.js'],
+					src:    ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js'],
 					dest:   'splainer-search.js'
         }
       },
@@ -81,7 +81,7 @@ module.exports = function(grunt) {
 				},
 				build: {
 					files:  {},
-					src:    ['module.js', 'services/*.js', 'factories/*.js'],
+					src:    ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js'],
 					dest:   'splainer-search.min.js'
 				}
 			},
