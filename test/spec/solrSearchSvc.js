@@ -28,18 +28,18 @@ describe('Service: solrSearchSvc', function () {
       ]
     }
   };
-  
-  
+
+
   beforeEach(inject(function($injector) {
     $httpBackend = $injector.get('$httpBackend');
   }));
-  
+
   beforeEach(inject(function (_solrSearchSvc_, _fieldSpecSvc_) {
     solrSearchSvc = _solrSearchSvc_;
     fieldSpecSvc = _fieldSpecSvc_;
     mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1');
   }));
-  
+
   it('access solr with mock solr params', function() {
     var searcher = solrSearchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
@@ -94,7 +94,7 @@ describe('Service: solrSearchSvc', function () {
 
     // optional highlighting part
     var highlighting = null;
-    
+
     var searcher = null;
 
     var createSearcherHlOn = function() {
@@ -133,7 +133,7 @@ describe('Service: solrSearchSvc', function () {
                           'hl.fl': ['path content']};
     });
 
-    
+
     it('asks for highlights', function() {
       createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
@@ -150,7 +150,7 @@ describe('Service: solrSearchSvc', function () {
       expect(called).toBe(1);
 
     });
-    
+
     it('gets highlight snippet field values if returned', function() {
       createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
@@ -166,7 +166,7 @@ describe('Service: solrSearchSvc', function () {
         var expectedHl = highlighting[docId].contentHlBold;
         expect(solrDocs[0].snippet(docId, 'content')).toEqual(expectedSnip);
         expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
-        
+
         docId = fullSolrResp.response.docs[1].path;
         expectedSnip = highlighting[docId].content;
         expectedHl = highlighting[docId].contentHlBold;
@@ -177,7 +177,7 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
     });
-    
+
     it('gets null if no highlights for field', function() {
       createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
@@ -203,7 +203,7 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
     });
-    
+
     it('gets null if no highlights', function() {
       createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
@@ -214,7 +214,7 @@ describe('Service: solrSearchSvc', function () {
         called++;
         var solrDocs = searcher.docs;
         var docId = fullSolrResp.response.docs[0].path;
-        var expectedSnip = null; 
+        var expectedSnip = null;
         var expectedHl = null;
         expect(solrDocs[0].snippet(docId, 'content')).toEqual(expectedSnip);
         expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
@@ -239,7 +239,7 @@ describe('Service: solrSearchSvc', function () {
         called++;
         var solrDocs = searcher.docs;
         var docId = fullSolrResp.response.docs[0].path;
-        var expectedSnip = null; 
+        var expectedSnip = null;
         var expectedHl = null;
         expect(solrDocs[0].snippet(docId, 'content')).toEqual(expectedSnip);
         expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
@@ -253,7 +253,7 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
     });
-    
+
   });
 
   describe('explain info ', function() {
@@ -354,13 +354,13 @@ describe('Service: solrSearchSvc', function () {
       expectedDebugParams = {'debug': ['true'],
                              'debug.explain.structured': ['true']};
     });
-    
+
     var createSearcherWithDebug = function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
       searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     };
-    
+
     var createSearcherDebugOff = function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
       var noHlConfig = solrSearchSvc.configFromDefault();
@@ -434,9 +434,9 @@ describe('Service: solrSearchSvc', function () {
     });
   });
 
- 
-  // For tests where 'id' is not the id field 
-  
+
+  // For tests where 'id' is not the id field
+
   describe('alt id field tests', function() {
     var mockResultsAltId = {
       response: {
@@ -454,7 +454,7 @@ describe('Service: solrSearchSvc', function () {
       searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     });
-    
+
     it('works with an alternate id field', function() {
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResultsAltId);
@@ -471,7 +471,7 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
     });
-    
+
     it('creates docs that can construct tokens URL', function() {
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResultsAltId);
@@ -483,14 +483,14 @@ describe('Service: solrSearchSvc', function () {
         // sanity check on these docs
         angular.forEach(solrDocs, function(queryDoc) {
           var generatedUrl = queryDoc.url('altId', queryDoc.altId);
-          expect(generatedUrl.indexOf('q=altId:' + queryDoc.altId)).toNotBe(-1);
+          expect(generatedUrl.indexOf('q=altId:' + queryDoc.altId)).not.toBe(-1);
         });
       });
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
 
     });
-  
+
     it('escapes percents in the query', function() {
       var mockSolrParamsWithMm = angular.copy(mockSolrParams);
       mockSolrParamsWithMm.mm = ['100%'];
@@ -505,17 +505,17 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.verifyNoOutstandingExpectation();
 
     });
-    
+
 
   });
 
-  
+
   it('encodes the url characters', function() {
     var s = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
     var e = '%20!%22%23%24%25%26\'()*%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~';
     expect(e).toEqual(encodeURIComponent(s));
   });
- 
+
   it('makes querydocs with tokensUrl', function() {
     var searcher = solrSearchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
@@ -545,13 +545,13 @@ describe('Service: solrSearchSvc', function () {
         var tokenUrl = doc.url('id', 'http://12');
         expect(tokenUrl.indexOf('http://12')).toBe(-1);
         var encId = encodeURIComponent('http\\://12');
-        expect(tokenUrl.indexOf(encId)).toNotBe(-1);
+        expect(tokenUrl.indexOf(encId)).not.toBe(-1);
       });
     });
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
   });
-  
+
   it('doesnt include score in facetfield', function() {
     var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
     var searcher = solrSearchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
@@ -577,10 +577,10 @@ describe('Service: solrSearchSvc', function () {
     var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
     var searcher = solrSearchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
-    expect(searcher.linkUrl.indexOf('wt=xml')).toNotBe(-1);
+    expect(searcher.linkUrl.indexOf('wt=xml')).not.toBe(-1);
 
   });
-  
+
   it('sanitizes solr arguments', function() {
     var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
     var mockUncleanSolrParams = angular.copy(mockSolrParams);
@@ -609,7 +609,7 @@ describe('Service: solrSearchSvc', function () {
     searcher.search();
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
-    
+
   });
 
   it('searches with fl == *', function() {
@@ -623,8 +623,8 @@ describe('Service: solrSearchSvc', function () {
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
   });
-  
-  
+
+
   describe('group-by', function() {
     var groupedSolrResp = { responseHeader:{
           'status':0,
@@ -763,16 +763,16 @@ describe('Service: solrSearchSvc', function () {
                 'time':0.0},
               'debug':{
                 'time':0.0}}}}};
-    
+
     var fieldSpec = null;
     var searcher = null;
-    
+
     beforeEach(function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id catch_line');
       searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                               mockSolrParams, mockQueryText);
     });
-    
+
     it('parses a grouped response', function() {
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, groupedSolrResp);
@@ -805,8 +805,8 @@ describe('Service: solrSearchSvc', function () {
           expect(doc.group()).toEqual('within');
           expect(doc.groupedBy()).toEqual('text');
         });
-       
-        /*jshint camelcase: false */ 
+
+        /*jshint camelcase: false */
         angular.forEach(gpd.catch_line[0].docs, function(doc) {
           expect(doc.group()).toEqual('would');
           expect(doc.groupedBy()).toEqual('catch_line');
@@ -848,10 +848,10 @@ describe('Service: solrSearchSvc', function () {
           }
         ]
       }};
-  
+
     var fieldSpec = null;
     var searcher = null;
-    
+
     beforeEach(function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
       searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
@@ -873,8 +873,8 @@ describe('Service: solrSearchSvc', function () {
                               .respond(200, fullSolrResp);
       nextSearcher.search();
       $httpBackend.flush();
-     
-      // get page 3 
+
+      // get page 3
       nextSearcher = nextSearcher.pager();
       expectedPageParams.rows = ['1'];
       expectedPageParams.start =['20'];
@@ -882,7 +882,7 @@ describe('Service: solrSearchSvc', function () {
                               .respond(200, fullSolrResp);
       nextSearcher.search();
       $httpBackend.flush();
-      
+
       // done
       nextSearcher = nextSearcher.pager();
       expect(nextSearcher).toBe(null);

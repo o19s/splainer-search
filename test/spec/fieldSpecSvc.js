@@ -21,14 +21,14 @@ describe('Service: fieldSpecSvc', function () {
     var fieldSpec = fieldSpecSvc.createFieldSpec('atitlefield');
     expect(fieldSpec.title).toEqual('atitlefield');
   });
-  
+
   it('extra fields are subfields', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('atitlefield subfield1 subfield2');
     expect(fieldSpec.title).toEqual('atitlefield');
     expect(fieldSpec.subs).toContain('subfield1');
     expect(fieldSpec.subs).toContain('subfield2');
   });
-  
+
   it('id fields specified', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2');
     expect(fieldSpec.id).toEqual('foo_id');
@@ -36,7 +36,7 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.subs).toContain('subfield1');
     expect(fieldSpec.subs).toContain('subfield2');
   });
-  
+
   it('second specs ignored', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 id:foo_id');
     expect(fieldSpec.id).toEqual('foo_id');
@@ -67,7 +67,7 @@ describe('Service: fieldSpecSvc', function () {
     var fieldSpec = fieldSpecSvc.createFieldSpec('atitlefield');
     expect(fieldSpec.fields).toContain('id');
   });
-  
+
   it('iterates all non-id fields', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 id:foo_id thumb:foo_img');
     var fieldsIterated = [];
@@ -78,7 +78,7 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldsIterated).toContain('subfield1');
     expect(fieldsIterated).toContain('subfield2');
     expect(fieldsIterated).toContain('foo_img');
-    expect(fieldsIterated).toNotContain('foo_id');
+    expect(fieldsIterated).not.toContain('foo_id');
   });
 
   it('returns field list', function() {
@@ -94,7 +94,7 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.title).toEqual('atitlefield');
     expect(fieldSpec.thumb).toEqual('foo_img');
   });
-  
+
   it('ignores +', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id,+atitlefield,+thumb:foo_img');
     expect(fieldSpec.id).toEqual('foo_id');
@@ -115,7 +115,7 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.title).toEqual('id');
     expect(fieldSpec.fieldList()).toEqual('*');
   });
-  
+
   it('correctly transforms *,score', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('*,score');
     expect(fieldSpec.subs).toEqual('*');
@@ -123,7 +123,7 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.title).toEqual('id');
     expect(fieldSpec.fieldList()).toEqual('*');
   });
-  
+
   it('correctly transforms empty', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec(' \t ');
     expect(fieldSpec.subs).toEqual('*');
