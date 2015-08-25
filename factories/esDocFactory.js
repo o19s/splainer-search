@@ -15,7 +15,7 @@
 
       var self = this;
       angular.forEach(self.fields, function(fieldValue, fieldName) {
-        if (fieldValue.length === 1 && typeof(fieldValue) === 'object') {
+        if ( fieldValue.length === 1 && typeof(fieldValue) === 'object' ) {
           self[fieldName] = fieldValue[0];
         } else {
           self[fieldName] = fieldValue;
@@ -29,6 +29,7 @@
     Doc.prototype.url        = url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
+    Doc.prototype.source     = source;
     Doc.prototype.highlight  = highlight;
 
     function url () {
@@ -45,6 +46,16 @@
       /*jslint validthis:true*/
       var self = this;
       return null;
+    }
+
+    function source () {
+      /*jslint validthis:true*/
+      var self = this;
+
+      // Usually you would return _source, but since we are specifying the
+      // fields to display, ES only returns those specific fields.
+      // And we are assigning the fields to the doc itself in this case.
+      return angular.copy(self);
     }
 
     function highlight (docId, fieldName, preText, postText) {

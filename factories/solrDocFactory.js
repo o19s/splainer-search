@@ -22,6 +22,7 @@
     Doc.prototype.url        = url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
+    Doc.prototype.source     = source;
     Doc.prototype.highlight  = highlight;
 
     var entityMap = {
@@ -90,6 +91,12 @@
         }
       }
       return null;
+    }
+
+    function source () {
+      /*jslint validthis:true*/
+      var self = this;
+      return angular.copy(self.doc);
     }
 
     function highlight (docId, fieldName, preText, postText) {

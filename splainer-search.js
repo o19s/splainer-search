@@ -422,7 +422,7 @@ angular.module('o19s.splainer-search')
 
 'use strict';
 
-// Deals with normalizing documents from solr
+// Deals with normalizing documents from the search engine
 // into a canonical representation, ie
 // each doc has an id, a title, possibly a thumbnail field
 // and possibly a list of sub fields
@@ -443,19 +443,19 @@ angular.module('o19s.splainer-search')
       });
     };
 
-    var assignSingleField = function(normalDoc, solrDoc, solrField, toProperty) {
-      if (solrDoc.hasOwnProperty(solrField)) {
-        normalDoc[toProperty] = ('' + solrDoc[solrField]);
+    var assignSingleField = function(normalDoc, doc, field, toProperty) {
+      if (doc.hasOwnProperty(field)) {
+        normalDoc[toProperty] = ('' + doc[field]);
       }
     };
 
-    var assignFields = function(normalDoc, solrDoc, fieldSpec) {
-      assignSingleField(normalDoc, solrDoc, fieldSpec.id, 'id');
-      assignSingleField(normalDoc, solrDoc, fieldSpec.title, 'title');
-      assignSingleField(normalDoc, solrDoc, fieldSpec.thumb, 'thumb');
+    var assignFields = function(normalDoc, doc, fieldSpec) {
+      assignSingleField(normalDoc, doc, fieldSpec.id, 'id');
+      assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
+      assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
       normalDoc.subs = {};
       if (fieldSpec.subs === '*') {
-        angular.forEach(solrDoc, function(value, fieldName) {
+        angular.forEach(doc, function(value, fieldName) {
           if (typeof(value) !== 'function') {
             if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
                 fieldName !== fieldSpec.thumb) {
@@ -466,17 +466,17 @@ angular.module('o19s.splainer-search')
       }
       else {
         angular.forEach(fieldSpec.subs, function(subFieldName) {
-          if (solrDoc.hasOwnProperty(subFieldName)) {
-            normalDoc.subs[subFieldName] = '' + solrDoc[subFieldName];
+          if (doc.hasOwnProperty(subFieldName)) {
+            normalDoc.subs[subFieldName] = '' + doc[subFieldName];
           }
         });
       }
     };
 
     // A document within a query
-    var NormalDoc = function(fieldSpec, solrDoc) {
-      this.solrDoc = solrDoc;
-      assignFields(this, this.solrDoc.source(), fieldSpec);
+    var NormalDoc = function(fieldSpec, doc) {
+      this.doc = doc;
+      assignFields(this, this.doc.source(), fieldSpec);
       var hasThumb = false;
       if (this.hasOwnProperty('thumb')) {
         hasThumb = true;
@@ -491,24 +491,24 @@ angular.module('o19s.splainer-search')
       this.hasThumb = function() {
         return hasThumb;
       };
-      
+
       this.url = function() {
-        return this.solrDoc.url(fieldSpec.id, this.id);
+        return this.doc.url(fieldSpec.id, this.id);
       };
 
     };
 
     // layer on highlighting features
     var snippitable = function(doc) {
-      var solrDoc = doc.solrDoc;
-      
+      var aDoc = doc.doc;
+
       var lastSubSnips = {};
       var lastHlPre = null;
       var lastHlPost = null;
       doc.subSnippets = function(hlPre, hlPost) {
         if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
           angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
-            var snip = solrDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
+            var snip = aDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
             if (snip === null) {
               snip = escapeHtml(subFieldValue.slice(0, 200));
             }
@@ -539,7 +539,7 @@ angular.module('o19s.splainer-search')
         initExplain();
         return simplerExplain;
       };
-      
+
       doc.hotMatches = function() {
         initExplain();
         return hotMatches;
@@ -575,29 +575,29 @@ angular.module('o19s.splainer-search')
       return doc;
     };
 
-    var getSolrDocExplain = function(solrDoc, nDoc) {
-      var explJson = solrDoc.explain(nDoc.id);
+    var getDocExplain = function(doc, nDoc) {
+      var explJson = doc.explain(nDoc.id);
       if (explJson === null) {
-        if (solrDoc.source().hasOwnProperty('id')) {
-          return solrDoc.explain(solrDoc.source().id);
+        if (doc.source().hasOwnProperty('id')) {
+          return doc.explain(doc.source().id);
         }
       }
-      return explJson; 
+      return explJson;
     };
 
-    this.createNormalDoc = function(fieldSpec, solrDoc, altExplainJson) {
-      var nDoc = new NormalDoc(fieldSpec, solrDoc);
+    this.createNormalDoc = function(fieldSpec, doc, altExplainJson) {
+      var nDoc = new NormalDoc(fieldSpec, doc);
       var explJson;
       if (altExplainJson) {
         explJson = altExplainJson;
       } else {
-        explJson = getSolrDocExplain(solrDoc, nDoc);
+        explJson = getDocExplain(doc, nDoc);
       }
       return this.snippetDoc(this.explainDoc(nDoc, explJson));
     };
 
     // Decorate doc with an explain/field values/etc other
-    // than what came back from Solr
+    // than what came back from the search engine
     this.explainDoc = function(doc, explainJson) {
       var decorated = angular.copy(doc);
       return explainable(decorated, explainJson);
@@ -608,8 +608,8 @@ angular.module('o19s.splainer-search')
       return snippitable(decorated);
     };
 
-    // A stub, used to display a result that we expected 
-    // to find in Solr, but isn't there
+    // A stub, used to display a result that we expected
+    // to find, but isn't there
     this.createPlaceholderDoc = function(docId, stubTitle, explainJson) {
       var placeHolder = {id: docId,
                          title: stubTitle};
@@ -621,7 +621,7 @@ angular.module('o19s.splainer-search')
       }
     };
 
-  
+
   });
 
 'use strict';
@@ -1429,25 +1429,14 @@ angular.module('o19s.splainer-search')
   function DocFactory() {
     var Doc = function(doc, options) {
       var self        = this;
-      var theSource   = angular.copy(doc);
 
-      // Copy over any attributes in the original doc.
-      // This may not be needed, but is in there because previous version
-      // was adding the functions from this factory to the original doc,
-      // so because I am no sure about the consequences of leaving it out
-      // I am copying the info, even though we have the source().
-      // -YC
       angular.copy(doc, self);
 
       self.options    = options;
+      self.doc        = doc;
 
-      self.source     = source;
       self.groupedBy  = groupedBy;
       self.group      = group;
-
-      function source () {
-        return theSource;
-      }
 
       function groupedBy () {
         if (options.groupedBy === undefined) {
@@ -1488,7 +1477,7 @@ angular.module('o19s.splainer-search')
 
       var self = this;
       angular.forEach(self.fields, function(fieldValue, fieldName) {
-        if (fieldValue.length === 1 && typeof(fieldValue) === 'object') {
+        if ( fieldValue.length === 1 && typeof(fieldValue) === 'object' ) {
           self[fieldName] = fieldValue[0];
         } else {
           self[fieldName] = fieldValue;
@@ -1502,6 +1491,7 @@ angular.module('o19s.splainer-search')
     Doc.prototype.url        = url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
+    Doc.prototype.source     = source;
     Doc.prototype.highlight  = highlight;
 
     function url () {
@@ -1518,6 +1508,16 @@ angular.module('o19s.splainer-search')
       /*jslint validthis:true*/
       var self = this;
       return null;
+    }
+
+    function source () {
+      /*jslint validthis:true*/
+      var self = this;
+
+      // Usually you would return _source, but since we are specifying the
+      // fields to display, ES only returns those specific fields.
+      // And we are assigning the fields to the doc itself in this case.
+      return angular.copy(self);
     }
 
     function highlight (docId, fieldName, preText, postText) {
@@ -1740,6 +1740,7 @@ angular.module('o19s.splainer-search')
     Doc.prototype.url        = url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
+    Doc.prototype.source     = source;
     Doc.prototype.highlight  = highlight;
 
     var entityMap = {
@@ -1808,6 +1809,12 @@ angular.module('o19s.splainer-search')
         }
       }
       return null;
+    }
+
+    function source () {
+      /*jslint validthis:true*/
+      var self = this;
+      return angular.copy(self.doc);
     }
 
     function highlight (docId, fieldName, preText, postText) {
