@@ -156,16 +156,10 @@ angular.module('o19s.splainer-search')
     self.prepare  = prepare;
 
     var replaceQuery = function(args, queryText) {
-      var replaced = {};
-      angular.forEach(args, function(value, key) {
-        if (typeof(value) === 'object') {
-          replaced[key] = replaceQuery(value, queryText);
-        } else if (typeof(value) === 'string') {
-          replaced[key] = value.replace(/#\$query##/g, queryText);
-        } else {
-          replaced[key] = value;
-        }
-      });
+      var replaced = angular.toJson(args, true);
+      replaced = replaced.replace(/#\$query##/g, encodeURIComponent(queryText));
+      replaced = angular.fromJson(replaced);
+
       return replaced;
     };
 
