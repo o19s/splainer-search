@@ -27,6 +27,7 @@ angular.module('o19s.splainer-search')
         settings.url,
         settings.selectedTry.args,
         queryText,
+        {},
         searchEngine
       );
     };
