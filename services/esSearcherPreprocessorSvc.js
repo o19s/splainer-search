@@ -7,7 +7,7 @@ angular.module('o19s.splainer-search')
 
     var replaceQuery = function(args, queryText) {
       var replaced = angular.toJson(args, true);
-      replaced = replaced.replace(/#\$query##/g, encodeURIComponent(queryText));
+      replaced = replaced.replace(/#\$query##/g, queryText);
       replaced = angular.fromJson(replaced);
 
       return replaced;
