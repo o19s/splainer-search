@@ -151,87 +151,25 @@ if (!Function.prototype.bind) {
 'use strict';
 
 angular.module('o19s.splainer-search')
-  .service('esSearchSvc', function esSearchSvc($http) {
+  .service('esSearcherPreprocessorSvc', function esSearcherPreprocessorSvc() {
+    var self      = this;
+    self.prepare  = prepare;
 
-      //baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
-    var replaceQuery = function(esArgs, queryText) {
-      var replaced = {};
-      angular.forEach(esArgs, function(value, key) {
-        if (typeof(value) === 'object') {
-          replaced[key] = replaceQuery(value, queryText);
-        } else if (typeof(value) === 'string') {
-          replaced[key] = value.replace(/#\$query##/g, queryText);
-        } else {
-          replaced[key] = value;
-        }
-      }); 
+    var replaceQuery = function(args, queryText) {
+      var replaced = angular.toJson(args, true);
+      replaced = replaced.replace(/#\$query##/g, encodeURIComponent(queryText));
+      replaced = angular.fromJson(replaced);
+
       return replaced;
     };
-  
- 
-    var EsSearcher = function(fieldList, esUrl, esArgs, queryText) {
-    
-      //TODO -- this.callUrl and this.linkUrl
-      this.docs = [];
-      this.numFound = 0;
-      this.inError = false;
 
-      var queryDsl = replaceQuery(esArgs, queryText);
-      queryDsl.fields = fieldList;
-      queryDsl.explain = true;
+    function prepare (searcher) {
+      var queryDsl = replaceQuery(searcher.args, searcher.queryText);
+      queryDsl.fields   = searcher.fieldList;
+      queryDsl.explain  = true;
 
-      this.search = function() {
-        this.inError = false;
-        var promise = Promise.create(this.search);
-        var that = this;
-
-        $http.post(esUrl, queryDsl).success(function(data) {
-          that.numFound = data.hits.total;
-
-          angular.forEach(data.hits.hits, function(hit) {
-            var doc = {};
-            // stringify fields
-            angular.forEach(hit.fields, function(fieldValue, fieldName) {
-              if (fieldValue.length === 1 && typeof(fieldValue) === 'object') {
-                doc[fieldName] = fieldValue[0];
-              } else {
-                doc[fieldName] = fieldValue;
-              }
-            });
-
-            // TODO doc.url, doc.explain, doc.highlight
-            doc.explain = function() {
-              if (hit.hasOwnProperty('_explanation')) {
-                return hit._explanation;
-              }
-              else {
-                return null;
-              }
-            };
-            doc.url = function() {
-              return '#';
-            };
-            doc.highlight = function() {
-              return null;
-            };
-            that.docs.push(doc);
-          });
-          promise.complete();
-        })
-        .error(function() {
-          that.inError = true;
-          promise.complete();
-        });
-
-        return promise;
-      };
-
-    };
-
-    this.createSearcher = function(fieldList, esUrl, esArgs, queryText) {
-      return new EsSearcher(fieldList, esUrl, esArgs, queryText);
-    };
-  
+      searcher.queryDsl = queryDsl;
+    }
   });
 
 'use strict';
@@ -478,7 +416,7 @@ angular.module('o19s.splainer-search')
 
 'use strict';
 
-// Deals with normalizing documents from solr
+// Deals with normalizing documents from the search engine
 // into a canonical representation, ie
 // each doc has an id, a title, possibly a thumbnail field
 // and possibly a list of sub fields
@@ -499,19 +437,19 @@ angular.module('o19s.splainer-search')
       });
     };
 
-    var assignSingleField = function(normalDoc, solrDoc, solrField, toProperty) {
-      if (solrDoc.hasOwnProperty(solrField)) {
-        normalDoc[toProperty] = ('' + solrDoc[solrField]);
+    var assignSingleField = function(normalDoc, doc, field, toProperty) {
+      if (doc.hasOwnProperty(field)) {
+        normalDoc[toProperty] = ('' + doc[field]);
       }
     };
 
-    var assignFields = function(normalDoc, solrDoc, fieldSpec) {
-      assignSingleField(normalDoc, solrDoc, fieldSpec.id, 'id');
-      assignSingleField(normalDoc, solrDoc, fieldSpec.title, 'title');
-      assignSingleField(normalDoc, solrDoc, fieldSpec.thumb, 'thumb');
+    var assignFields = function(normalDoc, doc, fieldSpec) {
+      assignSingleField(normalDoc, doc, fieldSpec.id, 'id');
+      assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
+      assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
       normalDoc.subs = {};
       if (fieldSpec.subs === '*') {
-        angular.forEach(solrDoc, function(value, fieldName) {
+        angular.forEach(doc, function(value, fieldName) {
           if (typeof(value) !== 'function') {
             if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
                 fieldName !== fieldSpec.thumb) {
@@ -522,17 +460,17 @@ angular.module('o19s.splainer-search')
       }
       else {
         angular.forEach(fieldSpec.subs, function(subFieldName) {
-          if (solrDoc.hasOwnProperty(subFieldName)) {
-            normalDoc.subs[subFieldName] = '' + solrDoc[subFieldName];
+          if (doc.hasOwnProperty(subFieldName)) {
+            normalDoc.subs[subFieldName] = '' + doc[subFieldName];
           }
         });
       }
     };
 
     // A document within a query
-    var NormalDoc = function(fieldSpec, solrDoc) {
-      this.solrDoc = solrDoc;
-      assignFields(this, this.solrDoc.source(), fieldSpec);
+    var NormalDoc = function(fieldSpec, doc) {
+      this.doc = doc;
+      assignFields(this, this.doc.source(), fieldSpec);
       var hasThumb = false;
       if (this.hasOwnProperty('thumb')) {
         hasThumb = true;
@@ -547,24 +485,24 @@ angular.module('o19s.splainer-search')
       this.hasThumb = function() {
         return hasThumb;
       };
-      
+
       this.url = function() {
-        return this.solrDoc.url(fieldSpec.id, this.id);
+        return this.doc.url(fieldSpec.id, this.id);
       };
 
     };
 
     // layer on highlighting features
     var snippitable = function(doc) {
-      var solrDoc = doc.solrDoc;
-      
+      var aDoc = doc.doc;
+
       var lastSubSnips = {};
       var lastHlPre = null;
       var lastHlPost = null;
       doc.subSnippets = function(hlPre, hlPost) {
         if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
           angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
-            var snip = solrDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
+            var snip = aDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
             if (snip === null) {
               snip = escapeHtml(subFieldValue.slice(0, 200));
             }
@@ -595,7 +533,7 @@ angular.module('o19s.splainer-search')
         initExplain();
         return simplerExplain;
       };
-      
+
       doc.hotMatches = function() {
         initExplain();
         return hotMatches;
@@ -631,29 +569,29 @@ angular.module('o19s.splainer-search')
       return doc;
     };
 
-    var getSolrDocExplain = function(solrDoc, nDoc) {
-      var explJson = solrDoc.explain(nDoc.id);
+    var getDocExplain = function(doc, nDoc) {
+      var explJson = doc.explain(nDoc.id);
       if (explJson === null) {
-        if (solrDoc.source().hasOwnProperty('id')) {
-          return solrDoc.explain(solrDoc.source().id);
+        if (doc.source().hasOwnProperty('id')) {
+          return doc.explain(doc.source().id);
         }
       }
-      return explJson; 
+      return explJson;
     };
 
-    this.createNormalDoc = function(fieldSpec, solrDoc, altExplainJson) {
-      var nDoc = new NormalDoc(fieldSpec, solrDoc);
+    this.createNormalDoc = function(fieldSpec, doc, altExplainJson) {
+      var nDoc = new NormalDoc(fieldSpec, doc);
       var explJson;
       if (altExplainJson) {
         explJson = altExplainJson;
       } else {
-        explJson = getSolrDocExplain(solrDoc, nDoc);
+        explJson = getDocExplain(doc, nDoc);
       }
       return this.snippetDoc(this.explainDoc(nDoc, explJson));
     };
 
     // Decorate doc with an explain/field values/etc other
-    // than what came back from Solr
+    // than what came back from the search engine
     this.explainDoc = function(doc, explainJson) {
       var decorated = angular.copy(doc);
       return explainable(decorated, explainJson);
@@ -664,8 +602,8 @@ angular.module('o19s.splainer-search')
       return snippitable(decorated);
     };
 
-    // A stub, used to display a result that we expected 
-    // to find in Solr, but isn't there
+    // A stub, used to display a result that we expected
+    // to find, but isn't there
     this.createPlaceholderDoc = function(docId, stubTitle, explainJson) {
       var placeHolder = {id: docId,
                          title: stubTitle};
@@ -677,7 +615,7 @@ angular.module('o19s.splainer-search')
       }
     };
 
-  
+
   });
 
 'use strict';
@@ -951,6 +889,72 @@ angular.module('o19s.splainer-search')
 
 'use strict';
 
+// Executes a solr search and returns
+// a set of solr documents
+angular.module('o19s.splainer-search')
+  .service('searchSvc', function searchSvc(
+    SolrSearcherFactory,
+    EsSearcherFactory,
+    activeQueries,
+    defaultSolrConfig
+  ) {
+    var svc = this;
+
+    // PRE and POST strings, can't just use HTML
+    // because Solr doesn't appear to support escaping
+    // XML/HTML tags in the content. So we do this stupid thing
+    svc.HIGHLIGHTING_PRE    = 'aouaoeuCRAZY_STRING!8_______';
+    svc.HIGHLIGHTING_POST   = '62362iueaiCRAZY_POST_STRING!_______';
+
+    this.configFromDefault = function() {
+      return angular.copy(defaultSolrConfig);
+    };
+
+    this.createSearcherFromSettings = function(settings, queryText, searchEngine) {
+      return this.createSearcher(
+        settings.createFieldSpec().fieldList(),
+        settings.url,
+        settings.selectedTry.args,
+        queryText,
+        {},
+        searchEngine
+      );
+    };
+
+    this.createSearcher = function (fieldList, url, args, queryText, config, searchEngine) {
+      if ( searchEngine === undefined ) {
+        searchEngine = 'solr';
+      }
+
+      var options = {
+        fieldList:      fieldList,
+        url:            url,
+        args:           args,
+        queryText:      queryText,
+        config:         config
+      };
+
+      var searcher;
+
+      if ( searchEngine === 'solr') {
+        options.HIGHLIGHTING_PRE  = svc.HIGHLIGHTING_PRE;
+        options.HIGHLIGHTING_POST = svc.HIGHLIGHTING_POST;
+
+        searcher = new SolrSearcherFactory(options);
+      } else if ( searchEngine === 'es') {
+        searcher = new EsSearcherFactory(options);
+      }
+
+      return searcher;
+    };
+
+    this.activeQueries = function() {
+      return activeQueries.count;
+    };
+  });
+
+'use strict';
+
 // Explains that exist below the match level
 // these have a lot to do with the similarity implementation used by Solr/Lucene
 // Here we implement default similarity, we will need to split this out for
@@ -1078,62 +1082,12 @@ angular.module('o19s.splainer-search')
 
 'use strict';
 
-// Executes a solr search and returns
-// a set of solr documents
 angular.module('o19s.splainer-search')
-  .service('solrSearchSvc', function solrSearchSvc($http, solrUrlSvc) {
+  .service('solrSearcherPreprocessorSvc', function solrSearcherPreprocessorSvc(solrUrlSvc, defaultSolrConfig) {
+    var self      = this;
+    self.prepare  = prepare;
 
-
-    // PRE and POST strings, can't just use HTML
-    // because Solr doesn't appear to support escaping 
-    // XML/HTML tags in the content. So we do this stupid thing 
-    this.HIGHLIGHTING_PRE = 'aouaoeuCRAZY_STRING!8_______';
-    this.HIGHLIGHTING_POST = '62362iueaiCRAZY_POST_STRING!_______';
-    var svc = this;
-
-    var activeQueries = 0;
-
-    // a URL to access a the specified docId 
-    var buildTokensUrl = function(fieldList, solrUrl, idField, docId) {
-      var escId = encodeURIComponent(solrUrlSvc.escapeUserQuery(docId));
-      var tokensArgs = {
-        'indent': ['true'],
-        'wt': ['xml'],
-        //'q': [idField + ':' + escId],
-        'facet': ['true'],
-        'facet.field': [],
-        'facet.mincount': ['1'],
-      };
-      if (fieldList !== '*') {
-        angular.forEach(fieldList, function(fieldName) {
-          if (fieldName !== 'score') {
-            tokensArgs['facet.field'].push(fieldName);
-          }
-        });
-      }
-      return solrUrlSvc.buildUrl(solrUrl, tokensArgs) + '&q=' + idField + ':'  + escId;
-    };
-
-    // the full URL we'll use to call Solr
-    var buildCallUrl = function(fieldList, solrUrl, solrArgs, queryText, config) {
-      solrArgs.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
-      solrArgs.wt = ['json'];
-      if (config.debug) {
-        solrArgs.debug = ['true'];
-        solrArgs['debug.explain.structured'] = ['true'];
-      }
-      if (config.highlight) {
-        solrArgs.hl = ['true'];
-        solrArgs['hl.fl'] = solrArgs.fl;
-        solrArgs['hl.simple.pre'] = [svc.HIGHLIGHTING_PRE];
-        solrArgs['hl.simple.post'] = [svc.HIGHLIGHTING_POST];
-      }
-      var baseUrl = solrUrlSvc.buildUrl(solrUrl, solrArgs);
-      baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
-      return baseUrl;
-    };
-    
-    var withoutUnsupported = function(argsToUse, dontSanitize) {
+    var withoutUnsupported = function (argsToUse, dontSanitize) {
       var argsRemoved = angular.copy(argsToUse);
       if (dontSanitize !== true) {
         solrUrlSvc.removeUnsupported(argsRemoved);
@@ -1141,229 +1095,46 @@ angular.module('o19s.splainer-search')
       return argsRemoved;
     };
 
-    var defaultConfig = {
-      sanitize: true,
-      highlight: true,
-      debug: true
-    };
-
-    this.configFromDefault = function() {
-      return angular.copy(defaultConfig);
-    };
+    // the full URL we'll use to call Solr
+    var buildCallUrl = function(searcher) {
+      var fieldList = searcher.fieldList;
+      var url       = searcher.url;
+      var args      = withoutUnsupported(searcher.args, !searcher.config.sanitize);
+      var queryText = searcher.queryText;
+      var config    = searcher.config;
 
 
-    var SolrSearcher = function(fieldList, solrUrl, solrArgs, queryText, config) {
-      if (config === undefined) {
-        config = defaultConfig;
+      args.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
+      args.wt = ['json'];
+
+      if (config.debug) {
+        args.debug = ['true'];
+        args['debug.explain.structured'] = ['true'];
       }
-      this.callUrl = this.linkUrl = '';
-      this.callUrl = buildCallUrl(fieldList, solrUrl, withoutUnsupported(solrArgs, !config.sanitize), queryText, config);
-      this.linkUrl = this.callUrl.replace('wt=json', 'wt=xml');
-      this.linkUrl = this.linkUrl + '&indent=true&echoParams=all';
-      this.docs = [];
-      this.grouped = {};
-      this.numFound = 0;
-      this.inError = false;
-      this.othersExplained = {};
 
-      this.addDocToGroup = function(groupedBy, group, solrDoc) {
-        if (!this.grouped.hasOwnProperty(groupedBy)) {
-          this.grouped[groupedBy] = [];
-        }
-        var found = null;
-        angular.forEach(this.grouped[groupedBy], function(groupedDocs) {
-          if (groupedDocs.value === group && !found) {
-            found = groupedDocs;
-          }
-        });
-        if (!found) {
-          found = {docs:[], value:group};
-          this.grouped[groupedBy].push(found);
-        }
-        found.docs.push(solrDoc);
-      };
+      if (config.highlight) {
+        args.hl                 = ['true'];
+        args['hl.fl']           = args.fl;
+        args['hl.simple.pre']   = [searcher.HIGHLIGHTING_PRE];
+        args['hl.simple.post']  = [searcher.HIGHLIGHTING_POST];
+      }
 
-      // return a new searcher that will give you
-      // the next page upon search(). To get the subsequent
-      // page, call pager on that searcher ad infinidum
-      this.pager = function() {
-        var start = 0;
-        var nextArgs = angular.copy(solrArgs);
-        if (nextArgs.hasOwnProperty('start')) {
-          start = parseInt(nextArgs.start) + 10;
-          if (start >= this.numFound) {
-            return null; // no more results
-          }
-        } else {
-          start = 10;
-        }
-        var remaining = this.numFound - start;
-        nextArgs.rows = ['' + Math.min(10, remaining)];
-        nextArgs.start = ['' + start];
-        var pageConfig = defaultConfig;
-        pageConfig.sanitize = false;
-        return new SolrSearcher(fieldList, solrUrl, nextArgs, queryText, pageConfig);
-      };
+      var baseUrl = solrUrlSvc.buildUrl(url, args);
+      baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
 
-      // search (execute the query) and produce results
-      // to the returned future
-      this.search = function() {
-        var url = this.callUrl + '&json.wrf=JSON_CALLBACK';
-        this.inError = false;
-        
-        var promise = Promise.create(this.search);
-        var thisSearcher = this;
-
-        var getExplData = function(solrResp) {
-          if (solrResp.hasOwnProperty('debug')) {
-            var dbg = solrResp.debug;
-            if (dbg.hasOwnProperty('explain')) {
-              return dbg.explain;
-            }
-          }
-          return {};
-        };
-
-        var getOthersExplained = function(solrResp) {
-          if (solrResp.hasOwnProperty('debug')) {
-            var dbg = solrResp.debug;
-            if (dbg.hasOwnProperty('explainOther')) {
-              return dbg.explainOther;
-            }
-          }
-        };
-
-        var getHlData = function(solrResp) {
-          if (solrResp.hasOwnProperty('highlighting')) {
-            return solrResp.highlighting;
-          }
-          return {};
-        };
-
-        activeQueries++;
-        $http.jsonp(url).success(function(solrResp) {
-          activeQueries--;
-          var explDict = getExplData(solrResp);
-          var hlDict = getHlData(solrResp);
-          thisSearcher.othersExplained = getOthersExplained(solrResp);
-         
-          var parseSolrDoc = function(solrDoc, groupedBy, group) {
-            // annotate the doc with several methods
-            var source = angular.copy(solrDoc);
-            if (groupedBy === undefined) {
-              groupedBy = null;
-            }
-            if (group === undefined) {
-              group = null;
-            }
-
-            solrDoc.groupedBy = function() {
-              return groupedBy;
-            };
-
-            solrDoc.group = function() {
-              return group;
-            };
-
-            solrDoc.source = function() {
-              return source;
-            };
-
-            solrDoc.url = function(idField, docId) {
-              return buildTokensUrl(fieldList, solrUrl, idField, docId);
-            };
-            solrDoc.explain = function(docId) {
-              if (explDict.hasOwnProperty(docId)) {
-                return explDict[docId];
-              } else {
-                return null;
-              }
-            };
-
-            solrDoc.snippet = function(docId, fieldName) {
-              if (hlDict.hasOwnProperty(docId)) {
-                var docHls = hlDict[docId];
-                if (docHls.hasOwnProperty(fieldName)) {
-                  return docHls[fieldName];
-                }
-              }
-              return null;
-            };
-
-            solrDoc.highlight = function(docId, fieldName, preText, postText) {
-              var fieldValue = this.snippet(docId, fieldName);
-              if (fieldValue) {
-                var esc = escapeHtml(fieldValue);
-                
-                var preRegex = new RegExp(svc.HIGHLIGHTING_PRE, 'g');
-                var hlPre = esc.replace(preRegex, preText);
-                var postRegex = new RegExp(svc.HIGHLIGHTING_POST, 'g');
-                return hlPre.replace(postRegex, postText);
-              } else {
-                return null;
-              }
-            };
-          };
-
-
-          if (solrResp.hasOwnProperty('response')) {
-            angular.forEach(solrResp.response.docs, function(solrDoc) {
-              parseSolrDoc(solrDoc); 
-              thisSearcher.numFound = solrResp.response.numFound;
-              thisSearcher.docs.push(solrDoc);
-            });
-          } else if (solrResp.hasOwnProperty('grouped')) {
-            angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
-              thisSearcher.numFound = groupedBy.matches;
-              angular.forEach(groupedBy.groups, function(groupResp) {
-                var groupValue = groupResp.groupValue;
-                angular.forEach(groupResp.doclist.docs, function(solrDoc) {
-                  parseSolrDoc(solrDoc, groupedByName, groupValue);
-                  thisSearcher.docs.push(solrDoc);
-                  thisSearcher.addDocToGroup(groupedByName, groupValue, solrDoc);
-                });
-              });
-            });
-          }
-          
-          promise.complete();
-        }).error(function() {
-          activeQueries--;
-          thisSearcher.inError = true;
-          promise.complete();
-        });
-        return promise;
-
-      };
+      return baseUrl;
     };
 
-    this.createSearcherFromSettings = function(settings, queryText) {
-      return new SolrSearcher(settings.createFieldSpec().fieldList(), settings.solrUrl,
-                              settings.selectedTry.solrArgs, queryText);
-    };
+    function prepare (searcher) {
+      if (searcher.config === undefined) {
+        searcher.config = defaultSolrConfig;
+      }
 
-    this.createSearcher = function (fieldList, solrUrl, solrArgs, queryText, config) {
-      return new SolrSearcher(fieldList, solrUrl, solrArgs, queryText, config);
-    };
+      searcher.callUrl = buildCallUrl(searcher);
 
-    this.activeQueries = function() {
-      return activeQueries;
-    };
-   
-    var entityMap = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '\"': '&quot;',
-      '\'': '&#39;',
-      '/': '&#x2F;'
-    };
-
-    var escapeHtml = function(string) {
-      return String(string).replace(/[&<>"'\/]/g, function (s) {
-        return entityMap[s];
-      });
-    };
+      searcher.linkUrl = searcher.callUrl.replace('wt=json', 'wt=xml');
+      searcher.linkUrl = searcher.linkUrl + '&indent=true&echoParams=all';
+    }
   });
 
 'use strict';
@@ -1388,7 +1159,7 @@ angular.module('o19s.splainer-search')
       baseUrl += this.formatSolrArgs(urlArgs);
       return baseUrl;
     };
-   
+
     /* Given arguments of the form {q: ['*:*'], fq: ['title:foo', 'text:bar']}
      * turn into string suitable for URL query param q=*:*&fq=title:foo&fq=text:bar
      *
@@ -1433,9 +1204,9 @@ angular.module('o19s.splainer-search')
       });
       return rVal;
     };
-    
+
     /* Parse a Solr URL of the form [/]solr/[collectionName]/[requestHandler]
-     * return object with {collectionName: <collectionName>, requestHandler: <requestHandler>} 
+     * return object with {collectionName: <collectionName>, requestHandler: <requestHandler>}
      * return null on failure to parse as above solr url
      * */
     this.parseSolrPath = function(pathStr) {
@@ -1483,13 +1254,13 @@ angular.module('o19s.splainer-search')
       return parsedUrl;
 
     };
-    
-    /*optionally escape user query text, ie 
-     * q=punctuation:: clearly can't search for the 
+
+    /*optionally escape user query text, ie
+     * q=punctuation:: clearly can't search for the
      * term ":" (colon) because colon has meaning in the query syntax
      * so instead, you've got to search for
-     * q=punctuation:\: 
-     * */ 
+     * q=punctuation:\:
+     * */
     this.escapeUserQuery = function(queryText) {
       var escapeChars = ['+', '-', '&', '!', '(', ')', '[', ']',
                          '{', '}', '^', '"', '~', '*', '?', ':', '\\'];
@@ -1502,12 +1273,12 @@ angular.module('o19s.splainer-search')
       return orRepl;
     };
 
-    /* This method is a bit tied to how the solrSearchSvc behaves, but 
+    /* This method is a bit tied to how the searchSvc behaves, but
      * as this module is probably what you're using to chop up a user's SolrURL
      * its placed here
-     * 
-     * It strips arguments out that are not supported by solrSearchSvc and
-     * generally interfere with its operation (ie fl, rows, etc). solrSearchSvc
+     *
+     * It strips arguments out that are not supported by searchSvc and
+     * generally interfere with its operation (ie fl, rows, etc). searchSvc
      * removes these itself, but this is placed here for convenience to remove
      * from user input (ie an fl may confuse the user when fl is actually supplied
      * elsewhere)
@@ -1520,7 +1291,7 @@ angular.module('o19s.splainer-search')
             delete solrArgs[arg];
           }
         };
-        
+
         var deleteThenWarnPrefix = function(argPrefix, warning) {
           var argsCpy = angular.copy(solrArgs);
           angular.forEach(argsCpy, function(value, key) {
@@ -1529,8 +1300,8 @@ angular.module('o19s.splainer-search')
             }
           });
         };
-       
-        // Stuff I think we can safely remove without warning the user 
+
+        // Stuff I think we can safely remove without warning the user
         delete solrArgs['json.wrf'];
         delete solrArgs.facet;
         delete solrArgs['facet.field'];
@@ -1640,4 +1411,618 @@ angular.module('o19s.splainer-search')
       return rVal;
     }; 
 
+  });
+
+'use strict';
+
+/*jslint latedef:false*/
+
+(function() {
+  angular.module('o19s.splainer-search')
+    .factory('DocFactory', [DocFactory]);
+
+  function DocFactory() {
+    var Doc = function(doc, options) {
+      var self        = this;
+
+      angular.copy(doc, self);
+
+      self.options    = options;
+      self.doc        = doc;
+
+      self.groupedBy  = groupedBy;
+      self.group      = group;
+
+      function groupedBy () {
+        if (options.groupedBy === undefined) {
+          return null;
+        } else {
+          return options.groupedBy;
+        }
+      }
+
+      function group () {
+        if (options.group === undefined) {
+          return null;
+        } else {
+          return options.group;
+        }
+      }
+    };
+
+    // Return factory object
+    return Doc;
+  }
+})();
+
+'use strict';
+
+/*jslint latedef:false*/
+
+(function() {
+  angular.module('o19s.splainer-search')
+    .factory('EsDocFactory', [
+      'DocFactory',
+      EsDocFactory
+    ]);
+
+  function EsDocFactory(DocFactory) {
+    var Doc = function(doc, options) {
+      DocFactory.call(this, doc, options);
+
+      var self = this;
+      angular.forEach(self.fields, function(fieldValue, fieldName) {
+        if ( fieldValue.length === 1 && typeof(fieldValue) === 'object' ) {
+          self[fieldName] = fieldValue[0];
+        } else {
+          self[fieldName] = fieldValue;
+        }
+      });
+    };
+
+    Doc.prototype = Object.create(DocFactory.prototype);
+    Doc.prototype.constructor = Doc; // Reset the constructor
+
+    Doc.prototype.url        = url;
+    Doc.prototype.explain    = explain;
+    Doc.prototype.snippet    = snippet;
+    Doc.prototype.source     = source;
+    Doc.prototype.highlight  = highlight;
+
+    function url () {
+      return '#';
+    }
+
+    function explain () {
+      /*jslint validthis:true*/
+      var self = this;
+      return self.options.explDict;
+    }
+
+    function snippet () {
+      /*jslint validthis:true*/
+      var self = this;
+      return null;
+    }
+
+    function source () {
+      /*jslint validthis:true*/
+      var self = this;
+
+      // Usually you would return _source, but since we are specifying the
+      // fields to display, ES only returns those specific fields.
+      // And we are assigning the fields to the doc itself in this case.
+      return angular.copy(self);
+    }
+
+    function highlight (docId, fieldName, preText, postText) {
+      /*jslint validthis:true*/
+      var self = this;
+      return self.options.hlDict;
+    }
+
+    return Doc;
+  }
+})();
+
+'use strict';
+
+/*jslint latedef:false*/
+
+(function() {
+  angular.module('o19s.splainer-search')
+    .factory('EsSearcherFactory', [
+      '$http',
+      'EsDocFactory',
+      'activeQueries',
+      'esSearcherPreprocessorSvc',
+      'SearcherFactory',
+      EsSearcherFactory
+    ]);
+
+  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, SearcherFactory) {
+
+    var Searcher = function(options) {
+      SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
+    };
+
+    Searcher.prototype = Object.create(SearcherFactory.prototype);
+    Searcher.prototype.constructor = Searcher; // Reset the constructor
+
+
+    Searcher.prototype.addDocToGroup    = addDocToGroup;
+    Searcher.prototype.pager            = pager;
+    Searcher.prototype.search           = search;
+
+    function addDocToGroup (groupedBy, group, solrDoc) {
+      /*jslint validthis:true*/
+      var self = this;
+
+      if (!self.grouped.hasOwnProperty(groupedBy)) {
+        self.grouped[groupedBy] = [];
+      }
+
+      var found = null;
+      angular.forEach(self.grouped[groupedBy], function(groupedDocs) {
+        if (groupedDocs.value === group && !found) {
+          found = groupedDocs;
+        }
+      });
+
+      if (!found) {
+        found = {docs:[], value:group};
+        self.grouped[groupedBy].push(found);
+      }
+
+      found.docs.push(solrDoc);
+    }
+
+    // return a new searcher that will give you
+    // the next page upon search(). To get the subsequent
+    // page, call pager on that searcher ad infinidum
+    function pager () {
+      /*jslint validthis:true*/
+      var self      = this;
+      var start     = 0;
+      var nextArgs  = angular.copy(self.args);
+
+      if (nextArgs.hasOwnProperty('start')) {
+        start = parseInt(nextArgs.start) + 10;
+
+        if (start >= self.numFound) {
+          return null; // no more results
+        }
+      } else {
+        start = 10;
+      }
+
+      var remaining       = self.numFound - start;
+      nextArgs.rows       = ['' + Math.min(10, remaining)];
+      nextArgs.start      = ['' + start];
+
+      var options = {
+        fieldList:  self.fieldList,
+        url:        self.url,
+        args:       nextArgs,
+        queryText:  self.queryText,
+      };
+
+      var nextSearcher = new Searcher(options);
+
+      return nextSearcher;
+    }
+
+    // search (execute the query) and produce results
+    // to the returned future
+    function search () {
+      /*jslint validthis:true*/
+      var self      = this;
+      var url       = self.url;
+      var payload   = self.queryDsl;
+      self.inError  = false;
+
+      var thisSearcher  = self;
+
+      var getExplData = function(doc) {
+        if (doc.hasOwnProperty('_explanation')) {
+          return doc._explanation;
+        }
+        else {
+          return null;
+        }
+      };
+
+      var getHlData = function(doc) {
+        if (doc.hasOwnProperty('highlight')) {
+          return doc.highlight;
+        } else {
+          return null;
+        }
+      };
+
+      activeQueries.count++;
+      return $http.post(url, payload).success(function(data) {
+        activeQueries.count--;
+        self.numFound = data.hits.total;
+
+        var parseDoc = function(doc, groupedBy, group) {
+          var explDict  = getExplData(doc);
+          var hlDict    = getHlData(doc);
+
+          var options = {
+            groupedBy:          groupedBy,
+            group:              group,
+            fieldList:          self.fieldList,
+            url:                self.url,
+            explDict:           explDict,
+            hlDict:             hlDict,
+          };
+
+          return new EsDocFactory(doc, options);
+        };
+
+        angular.forEach(data.hits.hits, function(hit) {
+          var doc = parseDoc(hit);
+          thisSearcher.docs.push(doc);
+        });
+      }).error(function() {
+        activeQueries.count--;
+        thisSearcher.inError = true;
+      });
+    }
+
+    // Return factory object
+    return Searcher;
+  }
+})();
+
+'use strict';
+
+/*jslint latedef:false*/
+
+(function() {
+  angular.module('o19s.splainer-search')
+    .factory('SearcherFactory', [SearcherFactory]);
+
+  function SearcherFactory() {
+    var Searcher = function(options, preprocessor) {
+      var self                = this;
+
+      self.fieldList          = options.fieldList;
+      self.url                = options.url;
+      self.args               = options.args;
+      self.queryText          = options.queryText;
+      self.config             = options.config;
+
+      self.docs               = [];
+      self.grouped            = {};
+      self.numFound           = 0;
+      self.inError            = false;
+      self.othersExplained    = {};
+
+      self.HIGHLIGHTING_PRE   = options.HIGHLIGHTING_PRE;
+      self.HIGHLIGHTING_POST  = options.HIGHLIGHTING_POST;
+
+      preprocessor.prepare(self);
+    };
+
+    // Return factory object
+    return Searcher;
+  }
+})();
+
+'use strict';
+
+/*jslint latedef:false*/
+
+(function() {
+  angular.module('o19s.splainer-search')
+    .factory('SolrDocFactory', [
+      'DocFactory',
+      'solrUrlSvc',
+      SolrDocFactory
+    ]);
+
+  function SolrDocFactory(DocFactory, solrUrlSvc) {
+    var Doc = function(doc, options) {
+      DocFactory.call(this, doc, options);
+    };
+
+    Doc.prototype = Object.create(DocFactory.prototype);
+    Doc.prototype.constructor = Doc; // Reset the constructor
+
+
+    Doc.prototype.url        = url;
+    Doc.prototype.explain    = explain;
+    Doc.prototype.snippet    = snippet;
+    Doc.prototype.source     = source;
+    Doc.prototype.highlight  = highlight;
+
+    var entityMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '\"': '&quot;',
+      '\'': '&#39;',
+      '/': '&#x2F;'
+    };
+
+    var escapeHtml = function(string) {
+      return String(string).replace(/[&<>"'\/]/g, function (s) {
+        return entityMap[s];
+      });
+    };
+
+    // a URL to access a the specified docId
+    var buildTokensUrl = function(fieldList, url, idField, docId) {
+      var escId = encodeURIComponent(solrUrlSvc.escapeUserQuery(docId));
+
+      var tokensArgs = {
+        'indent': ['true'],
+        'wt': ['xml'],
+        //'q': [idField + ':' + escId],
+        'facet': ['true'],
+        'facet.field': [],
+        'facet.mincount': ['1'],
+      };
+      if (fieldList !== '*') {
+
+        angular.forEach(fieldList, function(fieldName) {
+          if (fieldName !== 'score') {
+            tokensArgs['facet.field'].push(fieldName);
+          }
+        });
+      }
+      return solrUrlSvc.buildUrl(url, tokensArgs) + '&q=' + idField + ':'  + escId;
+    };
+
+    function url (idField, docId) {
+      /*jslint validthis:true*/
+      var self = this;
+      return buildTokensUrl(self.options.fieldList, self.options.url, idField, docId);
+    }
+
+    function explain (docId) {
+      /*jslint validthis:true*/
+      var self = this;
+
+      if (self.options.explDict.hasOwnProperty(docId)) {
+        return self.options.explDict[docId];
+      } else {
+        return null;
+      }
+    }
+
+    function snippet (docId, fieldName) {
+      /*jslint validthis:true*/
+      var self = this;
+
+      if (self.options.hlDict.hasOwnProperty(docId)) {
+        var docHls = self.options.hlDict[docId];
+        if (docHls.hasOwnProperty(fieldName)) {
+          return docHls[fieldName];
+        }
+      }
+      return null;
+    }
+
+    function source () {
+      /*jslint validthis:true*/
+      var self = this;
+      return angular.copy(self.doc);
+    }
+
+    function highlight (docId, fieldName, preText, postText) {
+      /*jslint validthis:true*/
+      var self        = this;
+      var fieldValue  = self.snippet(docId, fieldName);
+
+      if (fieldValue) {
+        var esc       = escapeHtml(fieldValue);
+        var preRegex  = new RegExp(self.options.highlightingPre, 'g');
+        var hlPre     = esc.replace(preRegex, preText);
+        var postRegex = new RegExp(self.options.highlightingPost, 'g');
+
+        return hlPre.replace(postRegex, postText);
+      } else {
+        return null;
+      }
+    }
+
+    return Doc;
+  }
+})();
+
+'use strict';
+
+/*jslint latedef:false*/
+
+(function() {
+  angular.module('o19s.splainer-search')
+    .factory('SolrSearcherFactory', [
+      '$http',
+      'SolrDocFactory',
+      'activeQueries',
+      'defaultSolrConfig',
+      'solrSearcherPreprocessorSvc',
+      'SearcherFactory',
+      SolrSearcherFactory
+    ]);
+
+  function SolrSearcherFactory($http, SolrDocFactory, activeQueries, defaultSolrConfig, solrSearcherPreprocessorSvc, SearcherFactory) {
+    var Searcher = function(options) {
+      SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
+    };
+
+    Searcher.prototype = Object.create(SearcherFactory.prototype);
+    Searcher.prototype.constructor = Searcher; // Reset the constructor
+
+    Searcher.prototype.addDocToGroup    = addDocToGroup;
+    Searcher.prototype.pager            = pager;
+    Searcher.prototype.search           = search;
+
+    function addDocToGroup (groupedBy, group, solrDoc) {
+      /*jslint validthis:true*/
+      var self = this;
+
+      if (!self.grouped.hasOwnProperty(groupedBy)) {
+        self.grouped[groupedBy] = [];
+      }
+
+      var found = null;
+      angular.forEach(self.grouped[groupedBy], function(groupedDocs) {
+        if (groupedDocs.value === group && !found) {
+          found = groupedDocs;
+        }
+      });
+
+      if (!found) {
+        found = {docs:[], value:group};
+        self.grouped[groupedBy].push(found);
+      }
+
+      found.docs.push(solrDoc);
+    }
+
+    // return a new searcher that will give you
+    // the next page upon search(). To get the subsequent
+    // page, call pager on that searcher ad infinidum
+    function pager () {
+      /*jslint validthis:true*/
+      var self      = this;
+      var start     = 0;
+      var nextArgs  = angular.copy(self.args);
+
+      if (nextArgs.hasOwnProperty('start')) {
+        start = parseInt(nextArgs.start) + 10;
+
+        if (start >= self.numFound) {
+          return null; // no more results
+        }
+      } else {
+        start = 10;
+      }
+
+      var remaining       = self.numFound - start;
+      nextArgs.rows       = ['' + Math.min(10, remaining)];
+      nextArgs.start      = ['' + start];
+      var pageConfig      = defaultSolrConfig;
+      pageConfig.sanitize = false;
+
+      var options = {
+        fieldList:  self.fieldList,
+        url:        self.url,
+        args:       nextArgs,
+        queryText:  self.queryText,
+        config:     pageConfig
+      };
+
+      var nextSearcher = new Searcher(options);
+
+      return nextSearcher;
+    }
+
+    // search (execute the query) and produce results
+    // to the returned future
+    function search () {
+      /*jslint validthis:true*/
+      var self      = this;
+      var url       = self.callUrl + '&json.wrf=JSON_CALLBACK';
+      self.inError  = false;
+
+      var thisSearcher  = self;
+
+      var getExplData = function(solrResp) {
+        if (solrResp.hasOwnProperty('debug')) {
+          var dbg = solrResp.debug;
+          if (dbg.hasOwnProperty('explain')) {
+            return dbg.explain;
+          }
+        }
+        return {};
+      };
+
+      var getOthersExplained = function(solrResp) {
+        if (solrResp.hasOwnProperty('debug')) {
+          var dbg = solrResp.debug;
+          if (dbg.hasOwnProperty('explainOther')) {
+            return dbg.explainOther;
+          }
+        }
+      };
+
+      var getHlData = function(solrResp) {
+        if (solrResp.hasOwnProperty('highlighting')) {
+          return solrResp.highlighting;
+        }
+        return {};
+      };
+
+      activeQueries.count++;
+      return $http.jsonp(url).success(function(solrResp) {
+        activeQueries.count--;
+
+        var explDict  = getExplData(solrResp);
+        var hlDict    = getHlData(solrResp);
+        thisSearcher.othersExplained = getOthersExplained(solrResp);
+
+        var parseSolrDoc = function(solrDoc, groupedBy, group) {
+          var options = {
+            groupedBy:          groupedBy,
+            group:              group,
+            fieldList:          self.fieldList,
+            url:                self.url,
+            explDict:           explDict,
+            hlDict:             hlDict,
+            highlightingPre:    self.HIGHLIGHTING_PRE,
+            highlightingPost:   self.HIGHLIGHTING_POST
+          };
+
+          return new SolrDocFactory(solrDoc, options);
+        };
+
+        if (solrResp.hasOwnProperty('response')) {
+          angular.forEach(solrResp.response.docs, function(solrDoc) {
+            var doc = parseSolrDoc(solrDoc);
+            thisSearcher.numFound = solrResp.response.numFound;
+            thisSearcher.docs.push(doc);
+          });
+        } else if (solrResp.hasOwnProperty('grouped')) {
+          angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
+            thisSearcher.numFound = groupedBy.matches;
+            angular.forEach(groupedBy.groups, function(groupResp) {
+              var groupValue = groupResp.groupValue;
+              angular.forEach(groupResp.doclist.docs, function(solrDoc) {
+                var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
+                thisSearcher.docs.push(doc);
+                thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
+              });
+            });
+          });
+        }
+      }).error(function() {
+        activeQueries.count--;
+        thisSearcher.inError = true;
+      });
+    }
+
+    // Return factory object
+    return Searcher;
+  }
+})();
+
+'use strict';
+
+angular.module('o19s.splainer-search')
+  .value('activeQueries', {
+    count: 0
+  });
+
+'use strict';
+
+angular.module('o19s.splainer-search')
+  .value('defaultSolrConfig', {
+    sanitize:   true,
+    highlight:  true,
+    debug:      true
   });

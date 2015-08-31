@@ -1,13 +1,14 @@
 'use strict';
 /* global urlContainsParams, urlMissingParams, mockExplainOther*/
 /*global describe,beforeEach,inject,it,expect*/
-describe('Service: solrSearchSvc', function () {
+describe('Service: searchSvc: Solr', function () {
 
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
   // instantiate service
-  var solrSearchSvc;
+  var searchSvc;
+  var activeQueries;
   var $httpBackend = null;
   var fieldSpecSvc = null;
   var mockSolrUrl = 'http://example.com:1234/solr/select';
@@ -34,14 +35,15 @@ describe('Service: solrSearchSvc', function () {
     $httpBackend = $injector.get('$httpBackend');
   }));
 
-  beforeEach(inject(function (_solrSearchSvc_, _fieldSpecSvc_) {
-    solrSearchSvc = _solrSearchSvc_;
-    fieldSpecSvc = _fieldSpecSvc_;
+  beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_, _activeQueries_) {
+    searchSvc     = _searchSvc_;
+    fieldSpecSvc  = _fieldSpecSvc_;
+    activeQueries = _activeQueries_;
     mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1');
   }));
 
   it('access solr with mock solr params', function() {
-    var searcher = solrSearchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+    var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
     $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                             .respond(200, mockResults);
@@ -51,16 +53,16 @@ describe('Service: solrSearchSvc', function () {
   });
 
   it('tracks active queries', function() {
-    expect(solrSearchSvc.activeQueries()).toEqual(0);
-    var searcher = solrSearchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+    expect(searchSvc.activeQueries()).toEqual(0);
+    var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
     $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                             .respond(200, mockResults);
     searcher.search();
-    expect(solrSearchSvc.activeQueries()).toEqual(1);
+    expect(searchSvc.activeQueries()).toEqual(1);
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
-    expect(solrSearchSvc.activeQueries()).toEqual(0);
+    expect(searchSvc.activeQueries()).toEqual(0);
   });
 
   describe('highlights', function() {
@@ -99,15 +101,15 @@ describe('Service: solrSearchSvc', function () {
 
     var createSearcherHlOn = function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     };
 
     var createSearcherHlOff = function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      var noHlConfig = solrSearchSvc.configFromDefault();
+      var noHlConfig = searchSvc.configFromDefault();
       noHlConfig.highlight = false;
-      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText,
                                                   noHlConfig);
     };
@@ -117,22 +119,21 @@ describe('Service: solrSearchSvc', function () {
     beforeEach(function() {
       highlighting ={
         'http://larkin.com/index/': {
-          content: solrSearchSvc.HIGHLIGHTING_PRE + 'highlighted larkin' + solrSearchSvc.HIGHLIGHTING_POST,
+          content: searchSvc.HIGHLIGHTING_PRE + 'highlighted larkin' + searchSvc.HIGHLIGHTING_POST,
           contentHlBold: '<b>highlighted larkin</b>'
         },
         'http://www.rogahnbins.com/main.html': {
-          content: solrSearchSvc.HIGHLIGHTING_PRE + 'highlighted rogah' + solrSearchSvc.HIGHLIGHTING_POST,
+          content: searchSvc.HIGHLIGHTING_PRE + 'highlighted rogah' + searchSvc.HIGHLIGHTING_POST,
           contentHlBold: '<b>highlighted rogah</b>'
         }
       };
 
 
       expectedHlParams = {'hl': ['true'],
-                          'hl.simple.pre': [solrSearchSvc.HIGHLIGHTING_PRE],
-                          'hl.simple.post': [solrSearchSvc.HIGHLIGHTING_POST],
+                          'hl.simple.pre': [searchSvc.HIGHLIGHTING_PRE],
+                          'hl.simple.post': [searchSvc.HIGHLIGHTING_POST],
                           'hl.fl': ['path content']};
     });
-
 
     it('asks for highlights', function() {
       createSearcherHlOn();
@@ -257,8 +258,6 @@ describe('Service: solrSearchSvc', function () {
   });
 
   describe('explain info ', function() {
-
-
     var fullSolrResp = {'responseHeader':{
       'status':0,
       'QTime':1,
@@ -357,15 +356,15 @@ describe('Service: solrSearchSvc', function () {
 
     var createSearcherWithDebug = function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     };
 
     var createSearcherDebugOff = function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      var noHlConfig = solrSearchSvc.configFromDefault();
+      var noHlConfig = searchSvc.configFromDefault();
       noHlConfig.debug = false;
-      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText,
                                                   noHlConfig);
     };
@@ -434,9 +433,7 @@ describe('Service: solrSearchSvc', function () {
     });
   });
 
-
   // For tests where 'id' is not the id field
-
   describe('alt id field tests', function() {
     var mockResultsAltId = {
       response: {
@@ -451,7 +448,7 @@ describe('Service: solrSearchSvc', function () {
     var searcher = null;
     beforeEach(function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:altId');
-      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     });
 
@@ -497,7 +494,7 @@ describe('Service: solrSearchSvc', function () {
       var expectedParamsMm = angular.copy(expectedParams);
       mockSolrParamsWithMm.mm = ['100%25'];
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:altId');
-      var searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParamsWithMm, mockQueryText);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParamsMm))
                               .respond(200, mockResultsAltId);
@@ -505,123 +502,124 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.verifyNoOutstandingExpectation();
 
     });
-
-
   });
 
-
-  it('encodes the url characters', function() {
-    var s = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
-    var e = '%20!%22%23%24%25%26\'()*%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~';
-    expect(e).toEqual(encodeURIComponent(s));
-  });
-
-  it('makes querydocs with tokensUrl', function() {
-    var searcher = solrSearchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
-                                                mockSolrParams, mockQueryText);
-    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
-                            .respond(200, mockResults);
-    searcher.search().then(function() {
-      var solrDocs = searcher.docs;
-      var expectedFacetField = {
-        'facet.field': ['field1', 'field']
-      };
-      angular.forEach(solrDocs, function(doc) {
-        expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc.url('id', '12'))).toBeTruthy();
-      });
+  describe('encode URL', function() {
+    it('encodes the url characters', function() {
+      var s = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+      var e = '%20!%22%23%24%25%26\'()*%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~';
+      expect(e).toEqual(encodeURIComponent(s));
     });
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
   });
 
-  it('escapes ids passed into url', function() {
-    var searcher = solrSearchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
-                                                mockSolrParams, mockQueryText);
-    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
-                            .respond(200, mockResults);
-    searcher.search().then(function() {
-      var solrDocs = searcher.docs;
-      angular.forEach(solrDocs, function(doc) {
-        var tokenUrl = doc.url('id', 'http://12');
-        expect(tokenUrl.indexOf('http://12')).toBe(-1);
-        var encId = encodeURIComponent('http\\://12');
-        expect(tokenUrl.indexOf(encId)).not.toBe(-1);
+  describe('search' ,function() {
+    it('makes querydocs with tokensUrl', function() {
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search().then(function() {
+        var solrDocs = searcher.docs;
+        var expectedFacetField = {
+          'facet.field': ['field1', 'field']
+        };
+        angular.forEach(solrDocs, function(doc) {
+          expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc.url('id', '12'))).toBeTruthy();
+        });
       });
-    });
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
-  });
-
-  it('doesnt include score in facetfield', function() {
-    var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
-    var searcher = solrSearchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
-                                                mockSolrParams, mockQueryText);
-    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
-                            .respond(200, mockResults);
-    searcher.search().then(function() {
-      var solrDocs = searcher.docs;
-      var expectedFacetField = {
-        'facet.field': ['field1', 'field']
-      };
-      angular.forEach(solrDocs, function(doc) {
-        expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc.url('id', 'foo'))).toBeTruthy();
-        expect(doc.url('id', 'foo').match(/facet.field=score/)).toBeFalsy();
-      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
     });
 
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
-  });
+    it('escapes ids passed into url', function() {
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search().then(function() {
+        var solrDocs = searcher.docs;
+        angular.forEach(solrDocs, function(doc) {
+          var tokenUrl = doc.url('id', 'http://12');
+          expect(tokenUrl.indexOf('http://12')).toBe(-1);
+          var encId = encodeURIComponent('http\\://12');
+          expect(tokenUrl.indexOf(encId)).not.toBe(-1);
+        });
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
 
-  it('linkurl has wt=xml', function() {
-    var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
-    var searcher = solrSearchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
-                                                mockSolrParams, mockQueryText);
-    expect(searcher.linkUrl.indexOf('wt=xml')).not.toBe(-1);
+    it('doesnt include score in facetfield', function() {
+      var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
+      var searcher = searchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search().then(function() {
+        var solrDocs = searcher.docs;
+        var expectedFacetField = {
+          'facet.field': ['field1', 'field']
+        };
+        angular.forEach(solrDocs, function(doc) {
+          expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc.url('id', 'foo'))).toBeTruthy();
+          expect(doc.url('id', 'foo').match(/facet.field=score/)).toBeFalsy();
+        });
+      });
 
-  });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
 
-  it('sanitizes solr arguments', function() {
-    var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
-    var mockUncleanSolrParams = angular.copy(mockSolrParams);
-    // make it filthy with these params we need to strip out!
-    mockUncleanSolrParams.wt = ['xml'];
-    mockUncleanSolrParams.rows = ['20'];
-    mockUncleanSolrParams.debug = ['true'];
-    var searcher = solrSearchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
-                                                mockUncleanSolrParams, mockQueryText);
-    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
-                            .respond(200, mockResults);
-    searcher.search();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
-  });
+    it('linkurl has wt=xml', function() {
+      var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
+      var searcher = searchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      expect(searcher.linkUrl.indexOf('wt=xml')).not.toBe(-1);
 
-  it('doesnt sanitize solr arguments when told not to', function() {
-    var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
-    var mockUncleanSolrParams = {};
-    // make it filthy with these params we need to strip out!
-    mockUncleanSolrParams.rows = ['20'];
-    var searcher = solrSearchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
-                                                mockUncleanSolrParams, mockQueryText, true);
-    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, mockUncleanSolrParams))
-                            .respond(200, mockResults);
-    searcher.search();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    });
 
-  });
+    it('sanitizes solr arguments', function() {
+      var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
+      var mockUncleanSolrParams = angular.copy(mockSolrParams);
+      // make it filthy with these params we need to strip out!
+      mockUncleanSolrParams.wt = ['xml'];
+      mockUncleanSolrParams.rows = ['20'];
+      mockUncleanSolrParams.debug = ['true'];
+      var searcher = searchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
+                                                  mockUncleanSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
 
-  it('searches with fl == *', function() {
-    var fieldSpec = fieldSpecSvc.createFieldSpec('*');
-    var searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
-                                                {'q': ['*:*']}, mockQueryText);
-    var testSolrParams = {'fl': ['*']};
-    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, testSolrParams))
-                            .respond(200, mockResults);
-    searcher.search();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    it('doesnt sanitize solr arguments when told not to', function() {
+      var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
+      var mockUncleanSolrParams = {};
+      // make it filthy with these params we need to strip out!
+      mockUncleanSolrParams.rows = ['20'];
+      var searcher = searchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
+                                                  mockUncleanSolrParams, mockQueryText, true);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, mockUncleanSolrParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+
+    });
+
+    it('searches with fl == *', function() {
+      var fieldSpec = fieldSpecSvc.createFieldSpec('*');
+      var searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+                                                  {'q': ['*:*']}, mockQueryText);
+      var testSolrParams = {'fl': ['*']};
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, testSolrParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
   });
 
 
@@ -769,7 +767,7 @@ describe('Service: solrSearchSvc', function () {
 
     beforeEach(function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id catch_line');
-      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                               mockSolrParams, mockQueryText);
     });
 
@@ -816,10 +814,7 @@ describe('Service: solrSearchSvc', function () {
       $httpBackend.flush();
       expect(called).toBe(1);
     });
-
-
   });
-
 
   describe('paging', function() {
     var fullSolrResp = {'responseHeader':{
@@ -854,7 +849,7 @@ describe('Service: solrSearchSvc', function () {
 
     beforeEach(function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     });
 
@@ -888,7 +883,4 @@ describe('Service: solrSearchSvc', function () {
       expect(nextSearcher).toBe(null);
     });
   });
-
-
-
 });
