@@ -169,6 +169,82 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
   });
 
+  describe('url', function() {
+    beforeEach(inject(function () {
+      mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title');
+      mockEsUrl     = 'http://localhost:9200/tmdb/_search';
+
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+    }));
+
+    var fullResponse = {
+      hits: {
+        hits: [
+          {
+            _score: 6.738184,
+            _type:  "movie",
+            _id:    "AU8pXbemwjf9yCj9Xh4e",
+            _source: {
+              poster_path:  "/nwCm80TFvA7pQAQdcGHs69ZeGOK.jpg",
+              title:        "Rambo",
+              id:           5039,
+              name:         "Rambo Collection"
+            },
+            _index: "tmdb",
+            highlight: {
+              title: [
+                "<em>Rambo</em>"
+              ]
+            }
+          },
+          {
+            _score:   4.1909046,
+            _type:    "movie",
+            _id:      "AU8pXau9wjf9yCj9Xhug",
+            _source: {
+              poster_path:  "/cUJgu5U6MHj9GF1weNtIPvN3IoS.jpg",
+              id:           1370,
+              title:        "Rambo III"
+            },
+            _index: "tmdb"
+          }
+        ],
+        total:      2,
+        max_score:  6.738184
+      },
+      _shards: {
+        successful: 5,
+        failed:     0,
+        total:      5
+      },
+      took:       88,
+      timed_out:  false
+    };
+
+    it('returns the proper url for the doc', function() {
+      $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
+
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var docs = searcher.docs;
+        var expectedUrl = 'http://localhost:9200/tmdb/movie/AU8pXbemwjf9yCj9Xh4e';
+        expect(docs[0].url()).toEqual(expectedUrl);
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
+  });
+
   describe('highlights', function() {
     beforeEach(inject(function () {
       mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title');
