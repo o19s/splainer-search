@@ -168,9 +168,14 @@ angular.module('o19s.splainer-search')
     self.prepare  = prepare;
 
     var replaceQuery = function(args, queryText) {
-      var replaced = angular.toJson(args, true);
-      replaced = replaced.replace(/#\$query##/g, queryText);
-      replaced = angular.fromJson(replaced);
+      if (queryText) {
+        queryText = queryText.replace(/\\/g, "\\\\");;
+        queryText = queryText.replace(/"/g, '\\\"');
+      }
+
+      var replaced  = angular.toJson(args, true);
+      replaced      = replaced.replace(/#\$query##/g, queryText);
+      replaced      = angular.fromJson(replaced);
 
       return replaced;
     };
