@@ -21,6 +21,11 @@
           self[fieldName] = fieldValue;
         }
       });
+
+      // Delete the highlight snippet because the normalized doc expect
+      // `highlight` to be a function, not an object.
+      // The highlight snippet is still available from `self.doc.highlight`.
+      delete self.highlight;
     };
 
     Doc.prototype = Object.create(DocFactory.prototype);
@@ -42,9 +47,16 @@
       return self.options.explDict;
     }
 
-    function snippet () {
+    function snippet (docId, fieldName) {
       /*jslint validthis:true*/
       var self = this;
+
+      if (self.doc.hasOwnProperty("highlight")) {
+        var docHls = self.doc.highlight;
+        if (docHls.hasOwnProperty(fieldName)) {
+          return docHls[fieldName];
+        }
+      }
       return null;
     }
 
@@ -60,8 +72,25 @@
 
     function highlight (docId, fieldName, preText, postText) {
       /*jslint validthis:true*/
-      var self = this;
-      return self.options.hlDict;
+      var self        = this;
+      var fieldValue  = self.snippet(docId, fieldName);
+
+      if (fieldValue) {
+        var newValue = [];
+        angular.forEach(fieldValue, function (value) {
+          // Doing the naive thing and assuming that the highlight tags
+          // were not overridden in the query DSL.
+          var preRegex  = new RegExp("<em>", 'g');
+          var hlPre     = value.replace(preRegex, preText);
+          var postRegex = new RegExp("</em>", 'g');
+
+          newValue.push(hlPre.replace(postRegex, postText));
+        });
+
+        return newValue;
+      } else {
+        return null;
+      }
     }
 
     return Doc;

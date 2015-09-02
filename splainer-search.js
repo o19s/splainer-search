@@ -1490,6 +1490,8 @@ angular.module('o19s.splainer-search')
           self[fieldName] = fieldValue;
         }
       });
+
+      delete self.highlight;
     };
 
     Doc.prototype = Object.create(DocFactory.prototype);
@@ -1511,9 +1513,16 @@ angular.module('o19s.splainer-search')
       return self.options.explDict;
     }
 
-    function snippet () {
+    function snippet (docId, fieldName) {
       /*jslint validthis:true*/
       var self = this;
+
+      if (self.doc.hasOwnProperty("highlight")) {
+        var docHls = self.doc.highlight;
+        if (docHls.hasOwnProperty(fieldName)) {
+          return docHls[fieldName];
+        }
+      }
       return null;
     }
 
@@ -1529,8 +1538,23 @@ angular.module('o19s.splainer-search')
 
     function highlight (docId, fieldName, preText, postText) {
       /*jslint validthis:true*/
-      var self = this;
-      return self.options.hlDict;
+      var self        = this;
+      var fieldValue  = self.snippet(docId, fieldName);
+
+      if (fieldValue) {
+        var newValue = [];
+        angular.forEach(fieldValue, function(value){
+          var preRegex  = new RegExp("<em>", 'g');
+          var hlPre     = value.replace(preRegex, preText);
+          var postRegex = new RegExp("</em>", 'g');
+
+          newValue.push(hlPre.replace(postRegex, postText));
+        });
+
+        return newValue;
+      } else {
+        return null;
+      }
     }
 
     return Doc;

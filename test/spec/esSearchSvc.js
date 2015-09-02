@@ -6,13 +6,14 @@ describe('Service: searchSvc: ElasticSearch', function() {
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
-  var searchSvc = null;
-  var $httpBackend = null;
-  var fieldSpecSvc = null;
-  var mockEsUrl = 'http://localhost:9200/statedecoded/_search';
+  var searcher;
+  var searchSvc;
+  var $httpBackend;
+  var fieldSpecSvc  = null;
+  var mockEsUrl     = 'http://localhost:9200/statedecoded/_search';
   var mockFieldSpec = null;
   var mockQueryText = 'elastic';
-  var mockEsParams = {
+  var mockEsParams  = {
     query: {
       term: {
         text: '#$query##'
@@ -34,66 +35,89 @@ describe('Service: searchSvc: ElasticSearch', function() {
     hits: {
       total: 2,
       'max_score': 1.0,
-      hits: [{
-        '_index': 'statedecoded',
-        '_type': 'law',
-        '_id': 'l_1',
-        '_score': 5.0,
-        'fields': {
-          'field': ['1--field value'],
-          'field1': ['1--field1 value']
+      hits: [
+        {
+          '_index': 'statedecoded',
+          '_type':  'law',
+          '_id':    'l_1',
+          '_score': 5.0,
+          'fields': {
+            'field':  ['1--field value'],
+            'field1': ['1--field1 value']
+          },
         },
-
-      },
-       {'_index': 'statedecoded',
-        '_type': 'law',
-        '_id': 'l_1',
-        '_score': 3.0,
-        'fields': {
-          'field': ['2--field value'],
-          'field1': ['2--field1 value']
+        {
+          '_index': 'statedecoded',
+          '_type':  'law',
+          '_id':    'l_1',
+          '_score': 3.0,
+          'fields': {
+            'field':  ['2--field value'],
+            'field1': ['2--field1 value']
+          }
         }
-       }
       ]
     }
   };
 
-  it('accesses es with mock es params', function() {
-    var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
-                                              mockEsParams, mockQueryText, {}, 'es');
-    $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-      var esQuery = angular.fromJson(data);
-      return (esQuery.query.term.text === mockQueryText);
-    }).
-    respond(200, mockResults);
-    searcher.search();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
-  });
+  describe('basic search', function () {
+    beforeEach(inject(function () {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+    }));
 
-  it('returns docs (they should look just like solrDocs)', function() {
-    var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
-                                              mockEsParams, mockQueryText, {}, 'es');
-    $httpBackend.expectPOST(mockEsUrl).
-    respond(200, mockResults);
-    var called = 0;
-    searcher.search()
-    .then(function() {
-      var docs = searcher.docs;
-      expect(docs.length === 2);
-      expect(docs[0].field).toEqual(mockResults.hits.hits[0].fields.field[0]);
-      expect(docs[0].field1).toEqual(mockResults.hits.hits[0].fields.field1[0]);
-      expect(docs[1].field).toEqual(mockResults.hits.hits[1].fields.field[0]);
-      expect(docs[1].field1).toEqual(mockResults.hits.hits[1].fields.field1[0]);
-      called++;
+    it('accesses es with mock es params', function () {
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        return (esQuery.query.term.text === mockQueryText);
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
     });
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
-    expect(called).toEqual(1);
-  });
 
+    it('returns docs (they should look just like ES docs)', function() {
+      $httpBackend.expectPOST(mockEsUrl).
+      respond(200, mockResults);
+
+      var called = 0;
+
+      searcher.search()
+      .then(function() {
+        var docs = searcher.docs;
+        expect(docs.length === 2);
+        expect(docs[0].field).toEqual(mockResults.hits.hits[0].fields.field[0]);
+        expect(docs[0].field1).toEqual(mockResults.hits.hits[0].fields.field1[0]);
+        expect(docs[1].field).toEqual(mockResults.hits.hits[1].fields.field[0]);
+        expect(docs[1].field1).toEqual(mockResults.hits.hits[1].fields.field1[0]);
+        called++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+    });
+  });
 
   describe('explain info', function() {
+    beforeEach(inject(function () {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+    }));
+
     var basicExplain1 = {
       match: true,
       value: 1.5,
@@ -115,8 +139,6 @@ describe('Service: searchSvc: ElasticSearch', function() {
     };
 
     it('asks for explain', function() {
-      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
-                                                mockEsParams, mockQueryText, {}, 'es');
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
         var esQuery = angular.fromJson(data);
         return (esQuery.hasOwnProperty('explain') && esQuery.explain === true);
@@ -128,8 +150,6 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
 
     it('it populates explain', function() {
-      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList, mockEsUrl,
-                                                mockEsParams, mockQueryText, {}, 'es');
       var mockResultsWithExpl = angular.copy(mockResults);
       mockResultsWithExpl.hits.hits[0]._explanation = sumExplain;
       var called = 0;
@@ -149,217 +169,116 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
   });
 
-  // describe('highlights', function() {
-  //   var fullResponse = {
-  //     "hits": {
-  //       "hits": [
-  //         {
-  //           "_score": 6.738184,
-  //           "_type":  "movie",
-  //           "_id":    "AU8pXbemwjf9yCj9Xh4e",
-  //           "_source": {
-  //             "poster_path":  "/nwCm80TFvA7pQAQdcGHs69ZeGOK.jpg",
-  //             "title":        "Rambo",
-  //             "id":           5039,
-  //             "poster_path":  "/a61qhaM73Acotl98fAxj6ey7YzE.jpg",
-  //             "name":         "Rambo Collection"
-  //           },
-  //           "_index": "tmdb",
-  //           "highlight": {
-  //             "title": [
-  //               "<em>Rambo</em>"
-  //             ]
-  //           }
-  //         },
-  //         {
-  //           "_score": 4.1909046,
-  //           "_type": "movie",
-  //           "_id": "AU8pXau9wjf9yCj9Xhug",
-  //           "_source": {
-  //             "poster_path": "/cUJgu5U6MHj9GF1weNtIPvN3IoS.jpg",
-  //             "id": 1370,
-  //             "title": "Rambo III"
-  //           },
-  //           "_index": "tmdb",
-  //           "highlight": {
-  //             "title": [
-  //               "<em>Rambo</em> III"
-  //             ]
-  //           }
-  //         }
-  //       ],
-  //       "total": 2,
-  //       "max_score": 6.738184
-  //     },
-  //     "_shards": {
-  //       "successful": 5,
-  //       "failed": 0,
-  //       "total": 5
-  //     },
-  //     "took": 88,
-  //     "timed_out": false
-  //   };
+  describe('highlights', function() {
+    beforeEach(inject(function () {
+      mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title');
 
-  //   // optional highlighting part
-  //   var highlighting = null;
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+    }));
 
-  //   var searcher = null;
+    var fullResponse = {
+      hits: {
+        hits: [
+          {
+            _score: 6.738184,
+            _type:  "movie",
+            _id:    "AU8pXbemwjf9yCj9Xh4e",
+            _source: {
+              poster_path:  "/nwCm80TFvA7pQAQdcGHs69ZeGOK.jpg",
+              title:        "Rambo",
+              id:           5039,
+              name:         "Rambo Collection"
+            },
+            _index: "tmdb",
+            highlight: {
+              title: [
+                "<em>Rambo</em>"
+              ]
+            }
+          },
+          {
+            _score:   4.1909046,
+            _type:    "movie",
+            _id:      "AU8pXau9wjf9yCj9Xhug",
+            _source: {
+              poster_path:  "/cUJgu5U6MHj9GF1weNtIPvN3IoS.jpg",
+              id:           1370,
+              title:        "Rambo III"
+            },
+            _index: "tmdb"
+          }
+        ],
+        total:      2,
+        max_score:  6.738184
+      },
+      _shards: {
+        successful: 5,
+        failed:     0,
+        total:      5
+      },
+      took:       88,
+      timed_out:  false
+    };
 
-  //   var createSearcherHlOn = function() {
-  //     var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-  //     searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
-  //                                                 mockSolrParams, mockQueryText);
-  //   };
+    it('gets highlight snippet field values if returned', function() {
+      $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
 
-  //   var createSearcherHlOff = function() {
-  //     var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-  //     var noHlConfig = solrSearchSvc.configFromDefault();
-  //     noHlConfig.highlight = false;
-  //     searcher = solrSearchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
-  //                                                 mockSolrParams, mockQueryText,
-  //                                                 noHlConfig);
-  //   };
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var docs = searcher.docs;
+        var expectedSnip  = ["<em>Rambo</em>"];
+        var expectedHl    = ["<b>Rambo</b>"];
+        expect(docs[0].snippet("AU8pXbemwjf9yCj9Xh4e", 'title')).toEqual(expectedSnip);
+        expect(docs[0].highlight("AU8pXbemwjf9yCj9Xh4e", 'title', '<b>', '</b>')).toEqual(expectedHl);
+      });
 
-  //   var expectedHlParams = null;
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
 
-  //   beforeEach(function() {
-  //     highlighting ={
-  //       'http://larkin.com/index/': {
-  //         content: solrSearchSvc.HIGHLIGHTING_PRE + 'highlighted larkin' + solrSearchSvc.HIGHLIGHTING_POST,
-  //         contentHlBold: '<b>highlighted larkin</b>'
-  //       },
-  //       'http://www.rogahnbins.com/main.html': {
-  //         content: solrSearchSvc.HIGHLIGHTING_PRE + 'highlighted rogah' + solrSearchSvc.HIGHLIGHTING_POST,
-  //         contentHlBold: '<b>highlighted rogah</b>'
-  //       }
-  //     };
+    it('returns null if no highlights for field', function() {
+      $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
 
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var docs = searcher.docs;
+        var expectedSnip  = null;
+        var expectedHl    = null;
+        expect(docs[0].snippet("AU8pXbemwjf9yCj9Xh4e", 'foo')).toEqual(expectedSnip);
+        expect(docs[0].highlight("AU8pXbemwjf9yCj9Xh4e", 'foo', '<b>', '</b>')).toEqual(expectedHl);
+      });
 
-  //     expectedHlParams = {'hl': ['true'],
-  //                         'hl.simple.pre': [solrSearchSvc.HIGHLIGHTING_PRE],
-  //                         'hl.simple.post': [solrSearchSvc.HIGHLIGHTING_POST],
-  //                         'hl.fl': ['path content']};
-  //   });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
 
-  //   it('asks for highlights', function() {
-  //     createSearcherHlOn();
-  //     var copiedResp = angular.copy(fullSolrResp);
-  //     copiedResp.highlighting = highlighting;
+    it('returns null if no highlights', function() {
+      $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
 
-  //     $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedHlParams))
-  //                             .respond(200, copiedResp);
-  //     var called = 0;
-  //     searcher.search().then(function() {
-  //       called++;
-  //     });
-  //     $httpBackend.flush();
-  //     $httpBackend.verifyNoOutstandingExpectation();
-  //     expect(called).toBe(1);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var docs = searcher.docs;
+        var expectedSnip  = null;
+        var expectedHl    = null;
+        expect(docs[1].snippet("AU8pXbemwjf9yCj9Xh4e", 'foo')).toEqual(expectedSnip);
+        expect(docs[1].highlight("AU8pXbemwjf9yCj9Xh4e", 'foo', '<b>', '</b>')).toEqual(expectedHl);
+      });
 
-  //   });
-
-  //   it('gets highlight snippet field values if returned', function() {
-  //     createSearcherHlOn();
-  //     var copiedResp = angular.copy(fullSolrResp);
-  //     copiedResp.highlighting = highlighting;
-  //     $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
-  //                             .respond(200, copiedResp);
-  //     var called = 0;
-  //     searcher.search().then(function() {
-  //       called++;
-  //       var solrDocs = searcher.docs;
-  //       var docId = fullSolrResp.response.docs[0].path;
-  //       var expectedSnip = highlighting[docId].content;
-  //       var expectedHl = highlighting[docId].contentHlBold;
-  //       expect(solrDocs[0].snippet(docId, 'content')).toEqual(expectedSnip);
-  //       expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
-
-  //       docId = fullSolrResp.response.docs[1].path;
-  //       expectedSnip = highlighting[docId].content;
-  //       expectedHl = highlighting[docId].contentHlBold;
-  //       expect(solrDocs[1].snippet(docId, 'content')).toEqual(expectedSnip);
-  //       expect(solrDocs[1].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
-  //     });
-  //     $httpBackend.flush();
-  //     $httpBackend.verifyNoOutstandingExpectation();
-  //     expect(called).toBe(1);
-  //   });
-
-  //   it('gets null if no highlights for field', function() {
-  //     createSearcherHlOn();
-  //     var copiedResp = angular.copy(fullSolrResp);
-  //     copiedResp.highlighting = highlighting;
-  //     $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
-  //                             .respond(200, copiedResp);
-  //     var called = 0;
-  //     searcher.search().then(function() {
-  //       called++;
-  //       var solrDocs = searcher.docs;
-  //       var docId = fullSolrResp.response.docs[0].path;
-  //       var expectedSnip = null;
-  //       var expectedHl = null;
-  //       expect(solrDocs[0].snippet(docId, 'some_other_field')).toEqual(expectedSnip);
-  //       expect(solrDocs[0].highlight(docId, 'some_other_field', '<b>', '</b>')).toEqual(expectedHl);
-  //       docId = fullSolrResp.response.docs[1].path;
-  //       expectedSnip = null;
-  //       expectedHl = null;
-  //       expect(solrDocs[1].snippet(docId, 'yet_another_field')).toEqual(expectedSnip);
-  //       expect(solrDocs[1].highlight(docId, 'yet_another_field', '<b>', '</b>')).toEqual(expectedHl);
-  //     });
-  //     $httpBackend.flush();
-  //     $httpBackend.verifyNoOutstandingExpectation();
-  //     expect(called).toBe(1);
-  //   });
-
-  //   it('gets null if no highlights', function() {
-  //     createSearcherHlOn();
-  //     var copiedResp = angular.copy(fullSolrResp);
-  //     $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
-  //                             .respond(200, copiedResp);
-  //     var called = 0;
-  //     searcher.search().then(function() {
-  //       called++;
-  //       var solrDocs = searcher.docs;
-  //       var docId = fullSolrResp.response.docs[0].path;
-  //       var expectedSnip = null;
-  //       var expectedHl = null;
-  //       expect(solrDocs[0].snippet(docId, 'content')).toEqual(expectedSnip);
-  //       expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
-  //       docId = fullSolrResp.response.docs[1].path;
-  //       expectedSnip = null;
-  //       expectedHl = null;
-  //       expect(solrDocs[1].snippet(docId, 'content')).toEqual(expectedSnip);
-  //       expect(solrDocs[1].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
-  //     });
-  //     $httpBackend.flush();
-  //     $httpBackend.verifyNoOutstandingExpectation();
-  //     expect(called).toBe(1);
-  //   });
-
-  //   it('doesnt request hls if hls off', function() {
-  //     createSearcherHlOff();
-  //     var copiedResp = angular.copy(fullSolrResp);
-  //     $httpBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedHlParams))
-  //                             .respond(200, copiedResp);
-  //     var called = 0;
-  //     searcher.search().then(function() {
-  //       called++;
-  //       var solrDocs = searcher.docs;
-  //       var docId = fullSolrResp.response.docs[0].path;
-  //       var expectedSnip = null;
-  //       var expectedHl = null;
-  //       expect(solrDocs[0].snippet(docId, 'content')).toEqual(expectedSnip);
-  //       expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
-  //       docId = fullSolrResp.response.docs[1].path;
-  //       expectedSnip = null;
-  //       expectedHl = null;
-  //       expect(solrDocs[1].snippet(docId, 'content')).toEqual(expectedSnip);
-  //       expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
-  //     });
-  //     $httpBackend.flush();
-  //     $httpBackend.verifyNoOutstandingExpectation();
-  //     expect(called).toBe(1);
-  //   });
-
-  // });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
+  });
 });
