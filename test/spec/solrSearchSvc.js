@@ -30,7 +30,6 @@ describe('Service: searchSvc: Solr', function () {
     }
   };
 
-
   beforeEach(inject(function($injector) {
     $httpBackend = $injector.get('$httpBackend');
   }));
@@ -40,6 +39,8 @@ describe('Service: searchSvc: Solr', function () {
     fieldSpecSvc  = _fieldSpecSvc_;
     activeQueries = _activeQueries_;
     mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1');
+
+    activeQueries.count = 0;
   }));
 
   it('access solr with mock solr params', function() {
