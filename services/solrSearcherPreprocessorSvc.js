@@ -5,9 +5,9 @@ angular.module('o19s.splainer-search')
     var self      = this;
     self.prepare  = prepare;
 
-    var withoutUnsupported = function (argsToUse, dontSanitize) {
+    var withoutUnsupported = function (argsToUse, sanitize) {
       var argsRemoved = angular.copy(argsToUse);
-      if (dontSanitize !== true) {
+      if (sanitize === true) {
         solrUrlSvc.removeUnsupported(argsRemoved);
       }
       return argsRemoved;
@@ -17,9 +17,9 @@ angular.module('o19s.splainer-search')
     var buildCallUrl = function(searcher) {
       var fieldList = searcher.fieldList;
       var url       = searcher.url;
-      var args      = withoutUnsupported(searcher.args, !searcher.config.sanitize);
-      var queryText = searcher.queryText;
       var config    = searcher.config;
+      var args      = withoutUnsupported(searcher.args, config.sanitize);
+      var queryText = searcher.queryText;
 
 
       args.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
@@ -37,6 +37,10 @@ angular.module('o19s.splainer-search')
         args['hl.simple.post']  = [searcher.HIGHLIGHTING_POST];
       }
 
+      if (config.escapeQuery) {
+        queryText = solrUrlSvc.escapeUserQuery(queryText);
+      }
+
       var baseUrl = solrUrlSvc.buildUrl(url, args);
       baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
 
@@ -46,6 +50,10 @@ angular.module('o19s.splainer-search')
     function prepare (searcher) {
       if (searcher.config === undefined) {
         searcher.config = defaultSolrConfig;
+      } else {
+        // make sure config params that weren't passed through are set from
+        // the default config object.
+        searcher.config = angular.merge({}, defaultSolrConfig, searcher.config);
       }
 
       searcher.callUrl = buildCallUrl(searcher);

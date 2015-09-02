@@ -576,7 +576,6 @@ describe('Service: searchSvc: Solr', function () {
       var searcher = searchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
       expect(searcher.linkUrl.indexOf('wt=xml')).not.toBe(-1);
-
     });
 
     it('sanitizes solr arguments', function() {
@@ -586,8 +585,12 @@ describe('Service: searchSvc: Solr', function () {
       mockUncleanSolrParams.wt = ['xml'];
       mockUncleanSolrParams.rows = ['20'];
       mockUncleanSolrParams.debug = ['true'];
-      var searcher = searchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
-                                                  mockUncleanSolrParams, mockQueryText);
+      var searcher = searchSvc.createSearcher(
+        fieldSpecWithScore.fieldList(),
+        mockSolrUrl,
+        mockUncleanSolrParams,
+        mockQueryText
+      );
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
       searcher.search();
@@ -600,14 +603,18 @@ describe('Service: searchSvc: Solr', function () {
       var mockUncleanSolrParams = {};
       // make it filthy with these params we need to strip out!
       mockUncleanSolrParams.rows = ['20'];
-      var searcher = searchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
-                                                  mockUncleanSolrParams, mockQueryText, true);
+      var searcher = searchSvc.createSearcher(
+        fieldSpecWithScore.fieldList(),
+        mockSolrUrl,
+        mockUncleanSolrParams,
+        mockQueryText,
+        { sanitize: false }
+      );
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, mockUncleanSolrParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
-
     });
 
     it('searches with fl == *', function() {
@@ -618,6 +625,29 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, testSolrParams))
                               .respond(200, mockResults);
       searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('escape special chars in queryText', function() {
+      var thisExpectedParams    = angular.copy(expectedParams);
+      var queryWithSpecialChars = '+-!(){}[]^"~*?:\\';
+      var escapedQuery          = '\\+\\-\\!\\(\\)\\{\\}\\[\\]\\^\\\"\\~\\*\\?\\:\\\\';
+      thisExpectedParams.q[0]   = encodeURIComponent(escapedQuery);
+      thisExpectedParams.fq[2]  = 'field2:' + encodeURIComponent(escapedQuery);
+
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        queryWithSpecialChars
+      );
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, thisExpectedParams))
+        .respond(200, mockResults);
+
+      searcher.search();
+
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
     });

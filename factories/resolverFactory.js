@@ -57,9 +57,10 @@
       }
 
       self.config = {
-        sanitize:   false,
-        highlight:  false,
-        debug:      false,
+        sanitize:     false,
+        highlight:    false,
+        debug:        false,
+        escapeQuery:  false,
       };
 
       self.searcher = searchSvc.createSearcher(
