@@ -5,11 +5,12 @@
 (function() {
   angular.module('o19s.splainer-search')
     .factory('EsDocFactory', [
+      'esUrlSvc',
       'DocFactory',
       EsDocFactory
     ]);
 
-  function EsDocFactory(DocFactory) {
+  function EsDocFactory(esUrlSvc, DocFactory) {
     var Doc = function(doc, options) {
       DocFactory.call(this, doc, options);
 
@@ -38,7 +39,13 @@
     Doc.prototype.highlight  = highlight;
 
     function url () {
-      return '#';
+      /*jslint validthis:true*/
+      var self  = this;
+      var doc   = self.doc;
+      var esurl = self.options.url;
+
+      esUrlSvc.parseUrl(esurl);
+      return esUrlSvc.buildDocUrl(doc);
     }
 
     function explain () {

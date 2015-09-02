@@ -186,6 +186,68 @@ angular.module('o19s.splainer-search')
 
 'use strict';
 
+angular.module('o19s.splainer-search')
+  .service('esUrlSvc', function esUrlSvc() {
+
+    var self      = this;
+    self.protocol = null;
+    self.host     = null;
+    self.pathname = null;
+
+    self.parseUrl     = parseUrl;
+    self.buildDocUrl  = buildDocUrl;
+
+    /**
+     *
+     * private method fixURLProtocol
+     * Adds 'http://' to the beginning of the URL if no protocol was specified.
+     *
+     */
+    var protocolRegex = /^https{0,1}\:/;
+    function fixURLProtocol(url) {
+      if (!protocolRegex.test(url)) {
+        url = 'http://' + url;
+      }
+      return url;
+    }
+
+    /**
+     *
+     * Parses an ES URL of the form [http|https]://[host][:port]/[collectionName]/_search
+     * Splits up the different parts of the URL.
+     *
+     */
+    function parseUrl (url) {
+      url = fixURLProtocol(url);
+      var a = document.createElement('a');
+      a.href = url;
+      url = a;
+
+      self.protocol = a.protocol;
+      self.host     = a.host;
+      self.pathname = a.pathname;
+    };
+
+    /**
+     *
+     * Builds ES URL of the form [protocol]://[host][:port]/[index]/[type]/[id]
+     * for an ES document.
+     *
+     */
+    function buildDocUrl (doc) {
+      var index = doc._index;
+      var type  = doc._type;
+      var id    = doc._id;
+
+      var url = self.protocol + '//' + self.host;
+      url = url + '/' + index + '/' + type + '/' + id;
+
+      return url;
+    }
+  });
+
+'use strict';
+
 // Factory for explains
 // really ties the room together
 angular.module('o19s.splainer-search')
@@ -1474,11 +1536,12 @@ angular.module('o19s.splainer-search')
 (function() {
   angular.module('o19s.splainer-search')
     .factory('EsDocFactory', [
+      'esUrlSvc',
       'DocFactory',
       EsDocFactory
     ]);
 
-  function EsDocFactory(DocFactory) {
+  function EsDocFactory(esUrlSvc, DocFactory) {
     var Doc = function(doc, options) {
       DocFactory.call(this, doc, options);
 
@@ -1491,6 +1554,9 @@ angular.module('o19s.splainer-search')
         }
       });
 
+      // Delete the highlight snippet because the normalized doc expect
+      // `highlight` to be a function, not an object.
+      // The highlight snippet is still available from `self.doc.highlight`.
       delete self.highlight;
     };
 
@@ -1504,7 +1570,13 @@ angular.module('o19s.splainer-search')
     Doc.prototype.highlight  = highlight;
 
     function url () {
-      return '#';
+      /*jslint validthis:true*/
+      var self  = this;
+      var doc   = self.doc;
+      var esurl = self.options.url;
+
+      esUrlSvc.parseUrl(esurl);
+      return esUrlSvc.buildDocUrl(doc);
     }
 
     function explain () {
@@ -1543,7 +1615,9 @@ angular.module('o19s.splainer-search')
 
       if (fieldValue) {
         var newValue = [];
-        angular.forEach(fieldValue, function(value){
+        angular.forEach(fieldValue, function (value) {
+          // Doing the naive thing and assuming that the highlight tags
+          // were not overridden in the query DSL.
           var preRegex  = new RegExp("<em>", 'g');
           var hlPre     = value.replace(preRegex, preText);
           var postRegex = new RegExp("</em>", 'g');
