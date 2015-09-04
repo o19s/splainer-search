@@ -71,7 +71,7 @@ window.urlMissingParams = function(url, params) {
               found = true;
             }
           });
-        } 
+        }
       });
       return !found;
     }
