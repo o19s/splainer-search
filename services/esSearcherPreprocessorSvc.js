@@ -19,10 +19,14 @@ angular.module('o19s.splainer-search')
     };
 
     function prepare (searcher) {
-      var queryDsl = replaceQuery(searcher.args, searcher.queryText);
-      queryDsl.fields   = searcher.fieldList;
-      queryDsl.explain  = true;
+      var pagerArgs       = angular.copy(searcher.args.pager);
+      searcher.pagerArgs  = pagerArgs;
+      delete searcher.args.pager;
 
-      searcher.queryDsl = queryDsl;
+      var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
+      queryDsl.fields     = searcher.fieldList;
+      queryDsl.explain    = true;
+
+      searcher.queryDsl   = queryDsl;
     }
   });

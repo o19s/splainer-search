@@ -9,11 +9,12 @@
       'EsDocFactory',
       'activeQueries',
       'esSearcherPreprocessorSvc',
+      'esUrlSvc',
       'SearcherFactory',
       EsSearcherFactory
     ]);
 
-  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, SearcherFactory) {
+  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory) {
 
     var Searcher = function(options) {
       SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
@@ -56,22 +57,28 @@
     function pager () {
       /*jslint validthis:true*/
       var self      = this;
-      var start     = 0;
+      var pagerArgs = { from: 0, size: 10 };
       var nextArgs  = angular.copy(self.args);
 
-      if (nextArgs.hasOwnProperty('start')) {
-        start = parseInt(nextArgs.start) + 10;
+      if (nextArgs.hasOwnProperty('pager') && nextArgs.pager !== undefined) {
+        pagerArgs = nextArgs.pager;
+      } else if (self.hasOwnProperty('pagerArgs') && self.pagerArgs !== undefined) {
+        pagerArgs = self.pagerArgs;
+      }
 
-        if (start >= self.numFound) {
+      if (pagerArgs.hasOwnProperty('from')) {
+        pagerArgs.from = parseInt(pagerArgs.from) + 10;
+
+        if (pagerArgs.from >= self.numFound) {
           return null; // no more results
         }
       } else {
-        start = 10;
+        pagerArgs.from = 10;
       }
 
-      var remaining       = self.numFound - start;
-      nextArgs.rows       = ['' + Math.min(10, remaining)];
-      nextArgs.start      = ['' + start];
+      var remaining       = self.numFound - pagerArgs.from;
+      pagerArgs.size      = Math.min(10, remaining);
+      nextArgs.pager      = pagerArgs;
 
       var options = {
         fieldList:  self.fieldList,
@@ -112,6 +119,11 @@
           return null;
         }
       };
+
+      // Build URL with params if any
+      // Eg. without params:  /_search
+      // Eg. with params:     /_search?size=5&from=5
+      url = esUrlSvc.buildUrl(url, self.pagerArgs);
 
       activeQueries.count++;
       return $http.post(url, payload).success(function(data) {
