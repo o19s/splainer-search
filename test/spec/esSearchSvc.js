@@ -357,4 +357,100 @@ describe('Service: searchSvc: ElasticSearch', function() {
       expect(called).toBe(1);
     });
   });
+
+  describe('paging', function() {
+    var fullResponse = {
+      hits: {
+        hits: [
+          {
+            _score: 6.738184,
+            _type:  "movie",
+            _id:    "AU8pXbemwjf9yCj9Xh4e",
+            _source: {
+              poster_path:  "/nwCm80TFvA7pQAQdcGHs69ZeGOK.jpg",
+              title:        "Rambo",
+              id:           5039,
+              name:         "Rambo Collection"
+            },
+            _index: "tmdb",
+            highlight: {
+              title: [
+                "<em>Rambo</em>"
+              ]
+            }
+          },
+          {
+            _score:   4.1909046,
+            _type:    "movie",
+            _id:      "AU8pXau9wjf9yCj9Xhug",
+            _source: {
+              poster_path:  "/cUJgu5U6MHj9GF1weNtIPvN3IoS.jpg",
+              id:           1370,
+              title:        "Rambo III"
+            },
+            _index: "tmdb"
+          }
+        ],
+        total:      30,
+        max_score:  6.738184
+      },
+      _shards: {
+        successful: 5,
+        failed:     0,
+        total:      5
+      },
+      took:       88,
+      timed_out:  false
+    };
+
+    beforeEach(inject(function () {
+      mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title');
+
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+    }));
+
+    it('pages on page', function() {
+      $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
+
+      searcher.search();
+      $httpBackend.flush();
+
+      // get page 2
+      var nextSearcher = searcher.pager();
+      var expectedPageParams = {
+        size: 10,
+        from: 10
+      };
+
+      $httpBackend.expectPOST(mockEsUrl + '?from=10&size=10')
+        .respond(200, fullResponse);
+
+      nextSearcher.search();
+      $httpBackend.flush();
+
+      // get page 3
+      nextSearcher = nextSearcher.pager();
+      expectedPageParams = {
+        size: 10,
+        from: 21
+      };
+
+      $httpBackend.expectPOST(mockEsUrl + '?from=20&size=10')
+        .respond(200, fullResponse);
+
+      nextSearcher.search();
+      $httpBackend.flush();
+
+      // done
+      nextSearcher = nextSearcher.pager();
+      expect(nextSearcher).toBe(null);
+    });
+  });
 });

@@ -10,6 +10,7 @@ angular.module('o19s.splainer-search')
 
     self.parseUrl     = parseUrl;
     self.buildDocUrl  = buildDocUrl;
+    self.buildUrl     = buildUrl;
 
     /**
      *
@@ -57,5 +58,38 @@ angular.module('o19s.splainer-search')
       url = url + '/' + index + '/' + type + '/' + id;
 
       return url;
+    }
+
+    /**
+     *
+     * Builds ES URL for a search query.
+     * Adds any query params if present: /_search?from=10&size=10
+     */
+    function buildUrl (url, params) {
+      // Return original URL if no params to append.
+      if (params === undefined ) {
+        return url;
+      }
+
+      var paramsAsStrings = [];
+
+      angular.forEach(params, function(value, key) {
+        paramsAsStrings.push(key + '=' + value);
+      });
+
+      // Return original URL if no params to append.
+      if ( paramsAsStrings.length === 0 ) {
+        return url;
+      }
+
+      var finalUrl = url;
+
+      if (finalUrl.substring(finalUrl.length - 1) === '?') {
+        finalUrl += paramsAsStrings.join('&');
+      } else {
+        finalUrl += '?' + paramsAsStrings.join('&');
+      }
+
+      return finalUrl;
     }
   });
