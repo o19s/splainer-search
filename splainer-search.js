@@ -181,11 +181,15 @@ angular.module('o19s.splainer-search')
     };
 
     function prepare (searcher) {
-      var queryDsl = replaceQuery(searcher.args, searcher.queryText);
-      queryDsl.fields   = searcher.fieldList;
-      queryDsl.explain  = true;
+      var pagerArgs       = angular.copy(searcher.args.pager);
+      searcher.pagerArgs  = pagerArgs;
+      delete searcher.args.pager;
 
-      searcher.queryDsl = queryDsl;
+      var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
+      queryDsl.fields     = searcher.fieldList;
+      queryDsl.explain    = true;
+
+      searcher.queryDsl   = queryDsl;
     }
   });
 
@@ -201,6 +205,7 @@ angular.module('o19s.splainer-search')
 
     self.parseUrl     = parseUrl;
     self.buildDocUrl  = buildDocUrl;
+    self.buildUrl     = buildUrl;
 
     /**
      *
@@ -248,6 +253,39 @@ angular.module('o19s.splainer-search')
       url = url + '/' + index + '/' + type + '/' + id;
 
       return url;
+    }
+
+    /**
+     *
+     * Builds ES URL for a search query.
+     * Adds any query params if present: /_search?from=10&size=10
+     */
+    function buildUrl (url, params) {
+      // Return original URL if no params to append.
+      if (params === undefined ) {
+        return url;
+      }
+
+      var paramsAsStrings = [];
+
+      angular.forEach(params, function(value, key) {
+        paramsAsStrings.push(key + '=' + value);
+      });
+
+      // Return original URL if no params to append.
+      if ( paramsAsStrings.length === 0 ) {
+        return url;
+      }
+
+      var finalUrl = url;
+
+      if (finalUrl.substring(finalUrl.length - 1) === '?') {
+        finalUrl += paramsAsStrings.join('&');
+      } else {
+        finalUrl += '?' + paramsAsStrings.join('&');
+      }
+
+      return finalUrl;
     }
   });
 
@@ -1659,11 +1697,12 @@ angular.module('o19s.splainer-search')
       'EsDocFactory',
       'activeQueries',
       'esSearcherPreprocessorSvc',
+      'esUrlSvc',
       'SearcherFactory',
       EsSearcherFactory
     ]);
 
-  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, SearcherFactory) {
+  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory) {
 
     var Searcher = function(options) {
       SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
@@ -1706,22 +1745,28 @@ angular.module('o19s.splainer-search')
     function pager () {
       /*jslint validthis:true*/
       var self      = this;
-      var start     = 0;
+      var pagerArgs = { from: 0, size: 10 };
       var nextArgs  = angular.copy(self.args);
 
-      if (nextArgs.hasOwnProperty('start')) {
-        start = parseInt(nextArgs.start) + 10;
+      if (nextArgs.hasOwnProperty('pager') && nextArgs.pager !== undefined) {
+        pagerArgs = nextArgs.pager;
+      } else if (self.hasOwnProperty('pagerArgs') && self.pagerArgs !== undefined) {
+        pagerArgs = self.pagerArgs;
+      }
 
-        if (start >= self.numFound) {
+      if (pagerArgs.hasOwnProperty('from')) {
+        pagerArgs.from = parseInt(pagerArgs.from) + 10;
+
+        if (pagerArgs.from >= self.numFound) {
           return null; // no more results
         }
       } else {
-        start = 10;
+        pagerArgs.from = 10;
       }
 
-      var remaining       = self.numFound - start;
-      nextArgs.rows       = ['' + Math.min(10, remaining)];
-      nextArgs.start      = ['' + start];
+      var remaining       = self.numFound - pagerArgs.from;
+      pagerArgs.size      = Math.min(10, remaining);
+      nextArgs.pager      = pagerArgs;
 
       var options = {
         fieldList:  self.fieldList,
@@ -1762,6 +1807,11 @@ angular.module('o19s.splainer-search')
           return null;
         }
       };
+
+      // Build URL with params if any
+      // Eg. without params:  /_search
+      // Eg. with params:     /_search?size=5&from=5
+      url = esUrlSvc.buildUrl(url, self.pagerArgs);
 
       activeQueries.count++;
       return $http.post(url, payload).success(function(data) {
