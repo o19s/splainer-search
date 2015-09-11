@@ -7,14 +7,20 @@
     .factory('SolrSearcherFactory', [
       '$http',
       'SolrDocFactory',
+      'SearcherFactory',
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
-      'SearcherFactory',
+      'normalDocsSvc',
       SolrSearcherFactory
     ]);
 
-  function SolrSearcherFactory($http, SolrDocFactory, activeQueries, defaultSolrConfig, solrSearcherPreprocessorSvc, SearcherFactory) {
+  function SolrSearcherFactory(
+    $http,
+    SolrDocFactory, SearcherFactory,
+    activeQueries, defaultSolrConfig,
+    solrSearcherPreprocessorSvc, normalDocsSvc
+  ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
     };
@@ -25,6 +31,7 @@
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
+    Searcher.prototype.explainOther     = explainOther;
 
     function addDocToGroup (groupedBy, group, solrDoc) {
       /*jslint validthis:true*/
@@ -169,6 +176,75 @@
         activeQueries.count--;
         thisSearcher.inError = true;
       });
+    }
+
+    function explainOther (otherQuery, fieldSpec) {
+      /*jslint validthis:true*/
+      var self = this;
+
+      var getOverridingExplain = function(doc, fieldSpec, overridingExplains) {
+        var idFieldName = fieldSpec.id;
+        var id = doc[idFieldName];
+
+        if (id && overridingExplains && overridingExplains.hasOwnProperty(id)) {
+          return overridingExplains[id];
+        }
+        return null;
+      };
+
+      var docsWithExplainOther = function(newDocs, fieldSpec, othersExplained) {
+        var docs = [];
+
+        angular.forEach(newDocs, function(doc) {
+          var overridingExplain = getOverridingExplain(doc, fieldSpec, othersExplained);
+          var normalDoc         = normalDocsSvc.createNormalDoc(fieldSpec, doc, overridingExplain);
+          docs.push(normalDoc);
+        });
+
+        return docs;
+      };
+
+      var args = angular.copy(self.args);
+      args.explainOther = [otherQuery];
+
+      var options = {
+        fieldList:  self.fieldList,
+        url:        self.url,
+        args:       args,
+        queryText:  self.queryText,
+        config:     self.config
+      };
+
+      var searcher = new Searcher(options);
+
+      return searcher.search()
+        .then(function() {
+          var othersExplained = searcher.othersExplained;
+
+          var solrParams = {
+            qf:   [fieldSpec.title + ' ' + fieldSpec.id],
+            rows: [5],
+            q:    [otherQuery]
+          };
+
+          var otherSearcherOptions = {
+            fieldList:  self.fieldList,
+            url:        self.url,
+            args:       solrParams,
+            queryText:  otherQuery,
+            config:     {}
+          };
+
+          var otherSearcher = new Searcher(otherSearcherOptions);
+
+          return otherSearcher.search()
+            .then(function() {
+              return {
+                numFound: otherSearcher.numFound,
+                docs:     docsWithExplainOther(otherSearcher.docs, fieldSpec, othersExplained)
+              };
+            });
+        });
     }
 
     // Return factory object
