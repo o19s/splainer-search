@@ -204,23 +204,12 @@
         return docs;
       };
 
-      var args = angular.copy(self.args);
-      args.explainOther = [otherQuery];
+      // var args = angular.copy(self.args);
+      self.args.explainOther = [otherQuery];
+      solrSearcherPreprocessorSvc.prepare(self);
 
-      var options = {
-        fieldList:  self.fieldList,
-        url:        self.url,
-        args:       args,
-        queryText:  self.queryText,
-        config:     self.config
-      };
-
-      var searcher = new Searcher(options);
-
-      return searcher.search()
+      return self.search()
         .then(function() {
-          var othersExplained = searcher.othersExplained;
-
           var solrParams = {
             qf:   [fieldSpec.title + ' ' + fieldSpec.id],
             rows: [5],
@@ -239,10 +228,8 @@
 
           return otherSearcher.search()
             .then(function() {
-              return {
-                numFound: otherSearcher.numFound,
-                docs:     docsWithExplainOther(otherSearcher.docs, fieldSpec, othersExplained)
-              };
+              self.numFound        = otherSearcher.numFound;
+              self.docs            = docsWithExplainOther(otherSearcher.docs, fieldSpec, self.othersExplained);
             });
         });
     }

@@ -1233,21 +1233,17 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockSolrResp);
 
-      var results = null;
-      searcher.explainOther('title:doc1', mockFieldSpec)
-        .then(function(response) {
-          results = response;
-        });
+      searcher.explainOther('title:doc1', mockFieldSpec);
 
       $httpBackend.flush();
 
-      expect(results.docs.length).toBe(2);
-      expect(Object.keys(results.docs[0].hotMatches().vecObj).length).toBe(1);
-      expect(Object.keys(results.docs[0].hotMatches().vecObj)).toContain('no matching term');
-      expect(results.docs[0].hotMatches().vecObj['no matching term']).toBe(0);
-      expect(results.docs[0].score()).toBe(0);
-      expect(Object.keys(results.docs[1].hotMatches().vecObj).length).toBe(1);
-      expect(results.docs[1].score()).toBe(3.3733945);
+      expect(searcher.docs.length).toBe(2);
+      expect(Object.keys(searcher.docs[0].hotMatches().vecObj).length).toBe(1);
+      expect(Object.keys(searcher.docs[0].hotMatches().vecObj)).toContain('no matching term');
+      expect(searcher.docs[0].hotMatches().vecObj['no matching term']).toBe(0);
+      expect(searcher.docs[0].score()).toBe(0);
+      expect(Object.keys(searcher.docs[1].hotMatches().vecObj).length).toBe(1);
+      expect(searcher.docs[1].score()).toBe(3.3733945);
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
@@ -1264,15 +1260,10 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl))
         .respond(200, mockSolrResp);
 
-      var results = null;
-      searcher.explainOther('', mockFieldSpec)
-        .then(function(response) {
-          results = response;
-        });
-
+      searcher.explainOther('', mockFieldSpec);
 
       $httpBackend.flush();
-      expect(results.docs.length).toBe(2);
+      expect(searcher.docs.length).toBe(2);
       $httpBackend.verifyNoOutstandingExpectation();
     });
   });
