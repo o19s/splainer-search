@@ -52,7 +52,8 @@
             'ids': {
               'values': ids
             }
-          }
+          },
+          size: ids.length
         };
       }
 

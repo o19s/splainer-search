@@ -1765,7 +1765,7 @@ angular.module('o19s.splainer-search')
       }
 
       var remaining       = self.numFound - pagerArgs.from;
-      pagerArgs.size      = Math.min(10, remaining);
+      pagerArgs.size      = Math.min(pagerArgs.size, remaining);
       nextArgs.pager      = pagerArgs;
 
       var options = {
@@ -1903,7 +1903,8 @@ angular.module('o19s.splainer-search')
             'ids': {
               'values': ids
             }
-          }
+          },
+          size: ids.length
         };
       }
 
