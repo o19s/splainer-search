@@ -77,7 +77,7 @@
       }
 
       var remaining       = self.numFound - pagerArgs.from;
-      pagerArgs.size      = Math.min(10, remaining);
+      pagerArgs.size      = Math.min(pagerArgs.size, remaining);
       nextArgs.pager      = pagerArgs;
 
       var options = {
