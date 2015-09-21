@@ -1854,8 +1854,17 @@ angular.module('o19s.splainer-search')
       esUrlSvc.setParams(self.pagerArgs);
       url = esUrlSvc.buildUrl();
 
+      var requestConfig = {};
+
+      if ( angular.isDefined(esUrlSvc.username) && esUrlSvc.username !== '' &&
+        angular.isDefined(esUrlSvc.password) && esUrlSvc.password !== '') {
+        var authorization = 'Basic ' + esUrlSvc.username + ':' + esUrlSvc.password;
+        requestConfig.headers = { 'Authorization': authorization };
+      }
+
       activeQueries.count++;
-      return $http.post(url, payload).success(function(data) {
+      return $http.post(url, payload, requestConfig)
+      .success(function(data) {
         activeQueries.count--;
         self.numFound = data.hits.total;
 
