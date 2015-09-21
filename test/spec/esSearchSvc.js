@@ -116,7 +116,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       );
 
       $httpBackend.expectPOST(mockEsUrl, undefined, function(headers) {
-        return headers['Authorization'] == 'Basic username:password';
+        return headers['Authorization'] == 'Basic ' + btoa('username:password');
       }).
       respond(200, mockResults);
 

@@ -572,6 +572,88 @@ angular.module('o19s.splainer-search')
 
 'use strict';
 
+/*
+ * Basic vector operations used by explain svc
+ *
+ * */
+angular.module('o19s.splainer-search')
+  .factory('hashMap', function hashMap() {
+    var HashMap = null;
+    if (angular.isUndefined(Map)) {
+      HashMap = function () {
+        this.set = polyfillSet;
+        this.get = polyfillGet;
+
+
+
+        var hashTable = {};
+
+        var hash = function (key) {
+            return Object.keys(key).join();
+        };
+
+        var slotInBucket = function (bucket, key) {
+            var len = bucket.length;
+            for (var i = 0; i < len; i++) {
+                if (bucket[i][0] === key) {
+                    return i;
+                }
+            }
+            return null;
+        };
+
+        function polyfillSet(key, value) {
+            var keyHash = hash(key);
+            if (!hashTable.hasOwnProperty(keyHash)) {
+                hashTable[keyHash] = [];
+            }
+            var bucket = hashTable[keyHash];
+            var slot = slotInBucket(bucket, key);
+            if (slot !== null) {
+                // overwrite existing
+                bucket[slot] = [key, value];
+            } else {
+                // add new
+                hashTable[keyHash].push([key, value]);
+            }
+        }
+
+        function polyfillGet(key) {
+            var keyHash = hash(key);
+            if (hashTable.hasOwnProperty(keyHash)) {
+                var bucket = hashTable[keyHash];
+                var slot = slotInBucket(bucket, key);
+                if (slot !== null) {
+                    return bucket[slot][1];
+                }
+
+            }
+            return null;
+        }
+      };
+    }
+    else {
+
+      HashMap = function() {
+        var map = new Map();
+
+        this.set = function(key, value) {
+          map.set(key, value);
+        };
+
+        this.get = function(key) {
+          return map.get(key);
+        };
+
+      };
+    }
+
+    return HashMap;
+
+  });
+
+'use strict';
+
 // Deals with normalizing documents from the search engine
 // into a canonical representation, ie
 // each doc has an id, a title, possibly a thumbnail field
@@ -1858,7 +1940,7 @@ angular.module('o19s.splainer-search')
 
       if ( angular.isDefined(esUrlSvc.username) && esUrlSvc.username !== '' &&
         angular.isDefined(esUrlSvc.password) && esUrlSvc.password !== '') {
-        var authorization = 'Basic ' + esUrlSvc.username + ':' + esUrlSvc.password;
+        var authorization = 'Basic ' + btoa(esUrlSvc.username + ':' + esUrlSvc.password);
         requestConfig.headers = { 'Authorization': authorization };
       }
 
