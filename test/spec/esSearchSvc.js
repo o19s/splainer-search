@@ -104,6 +104,39 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toEqual(1);
     });
+
+    it('sets the proper headers for auth', function() {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        'http://username:password@localhost:9200/statedecoded/_search',
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+
+      $httpBackend.expectPOST(mockEsUrl, undefined, function(headers) {
+        return headers['Authorization'] == 'Basic username:password';
+      }).
+      respond(200, mockResults);
+
+      var called = 0;
+
+      searcher.search()
+      .then(function() {
+        var docs = searcher.docs;
+        expect(docs.length === 2);
+        expect(docs[0].field).toEqual(mockResults.hits.hits[0].fields.field[0]);
+        expect(docs[0].field1).toEqual(mockResults.hits.hits[0].fields.field1[0]);
+        expect(docs[1].field).toEqual(mockResults.hits.hits[1].fields.field[0]);
+        expect(docs[1].field1).toEqual(mockResults.hits.hits[1].fields.field1[0]);
+        called++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+    });
   });
 
   describe('explain info', function() {
