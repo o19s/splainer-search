@@ -41,4 +41,24 @@ describe('Service: esUrlSvc', function () {
       expect(esUrlSvc.protocol).toBe('http:');
     });
   });
+
+  describe('build doc URL', function() {
+    var url = 'http://localhost:9200/tmdb/_search';
+
+    var doc = {
+      _index: 'tmdb',
+      _type:  'movies',
+      _id:    '1'
+    }
+
+    beforeEach( function () {
+      esUrlSvc.parseUrl(url);
+    });
+
+    it('builds a proper doc URL from the doc info', function() {
+      var docUrl = esUrlSvc.buildDocUrl(doc);
+
+      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/1');
+    });
+  });
 });
