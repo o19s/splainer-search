@@ -15,21 +15,21 @@ describe('Service: esUrlSvc', function () {
       var url = 'http://localhost:9200/tmdb/_search';
       esUrlSvc.parseUrl(url);
 
-      expect(esUrlSvc.protocol).toBe('http:');
+      expect(esUrlSvc.protocol).toBe('http');
       expect(esUrlSvc.host).toBe('localhost:9200');
       expect(esUrlSvc.pathname).toBe('/tmdb/_search');
 
       var url = 'http://es.quepid.com/tmdb/_search';
       esUrlSvc.parseUrl(url);
 
-      expect(esUrlSvc.protocol).toBe('http:');
+      expect(esUrlSvc.protocol).toBe('http');
       expect(esUrlSvc.host).toBe('es.quepid.com');
       expect(esUrlSvc.pathname).toBe('/tmdb/_search');
 
       var url = 'https://es.quepid.com/tmdb/_search';
       esUrlSvc.parseUrl(url);
 
-      expect(esUrlSvc.protocol).toBe('https:');
+      expect(esUrlSvc.protocol).toBe('https');
       expect(esUrlSvc.host).toBe('es.quepid.com');
       expect(esUrlSvc.pathname).toBe('/tmdb/_search');
     });
@@ -38,7 +38,27 @@ describe('Service: esUrlSvc', function () {
       var url = 'localhost:9200/tmdb/_search';
       esUrlSvc.parseUrl(url);
 
-      expect(esUrlSvc.protocol).toBe('http:');
+      expect(esUrlSvc.protocol).toBe('http');
+    });
+
+    it('retrieves the username and password if available', function() {
+      var url = 'http://es.quepid.com/tmdb/_search';
+      esUrlSvc.parseUrl(url);
+
+      expect(esUrlSvc.username).toBe('');
+      expect(esUrlSvc.password).toBe('');
+
+      var url = 'http://username:password@es.quepid.com/tmdb/_search';
+      esUrlSvc.parseUrl(url);
+
+      expect(esUrlSvc.username).toBe('username');
+      expect(esUrlSvc.password).toBe('password');
+
+      var url = 'http://username:password@localhost:9200/tmdb/_search';
+      esUrlSvc.parseUrl(url);
+
+      expect(esUrlSvc.username).toBe('username');
+      expect(esUrlSvc.password).toBe('password');
     });
   });
 
@@ -62,30 +82,37 @@ describe('Service: esUrlSvc', function () {
     });
   });
 
-  describe('build doc URL', function() {
+  describe('build URL', function() {
     var url = 'http://localhost:9200/tmdb/_search';
 
+    beforeEach( function () {
+      esUrlSvc.parseUrl(url);
+    });
+
     it('returns the original URL if no params are passed', function() {
-      var returnedUrl = esUrlSvc.buildUrl(url);
+      var returnedUrl = esUrlSvc.buildUrl();
 
       expect(returnedUrl).toBe(url);
     });
 
     it('returns the original URL if params passed is empty', function() {
       var params = { };
-      var returnedUrl = esUrlSvc.buildUrl(url, params);
+      esUrlSvc.setParams(params);
+      var returnedUrl = esUrlSvc.buildUrl();
 
       expect(returnedUrl).toBe(url);
     });
 
     it('appends params to the original URL', function() {
       var params = { foo: "bar" };
-      var returnedUrl = esUrlSvc.buildUrl(url, params);
+      esUrlSvc.setParams(params);
+      var returnedUrl = esUrlSvc.buildUrl();
 
       expect(returnedUrl).toBe(url + '?foo=bar');
 
       var params = { foo: "bar", bar: "foo" };
-      var returnedUrl = esUrlSvc.buildUrl(url, params);
+      esUrlSvc.setParams(params);
+      var returnedUrl = esUrlSvc.buildUrl();
 
       expect(returnedUrl).toBe(url + '?foo=bar&bar=foo');
     });

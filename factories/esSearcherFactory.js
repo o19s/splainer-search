@@ -123,7 +123,9 @@
       // Build URL with params if any
       // Eg. without params:  /_search
       // Eg. with params:     /_search?size=5&from=5
-      url = esUrlSvc.buildUrl(url, self.pagerArgs);
+      esUrlSvc.parseUrl(url);
+      esUrlSvc.setParams(self.pagerArgs);
+      url = esUrlSvc.buildUrl();
 
       activeQueries.count++;
       return $http.post(url, payload).success(function(data) {
