@@ -61,4 +61,33 @@ describe('Service: esUrlSvc', function () {
       expect(docUrl).toBe('http://localhost:9200/tmdb/movies/1');
     });
   });
+
+  describe('build doc URL', function() {
+    var url = 'http://localhost:9200/tmdb/_search';
+
+    it('returns the original URL if no params are passed', function() {
+      var returnedUrl = esUrlSvc.buildUrl(url);
+
+      expect(returnedUrl).toBe(url);
+    });
+
+    it('returns the original URL if params passed is empty', function() {
+      var params = { };
+      var returnedUrl = esUrlSvc.buildUrl(url, params);
+
+      expect(returnedUrl).toBe(url);
+    });
+
+    it('appends params to the original URL', function() {
+      var params = { foo: "bar" };
+      var returnedUrl = esUrlSvc.buildUrl(url, params);
+
+      expect(returnedUrl).toBe(url + '?foo=bar');
+
+      var params = { foo: "bar", bar: "foo" };
+      var returnedUrl = esUrlSvc.buildUrl(url, params);
+
+      expect(returnedUrl).toBe(url + '?foo=bar&bar=foo');
+    });
+  });
 });
