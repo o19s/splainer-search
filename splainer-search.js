@@ -1858,7 +1858,7 @@ angular.module('o19s.splainer-search')
 
       if ( angular.isDefined(esUrlSvc.username) && esUrlSvc.username !== '' &&
         angular.isDefined(esUrlSvc.password) && esUrlSvc.password !== '') {
-        var authorization = 'Basic ' + esUrlSvc.username + ':' + esUrlSvc.password;
+        var authorization = 'Basic ' + btoa(esUrlSvc.username + ':' + esUrlSvc.password);
         requestConfig.headers = { 'Authorization': authorization };
       }
 
