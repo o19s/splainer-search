@@ -211,6 +211,14 @@ describe('Service: normalDocsSvc', function () {
       expect(expl.explanation()).toContain('order');
     });
 
+    it('decorated doc same as original', function() {
+      // we need these to be the same to preserve memory
+      var fieldSpec = {id: 'custom_id_field', title: 'title_field'};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDocNoExpl);
+      var decoratedDoc = normalDocsSvc.explainDoc(normalDoc, basicExplain2);
+      expect(decoratedDoc).toBe(normalDoc);
+    });
+
     it('uses alt explain if available', function() {
       var fieldSpec = {id: 'custom_id_field', title: 'title_field'};
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDocNoExpl, basicExplain2);
