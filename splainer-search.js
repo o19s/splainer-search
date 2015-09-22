@@ -749,13 +749,11 @@ angular.module('o19s.splainer-search')
     // Decorate doc with an explain/field values/etc other
     // than what came back from the search engine
     this.explainDoc = function(doc, explainJson) {
-      var decorated = angular.copy(doc);
-      return explainable(decorated, explainJson);
+      return explainable(doc, explainJson);
     };
 
     this.snippetDoc = function(doc) {
-      var decorated = angular.copy(doc);
-      return snippitable(decorated);
+      return snippitable(doc);
     };
 
     // A stub, used to display a result that we expected

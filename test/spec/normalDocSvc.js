@@ -6,7 +6,7 @@ describe('Service: normalDocsSvc', function () {
 
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
- 
+
   /*jshint camelcase: false */
   var normalDocsSvc = null;
   var vectorSvc = null;
@@ -91,7 +91,7 @@ describe('Service: normalDocsSvc', function () {
       expect(normalDoc.subSnippets().another_field).toContain('&gt;');
       expect(normalDoc.subSnippets().another_field).toContain('&lt;');
   });
-  
+
   describe('highlight tests', function() {
     var availableHighlight = null;
     var solrDoc = null;
@@ -119,7 +119,7 @@ describe('Service: normalDocsSvc', function () {
       var snips = normalDoc.subSnippets('<b>', '</b>');
       expect(snips.another_field).toEqual('<b>' + availableHighlight + '</b>');
     });
-    
+
     it('uses highlights for sub fileds', function() {
       availableHighlight = 'something';
       var fieldSpec = {id: 'custom_id_field', title: 'title_field', subs: ['another_field']};
@@ -127,7 +127,7 @@ describe('Service: normalDocsSvc', function () {
       expect(normalDoc.subs.another_field).toEqual(solrDoc.another_field);
       expect(normalDoc.title).toEqual(solrDoc.title_field);
     });
-    
+
     it('uses orig value on no hl', function() {
       availableHighlight = null;
       var anotherFieldValue =solrDoc.another_field;
@@ -206,17 +206,9 @@ describe('Service: normalDocsSvc', function () {
       expect(hmOutOf.length).toBe(1);
       expect(hmOutOf[0].description).toContain('order');
       expect(hmOutOf[0].percentage).toBe(50.0);
-      
+
       var expl = decoratedDoc.explain();
       expect(expl.explanation()).toContain('order');
-    });
-    
-    it('decorates and leaves alone original', function() {
-      var fieldSpec = {id: 'custom_id_field', title: 'title_field'};
-      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDocNoExpl);
-      var explBefore = normalDoc.explain();
-      normalDocsSvc.explainDoc(normalDoc, basicExplain2);
-      expect(explBefore).toEqual(normalDoc.explain());
     });
 
     it('uses alt explain if available', function() {
@@ -226,7 +218,7 @@ describe('Service: normalDocsSvc', function () {
       expect(hmOutOf.length).toBe(1);
       expect(hmOutOf[0].description).toContain('order');
       expect(hmOutOf[0].percentage).toBe(50.0);
-      
+
       var expl = normalDoc.explain();
       expect(expl.explanation()).toContain('order');
     });
@@ -252,16 +244,16 @@ describe('Service: normalDocsSvc', function () {
           return sumExplain;
         }
         return null;
-      }; 
+      };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
       expect(idVals.length).toBe(2); // 2 lookups
       expect(idVals[0]).toEqual(solrDoc.source().custom_id_field);
       expect(idVals[1]).toEqual(solrDoc.source().id);
       expect(normalDoc.score()).toEqual(1.0);
     });
-    
+
   });
-  
+
   describe('uses source(), not fields on doc', function() {
     var solrDoc = null;
     var availableHighlights = {};
@@ -293,7 +285,7 @@ describe('Service: normalDocsSvc', function () {
                    return null;
                  } };
     });
-      
+
     it('reads fields', function() {
       var fieldSpec = {id: 'custom_id_field', title: 'title_field', subs: '*'};
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -337,7 +329,7 @@ describe('Service: normalDocsSvc', function () {
       expect(normalDoc.subs.sub1).toEqual('sub1_val');
       expect(normalDoc.subs.sub2).toEqual('sub2_val');
     });
-    
+
     it('captures sub values w/ highlight', function() {
       var fieldSpec = {id: 'custom_id_field', title: 'title_field', subs: '*'};
       availableHighlights.sub1 = 'sub1_hl';
