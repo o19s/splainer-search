@@ -28,9 +28,9 @@
         var args    = { };
         var fields  = '*';
 
-        if ( self.searchEngine == 'solr' ) {
+        if ( self.searchEngine === 'solr' ) {
           args = { q: ['*:*'] };
-        } else if ( self.searchEngine == 'es' ) {
+        } else if ( self.searchEngine === 'es' ) {
           fields = null;
         }
 
@@ -51,7 +51,7 @@
           // the entire list of fields possible.
           // This is not perfect as the top 10 results might not include
           // a comprehensive list, but it's the best we can do.
-          if ( self.searchEngine == 'solr' ) {
+          if ( self.searchEngine === 'solr' ) {
             angular.forEach(self.searcher.docs, function(doc) {
               var attributes = Object.keys(doc.doc);
 
@@ -59,8 +59,8 @@
                 return self.fields.indexOf(attribute) < 0;
               }));
             });
-          } else if ( self.searchEngine == 'es' ) {
-            self.fields.push("_id");
+          } else if ( self.searchEngine === 'es' ) {
+            self.fields.push('_id');
 
             angular.forEach(self.searcher.docs, function(doc) {
               var attributes = Object.keys(doc.doc._source);

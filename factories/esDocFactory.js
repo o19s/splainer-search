@@ -58,7 +58,7 @@
       /*jslint validthis:true*/
       var self = this;
 
-      if (self.doc.hasOwnProperty("highlight")) {
+      if (self.doc.hasOwnProperty('highlight')) {
         var docHls = self.doc.highlight;
         if (docHls.hasOwnProperty(fieldName)) {
           return docHls[fieldName];
@@ -87,9 +87,9 @@
         angular.forEach(fieldValue, function (value) {
           // Doing the naive thing and assuming that the highlight tags
           // were not overridden in the query DSL.
-          var preRegex  = new RegExp("<em>", 'g');
+          var preRegex  = new RegExp('<em>', 'g');
           var hlPre     = value.replace(preRegex, preText);
-          var postRegex = new RegExp("</em>", 'g');
+          var postRegex = new RegExp('</em>', 'g');
 
           newValue.push(hlPre.replace(postRegex, postText));
         });

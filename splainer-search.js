@@ -169,7 +169,7 @@ angular.module('o19s.splainer-search')
 
     var replaceQuery = function(args, queryText) {
       if (queryText) {
-        queryText = queryText.replace(/\\/g, "\\\\");;
+        queryText = queryText.replace(/\\/g, '\\\\');
         queryText = queryText.replace(/"/g, '\\\"');
       }
 
@@ -251,7 +251,7 @@ angular.module('o19s.splainer-search')
       self.password = a.password();
 
       self.parsed   = true;
-    };
+    }
 
     /**
      *
@@ -315,7 +315,7 @@ angular.module('o19s.splainer-search')
 
       var url = self.protocol + '://' + self.host;
 
-      return url
+      return url;
     }
 
     function setParams (params) {
@@ -325,7 +325,7 @@ angular.module('o19s.splainer-search')
 
     function UrlNotParseException() {
        var self = this;
-       self.message = "URL not parsed. Must call the parse() function first.";
+       self.message = 'URL not parsed. Must call the parse() function first.';
        self.toString = function() {
           return self.message;
        };
@@ -471,7 +471,7 @@ angular.module('o19s.splainer-search')
 angular.module('o19s.splainer-search')
   .service('fieldSpecSvc', function fieldSpecSvc() {
     // AngularJS will instantiate a singleton by calling 'new' on this function
-    
+
     var addFieldOfType = function(fieldSpec, fieldType, fieldName) {
       if (fieldType === 'sub') {
         if (!fieldSpec.hasOwnProperty('subs')) {
@@ -479,7 +479,7 @@ angular.module('o19s.splainer-search')
         }
         if (fieldSpec.subs !== '*') {
           fieldSpec.subs.push(fieldName);
-        } 
+        }
         if (fieldName === '*') {
           fieldSpec.subs = '*';
         }
@@ -515,8 +515,8 @@ angular.module('o19s.splainer-search')
         }
       });
     };
-    
-    
+
+
     var FieldSpec = function(fieldSpecStr) {
       this.fields = [];
       this.fieldSpecStr = fieldSpecStr;
@@ -1138,7 +1138,7 @@ angular.module('o19s.splainer-search')
       });
 
       this.formulaStr = function() {
-        return 'TF=' + this.fieldWeight.tf().contribution() + 
+        return 'TF=' + this.fieldWeight.tf().contribution() +
                ' * IDF=' + this.fieldWeight.idf().contribution();
       };
     };
@@ -1157,7 +1157,7 @@ angular.module('o19s.splainer-search')
       explain.tf = function() {
         return tfExpl;
       };
-      
+
       explain.idf = function() {
         return idfExpl;
       };
@@ -1175,7 +1175,7 @@ angular.module('o19s.splainer-search')
       /*this.fieldNorm = function() {
       };*/
     };
-    
+
     this.QueryWeightExplain = function() {
       this.realExplanation = 'Query Weight';
       tfIdfable(this);
@@ -1200,7 +1200,7 @@ angular.module('o19s.splainer-search')
 
     // For default similarity, IDF of the term being searched
     // in the case of phrase queries, this is a sum of
-    // all the members of the phrase. 
+    // all the members of the phrase.
     //
     // TODO -- the underlying idf for each member of a phrase
     // does not identify the term corresponding to that idf,
@@ -1451,22 +1451,6 @@ angular.module('o19s.splainer-search')
      * */
     this.removeUnsupported = function(solrArgs) {
         var warnings = {};
-        var deleteThenWarn = function(arg, warning) {
-          if (solrArgs.hasOwnProperty(arg)) {
-            warnings[arg] = warning;
-            delete solrArgs[arg];
-          }
-        };
-
-        var deleteThenWarnPrefix = function(argPrefix, warning) {
-          var argsCpy = angular.copy(solrArgs);
-          angular.forEach(argsCpy, function(value, key) {
-            if (key.startsWith(argPrefix)) {
-              deleteThenWarn(key, warning);
-            }
-          });
-        };
-
         // Stuff I think we can safely remove without warning the user
         delete solrArgs['json.wrf'];
         delete solrArgs.facet;
@@ -1480,7 +1464,6 @@ angular.module('o19s.splainer-search')
         delete solrArgs.debug;
 
         // Unsupported stuff to remove and provide a friendly warning
-        // deleteThenWarnPrefix('group', 'Group queries/field collapsing not supported');
         return warnings;
     };
 
@@ -1490,7 +1473,7 @@ angular.module('o19s.splainer-search')
 
 if (typeof String.prototype.startsWith !== 'function') {
   // see below for better implementation!
-  String.prototype.startsWith = function (str){
+  String.prototype.startsWith = function (str) {
     return this.indexOf(str) === 0;
   };
 }
@@ -1503,7 +1486,7 @@ if (typeof String.prototype.hasSubstr !== 'function') {
 
 if (typeof String.prototype.endsWith !== 'function') {
   String.prototype.endsWith = function(suffix) {
-      return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    return this.indexOf(suffix, this.length - suffix.length) !== -1;
   };
 }
 
@@ -1575,8 +1558,7 @@ angular.module('o19s.splainer-search')
         rVal.set(key, value * scalar);
       });
       return rVal;
-    }; 
-
+    };
   });
 
 'use strict';
@@ -1685,7 +1667,7 @@ angular.module('o19s.splainer-search')
       /*jslint validthis:true*/
       var self = this;
 
-      if (self.doc.hasOwnProperty("highlight")) {
+      if (self.doc.hasOwnProperty('highlight')) {
         var docHls = self.doc.highlight;
         if (docHls.hasOwnProperty(fieldName)) {
           return docHls[fieldName];
@@ -1714,9 +1696,9 @@ angular.module('o19s.splainer-search')
         angular.forEach(fieldValue, function (value) {
           // Doing the naive thing and assuming that the highlight tags
           // were not overridden in the query DSL.
-          var preRegex  = new RegExp("<em>", 'g');
+          var preRegex  = new RegExp('<em>', 'g');
           var hlPre     = value.replace(preRegex, preText);
-          var postRegex = new RegExp("</em>", 'g');
+          var postRegex = new RegExp('</em>', 'g');
 
           newValue.push(hlPre.replace(postRegex, postText));
         });
@@ -2109,9 +2091,9 @@ angular.module('o19s.splainer-search')
         var args    = { };
         var fields  = '*';
 
-        if ( self.searchEngine == 'solr' ) {
+        if ( self.searchEngine === 'solr' ) {
           args = { q: ['*:*'] };
-        } else if ( self.searchEngine == 'es' ) {
+        } else if ( self.searchEngine === 'es' ) {
           fields = null;
         }
 
@@ -2132,7 +2114,7 @@ angular.module('o19s.splainer-search')
           // the entire list of fields possible.
           // This is not perfect as the top 10 results might not include
           // a comprehensive list, but it's the best we can do.
-          if ( self.searchEngine == 'solr' ) {
+          if ( self.searchEngine === 'solr' ) {
             angular.forEach(self.searcher.docs, function(doc) {
               var attributes = Object.keys(doc.doc);
 
@@ -2140,8 +2122,8 @@ angular.module('o19s.splainer-search')
                 return self.fields.indexOf(attribute) < 0;
               }));
             });
-          } else if ( self.searchEngine == 'es' ) {
-            self.fields.push("_id");
+          } else if ( self.searchEngine === 'es' ) {
+            self.fields.push('_id');
 
             angular.forEach(self.searcher.docs, function(doc) {
               var attributes = Object.keys(doc.doc._source);

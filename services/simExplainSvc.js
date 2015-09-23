@@ -25,7 +25,7 @@ angular.module('o19s.splainer-search')
       });
 
       this.formulaStr = function() {
-        return 'TF=' + this.fieldWeight.tf().contribution() + 
+        return 'TF=' + this.fieldWeight.tf().contribution() +
                ' * IDF=' + this.fieldWeight.idf().contribution();
       };
     };
@@ -44,7 +44,7 @@ angular.module('o19s.splainer-search')
       explain.tf = function() {
         return tfExpl;
       };
-      
+
       explain.idf = function() {
         return idfExpl;
       };
@@ -62,7 +62,7 @@ angular.module('o19s.splainer-search')
       /*this.fieldNorm = function() {
       };*/
     };
-    
+
     this.QueryWeightExplain = function() {
       this.realExplanation = 'Query Weight';
       tfIdfable(this);
@@ -87,7 +87,7 @@ angular.module('o19s.splainer-search')
 
     // For default similarity, IDF of the term being searched
     // in the case of phrase queries, this is a sum of
-    // all the members of the phrase. 
+    // all the members of the phrase.
     //
     // TODO -- the underlying idf for each member of a phrase
     // does not identify the term corresponding to that idf,

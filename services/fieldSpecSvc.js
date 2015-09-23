@@ -3,7 +3,7 @@
 angular.module('o19s.splainer-search')
   .service('fieldSpecSvc', function fieldSpecSvc() {
     // AngularJS will instantiate a singleton by calling 'new' on this function
-    
+
     var addFieldOfType = function(fieldSpec, fieldType, fieldName) {
       if (fieldType === 'sub') {
         if (!fieldSpec.hasOwnProperty('subs')) {
@@ -11,7 +11,7 @@ angular.module('o19s.splainer-search')
         }
         if (fieldSpec.subs !== '*') {
           fieldSpec.subs.push(fieldName);
-        } 
+        }
         if (fieldName === '*') {
           fieldSpec.subs = '*';
         }
@@ -47,8 +47,8 @@ angular.module('o19s.splainer-search')
         }
       });
     };
-    
-    
+
+
     var FieldSpec = function(fieldSpecStr) {
       this.fields = [];
       this.fieldSpecStr = fieldSpecStr;

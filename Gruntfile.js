@@ -32,42 +32,14 @@ module.exports = function(grunt) {
 		*/
 		grunt.initConfig({
 			jshint: {
-				options: {
-					//force:          true,
-					globalstrict:   true,
-					//sub:            true,
-					node: true,
-					loopfunc: true,
-					browser:     true,
-					devel:       true,
-					globals: {
-						angular:    true,
-						$:          true,
-						moment:		false,
-						Pikaday: false,
-						module: false,
-						forge: false
-					}
-				},
-				beforeconcat:   {
-					options: {
-						force:	false,
-						ignores: ['**.min.js']
-					},
-					files: {
-						src: ['services/*.js', 'factories/*.js', 'values/*.js']
-					}
-				},
-				//quick version - will not fail entire grunt process if there are lint errors
-				beforeconcatQ:   {
-					options: {
-						force:	true,
-						ignores: ['**.min.js']
-					},
-					files: {
-						src: ['module.js, services/*.js', 'factories/*.js', 'values/*.js']
-					}
-				}
+        options: {
+          force:	true,
+          ignores: ['**.min.js'],
+          jshintrc: '.jshintrc'
+        },
+        all: {
+          src: ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js']
+        }
 			},
       concat: {
         dist: {
@@ -105,7 +77,7 @@ module.exports = function(grunt) {
 		@toc 6.
 		*/
 		// Default task(s).
-		grunt.registerTask('default', ['jshint:beforeconcatQ', 'karma:unit', 'concat:dist']);
+		grunt.registerTask('default', ['jshint', 'karma:unit', 'concat:dist']);
 
 	}
 	init({});		//initialize here for defaults (init may be called again later within a task)
