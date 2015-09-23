@@ -123,15 +123,15 @@
       // Build URL with params if any
       // Eg. without params:  /_search
       // Eg. with params:     /_search?size=5&from=5
-      esUrlSvc.parseUrl(url);
-      esUrlSvc.setParams(self.pagerArgs);
-      url = esUrlSvc.buildUrl();
+      var uri = esUrlSvc.parseUrl(url);
+      esUrlSvc.setParams(uri, self.pagerArgs);
+      url = esUrlSvc.buildUrl(uri);
 
       var requestConfig = {};
 
-      if ( angular.isDefined(esUrlSvc.username) && esUrlSvc.username !== '' &&
-        angular.isDefined(esUrlSvc.password) && esUrlSvc.password !== '') {
-        var authorization = 'Basic ' + btoa(esUrlSvc.username + ':' + esUrlSvc.password);
+      if ( angular.isDefined(uri.username) && uri.username !== '' &&
+        angular.isDefined(uri.password) && uri.password !== '') {
+        var authorization = 'Basic ' + btoa(uri.username + ':' + uri.password);
         requestConfig.headers = { 'Authorization': authorization };
       }
 
