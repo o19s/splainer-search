@@ -11,10 +11,11 @@
       'esSearcherPreprocessorSvc',
       'esUrlSvc',
       'SearcherFactory',
+      'transportSvc',
       EsSearcherFactory
     ]);
 
-  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory) {
+  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory, transportSvc) {
 
     var Searcher = function(options) {
       SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
@@ -27,6 +28,7 @@
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
+
 
     function addDocToGroup (groupedBy, group, solrDoc) {
       /*jslint validthis:true*/
@@ -97,6 +99,7 @@
     function search () {
       /*jslint validthis:true*/
       var self      = this;
+      self.transport = transportSvc.getTransport();
       var url       = self.url;
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);
       if (self.pagerArgs) {
@@ -131,16 +134,16 @@
       //esUrlSvc.setParams(uri, self.pagerArgs);
       url = esUrlSvc.buildUrl(uri);
 
-      var requestConfig = {};
+      var headers = {};
 
       if ( angular.isDefined(uri.username) && uri.username !== '' &&
         angular.isDefined(uri.password) && uri.password !== '') {
         var authorization = 'Basic ' + btoa(uri.username + ':' + uri.password);
-        requestConfig.headers = { 'Authorization': authorization };
+        headers = { 'Authorization': authorization };
       }
 
       activeQueries.count++;
-      return $http.post(url, queryDslWithPagerArgs, requestConfig)
+      return self.transport.query(url, queryDslWithPagerArgs, headers)
       .success(function(data) {
         activeQueries.count--;
         self.numFound = data.hits.total;
