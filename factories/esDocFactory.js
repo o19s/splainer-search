@@ -42,7 +42,7 @@
       /*jslint validthis:true*/
       var self  = this;
       var doc   = self.doc;
-      var esurl = self.options.url;
+      var esurl = self.options().url;
 
       esUrlSvc.parseUrl(esurl);
       return esUrlSvc.buildDocUrl(doc);
@@ -51,7 +51,7 @@
     function explain () {
       /*jslint validthis:true*/
       var self = this;
-      return self.options.explDict;
+      return self.options().explDict;
     }
 
     function snippet (docId, fieldName) {

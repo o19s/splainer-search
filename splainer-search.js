@@ -1584,30 +1584,34 @@ angular.module('o19s.splainer-search')
     .factory('DocFactory', [DocFactory]);
 
   function DocFactory() {
-    var Doc = function(doc, options) {
+    var Doc = function(doc, opts) {
       var self        = this;
 
       angular.copy(doc, self);
 
-      self.options    = options;
       self.doc        = doc;
 
       self.groupedBy  = groupedBy;
       self.group      = group;
+      self.options      = options;
 
       function groupedBy () {
-        if (options.groupedBy === undefined) {
+        if (opts.groupedBy === undefined) {
           return null;
         } else {
-          return options.groupedBy;
+          return opts.groupedBy;
         }
       }
 
+      function options() {
+        return opts;
+      }
+
       function group () {
-        if (options.group === undefined) {
+        if (opts.group === undefined) {
           return null;
         } else {
-          return options.group;
+          return opts.group;
         }
       }
     };
@@ -1661,7 +1665,7 @@ angular.module('o19s.splainer-search')
       /*jslint validthis:true*/
       var self  = this;
       var doc   = self.doc;
-      var esurl = self.options.url;
+      var esurl = self.options().url;
 
       esUrlSvc.parseUrl(esurl);
       return esUrlSvc.buildDocUrl(doc);
@@ -1670,7 +1674,7 @@ angular.module('o19s.splainer-search')
     function explain () {
       /*jslint validthis:true*/
       var self = this;
-      return self.options.explDict;
+      return self.options().explDict;
     }
 
     function snippet (docId, fieldName) {
@@ -2139,15 +2143,15 @@ angular.module('o19s.splainer-search')
     function url (idField, docId) {
       /*jslint validthis:true*/
       var self = this;
-      return buildTokensUrl(self.options.fieldList, self.options.url, idField, docId);
+      return buildTokensUrl(self.options().fieldList, self.options().url, idField, docId);
     }
 
     function explain (docId) {
       /*jslint validthis:true*/
       var self = this;
 
-      if (self.options.explDict.hasOwnProperty(docId)) {
-        return self.options.explDict[docId];
+      if (self.options().explDict.hasOwnProperty(docId)) {
+        return self.options().explDict[docId];
       } else {
         return null;
       }
@@ -2157,8 +2161,8 @@ angular.module('o19s.splainer-search')
       /*jslint validthis:true*/
       var self = this;
 
-      if (self.options.hlDict.hasOwnProperty(docId)) {
-        var docHls = self.options.hlDict[docId];
+      if (self.options().hlDict.hasOwnProperty(docId)) {
+        var docHls = self.options().hlDict[docId];
         if (docHls.hasOwnProperty(fieldName)) {
           return docHls[fieldName];
         }
@@ -2179,9 +2183,9 @@ angular.module('o19s.splainer-search')
 
       if (fieldValue) {
         var esc       = escapeHtml(fieldValue);
-        var preRegex  = new RegExp(self.options.highlightingPre, 'g');
+        var preRegex  = new RegExp(self.options().highlightingPre, 'g');
         var hlPre     = esc.replace(preRegex, preText);
-        var postRegex = new RegExp(self.options.highlightingPost, 'g');
+        var postRegex = new RegExp(self.options().highlightingPost, 'g');
 
         return hlPre.replace(postRegex, postText);
       } else {
