@@ -40,7 +40,7 @@ module.exports = function(grunt) {
         all: {
           src: ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js']
         }
-			},
+      },
       concat: {
         dist: {
 					src:    ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js'],
