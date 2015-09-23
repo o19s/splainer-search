@@ -7,30 +7,34 @@
     .factory('DocFactory', [DocFactory]);
 
   function DocFactory() {
-    var Doc = function(doc, options) {
+    var Doc = function(doc, opts) {
       var self        = this;
 
       angular.copy(doc, self);
 
-      self.options    = options;
       self.doc        = doc;
 
       self.groupedBy  = groupedBy;
       self.group      = group;
+      self.options      = options;
 
       function groupedBy () {
-        if (options.groupedBy === undefined) {
+        if (opts.groupedBy === undefined) {
           return null;
         } else {
-          return options.groupedBy;
+          return opts.groupedBy;
         }
       }
 
+      function options() {
+        return opts;
+      }
+
       function group () {
-        if (options.group === undefined) {
+        if (opts.group === undefined) {
           return null;
         } else {
-          return options.group;
+          return opts.group;
         }
       }
     };

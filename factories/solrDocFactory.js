@@ -66,15 +66,15 @@
     function url (idField, docId) {
       /*jslint validthis:true*/
       var self = this;
-      return buildTokensUrl(self.options.fieldList, self.options.url, idField, docId);
+      return buildTokensUrl(self.options().fieldList, self.options().url, idField, docId);
     }
 
     function explain (docId) {
       /*jslint validthis:true*/
       var self = this;
 
-      if (self.options.explDict.hasOwnProperty(docId)) {
-        return self.options.explDict[docId];
+      if (self.options().explDict.hasOwnProperty(docId)) {
+        return self.options().explDict[docId];
       } else {
         return null;
       }
@@ -84,8 +84,8 @@
       /*jslint validthis:true*/
       var self = this;
 
-      if (self.options.hlDict.hasOwnProperty(docId)) {
-        var docHls = self.options.hlDict[docId];
+      if (self.options().hlDict.hasOwnProperty(docId)) {
+        var docHls = self.options().hlDict[docId];
         if (docHls.hasOwnProperty(fieldName)) {
           return docHls[fieldName];
         }
@@ -106,9 +106,9 @@
 
       if (fieldValue) {
         var esc       = escapeHtml(fieldValue);
-        var preRegex  = new RegExp(self.options.highlightingPre, 'g');
+        var preRegex  = new RegExp(self.options().highlightingPre, 'g');
         var hlPre     = esc.replace(preRegex, preText);
-        var postRegex = new RegExp(self.options.highlightingPost, 'g');
+        var postRegex = new RegExp(self.options().highlightingPost, 'g');
 
         return hlPre.replace(postRegex, postText);
       } else {
