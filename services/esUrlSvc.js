@@ -52,7 +52,7 @@ angular.module('o19s.splainer-search')
       self.password = a.password();
 
       self.parsed   = true;
-    };
+    }
 
     /**
      *
@@ -116,7 +116,7 @@ angular.module('o19s.splainer-search')
 
       var url = self.protocol + '://' + self.host;
 
-      return url
+      return url;
     }
 
     function setParams (params) {
@@ -126,7 +126,7 @@ angular.module('o19s.splainer-search')
 
     function UrlNotParseException() {
        var self = this;
-       self.message = "URL not parsed. Must call the parse() function first.";
+       self.message = 'URL not parsed. Must call the parse() function first.';
        self.toString = function() {
           return self.message;
        };

@@ -66,6 +66,5 @@ angular.module('o19s.splainer-search')
         rVal.set(key, value * scalar);
       });
       return rVal;
-    }; 
-
+    };
   });

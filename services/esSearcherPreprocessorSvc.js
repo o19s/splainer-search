@@ -7,7 +7,7 @@ angular.module('o19s.splainer-search')
 
     var replaceQuery = function(args, queryText) {
       if (queryText) {
-        queryText = queryText.replace(/\\/g, "\\\\");;
+        queryText = queryText.replace(/\\/g, '\\\\');
         queryText = queryText.replace(/"/g, '\\\"');
       }
 

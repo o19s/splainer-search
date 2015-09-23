@@ -7,8 +7,7 @@
   "curly": true,
   "eqeqeq": true,
   "immed": true,
-  "indent": 2,
-  "latedef": true,
+  "latedef": "nofunc",
   "newcap": true,
   "noarg": true,
   "quotmark": "single",
@@ -18,7 +17,11 @@
   "strict": true,
   "trailing": true,
   "smarttabs": true,
+  "validthis": true,
   "globals": {
-    "angular": false
+    "angular": false,
+    "inject": false,
+    "Promise": false,
+    "URI": false
   }
 }

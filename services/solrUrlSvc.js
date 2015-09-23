@@ -146,22 +146,6 @@ angular.module('o19s.splainer-search')
      * */
     this.removeUnsupported = function(solrArgs) {
         var warnings = {};
-        var deleteThenWarn = function(arg, warning) {
-          if (solrArgs.hasOwnProperty(arg)) {
-            warnings[arg] = warning;
-            delete solrArgs[arg];
-          }
-        };
-
-        var deleteThenWarnPrefix = function(argPrefix, warning) {
-          var argsCpy = angular.copy(solrArgs);
-          angular.forEach(argsCpy, function(value, key) {
-            if (key.startsWith(argPrefix)) {
-              deleteThenWarn(key, warning);
-            }
-          });
-        };
-
         // Stuff I think we can safely remove without warning the user
         delete solrArgs['json.wrf'];
         delete solrArgs.facet;
@@ -175,7 +159,6 @@ angular.module('o19s.splainer-search')
         delete solrArgs.debug;
 
         // Unsupported stuff to remove and provide a friendly warning
-        // deleteThenWarnPrefix('group', 'Group queries/field collapsing not supported');
         return warnings;
     };
 
