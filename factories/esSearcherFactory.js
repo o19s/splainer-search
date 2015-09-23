@@ -144,7 +144,8 @@
 
       activeQueries.count++;
       return self.transport.query(url, queryDslWithPagerArgs, headers)
-      .success(function(data) {
+      .then(function success(httpConfig) {
+        var data = httpConfig.data;
         activeQueries.count--;
         self.numFound = data.hits.total;
 
@@ -168,7 +169,7 @@
           var doc = parseDoc(hit);
           thisSearcher.docs.push(doc);
         });
-      }).error(function() {
+      }, function error() {
         activeQueries.count--;
         thisSearcher.inError = true;
       });
