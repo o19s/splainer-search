@@ -98,7 +98,11 @@
       /*jslint validthis:true*/
       var self      = this;
       var url       = self.url;
-      var payload   = self.queryDsl;
+      var queryDslWithPagerArgs = angular.copy(self.queryDsl);
+      if (self.pagerArgs) {
+        queryDslWithPagerArgs.from = self.pagerArgs.from;
+        queryDslWithPagerArgs.size = self.pagerArgs.size;
+      }
       self.inError  = false;
 
       var thisSearcher  = self;
@@ -124,7 +128,7 @@
       // Eg. without params:  /_search
       // Eg. with params:     /_search?size=5&from=5
       var uri = esUrlSvc.parseUrl(url);
-      esUrlSvc.setParams(uri, self.pagerArgs);
+      //esUrlSvc.setParams(uri, self.pagerArgs);
       url = esUrlSvc.buildUrl(uri);
 
       var requestConfig = {};
@@ -136,7 +140,7 @@
       }
 
       activeQueries.count++;
-      return $http.post(url, payload, requestConfig)
+      return $http.post(url, queryDslWithPagerArgs, requestConfig)
       .success(function(data) {
         activeQueries.count--;
         self.numFound = data.hits.total;

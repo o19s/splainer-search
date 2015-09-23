@@ -449,6 +449,15 @@ describe('Service: searchSvc: ElasticSearch', function() {
       );
     }));
 
+    function pagerValidator(expectedPagerParams) {
+      return {
+        test: function(data) {
+          var data = JSON.parse(data);
+          return (data.from === expectedPagerParams.from) && (data.size === expectedPagerParams.size);
+        }
+      }
+    };
+
     it('pages on page', function() {
       $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
 
@@ -462,7 +471,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         from: 10
       };
 
-      $httpBackend.expectPOST(mockEsUrl + '?from=10&size=10')
+      $httpBackend.expectPOST(mockEsUrl, pagerValidator(expectedPageParams))
         .respond(200, fullResponse);
 
       nextSearcher.search();
@@ -472,10 +481,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
       nextSearcher = nextSearcher.pager();
       expectedPageParams = {
         size: 10,
-        from: 21
+        from: 20
       };
 
-      $httpBackend.expectPOST(mockEsUrl + '?from=20&size=10')
+      $httpBackend.expectPOST(mockEsUrl, pagerValidator(expectedPageParams))
         .respond(200, fullResponse);
 
       nextSearcher.search();
