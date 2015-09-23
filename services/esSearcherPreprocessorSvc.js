@@ -24,7 +24,11 @@ angular.module('o19s.splainer-search')
       delete searcher.args.pager;
 
       var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
-      queryDsl.fields     = searcher.fieldList;
+
+      if ( angular.isDefined(searcher.fieldList) && searcher.fieldList !== null ) {
+        queryDsl.fields   = searcher.fieldList;
+      }
+
       queryDsl.explain    = true;
 
       searcher.queryDsl   = queryDsl;
