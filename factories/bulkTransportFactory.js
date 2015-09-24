@@ -4,14 +4,16 @@
 
 (function() {
   angular.module('o19s.splainer-search')
-    .factory('HttpPostTransportFactory', [
+    .factory('BulkTransportFactory', [
       'TransportFactory',
       '$http',
-      HttpPostTransportFactory
+      '$q',
+      '$timeout',
+      BulkTransportFactory
     ]);
 
 
-  function HttpPostTransportFactory(TransportFactory, $http, $q, $timeout) {
+  function BulkTransportFactory(TransportFactory, $http, $q, $timeout) {
     var BulkTransporter = function(url, headers) {
 
       var requestConfig = {headers: headers};
@@ -20,22 +22,28 @@
       var queue = [];
       var pendingHttp = null;
 
-      function dequeue(bulkHttpResp) {
+      function finishBatch(batchSize) {
+        pendingHttp = null;
+        queue = queue.slice(batchSize);
+      }
+
+      function dequeue(httpResp) {
+        var bulkHttpResp = httpResp.data;
         if (bulkHttpResp.hasOwnProperty('responses'))  {
           var queueIdx = 0;
           var respLen = bulkHttpResp.responses.length;
           angular.forEach(bulkHttpResp.responses, function(resp) {
+            var currRequest = queue[queueIdx];
             if (resp.hasOwnProperty('error')) {
               currRequest.defered.reject(resp);
               // individual query failure
             } else {
-              var currRequest = queue[queueIdx];
               currRequest.defered.resolve(resp);
             }
 
             queueIdx++;
           });
-          queue.slice(respLen);
+          finishBatch(respLen);
         } else {
           allFailed(bulkHttpResp);
         }
@@ -50,20 +58,20 @@
             numInFlight++;
           }
         });
-        queue.slice(numInFlight);
+        finishBatch(numInFlight);
       }
 
       function tryHttp() {
         if (!pendingHttp) {
           // Implementation of Elasticsearch's _msearch ("Multi Search") API
-          var sharedHeader = {}; // means use inde
+          var sharedHeader = JSON.stringify({}); // means use inde
           var queryLines = [];
           angular.forEach(queue, function(pendingQuery) {
             queryLines.push(sharedHeader);
             pendingQuery.inFlight = true;
-            queryLines.push(pendingQuery.payload);
+            queryLines.push(JSON.stringify(pendingQuery.payload));
           });
-          var data = '\n'.join(queryLines);
+          var data = queryLines.join('\n');
           pendingHttp = $http.post(url, data, requestConfig);
           pendingHttp.then(dequeue, allFailed);
         }
@@ -83,10 +91,10 @@
 
       function timerTick() {
         tryHttp();
-        $timeout(100, timerTick);
+        $timeout(timerTick, 100);
       }
 
-      $timeout(100, timerTick);
+      $timeout(timerTick, 100);
 
 
     };
