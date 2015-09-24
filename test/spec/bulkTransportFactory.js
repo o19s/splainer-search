@@ -299,6 +299,23 @@ describe('Service: transport: es bulk transport', function() {
     .respond(200, mockResults);
     $timeout.flush();
     $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(numToQuery * 2);
+  });
+
+  it('doesnt issue http if nothing to send', function () {
+    var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
+    var headers = {'header': 1};
+    var bulkTransport = new BulkTransportFactory();
+    var payloadTemplate = {'test': 0};
+    var payload = angular.copy(payloadTemplate);
+    var mockResults = buildMockResults(1);
+    bulkTransport.query(url, payload, headers);
+    $httpBackend.expectPOST(url).respond(200, mockResults);
+    $timeout.flush();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+    $timeout.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
   });
 });

@@ -60,6 +60,20 @@ describe('Service: esUrlSvc', function () {
       expect(uri.username).toBe('username');
       expect(uri.password).toBe('password');
     });
+
+    it('understands when bulk endpoint used', function() {
+      var url = 'http://es.quepid.com/tmdb/_search';
+      var uri = esUrlSvc.parseUrl(url);
+      expect(uri.searchApi).toBe('post');
+
+      url = 'http://es.quepid.com/tmdb/_msearch';
+      uri = esUrlSvc.parseUrl(url);
+      expect(uri.searchApi).toBe('bulk');
+
+      url = 'http://es.quepid.com/tmdb/_msearch/';
+      uri = esUrlSvc.parseUrl(url);
+      expect(uri.searchApi).toBe('bulk');
+    });
   });
 
   describe('build doc URL', function() {

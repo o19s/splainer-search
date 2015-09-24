@@ -99,8 +99,10 @@
     function search () {
       /*jslint validthis:true*/
       var self      = this;
-      self.transport = transportSvc.getTransport();
       var url       = self.url;
+      var uri = esUrlSvc.parseUrl(url);
+      url = esUrlSvc.buildUrl(uri);
+      var transport = transportSvc.getTransport({searchApi: uri.searchApi});
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);
       if (self.pagerArgs) {
         queryDslWithPagerArgs.from = self.pagerArgs.from;
@@ -130,9 +132,7 @@
       // Build URL with params if any
       // Eg. without params:  /_search
       // Eg. with params:     /_search?size=5&from=5
-      var uri = esUrlSvc.parseUrl(url);
       //esUrlSvc.setParams(uri, self.pagerArgs);
-      url = esUrlSvc.buildUrl(uri);
 
       var headers = {};
 
@@ -143,7 +143,7 @@
       }
 
       activeQueries.count++;
-      return self.transport.query(url, queryDslWithPagerArgs, headers)
+      return transport.query(url, queryDslWithPagerArgs, headers)
       .then(function success(httpConfig) {
         var data = httpConfig.data;
         activeQueries.count--;

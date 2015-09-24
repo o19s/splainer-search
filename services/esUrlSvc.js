@@ -42,8 +42,17 @@ angular.module('o19s.splainer-search')
         host: a.host(),
         pathname: a.pathname(),
         username: a.username(),
-        password: a.password()
+        password: a.password(),
+        searchApi: 'post'
       };
+
+      if (esUri.pathname.endsWith('/')) {
+        esUri.pathname = esUri.pathname.substring(0, esUri.pathname.length - 1);
+      }
+
+      if (esUri.pathname.endsWith('_msearch')) {
+        esUri.searchApi = 'bulk';
+      }
 
       return esUri;
     }

@@ -62,7 +62,7 @@
       }
 
       function tryHttp() {
-        if (!pendingHttp) {
+        if (!pendingHttp && queue.length > 0) {
           // Implementation of Elasticsearch's _msearch ("Multi Search") API
           var sharedHeader = JSON.stringify({}); // means use inde
           var queryLines = [];

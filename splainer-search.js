@@ -199,19 +199,11 @@ angular.module('o19s.splainer-search')
 
 'use strict';
 
+/*global URI*/
 angular.module('o19s.splainer-search')
   .service('esUrlSvc', function esUrlSvc() {
 
     var self      = this;
-
-    self.protocol = null;
-    self.host     = null;
-    self.pathname = null;
-    self.username = null;
-    self.password = null;
-
-    self.parsed   = null;
-    self.params   = null;
 
     self.parseUrl     = parseUrl;
     self.buildDocUrl  = buildDocUrl;
@@ -244,13 +236,24 @@ angular.module('o19s.splainer-search')
       var a = new URI(url);
       url = a;
 
-      self.protocol = a.protocol();
-      self.host     = a.host();
-      self.pathname = a.pathname();
-      self.username = a.username();
-      self.password = a.password();
+      var esUri = {
+        protocol: a.protocol(),
+        host: a.host(),
+        pathname: a.pathname(),
+        username: a.username(),
+        password: a.password(),
+        searchApi: 'post'
+      };
 
-      self.parsed   = true;
+      if (esUri.pathname.endsWith('/')) {
+        esUri.pathname = esUri.pathname.substring(0, esUri.pathname.length - 1);
+      }
+
+      if (esUri.pathname.endsWith('_msearch')) {
+        esUri.searchApi = 'bulk';
+      }
+
+      return esUri;
     }
 
     /**
@@ -259,12 +262,12 @@ angular.module('o19s.splainer-search')
      * for an ES document.
      *
      */
-    function buildDocUrl (doc) {
+    function buildDocUrl (uri, doc) {
       var index = doc._index;
       var type  = doc._type;
       var id    = doc._id;
 
-      var url = self.buildBaseUrl();
+      var url = self.buildBaseUrl(uri);
       url = url + '/' + index + '/' + type + '/' + id;
 
       return url;
@@ -275,20 +278,20 @@ angular.module('o19s.splainer-search')
      * Builds ES URL for a search query.
      * Adds any query params if present: /_search?from=10&size=10
      */
-    function buildUrl () {
+    function buildUrl (uri) {
       var self = this;
 
-      var url = self.buildBaseUrl();
-      url = url + self.pathname;
+      var url = self.buildBaseUrl(uri);
+      url = url + uri.pathname;
 
       // Return original URL if no params to append.
-      if ( angular.isUndefined(self.params) ) {
+      if ( angular.isUndefined(uri.params) ) {
         return url;
       }
 
       var paramsAsStrings = [];
 
-      angular.forEach(self.params, function(value, key) {
+      angular.forEach(uri.params, function(value, key) {
         paramsAsStrings.push(key + '=' + value);
       });
 
@@ -308,27 +311,14 @@ angular.module('o19s.splainer-search')
       return finalUrl;
     }
 
-    function buildBaseUrl() {
-      if (!self.parsed) {
-        throw new UrlNotParseException();
-      }
-
-      var url = self.protocol + '://' + self.host;
+    function buildBaseUrl(uri) {
+      var url = uri.protocol + '://' + uri.host;
 
       return url;
     }
 
-    function setParams (params) {
-      var self    = this;
-      self.params = params;
-    }
-
-    function UrlNotParseException() {
-       var self = this;
-       self.message = 'URL not parsed. Must call the parse() function first.';
-       self.toString = function() {
-          return self.message;
-       };
+    function setParams (uri, params) {
+      uri.params = params;
     }
   });
 
@@ -1492,6 +1482,21 @@ if (typeof String.prototype.endsWith !== 'function') {
 
 'use strict';
 
+angular.module('o19s.splainer-search')
+  .service('transportSvc', function transportSvc(HttpPostTransportFactory, BulkTransportFactory) {
+    var self = this;
+    self.getTransport = getTransport;
+
+    function getTransport(options) {
+      if (options.searchApi === 'bulk') {
+        return new BulkTransportFactory(options);
+      }
+      return new HttpPostTransportFactory(options);
+    }
+  });
+
+'use strict';
+
 /*
  * Basic vector operations used by explain svc
  *
@@ -1560,6 +1565,130 @@ angular.module('o19s.splainer-search')
       return rVal;
     };
   });
+
+'use strict';
+
+/*jslint latedef:false*/
+
+(function() {
+  angular.module('o19s.splainer-search')
+    .factory('BulkTransportFactory', [
+      'TransportFactory',
+      '$http',
+      '$q',
+      '$timeout',
+      BulkTransportFactory
+    ]);
+
+
+  function BulkTransportFactory(TransportFactory, $http, $q, $timeout) {
+    var BulkTransporter = function(url, headers) {
+
+      var requestConfig = {headers: headers};
+      var self = this;
+      self.enqueue = enqueue;
+      var queue = [];
+      var pendingHttp = null;
+
+      function finishBatch(batchSize) {
+        pendingHttp = null;
+        queue = queue.slice(batchSize);
+      }
+
+      function dequeue(httpResp) {
+        var bulkHttpResp = httpResp.data;
+        if (bulkHttpResp.hasOwnProperty('responses'))  {
+          var queueIdx = 0;
+          var respLen = bulkHttpResp.responses.length;
+          angular.forEach(bulkHttpResp.responses, function(resp) {
+            var currRequest = queue[queueIdx];
+            if (resp.hasOwnProperty('error')) {
+              currRequest.defered.reject(resp);
+              // individual query failure
+            } else {
+              currRequest.defered.resolve(resp);
+            }
+
+            queueIdx++;
+          });
+          finishBatch(respLen);
+        } else {
+          allFailed(bulkHttpResp);
+        }
+      }
+
+      function allFailed(bulkHttpResp) {
+        var numInFlight = 0;
+        angular.forEach(queue, function(pendingQuery) {
+          if (pendingQuery.inFlight) {
+            pendingQuery.defered.reject(bulkHttpResp);
+            // fail them
+            numInFlight++;
+          }
+        });
+        finishBatch(numInFlight);
+      }
+
+      function tryHttp() {
+        if (!pendingHttp && queue.length > 0) {
+          // Implementation of Elasticsearch's _msearch ("Multi Search") API
+          var sharedHeader = JSON.stringify({}); // means use inde
+          var queryLines = [];
+          angular.forEach(queue, function(pendingQuery) {
+            queryLines.push(sharedHeader);
+            pendingQuery.inFlight = true;
+            queryLines.push(JSON.stringify(pendingQuery.payload));
+          });
+          var data = queryLines.join('\n');
+          pendingHttp = $http.post(url, data, requestConfig);
+          pendingHttp.then(dequeue, allFailed);
+        }
+      }
+
+      function enqueue(payload) {
+        var defered = $q.defer();
+
+        var pendingQuery = {
+          defered: defered,
+          inFlight: false,
+          payload: payload,
+        };
+        queue.push(pendingQuery);
+        return defered.promise;
+      }
+
+      function timerTick() {
+        tryHttp();
+        $timeout(timerTick, 100);
+      }
+
+      $timeout(timerTick, 100);
+
+
+    };
+
+    var Transport = function(options) {
+      TransportFactory.call(this, options);
+      this.bulkTransporter = null;
+    };
+
+    Transport.prototype = Object.create(TransportFactory.prototype);
+    Transport.prototype.constructor = Transport;
+
+    Transport.prototype.query = query;
+
+    function query(url, payload, headers) {
+      var self = this;
+      if (!self.bulkTransporter) {
+        self.bulkTransporter = new BulkTransporter(url, headers);
+      }
+      return self.bulkTransporter.enqueue(payload);
+
+    }
+
+    return Transport;
+  }
+})();
 
 'use strict';
 
@@ -1653,8 +1782,8 @@ angular.module('o19s.splainer-search')
       var doc   = self.doc;
       var esurl = self.options().url;
 
-      esUrlSvc.parseUrl(esurl);
-      return esUrlSvc.buildDocUrl(doc);
+      var uri = esUrlSvc.parseUrl(esurl);
+      return esUrlSvc.buildDocUrl(uri, doc);
     }
 
     function explain () {
@@ -1726,10 +1855,11 @@ angular.module('o19s.splainer-search')
       'esSearcherPreprocessorSvc',
       'esUrlSvc',
       'SearcherFactory',
+      'transportSvc',
       EsSearcherFactory
     ]);
 
-  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory) {
+  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory, transportSvc) {
 
     var Searcher = function(options) {
       SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
@@ -1742,6 +1872,7 @@ angular.module('o19s.splainer-search')
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
+
 
     function addDocToGroup (groupedBy, group, solrDoc) {
       /*jslint validthis:true*/
@@ -1813,7 +1944,14 @@ angular.module('o19s.splainer-search')
       /*jslint validthis:true*/
       var self      = this;
       var url       = self.url;
-      var payload   = self.queryDsl;
+      var uri = esUrlSvc.parseUrl(url);
+      url = esUrlSvc.buildUrl(uri);
+      var transport = transportSvc.getTransport({searchApi: uri.searchApi});
+      var queryDslWithPagerArgs = angular.copy(self.queryDsl);
+      if (self.pagerArgs) {
+        queryDslWithPagerArgs.from = self.pagerArgs.from;
+        queryDslWithPagerArgs.size = self.pagerArgs.size;
+      }
       self.inError  = false;
 
       var thisSearcher  = self;
@@ -1838,21 +1976,20 @@ angular.module('o19s.splainer-search')
       // Build URL with params if any
       // Eg. without params:  /_search
       // Eg. with params:     /_search?size=5&from=5
-      esUrlSvc.parseUrl(url);
-      esUrlSvc.setParams(self.pagerArgs);
-      url = esUrlSvc.buildUrl();
+      //esUrlSvc.setParams(uri, self.pagerArgs);
 
-      var requestConfig = {};
+      var headers = {};
 
-      if ( angular.isDefined(esUrlSvc.username) && esUrlSvc.username !== '' &&
-        angular.isDefined(esUrlSvc.password) && esUrlSvc.password !== '') {
-        var authorization = 'Basic ' + btoa(esUrlSvc.username + ':' + esUrlSvc.password);
-        requestConfig.headers = { 'Authorization': authorization };
+      if ( angular.isDefined(uri.username) && uri.username !== '' &&
+        angular.isDefined(uri.password) && uri.password !== '') {
+        var authorization = 'Basic ' + btoa(uri.username + ':' + uri.password);
+        headers = { 'Authorization': authorization };
       }
 
       activeQueries.count++;
-      return $http.post(url, payload, requestConfig)
-      .success(function(data) {
+      return transport.query(url, queryDslWithPagerArgs, headers)
+      .then(function success(httpConfig) {
+        var data = httpConfig.data;
         activeQueries.count--;
         self.numFound = data.hits.total;
 
@@ -1876,7 +2013,7 @@ angular.module('o19s.splainer-search')
           var doc = parseDoc(hit);
           thisSearcher.docs.push(doc);
         });
-      }).error(function() {
+      }, function error() {
         activeQueries.count--;
         thisSearcher.inError = true;
       });
@@ -1884,6 +2021,37 @@ angular.module('o19s.splainer-search')
 
     // Return factory object
     return Searcher;
+  }
+})();
+
+'use strict';
+
+/*jslint latedef:false*/
+
+(function() {
+  angular.module('o19s.splainer-search')
+    .factory('HttpPostTransportFactory', [
+      'TransportFactory',
+      '$http',
+      HttpPostTransportFactory
+    ]);
+
+  function HttpPostTransportFactory(TransportFactory, $http) {
+    var Transport = function(options) {
+      TransportFactory.call(this, options);
+    };
+
+    Transport.prototype = Object.create(TransportFactory.prototype);
+    Transport.prototype.constructor = Transport;
+
+    Transport.prototype.query = query;
+
+    function query(url, payload, headers) {
+      var requestConfig = {headers: headers};
+      return $http.post(url, payload, requestConfig);
+    }
+
+    return Transport;
   }
 })();
 
@@ -2438,6 +2606,31 @@ angular.module('o19s.splainer-search')
 
     // Return factory object
     return Searcher;
+  }
+})();
+
+'use strict';
+
+/*jslint latedef:false*/
+
+(function() {
+  angular.module('o19s.splainer-search')
+    .factory('TransportFactory', [TransportFactory]);
+
+  function TransportFactory() {
+    var Transporter = function(opts) {
+      var self                = this;
+
+      self.options = options;
+
+      function options() {
+        return opts;
+      }
+
+    };
+
+    // Return factory object
+    return Transporter;
   }
 })();
 
