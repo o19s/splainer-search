@@ -39,7 +39,8 @@
               currRequest.defered.reject(resp);
               // individual query failure
             } else {
-              currRequest.defered.resolve(resp);
+              // make the response look like standard response
+              currRequest.defered.resolve({'data': resp});
             }
 
             queueIdx++;

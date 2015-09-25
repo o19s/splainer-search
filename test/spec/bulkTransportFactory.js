@@ -130,7 +130,7 @@ describe('Service: transport: es bulk transport', function() {
 
     var indivSuccessCheck = function(requestIdx) {
       return function(results) {
-        expect(results).toEqual(mockResults.responses[requestIdx]);
+        expect(results.data).toEqual(mockResults.responses[requestIdx]);
         promisesResolved++;
       };
     };
@@ -171,7 +171,7 @@ describe('Service: transport: es bulk transport', function() {
 
     var indivSuccessCheck = function(requestIdx) {
       return function(results) {
-        expect(results).toEqual(mockResults.responses[requestIdx]);
+        expect(results.data).toEqual(mockResults.responses[requestIdx]);
         promisesResolved++;
       };
     };
@@ -216,7 +216,7 @@ describe('Service: transport: es bulk transport', function() {
 
     var indivSuccessCheck = function(requestIdx) {
       return function(results) {
-        expect(results).toEqual(mockResults.responses[requestIdx]);
+        expect(results.date).toEqual(mockResults.responses[requestIdx]);
         promisesResolved++;
       };
     };
@@ -261,7 +261,7 @@ describe('Service: transport: es bulk transport', function() {
 
     var indivSuccessCheck = function(requestIdx) {
       return function(results) {
-        expect(results).toEqual(mockResults.responses[requestIdx]);
+        expect(results.data).toEqual(mockResults.responses[requestIdx]);
         promisesResolved++;
       };
     };
