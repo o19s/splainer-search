@@ -51,6 +51,10 @@ describe('Service: transport: es bulk transport', function() {
   var hasExpectedJsonList = function(expectedObjects) {
     return {
       test: function(textSent) {
+        if (!textSent.endsWith('\n')) {
+          return false;
+        }
+        textSent = textSent.substring(0, textSent.length - 1);
         var sentObjs = textSent.split('\n');
         if (sentObjs.length !== expectedObjects.length) {
           return false;
@@ -317,5 +321,47 @@ describe('Service: transport: es bulk transport', function() {
     $httpBackend.verifyNoOutstandingExpectation();
     $timeout.flush();
     $httpBackend.verifyNoOutstandingExpectation();
+  });
+
+  it('adds a trailing \n', function () {
+
+    var trailingEndlineTest = {
+      test: function(data) {
+        return data.endsWith('\n');
+      }
+    };
+
+    var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
+    var headers = {'header': 1};
+    var bulkTransport = new BulkTransportFactory();
+    var payloadTemplate = {'test': 0};
+    var payload = angular.copy(payloadTemplate);
+    var mockResults = buildMockResults(1);
+    bulkTransport.query(url, payload, headers);
+    $httpBackend.expectPOST(url, trailingEndlineTest).respond(200, mockResults);
+    $timeout.flush();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+  });
+
+
+  it('changes URLs', function () {
+    var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
+    var headers = {'header': 1};
+    var bulkTransport = new BulkTransportFactory();
+    var payloadTemplate = {'test': 0};
+    var payload = angular.copy(payloadTemplate);
+    var mockResults = buildMockResults(1);
+    bulkTransport.query(url, payload, headers);
+    $httpBackend.expectPOST(url).respond(200, mockResults);
+    $timeout.flush();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+
+    var url2 = 'http://es2.splainer-search.com/foods/tacos/_msearch';
+    bulkTransport.query(url2, payload, headers);
+    $httpBackend.expectPOST(url2).respond(200, mockResults);
+    $timeout.flush();
+    $httpBackend.flush();
   });
 });

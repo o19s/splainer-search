@@ -1587,6 +1587,7 @@ angular.module('o19s.splainer-search')
       var requestConfig = {headers: headers};
       var self = this;
       self.enqueue = enqueue;
+      self.url = getUrl;
       var queue = [];
       var pendingHttp = null;
 
@@ -1640,7 +1641,7 @@ angular.module('o19s.splainer-search')
             queryLines.push(JSON.stringify(pendingQuery.payload));
           });
           var data = queryLines.join('\n');
-          pendingHttp = $http.post(url, data, requestConfig);
+          pendingHttp = $http.post(url, data + '\n', requestConfig);
           pendingHttp.then(dequeue, allFailed);
         }
       }
@@ -1662,6 +1663,10 @@ angular.module('o19s.splainer-search')
         $timeout(timerTick, 100);
       }
 
+      function getUrl() {
+        return url;
+      }
+
       $timeout(timerTick, 100);
 
 
@@ -1680,6 +1685,9 @@ angular.module('o19s.splainer-search')
     function query(url, payload, headers) {
       var self = this;
       if (!self.bulkTransporter) {
+        self.bulkTransporter = new BulkTransporter(url, headers);
+      }
+      else if (self.bulkTransporter.url() !== url) {
         self.bulkTransporter = new BulkTransporter(url, headers);
       }
       return self.bulkTransporter.enqueue(payload);
