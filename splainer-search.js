@@ -1486,12 +1486,14 @@ angular.module('o19s.splainer-search')
   .service('transportSvc', function transportSvc(HttpPostTransportFactory, BulkTransportFactory) {
     var self = this;
     self.getTransport = getTransport;
+    var bulkTransport = new BulkTransportFactory({});
+    var httpPostTransport = new HttpPostTransportFactory({});
 
     function getTransport(options) {
       if (options.searchApi === 'bulk') {
-        return new BulkTransportFactory(options);
+        return bulkTransport;
       }
-      return new HttpPostTransportFactory(options);
+      return httpPostTransport;
     }
   });
 
@@ -1607,7 +1609,8 @@ angular.module('o19s.splainer-search')
               currRequest.defered.reject(resp);
               // individual query failure
             } else {
-              currRequest.defered.resolve(resp);
+              // make the response look like standard response
+              currRequest.defered.resolve({'data': resp});
             }
 
             queueIdx++;
