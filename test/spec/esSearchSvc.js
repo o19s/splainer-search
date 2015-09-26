@@ -105,6 +105,26 @@ describe('Service: searchSvc: ElasticSearch', function() {
       expect(called).toEqual(1);
     });
 
+    it('reports errors for the search', function() {
+      var errorMsg = 'your query just plain stunk';
+      $httpBackend.expectPOST(mockEsUrl).
+      respond(400, errorMsg);
+
+      var errorCalled = 0;
+
+      searcher.search()
+      .then(function success() {
+        errorCalled--;
+      }, function failure(msg) {
+        expect(msg.data).toBe(errorMsg);
+        errorCalled++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(errorCalled).toEqual(1);
+    });
+
     it('sets the proper headers for auth', function() {
       searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList,

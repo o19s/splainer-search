@@ -1584,7 +1584,22 @@ angular.module('o19s.splainer-search')
 
 
   function BulkTransportFactory(TransportFactory, $http, $q, $timeout) {
-    var BulkTransporter = function(url, headers) {
+    var Transport = function(options) {
+      TransportFactory.call(this, options);
+      this.batchSender = null;
+    };
+
+    Transport.prototype = Object.create(TransportFactory.prototype);
+    Transport.prototype.constructor = Transport;
+
+    Transport.prototype.query = query;
+
+
+
+    var BatchSender = function(url, headers) {
+      /* Use Elasticsearch's _msearch API to send
+       * batches of searches one batch at a time
+       * */
 
       var requestConfig = {headers: headers};
       var self = this;
@@ -1612,6 +1627,7 @@ angular.module('o19s.splainer-search')
       }
 
       function multiSearchFailed(bulkHttpResp) {
+        // Handle HTTP failure, which should fail all in flight searches
         var numInFlight = 0;
         angular.forEach(queue, function(pendingQuery) {
           if (pendingQuery.inFlight) {
@@ -1689,25 +1705,15 @@ angular.module('o19s.splainer-search')
 
     };
 
-    var Transport = function(options) {
-      TransportFactory.call(this, options);
-      this.bulkTransporter = null;
-    };
-
-    Transport.prototype = Object.create(TransportFactory.prototype);
-    Transport.prototype.constructor = Transport;
-
-    Transport.prototype.query = query;
-
     function query(url, payload, headers) {
       var self = this;
-      if (!self.bulkTransporter) {
-        self.bulkTransporter = new BulkTransporter(url, headers);
+      if (!self.batchSender) {
+        self.batchSender = new BatchSender(url, headers);
       }
-      else if (self.bulkTransporter.url() !== url) {
-        self.bulkTransporter = new BulkTransporter(url, headers);
+      else if (self.batchSender.url() !== url) {
+        self.batchSender = new BatchSender(url, headers);
       }
-      return self.bulkTransporter.enqueue(payload);
+      return self.batchSender.enqueue(payload);
 
     }
 
@@ -1875,6 +1881,7 @@ angular.module('o19s.splainer-search')
   angular.module('o19s.splainer-search')
     .factory('EsSearcherFactory', [
       '$http',
+      '$q',
       'EsDocFactory',
       'activeQueries',
       'esSearcherPreprocessorSvc',
@@ -1884,7 +1891,7 @@ angular.module('o19s.splainer-search')
       EsSearcherFactory
     ]);
 
-  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory, transportSvc) {
+  function EsSearcherFactory($http, $q, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory, transportSvc) {
 
     var Searcher = function(options) {
       SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
@@ -2038,9 +2045,10 @@ angular.module('o19s.splainer-search')
           var doc = parseDoc(hit);
           thisSearcher.docs.push(doc);
         });
-      }, function error() {
+      }, function error(msg) {
         activeQueries.count--;
         thisSearcher.inError = true;
+        return $q.reject(msg);
       });
     }
 

@@ -6,6 +6,7 @@
   angular.module('o19s.splainer-search')
     .factory('EsSearcherFactory', [
       '$http',
+      '$q',
       'EsDocFactory',
       'activeQueries',
       'esSearcherPreprocessorSvc',
@@ -15,7 +16,7 @@
       EsSearcherFactory
     ]);
 
-  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory, transportSvc) {
+  function EsSearcherFactory($http, $q, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory, transportSvc) {
 
     var Searcher = function(options) {
       SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
@@ -169,9 +170,10 @@
           var doc = parseDoc(hit);
           thisSearcher.docs.push(doc);
         });
-      }, function error() {
+      }, function error(msg) {
         activeQueries.count--;
         thisSearcher.inError = true;
+        return $q.reject(msg);
       });
     }
 
