@@ -14,7 +14,22 @@
 
 
   function BulkTransportFactory(TransportFactory, $http, $q, $timeout) {
-    var BulkTransporter = function(url, headers) {
+    var Transport = function(options) {
+      TransportFactory.call(this, options);
+      this.batchSender = null;
+    };
+
+    Transport.prototype = Object.create(TransportFactory.prototype);
+    Transport.prototype.constructor = Transport;
+
+    Transport.prototype.query = query;
+
+
+
+    var BatchSender = function(url, headers) {
+      /* Use Elasticsearch's _msearch API to send
+       * batches of searches one batch at a time
+       * */
 
       var requestConfig = {headers: headers};
       var self = this;
@@ -42,6 +57,7 @@
       }
 
       function multiSearchFailed(bulkHttpResp) {
+        // Handle HTTP failure, which should fail all in flight searches
         var numInFlight = 0;
         angular.forEach(queue, function(pendingQuery) {
           if (pendingQuery.inFlight) {
@@ -119,25 +135,15 @@
 
     };
 
-    var Transport = function(options) {
-      TransportFactory.call(this, options);
-      this.bulkTransporter = null;
-    };
-
-    Transport.prototype = Object.create(TransportFactory.prototype);
-    Transport.prototype.constructor = Transport;
-
-    Transport.prototype.query = query;
-
     function query(url, payload, headers) {
       var self = this;
-      if (!self.bulkTransporter) {
-        self.bulkTransporter = new BulkTransporter(url, headers);
+      if (!self.batchSender) {
+        self.batchSender = new BatchSender(url, headers);
       }
-      else if (self.bulkTransporter.url() !== url) {
-        self.bulkTransporter = new BulkTransporter(url, headers);
+      else if (self.batchSender.url() !== url) {
+        self.batchSender = new BatchSender(url, headers);
       }
-      return self.bulkTransporter.enqueue(payload);
+      return self.batchSender.enqueue(payload);
 
     }
 
