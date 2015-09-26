@@ -28,71 +28,85 @@
         queue = queue.slice(batchSize);
       }
 
-      function dequeue(httpResp) {
+      function multiSearchSuccess(httpResp) {
+        // Examine the responses and dequeue the corresponding
+        // searches
         var bulkHttpResp = httpResp.data;
         if (bulkHttpResp.hasOwnProperty('responses'))  {
-          var queueIdx = 0;
           var respLen = bulkHttpResp.responses.length;
-          angular.forEach(bulkHttpResp.responses, function(resp) {
-            var currRequest = queue[queueIdx];
-            if (resp.hasOwnProperty('error')) {
-              currRequest.defered.reject(resp);
-              // individual query failure
-            } else {
-              // make the response look like standard response
-              currRequest.defered.resolve({'data': resp});
-            }
-
-            queueIdx++;
-          });
+          dequeuePendingSearches(bulkHttpResp);
           finishBatch(respLen);
         } else {
-          allFailed(bulkHttpResp);
+          multiSearchFailed(bulkHttpResp);
         }
       }
 
-      function allFailed(bulkHttpResp) {
+      function multiSearchFailed(bulkHttpResp) {
         var numInFlight = 0;
         angular.forEach(queue, function(pendingQuery) {
           if (pendingQuery.inFlight) {
             pendingQuery.defered.reject(bulkHttpResp);
-            // fail them
             numInFlight++;
           }
         });
         finishBatch(numInFlight);
       }
 
-      function tryHttp() {
+      function buildMultiSearch() {
+        // Batch queued searches into one message using MultiSearch API
+        // https://www.elastic.co/guide/en/elasticsearch/reference/1.4/search-multi-search.html
+        var sharedHeader = JSON.stringify({});
+        var queryLines = [];
+        angular.forEach(queue, function(pendingQuery) {
+          queryLines.push(sharedHeader);
+          pendingQuery.inFlight = true;
+          queryLines.push(JSON.stringify(pendingQuery.payload));
+        });
+        var data = queryLines.join('\n') + '\n';
+        return data;
+      }
+
+      function dequeuePendingSearches(bulkHttpResp) {
+        // Examine the responses and dequeue the corresponding
+        // searches
+        var queueIdx = 0;
+        angular.forEach(bulkHttpResp.responses, function(resp) {
+          var currRequest = queue[queueIdx];
+          if (resp.hasOwnProperty('error')) {
+            currRequest.defered.reject(resp);
+            // individual query failure
+          } else {
+            // make the response look like standard response
+            currRequest.defered.resolve({'data': resp});
+          }
+
+          queueIdx++;
+        });
+      }
+
+      function sendMultiSearch() {
         if (!pendingHttp && queue.length > 0) {
           // Implementation of Elasticsearch's _msearch ("Multi Search") API
-          var sharedHeader = JSON.stringify({}); // means use inde
-          var queryLines = [];
-          angular.forEach(queue, function(pendingQuery) {
-            queryLines.push(sharedHeader);
-            pendingQuery.inFlight = true;
-            queryLines.push(JSON.stringify(pendingQuery.payload));
-          });
-          var data = queryLines.join('\n');
-          pendingHttp = $http.post(url, data + '\n', requestConfig);
-          pendingHttp.then(dequeue, allFailed);
+          var payload = buildMultiSearch();
+          pendingHttp = $http.post(url, payload, requestConfig);
+          pendingHttp.then(multiSearchSuccess, multiSearchFailed);
         }
       }
 
-      function enqueue(payload) {
+      function enqueue(query) {
         var defered = $q.defer();
 
         var pendingQuery = {
           defered: defered,
           inFlight: false,
-          payload: payload,
+          payload: query,
         };
         queue.push(pendingQuery);
         return defered.promise;
       }
 
       function timerTick() {
-        tryHttp();
+        sendMultiSearch();
         $timeout(timerTick, 100);
       }
 
