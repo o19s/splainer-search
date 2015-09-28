@@ -44,8 +44,8 @@
       var doc   = self.doc;
       var esurl = self.options().url;
 
-      esUrlSvc.parseUrl(esurl);
-      return esUrlSvc.buildDocUrl(doc);
+      var uri = esUrlSvc.parseUrl(esurl);
+      return esUrlSvc.buildDocUrl(uri, doc);
     }
 
     function explain () {

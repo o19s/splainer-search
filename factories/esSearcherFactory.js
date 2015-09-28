@@ -6,15 +6,17 @@
   angular.module('o19s.splainer-search')
     .factory('EsSearcherFactory', [
       '$http',
+      '$q',
       'EsDocFactory',
       'activeQueries',
       'esSearcherPreprocessorSvc',
       'esUrlSvc',
       'SearcherFactory',
+      'transportSvc',
       EsSearcherFactory
     ]);
 
-  function EsSearcherFactory($http, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory) {
+  function EsSearcherFactory($http, $q, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory, transportSvc) {
 
     var Searcher = function(options) {
       SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
@@ -27,6 +29,7 @@
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
+
 
     function addDocToGroup (groupedBy, group, solrDoc) {
       /*jslint validthis:true*/
@@ -98,7 +101,14 @@
       /*jslint validthis:true*/
       var self      = this;
       var url       = self.url;
-      var payload   = self.queryDsl;
+      var uri = esUrlSvc.parseUrl(url);
+      url = esUrlSvc.buildUrl(uri);
+      var transport = transportSvc.getTransport({searchApi: uri.searchApi});
+      var queryDslWithPagerArgs = angular.copy(self.queryDsl);
+      if (self.pagerArgs) {
+        queryDslWithPagerArgs.from = self.pagerArgs.from;
+        queryDslWithPagerArgs.size = self.pagerArgs.size;
+      }
       self.inError  = false;
 
       var thisSearcher  = self;
@@ -123,21 +133,20 @@
       // Build URL with params if any
       // Eg. without params:  /_search
       // Eg. with params:     /_search?size=5&from=5
-      esUrlSvc.parseUrl(url);
-      esUrlSvc.setParams(self.pagerArgs);
-      url = esUrlSvc.buildUrl();
+      //esUrlSvc.setParams(uri, self.pagerArgs);
 
-      var requestConfig = {};
+      var headers = {};
 
-      if ( angular.isDefined(esUrlSvc.username) && esUrlSvc.username !== '' &&
-        angular.isDefined(esUrlSvc.password) && esUrlSvc.password !== '') {
-        var authorization = 'Basic ' + btoa(esUrlSvc.username + ':' + esUrlSvc.password);
-        requestConfig.headers = { 'Authorization': authorization };
+      if ( angular.isDefined(uri.username) && uri.username !== '' &&
+        angular.isDefined(uri.password) && uri.password !== '') {
+        var authorization = 'Basic ' + btoa(uri.username + ':' + uri.password);
+        headers = { 'Authorization': authorization };
       }
 
       activeQueries.count++;
-      return $http.post(url, payload, requestConfig)
-      .success(function(data) {
+      return transport.query(url, queryDslWithPagerArgs, headers)
+      .then(function success(httpConfig) {
+        var data = httpConfig.data;
         activeQueries.count--;
         self.numFound = data.hits.total;
 
@@ -161,9 +170,10 @@
           var doc = parseDoc(hit);
           thisSearcher.docs.push(doc);
         });
-      }).error(function() {
+      }, function error(msg) {
         activeQueries.count--;
         thisSearcher.inError = true;
+        return $q.reject(msg);
       });
     }
 
