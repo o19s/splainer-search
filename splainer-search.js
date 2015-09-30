@@ -2045,6 +2045,10 @@ angular.module('o19s.splainer-search')
           var doc = parseDoc(hit);
           thisSearcher.docs.push(doc);
         });
+
+        if ( angular.isDefined(data._shards) && data._shards.failed > 0 ) {
+          return $q.reject(data._shards.failures[0]);
+        }
       }, function error(msg) {
         activeQueries.count--;
         thisSearcher.inError = true;
