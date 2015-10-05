@@ -515,4 +515,56 @@ describe('Service: searchSvc: ElasticSearch', function() {
       expect(nextSearcher).toBe(null);
     });
   });
+
+  describe('failures', function () {
+    beforeEach(inject(function () {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+    }));
+
+    it('reports failures', function() {
+      var failureResponse = {
+        _shards: {
+          total:      2,
+          successful: 1,
+          failed:     1,
+          failures: [
+            {
+              index:  'statedecoded',
+              shard:  1,
+              status: 400,
+              reason: "ElasticsearchIllegalArgumentException[field [cast] isn't a leaf field]"
+            }
+          ]
+        },
+        hits: {
+          total: 2,
+          'max_score': 1.0,
+          hits: []
+        }
+      };
+      $httpBackend.expectPOST(mockEsUrl).
+      respond(200, failureResponse);
+
+      var errorCalled = 0;
+
+      searcher.search()
+      .then(function success() {
+        errorCalled--;
+      }, function failure(msg) {
+        expect(msg.reason).toBe("ElasticsearchIllegalArgumentException[field [cast] isn't a leaf field]");
+        errorCalled++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(errorCalled).toEqual(1);
+    });
+  });
 });
