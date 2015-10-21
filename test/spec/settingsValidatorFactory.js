@@ -56,9 +56,98 @@ describe('Factory: Settings Validator', function () {
         ]
       }
     };
+    var funkyDocs =
+      [
+        {
+          "id":"l_5552",
+          "text":"For purposes of computing.",
+          "section":"9.1-703",
+          "structure":"Commonwealth Public Safety/Overtime Compensation for Law-Enforcement Employees and Firefighters, Emergency Medical Technicians,",
+          "type":"law",
+          'uid': "1234",
+          "_version_":1512671587453632512
+        },
+        {
+          "catch_line":"Powers, duties and responsibilities of the Inspector.",
+          "text":"foo",
+          "section":"45.1-361.28",
+          "structure":"Mines and Mining/The Virginia Gas and Oil Act",
+          "tags":["locality"],
+          "refers_to":["45.1-161.5"],
+          "type":"law",
+          'uid': "1235",
+          "_version_":1512671587500818432
+        },
+        {
+          "id":"l_5552",
+          "text":"For purposes of computing.",
+          "section":"9.1-703",
+          'uid': "1236",
+          "_version_":1512671587453632512
+        }
+
+        ];
 
     beforeEach( function () {
       validator = new SettingsValidatorFactory(settings);
+    });
+
+    describe('Generates candidate ids', function() {
+
+      it('selects only ids occuring across all docs, bland docs', function() {
+          var expectedParams = {
+            q: ['*:*'],
+          };
+
+          $httpBackend.expectJSONP(urlContainsParams(settings.searchUrl, expectedParams))
+            .respond(200, fullResponse);
+
+          var called = 0;
+          validator.validateUrl()
+          .then(function() {
+            expect(validator.idFields.length).toBe(7);
+            expect(validator.idFields).toContain('id')
+            expect(validator.idFields).toContain('text')
+            expect(validator.idFields).toContain('catch_line')
+            expect(validator.idFields).toContain('section')
+            expect(validator.idFields).toContain('type')
+            expect(validator.idFields).toContain('structure')
+            expect(validator.idFields).toContain('_version_')
+            called++;
+          });
+
+          $httpBackend.flush();
+          $httpBackend.verifyNoOutstandingExpectation();
+          expect(called).toBe(1);
+      });
+
+      it('selects only ids occuring across all docs, funkier docs', function() {
+        var expectedParams = {
+          q: ['*:*'],
+        };
+
+        var funkyResponse = angular.copy(fullResponse);
+        funkyResponse.response.docs = funkyDocs
+        $httpBackend.expectJSONP(urlContainsParams(settings.searchUrl, expectedParams))
+          .respond(200, funkyResponse);
+
+        var called = 0;
+        validator.validateUrl()
+        .then(function() {
+          called++;
+          expect(validator.idFields.length).toBe(4);
+          expect(validator.idFields).toContain('uid')
+          expect(validator.idFields).toContain('text')
+          expect(validator.idFields).toContain('section')
+          expect(validator.idFields).toContain('_version_')
+        });
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toBe(1);
+      });
+
+      it('selects only ids occuring across all docs, funkier docs', function() {
+      });
     });
 
     describe('Validate URL:', function () {
@@ -154,6 +243,32 @@ describe('Factory: Settings Validator', function () {
 
     beforeEach( function () {
       validator = new SettingsValidatorFactory(settings);
+    });
+
+    describe('Generates candidate ids', function() {
+
+      it('selects only ids occuring across all docs', function() {
+          var expectedParams = {
+            q: ['*:*'],
+          };
+
+          $httpBackend.expectPOST(settings.searchUrl).respond(200, fullResponse);
+
+          var called = 0;
+          validator.validateUrl()
+          .then(function() {
+            expect(validator.idFields.length).toBe(3);
+            expect(validator.idFields).toContain('id')
+            expect(validator.idFields).toContain('_id')
+            expect(validator.idFields).toContain('title')
+            called++;
+          });
+
+          $httpBackend.flush();
+          $httpBackend.verifyNoOutstandingExpectation();
+          expect(called).toBe(1);
+      });
+
     });
 
     describe('Validate URL:', function () {
