@@ -18,6 +18,7 @@
 
       self.searcher = null;
       self.fields   = [];
+      self.idFields = [];
 
       self.setupSearcher  = setupSearcher;
       self.validateUrl    = validateUrl;
@@ -44,31 +45,50 @@
         );
       }
 
+      function sourceDoc(doc) {
+        if ( self.searchEngine === 'solr' ) {
+          return doc.doc;
+        } else if (self.searchEngine === 'es') {
+          return doc.doc._source;
+        }
+      }
+
+      function intersection(a, b) {
+        var intersect = a.filter(function(aVal) {
+          return b.indexOf(aVal) !== -1;
+        });
+        return intersect;
+      }
+
+      function updateCandidateIds(candidateIds, attributes) {
+        if (angular.isUndefined(candidateIds)) {
+          return attributes;
+        }
+        // Guarantee that the candidateIds set occurs in every field
+        return intersection(candidateIds, attributes);
+      }
+
       function validateUrl () {
         return self.searcher.search()
         .then(function () {
+          if (self.searchEngine === 'es') {
+            self.fields.push('_id');
+          }
+          var candidateIds;
+
           // Merge fields from multiple docs because some docs might not return
           // the entire list of fields possible.
           // This is not perfect as the top 10 results might not include
           // a comprehensive list, but it's the best we can do.
-          if ( self.searchEngine === 'solr' ) {
-            angular.forEach(self.searcher.docs, function(doc) {
-              var attributes = Object.keys(doc.doc);
+          angular.forEach(self.searcher.docs, function(doc) {
+            var attributes = Object.keys(sourceDoc(doc));
+            candidateIds = updateCandidateIds(candidateIds, attributes);
 
-              self.fields = self.fields.concat(attributes.filter(function (attribute) {
-                return self.fields.indexOf(attribute) < 0;
-              }));
-            });
-          } else if ( self.searchEngine === 'es' ) {
-            self.fields.push('_id');
-
-            angular.forEach(self.searcher.docs, function(doc) {
-              var attributes = Object.keys(doc.doc._source);
-              self.fields = self.fields.concat(attributes.filter(function (attribute) {
-                return self.fields.indexOf(attribute) < 0;
-              }));
-            });
-          }
+            self.fields = self.fields.concat(attributes.filter(function (attribute) {
+              return self.fields.indexOf(attribute) < 0;
+            }));
+          });
+          self.idFields = candidateIds;
         });
       }
     };
