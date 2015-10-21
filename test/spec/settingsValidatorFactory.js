@@ -93,7 +93,35 @@ describe('Factory: Settings Validator', function () {
     });
 
     describe('Generates candidate ids', function() {
-      it('selects only ids occuring across all docs', function() {
+
+      it('selects only ids occuring across all docs, bland docs', function() {
+          var expectedParams = {
+            q: ['*:*'],
+          };
+
+          $httpBackend.expectJSONP(urlContainsParams(settings.searchUrl, expectedParams))
+            .respond(200, fullResponse);
+
+          var called = 0;
+          validator.validateUrl()
+          .then(function() {
+            expect(validator.idFields.length).toBe(7);
+            expect(validator.idFields).toContain('id')
+            expect(validator.idFields).toContain('text')
+            expect(validator.idFields).toContain('catch_line')
+            expect(validator.idFields).toContain('section')
+            expect(validator.idFields).toContain('type')
+            expect(validator.idFields).toContain('structure')
+            expect(validator.idFields).toContain('_version_')
+            called++;
+          });
+
+          $httpBackend.flush();
+          $httpBackend.verifyNoOutstandingExpectation();
+          expect(called).toBe(1);
+      });
+
+      it('selects only ids occuring across all docs, funkier docs', function() {
         var expectedParams = {
           q: ['*:*'],
         };
@@ -116,6 +144,9 @@ describe('Factory: Settings Validator', function () {
         $httpBackend.flush();
         $httpBackend.verifyNoOutstandingExpectation();
         expect(called).toBe(1);
+      });
+
+      it('selects only ids occuring across all docs, funkier docs', function() {
       });
     });
 
@@ -212,6 +243,32 @@ describe('Factory: Settings Validator', function () {
 
     beforeEach( function () {
       validator = new SettingsValidatorFactory(settings);
+    });
+
+    describe('Generates candidate ids', function() {
+
+      it('selects only ids occuring across all docs', function() {
+          var expectedParams = {
+            q: ['*:*'],
+          };
+
+          $httpBackend.expectPOST(settings.searchUrl).respond(200, fullResponse);
+
+          var called = 0;
+          validator.validateUrl()
+          .then(function() {
+            expect(validator.idFields.length).toBe(3);
+            expect(validator.idFields).toContain('id')
+            expect(validator.idFields).toContain('_id')
+            expect(validator.idFields).toContain('title')
+            called++;
+          });
+
+          $httpBackend.flush();
+          $httpBackend.verifyNoOutstandingExpectation();
+          expect(called).toBe(1);
+      });
+
     });
 
     describe('Validate URL:', function () {

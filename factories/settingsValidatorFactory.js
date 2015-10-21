@@ -71,9 +71,6 @@
       function validateUrl () {
         return self.searcher.search()
         .then(function () {
-          if (self.searchEngine === 'es') {
-            self.fields.push('_id');
-          }
           var candidateIds;
 
           // Merge fields from multiple docs because some docs might not return
@@ -89,6 +86,10 @@
             }));
           });
           self.idFields = candidateIds;
+          if (self.searchEngine === 'es') {
+            self.fields.unshift('_id');
+            self.idFields.unshift('_id');
+          }
         });
       }
     };
