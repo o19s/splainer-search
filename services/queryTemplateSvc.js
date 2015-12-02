@@ -18,10 +18,11 @@ angular.module('o19s.splainer-search')
       }
     }
 
-    function getMaxKeywords(template) {
-      var keywordMatch = /#\$keyword(\d)##/g;
+    function getKeywordDefaults(template, config) {
+      var keywordMatch = /#\$keyword(\d)(\|.*?){0,1}##/g;
       var match = keywordMatch.exec(template);
       var maxKw = 0;
+      var defaults = [];
       while (match !== null) {
         var kwNum = parseInt(match[1]);
         if (kwNum) {
@@ -29,9 +30,16 @@ angular.module('o19s.splainer-search')
             maxKw = kwNum;
           }
         }
+        var def = match[2];
+        if (def) {
+          defaults[kwNum] = def.slice(1);
+        }
+        else {
+          defaults[kwNum] = config.defaultKw;
+        }
         match = keywordMatch.exec(template);
       }
-      return maxKw;
+      return defaults;
     }
 
     function keywordMapping(queryText, maxKeywords) {
@@ -54,11 +62,16 @@ angular.module('o19s.splainer-search')
 
       var replaced  = template.replace(/#\$query##/g, encode(queryText, config));
       var idx = 0;
-      var maxKeywords = getMaxKeywords(template);
+      var defaults = getKeywordDefaults(template, config);
+      var maxKeywords = defaults.length;
       angular.forEach(keywordMapping(queryText, maxKeywords), function(queryTerm) {
-        var regex = new RegExp('#\\$keyword' + (idx + 1) + '##', 'g');
+        var regex = new RegExp('#\\$keyword' + (idx + 1) + '(.*?)##', 'g');
+        var def = defaults[idx + 1];
+        if (angular.isUndefined(def)) {
+          def = config.defaultKw;
+        }
         if (queryTerm === null) {
-          queryTerm = config.defaultKw;
+          queryTerm = def;
         } else {
           queryTerm = encode(queryTerm, config);
         }
