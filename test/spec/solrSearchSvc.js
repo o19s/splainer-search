@@ -847,6 +847,59 @@ describe('Service: searchSvc: Solr', function () {
     });
   });
 
+  describe('vars', function() {
+    it('does full replacement', function() {
+      var mockQueryText = 'burrito taco';
+      var mockSolrParams = {
+        q: ['#$query##'],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.q[0] = encodeURIComponent(mockQueryText);
+
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('does keyword replacement', function() {
+      var mockQueryText = 'burrito taco';
+      var mockSolrParams = {
+        q: ['#$query1## query #$query2##'],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.q[0] = 'burrito query taco';
+
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('extra keyword replacements go blank', function() {
+      var mockQueryText = 'burrito taco';
+      var mockSolrParams = {
+        q: ['#$query1## query #$query2## nothing #$query3##'],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.q[0] = 'burrito query taco nothing ';
+
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+  });
+
   describe('paging', function() {
     var fullSolrResp = {'responseHeader':{
       'status':0,
