@@ -1056,10 +1056,24 @@ angular.module('o19s.splainer-search')
       }
     }
 
+    function getMaxKeywords(template) {
+      var keywordMatch = /#\$keyword(\d)##/g;
+      var match = keywordMatch.exec(template);
+      var maxKw = 0;
+      while (match !== null) {
+        var kwNum = parseInt(match[1]);
+        if (kwNum) {
+          if (kwNum > maxKw) {
+            maxKw = kwNum;
+          }
+        }
+        match = keywordMatch.exec(template);
+      }
+      return maxKw;
+    }
 
-    function keywordMapping(queryText) {
+    function keywordMapping(queryText, maxKeywords) {
       var queryTerms    = queryText.split(/[ ,]+/);
-      var maxKeywords = 10;
       var numTerms = queryTerms.length;
       for (var i = numTerms; i < maxKeywords; i++) {
         queryTerms.push(null);
@@ -1078,8 +1092,9 @@ angular.module('o19s.splainer-search')
 
       var replaced  = template.replace(/#\$query##/g, encode(queryText, config));
       var idx = 0;
-      angular.forEach(keywordMapping(queryText), function(queryTerm) {
-        var regex = new RegExp('#\\$query' + (idx + 1) + '##', 'g');
+      var maxKeywords = getMaxKeywords(template);
+      angular.forEach(keywordMapping(queryText, maxKeywords), function(queryTerm) {
+        var regex = new RegExp('#\\$keyword' + (idx + 1) + '##', 'g');
         if (queryTerm === null) {
           queryTerm = config.defaultKw;
         } else {
