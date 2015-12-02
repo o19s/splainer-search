@@ -899,6 +899,23 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
+    it('custom defaults', function() {
+      var mockQueryText = 'burrito taco';
+      var mockSolrParams = {
+        q: ['#$keyword1## query #$keyword2## nothing #$keyword3|someDefault##'],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.q[0] = 'burrito query taco nothing someDefault';
+
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
     it('super long query', function() {
       var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciouness taco bell cannot run away from me crazy muhahahaa peanut';
       var mockSolrParams = {
