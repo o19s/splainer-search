@@ -868,7 +868,7 @@ describe('Service: searchSvc: Solr', function () {
     it('does keyword replacement', function() {
       var mockQueryText = 'burrito taco';
       var mockSolrParams = {
-        q: ['#$query1## query #$query2##'],
+        q: ['#$keyword1## query #$keyword2##'],
       };
       var expectedParams = angular.copy(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco';
@@ -885,7 +885,7 @@ describe('Service: searchSvc: Solr', function () {
     it('extra keyword replacements turns to empty quotes', function() {
       var mockQueryText = 'burrito taco';
       var mockSolrParams = {
-        q: ['#$query1## query #$query2## nothing #$query3##'],
+        q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
       };
       var expectedParams = angular.copy(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing ""';
@@ -902,7 +902,7 @@ describe('Service: searchSvc: Solr', function () {
     it('super long query', function() {
       var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciouness taco bell cannot run away from me crazy muhahahaa peanut';
       var mockSolrParams = {
-        q: ['#$query1## query #$query2## nothing #$query3##'],
+        q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
       };
       var expectedParams = angular.copy(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing nacho';

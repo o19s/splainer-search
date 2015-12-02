@@ -444,7 +444,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       var mockEsParams  = {
         query: {
           term: {
-            text: '#$query1## #$query## #$query2##'
+            text: '#$keyword1## #$query## #$keyword2##'
           }
         }
       };
@@ -498,7 +498,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       var mockEsParams  = {
         query: {
           term: {
-            text: '#$query1## #$query3##'
+            text: '#$keyword1## #$keyword3##'
           }
         }
       };

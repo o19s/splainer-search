@@ -41,7 +41,7 @@ angular.module('o19s.splainer-search')
       var replaced  = template.replace(/#\$query##/g, encode(queryText, config));
       var idx = 0;
       angular.forEach(keywordMapping(queryText), function(queryTerm) {
-        var regex = new RegExp('#\\$query' + (idx + 1) + '##', 'g');
+        var regex = new RegExp('#\\$keyword' + (idx + 1) + '##', 'g');
         if (queryTerm === null) {
           queryTerm = config.defaultKw;
         } else {
