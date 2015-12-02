@@ -163,7 +163,7 @@ angular.module('o19s.splainer-search')
 'use strict';
 
 angular.module('o19s.splainer-search')
-  .service('esSearcherPreprocessorSvc', function esSearcherPreprocessorSvc() {
+  .service('esSearcherPreprocessorSvc', function esSearcherPreprocessorSvc(queryTemplateSvc) {
     var self      = this;
     self.prepare  = prepare;
 
@@ -174,7 +174,8 @@ angular.module('o19s.splainer-search')
       }
 
       var replaced  = angular.toJson(args, true);
-      replaced      = replaced.replace(/#\$query##/g, queryText);
+
+      replaced      = queryTemplateSvc.hydrate(replaced, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
       replaced      = angular.fromJson(replaced);
 
       return replaced;
@@ -1037,6 +1038,77 @@ angular.module('o19s.splainer-search')
 
 'use strict';
 
+angular.module('o19s.splainer-search')
+  .service('queryTemplateSvc', function queryTemplateSvc() {
+    var self      = this;
+    self.hydrate = hydrate;
+
+    var defaultConfig = {
+      encodeURI: false,
+      defaultKw: '""',
+    };
+
+    function encode(queryPart, config) {
+      if (config.encodeURI) {
+        return encodeURIComponent(queryPart);
+      } else {
+        return queryPart;
+      }
+    }
+
+    function getMaxKeywords(template) {
+      var keywordMatch = /#\$keyword(\d)##/g;
+      var match = keywordMatch.exec(template);
+      var maxKw = 0;
+      while (match !== null) {
+        var kwNum = parseInt(match[1]);
+        if (kwNum) {
+          if (kwNum > maxKw) {
+            maxKw = kwNum;
+          }
+        }
+        match = keywordMatch.exec(template);
+      }
+      return maxKw;
+    }
+
+    function keywordMapping(queryText, maxKeywords) {
+      var queryTerms    = queryText.split(/[ ,]+/);
+      var numTerms = queryTerms.length;
+      for (var i = numTerms; i < maxKeywords; i++) {
+        queryTerms.push(null);
+      }
+      return queryTerms;
+    }
+
+    function hydrate(template, queryText, config) {
+      if (!config) {
+        config = defaultConfig;
+      }
+
+      if (queryText === null || angular.isUndefined(queryText)) {
+        return template;
+      }
+
+      var replaced  = template.replace(/#\$query##/g, encode(queryText, config));
+      var idx = 0;
+      var maxKeywords = getMaxKeywords(template);
+      angular.forEach(keywordMapping(queryText, maxKeywords), function(queryTerm) {
+        var regex = new RegExp('#\\$keyword' + (idx + 1) + '##', 'g');
+        if (queryTerm === null) {
+          queryTerm = config.defaultKw;
+        } else {
+          queryTerm = encode(queryTerm, config);
+        }
+        replaced = replaced.replace(regex, queryTerm);
+        idx += 1;
+      });
+      return replaced;
+    }
+  });
+
+'use strict';
+
 // Executes a solr search and returns
 // a set of solr documents
 angular.module('o19s.splainer-search')
@@ -1231,7 +1303,7 @@ angular.module('o19s.splainer-search')
 'use strict';
 
 angular.module('o19s.splainer-search')
-  .service('solrSearcherPreprocessorSvc', function solrSearcherPreprocessorSvc(solrUrlSvc, defaultSolrConfig) {
+  .service('solrSearcherPreprocessorSvc', function solrSearcherPreprocessorSvc(solrUrlSvc, defaultSolrConfig, queryTemplateSvc) {
     var self      = this;
     self.prepare  = prepare;
 
@@ -1272,7 +1344,7 @@ angular.module('o19s.splainer-search')
       }
 
       var baseUrl = solrUrlSvc.buildUrl(url, args);
-      baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
+      baseUrl = queryTemplateSvc.hydrate(baseUrl, queryText, {encodeURI: true, defaultKw: '""'});
 
       return baseUrl;
     };

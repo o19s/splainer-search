@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('o19s.splainer-search')
-  .service('esSearcherPreprocessorSvc', function esSearcherPreprocessorSvc() {
+  .service('esSearcherPreprocessorSvc', function esSearcherPreprocessorSvc(queryTemplateSvc) {
     var self      = this;
     self.prepare  = prepare;
 
@@ -12,7 +12,8 @@ angular.module('o19s.splainer-search')
       }
 
       var replaced  = angular.toJson(args, true);
-      replaced      = replaced.replace(/#\$query##/g, queryText);
+
+      replaced      = queryTemplateSvc.hydrate(replaced, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
       replaced      = angular.fromJson(replaced);
 
       return replaced;

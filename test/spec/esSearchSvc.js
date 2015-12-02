@@ -411,6 +411,117 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
   });
 
+  describe('vars', function() {
+    it('replaces vars no URI encode', function() {
+      var mockQueryText = 'taco&burrito';
+      var mockEsParams  = {
+        query: {
+          term: {
+            text: '#$query##'
+          }
+        }
+      };
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        return (esQuery.query.term.text === mockQueryText);
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('replaces keywords vars', function() {
+      var mockQueryText = 'taco&burrito purina headphone';
+      var mockEsParams  = {
+        query: {
+          term: {
+            text: '#$keyword1## #$query## #$keyword2##'
+          }
+        }
+      };
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        return (esQuery.query.term.text === 'taco&burrito taco&burrito purina headphone purina');
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('null queryText', function() {
+      var mockQueryText = 'taco&burrito purina headphone';
+      var mockEsParams  = {
+        query: {
+          term: {
+            text: 'lovely bunnies'
+          }
+        }
+      };
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        null,
+        {},
+        'es'
+      );
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        return (esQuery.query.term.text === 'lovely bunnies');
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('empty query turns to quotes', function() {
+      var mockQueryText = 'purina headphone';
+      var mockEsParams  = {
+        query: {
+          term: {
+            text: '#$keyword1## #$keyword3##'
+          }
+        }
+      };
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        console.log(esQuery.query.term.text);
+        return (esQuery.query.term.text === 'purina \"\"');
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+  });
+
   describe('paging', function() {
     var fullResponse = {
       hits: {

@@ -847,6 +847,76 @@ describe('Service: searchSvc: Solr', function () {
     });
   });
 
+  describe('vars', function() {
+    it('does full replacement', function() {
+      var mockQueryText = 'burrito taco';
+      var mockSolrParams = {
+        q: ['#$query##'],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.q[0] = encodeURIComponent(mockQueryText);
+
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('does keyword replacement', function() {
+      var mockQueryText = 'burrito taco';
+      var mockSolrParams = {
+        q: ['#$keyword1## query #$keyword2##'],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.q[0] = 'burrito query taco';
+
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('extra keyword replacements turns to empty quotes', function() {
+      var mockQueryText = 'burrito taco';
+      var mockSolrParams = {
+        q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.q[0] = 'burrito query taco nothing ""';
+
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('super long query', function() {
+      var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciouness taco bell cannot run away from me crazy muhahahaa peanut';
+      var mockSolrParams = {
+        q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.q[0] = 'burrito query taco nothing nacho';
+
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    })
+  });
+
   describe('paging', function() {
     var fullSolrResp = {'responseHeader':{
       'status':0,
