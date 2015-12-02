@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('o19s.splainer-search')
-  .service('solrSearcherPreprocessorSvc', function solrSearcherPreprocessorSvc(solrUrlSvc, defaultSolrConfig) {
+  .service('solrSearcherPreprocessorSvc', function solrSearcherPreprocessorSvc(solrUrlSvc, defaultSolrConfig, queryTemplateSvc) {
     var self      = this;
     self.prepare  = prepare;
 
@@ -42,7 +42,7 @@ angular.module('o19s.splainer-search')
       }
 
       var baseUrl = solrUrlSvc.buildUrl(url, args);
-      baseUrl = baseUrl.replace(/#\$query##/g, encodeURIComponent(queryText));
+      baseUrl = queryTemplateSvc.hydrate(baseUrl, queryText, {encodeURI: true});
 
       return baseUrl;
     };
