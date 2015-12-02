@@ -6,7 +6,7 @@ angular.module('o19s.splainer-search')
     self.hydrate = hydrate;
 
     var defaultConfig = {
-      encodeURI: true
+      encodeURI: false
     };
 
     function encode(queryPart, config) {

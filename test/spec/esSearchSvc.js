@@ -411,6 +411,62 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
   });
 
+  describe('vars', function() {
+    it('replaces vars no URI encode', function() {
+      var mockQueryText = 'taco&burrito';
+      var mockEsParams  = {
+        query: {
+          term: {
+            text: '#$query##'
+          }
+        }
+      };
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        return (esQuery.query.term.text === mockQueryText);
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('replaces keywords vars', function() {
+      var mockQueryText = 'taco&burrito purina headphone';
+      var mockEsParams  = {
+        query: {
+          term: {
+            text: '#$query1## #$query## #$query2##'
+          }
+        }
+      };
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        return (esQuery.query.term.text === 'taco&burrito taco&burrito purina headphone purina');
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+  });
+
   describe('paging', function() {
     var fullResponse = {
       hits: {
