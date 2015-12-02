@@ -492,6 +492,34 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
     });
+
+    it('empty query turns to quotes', function() {
+      var mockQueryText = 'purina headphone';
+      var mockEsParams  = {
+        query: {
+          term: {
+            text: '#$query1## #$query3##'
+          }
+        }
+      };
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        console.log(esQuery.query.term.text);
+        return (esQuery.query.term.text === 'purina \"\"');
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
   });
 
   describe('paging', function() {

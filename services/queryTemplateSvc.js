@@ -6,7 +6,8 @@ angular.module('o19s.splainer-search')
     self.hydrate = hydrate;
 
     var defaultConfig = {
-      encodeURI: false
+      encodeURI: false,
+      defaultKw: '""',
     };
 
     function encode(queryPart, config) {
@@ -39,11 +40,10 @@ angular.module('o19s.splainer-search')
 
       var replaced  = template.replace(/#\$query##/g, encode(queryText, config));
       var idx = 0;
-      var defaultKwReplacement = '';
       angular.forEach(keywordMapping(queryText), function(queryTerm) {
         var regex = new RegExp('#\\$query' + (idx + 1) + '##', 'g');
         if (queryTerm === null) {
-          queryTerm = defaultKwReplacement;
+          queryTerm = config.defaultKw;
         } else {
           queryTerm = encode(queryTerm, config);
         }

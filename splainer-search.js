@@ -175,7 +175,7 @@ angular.module('o19s.splainer-search')
 
       var replaced  = angular.toJson(args, true);
 
-      replaced      = queryTemplateSvc.hydrate(replaced, queryText);
+      replaced      = queryTemplateSvc.hydrate(replaced, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
       replaced      = angular.fromJson(replaced);
 
       return replaced;
@@ -1044,7 +1044,8 @@ angular.module('o19s.splainer-search')
     self.hydrate = hydrate;
 
     var defaultConfig = {
-      encodeURI: false
+      encodeURI: false,
+      defaultKw: '""',
     };
 
     function encode(queryPart, config) {
@@ -1077,11 +1078,10 @@ angular.module('o19s.splainer-search')
 
       var replaced  = template.replace(/#\$query##/g, encode(queryText, config));
       var idx = 0;
-      var defaultKwReplacement = '';
       angular.forEach(keywordMapping(queryText), function(queryTerm) {
         var regex = new RegExp('#\\$query' + (idx + 1) + '##', 'g');
         if (queryTerm === null) {
-          queryTerm = defaultKwReplacement;
+          queryTerm = config.defaultKw;
         } else {
           queryTerm = encode(queryTerm, config);
         }
@@ -1329,7 +1329,7 @@ angular.module('o19s.splainer-search')
       }
 
       var baseUrl = solrUrlSvc.buildUrl(url, args);
-      baseUrl = queryTemplateSvc.hydrate(baseUrl, queryText, {encodeURI: true});
+      baseUrl = queryTemplateSvc.hydrate(baseUrl, queryText, {encodeURI: true, defaultKw: '""'});
 
       return baseUrl;
     };

@@ -13,7 +13,7 @@ angular.module('o19s.splainer-search')
 
       var replaced  = angular.toJson(args, true);
 
-      replaced      = queryTemplateSvc.hydrate(replaced, queryText);
+      replaced      = queryTemplateSvc.hydrate(replaced, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
       replaced      = angular.fromJson(replaced);
 
       return replaced;

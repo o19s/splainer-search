@@ -882,13 +882,13 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
-    it('extra keyword replacements go blank', function() {
+    it('extra keyword replacements turns to empty quotes', function() {
       var mockQueryText = 'burrito taco';
       var mockSolrParams = {
         q: ['#$query1## query #$query2## nothing #$query3##'],
       };
       var expectedParams = angular.copy(mockSolrParams);
-      expectedParams.q[0] = 'burrito query taco nothing ';
+      expectedParams.q[0] = 'burrito query taco nothing ""';
 
       var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
