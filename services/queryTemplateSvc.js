@@ -18,11 +18,10 @@ angular.module('o19s.splainer-search')
       }
     }
 
-    function getKeywordDefaults(template, config) {
+    function getMaxKws(template) {
       var keywordMatch = /#\$keyword(\d)(\|.*?){0,1}##/g;
       var match = keywordMatch.exec(template);
       var maxKw = 0;
-      var defaults = [];
       while (match !== null) {
         var kwNum = parseInt(match[1]);
         if (kwNum) {
@@ -30,16 +29,9 @@ angular.module('o19s.splainer-search')
             maxKw = kwNum;
           }
         }
-        var def = match[2];
-        if (def) {
-          defaults[kwNum] = def.slice(1);
-        }
-        else {
-          defaults[kwNum] = config.defaultKw;
-        }
         match = keywordMatch.exec(template);
       }
-      return defaults;
+      return maxKw;
     }
 
     function keywordMapping(queryText, maxKeywords) {
@@ -49,6 +41,29 @@ angular.module('o19s.splainer-search')
         queryTerms.push(null);
       }
       return queryTerms;
+    }
+
+    function hydrateWithKwDefaults(replaced, config) {
+      // Though its possible this link gets out of link, this was the origin
+      // of the regex below
+      // http://www.regexpal.com/?fam=93576
+      replaced = replaced.replace(/#\$keyword\d(\|(.*?)){1}##/g, '$2'); // regex
+      // anything left, use config defaults
+      replaced = replaced.replace(/#\$keyword\d(\|(.*?)){0,1}##/g, config.defaultKw); // regex
+      return replaced;
+    }
+
+    function hydrateWithKws(replaced, queryText, maxKws, config) {
+      var idx = 0;
+      angular.forEach(keywordMapping(queryText, maxKws), function(queryTerm) {
+        var regex = new RegExp('#\\$keyword' + (idx + 1) + '(.*?)##', 'g');
+        if (queryTerm !== null) {
+          queryTerm = encode(queryTerm, config);
+          replaced = replaced.replace(regex, queryTerm);
+        }
+        idx += 1;
+      });
+      return replaced;
     }
 
     function hydrate(template, queryText, config) {
@@ -61,23 +76,10 @@ angular.module('o19s.splainer-search')
       }
 
       var replaced  = template.replace(/#\$query##/g, encode(queryText, config));
-      var idx = 0;
-      var defaults = getKeywordDefaults(template, config);
-      var maxKeywords = defaults.length;
-      angular.forEach(keywordMapping(queryText, maxKeywords), function(queryTerm) {
-        var regex = new RegExp('#\\$keyword' + (idx + 1) + '(.*?)##', 'g');
-        var def = defaults[idx + 1];
-        if (angular.isUndefined(def)) {
-          def = config.defaultKw;
-        }
-        if (queryTerm === null) {
-          queryTerm = def;
-        } else {
-          queryTerm = encode(queryTerm, config);
-        }
-        replaced = replaced.replace(regex, queryTerm);
-        idx += 1;
-      });
+      var maxKws = getMaxKws(template, config);
+      replaced = hydrateWithKws(replaced, queryText, maxKws, config);
+      replaced = hydrateWithKwDefaults(replaced, config);
+
       return replaced;
     }
   });
