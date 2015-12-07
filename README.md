@@ -4,7 +4,7 @@ Splainer Search is an Angular Solr and Elasticsearch Search library focussed on 
 
 [![Build Status](https://travis-ci.org/o19s/splainer-search.svg?branch=master)](https://travis-ci.org/o19s/splainer-search)
 
-Splainer Search calls out to Solr via JSONP, asking Solr by default to try to explain and highlight all passed in fields. A friendly interface is provided to specify the Solr args in terms of a Javascript object. See below for basic examples
+Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsearch communicates clearly with simple HTTP and JSON. All fields are explained and highligted. A friendly interface is provided to specify the arguments in terms of a Javascript object. See below for basic examples.
 
 ## Basic usage
 
@@ -15,7 +15,7 @@ Splainer-search will perform the specified search against Solr attempting to hig
 ```js
 // searcher that searches id, title, body, author
 var searcher = searchSvc.createSearcher(
-  ['id', 'title', 'body', 'author']',
+  ['id', 'title', 'body', 'author'],
   'http://localhost:8983/solr/select',
   {
     'q': ['*:*'],
