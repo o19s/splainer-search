@@ -5,117 +5,120 @@ angular.module('o19s.splainer-search', []);
 // Executes a solr search and returns
 // a set of queryDocs
 angular.module('o19s.splainer-search')
-  .service('baseExplainSvc', function explainSvc(vectorSvc) {
+  .service('baseExplainSvc', [
+    'vectorSvc',
+    function explainSvc(vectorSvc) {
 
-    this.Explain = function(explJson, explFactory) {
-      var datExplain = this;
-      this.asJson = explJson;
-      this.realContribution = this.score = parseFloat(explJson.value);
-      this.realExplanation = this.description = explJson.description;
-      var details = [];
-      if (explJson.hasOwnProperty('details')) {
-        details = explJson.details;
-      }
-      this.children = [];
-      angular.forEach(details, function(detail) {
-        datExplain.children.push(explFactory(detail));
-      });
-
-      /* Each explain defines influencers, 
-       *
-       * whatever this explain feels should be
-       * plucked out of the explJson passed in as a list
-       * of things that explain it
-       * */
-      this.influencers = function() {
-        return [];
-      };
-
-      /* Each explain reports its contribution
-       * */
-      this.contribution = function() {
-        return this.realContribution;
-      };
-
-      /* Each explain reports a more human-readable form
-       * of the explain text that hopefully is less search geeky
-       * */
-      this.explanation = function() {
-        return this.realExplanation;
-      };
-
-      /* Once we get to "matches" we intend to 
-       * stop, and the level below becomes heavily related to 
-       * similarity implementations (how does the tf * idf calculation work)
-       * we'll call that out seperately to keep things sane
-       * */
-      this.hasMatch = function() {
-        return false;
-      };
-
-      /* Return my influencers as a vector
-       * where magnitude of each dimension is how 
-       * much I am influenced by that influencer
-       *
-       * IE if I am a SumExplain, my vector is likely to be
-       * for matches x and y with scores a and y respectively
-       *
-       *  a * x + b * y
-       *
-       *  here a and b are constants, x and y are other 
-       *  matches to be recursively expanded
-       *
-       * */
-      this.vectorize = function() {
-        var rVal = vectorSvc.create();
-        // base vector is just a, no expansion farther down
-        // so any children's expansion will get ignored
-        rVal.set(this.explanation(), this.contribution());
-        return rVal;
-      };
-
-      var mergeInto = function(sink, source) {
-        for (var attrname in source) { sink[attrname] = source[attrname]; }
-        return sink;
-      };
-      this.matchDetails = function() {
-        var rVal = {};
-        angular.forEach(this.children, function(child) {
-          mergeInto(rVal, child.matchDetails());
+      this.Explain = function(explJson, explFactory) {
+        var datExplain = this;
+        this.asJson = explJson;
+        this.realContribution = this.score = parseFloat(explJson.value);
+        this.realExplanation = this.description = explJson.description;
+        var details = [];
+        if (explJson.hasOwnProperty('details')) {
+          details = explJson.details;
+        }
+        this.children = [];
+        angular.forEach(details, function(detail) {
+          datExplain.children.push(explFactory(detail));
         });
-        return rVal;
-      };
 
-      /* A friendly, hiererarchical view
-       * of all the influencers
-       * */
-      var asStr = '';
-      var asRawStr = '';
-      this.toStr = function(depth) {
-        if (asStr === '') {
-          if (depth === undefined) {
-            depth = 0;
-          }
-          var prefix = new Array(2 * depth).join(' ');
-          var me = prefix + this.contribution() + ' ' + this.explanation() + '\n';
-          var childStrs = [];
-          angular.forEach(this.influencers(), function(child) {
-            childStrs.push(child.toStr(depth+1));
+        /* Each explain defines influencers,
+         *
+         * whatever this explain feels should be
+         * plucked out of the explJson passed in as a list
+         * of things that explain it
+         * */
+        this.influencers = function() {
+          return [];
+        };
+
+        /* Each explain reports its contribution
+         * */
+        this.contribution = function() {
+          return this.realContribution;
+        };
+
+        /* Each explain reports a more human-readable form
+         * of the explain text that hopefully is less search geeky
+         * */
+        this.explanation = function() {
+          return this.realExplanation;
+        };
+
+        /* Once we get to "matches" we intend to
+         * stop, and the level below becomes heavily related to
+         * similarity implementations (how does the tf * idf calculation work)
+         * we'll call that out seperately to keep things sane
+         * */
+        this.hasMatch = function() {
+          return false;
+        };
+
+        /* Return my influencers as a vector
+         * where magnitude of each dimension is how
+         * much I am influenced by that influencer
+         *
+         * IE if I am a SumExplain, my vector is likely to be
+         * for matches x and y with scores a and y respectively
+         *
+         *  a * x + b * y
+         *
+         *  here a and b are constants, x and y are other
+         *  matches to be recursively expanded
+         *
+         * */
+        this.vectorize = function() {
+          var rVal = vectorSvc.create();
+          // base vector is just a, no expansion farther down
+          // so any children's expansion will get ignored
+          rVal.set(this.explanation(), this.contribution());
+          return rVal;
+        };
+
+        var mergeInto = function(sink, source) {
+          for (var attrname in source) { sink[attrname] = source[attrname]; }
+          return sink;
+        };
+        this.matchDetails = function() {
+          var rVal = {};
+          angular.forEach(this.children, function(child) {
+            mergeInto(rVal, child.matchDetails());
           });
-          asStr = me + childStrs.join('\n');
-        }
-        return asStr;
-      };
+          return rVal;
+        };
 
-      this.rawStr = function() {
-        /* global JSON */
-        if (asRawStr === '') {
-          asRawStr = JSON.stringify(this.asJson);
-        }
-        return asRawStr;
+        /* A friendly, hiererarchical view
+         * of all the influencers
+         * */
+        var asStr = '';
+        var asRawStr = '';
+        this.toStr = function(depth) {
+          if (asStr === '') {
+            if (depth === undefined) {
+              depth = 0;
+            }
+            var prefix = new Array(2 * depth).join(' ');
+            var me = prefix + this.contribution() + ' ' + this.explanation() + '\n';
+            var childStrs = [];
+            angular.forEach(this.influencers(), function(child) {
+              childStrs.push(child.toStr(depth+1));
+            });
+            asStr = me + childStrs.join('\n');
+          }
+          return asStr;
+        };
+
+        this.rawStr = function() {
+          /* global JSON */
+          if (asRawStr === '') {
+            asRawStr = JSON.stringify(this.asJson);
+          }
+          return asRawStr;
+        };
       };
-    };
-  });
+    }
+  ]);
 
 'use strict';
 
@@ -152,418 +155,427 @@ if (!Function.prototype.bind) {
 
 // Resolves a set of ids to Normal docs
 angular.module('o19s.splainer-search')
-  .service('docResolverSvc', function docResolverSvc(ResolverFactory) {
-
-  this.createResolver = function(ids, settings, chunkSize) {
-    return new ResolverFactory(ids, settings, chunkSize);
-  };
-
-});
+  .service('docResolverSvc', [
+    'ResolverFactory',
+    function docResolverSvc(ResolverFactory) {
+      this.createResolver = function(ids, settings, chunkSize) {
+        return new ResolverFactory(ids, settings, chunkSize);
+      };
+    }
+  ]);
 
 'use strict';
 
 angular.module('o19s.splainer-search')
-  .service('esSearcherPreprocessorSvc', function esSearcherPreprocessorSvc(queryTemplateSvc) {
-    var self      = this;
-    self.prepare  = prepare;
+  .service('esSearcherPreprocessorSvc', [
+    'queryTemplateSvc',
+    function esSearcherPreprocessorSvc(queryTemplateSvc) {
+      var self      = this;
+      self.prepare  = prepare;
 
-    var replaceQuery = function(args, queryText) {
-      if (queryText) {
-        queryText = queryText.replace(/\\/g, '\\\\');
-        queryText = queryText.replace(/"/g, '\\\"');
+      var replaceQuery = function(args, queryText) {
+        if (queryText) {
+          queryText = queryText.replace(/\\/g, '\\\\');
+          queryText = queryText.replace(/"/g, '\\\"');
+        }
+
+        var replaced  = angular.toJson(args, true);
+
+        replaced      = queryTemplateSvc.hydrate(replaced, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
+        replaced      = angular.fromJson(replaced);
+
+        return replaced;
+      };
+
+      function prepare (searcher) {
+        var pagerArgs       = angular.copy(searcher.args.pager);
+        searcher.pagerArgs  = pagerArgs;
+        delete searcher.args.pager;
+
+        var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
+
+        if ( angular.isDefined(searcher.fieldList) && searcher.fieldList !== null ) {
+          queryDsl.fields   = searcher.fieldList;
+        }
+
+        queryDsl.explain    = true;
+
+        searcher.queryDsl   = queryDsl;
       }
-
-      var replaced  = angular.toJson(args, true);
-
-      replaced      = queryTemplateSvc.hydrate(replaced, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
-      replaced      = angular.fromJson(replaced);
-
-      return replaced;
-    };
-
-    function prepare (searcher) {
-      var pagerArgs       = angular.copy(searcher.args.pager);
-      searcher.pagerArgs  = pagerArgs;
-      delete searcher.args.pager;
-
-      var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
-
-      if ( angular.isDefined(searcher.fieldList) && searcher.fieldList !== null ) {
-        queryDsl.fields   = searcher.fieldList;
-      }
-
-      queryDsl.explain    = true;
-
-      searcher.queryDsl   = queryDsl;
     }
-  });
+  ]);
 
 'use strict';
 
 /*global URI*/
 angular.module('o19s.splainer-search')
-  .service('esUrlSvc', function esUrlSvc() {
+  .service('esUrlSvc', [
+    function esUrlSvc() {
 
-    var self      = this;
+      var self      = this;
 
-    self.parseUrl     = parseUrl;
-    self.buildDocUrl  = buildDocUrl;
-    self.buildUrl     = buildUrl;
-    self.buildBaseUrl = buildBaseUrl;
-    self.setParams    = setParams;
+      self.parseUrl     = parseUrl;
+      self.buildDocUrl  = buildDocUrl;
+      self.buildUrl     = buildUrl;
+      self.buildBaseUrl = buildBaseUrl;
+      self.setParams    = setParams;
 
-    /**
-     *
-     * private method fixURLProtocol
-     * Adds 'http://' to the beginning of the URL if no protocol was specified.
-     *
-     */
-    var protocolRegex = /^https{0,1}\:/;
-    function fixURLProtocol(url) {
-      if (!protocolRegex.test(url)) {
-        url = 'http://' + url;
-      }
-      return url;
-    }
-
-    /**
-     *
-     * Parses an ES URL of the form [http|https]://[username@password:][host][:port]/[collectionName]/_search
-     * Splits up the different parts of the URL.
-     *
-     */
-    function parseUrl (url) {
-      url = fixURLProtocol(url);
-      var a = new URI(url);
-      url = a;
-
-      var esUri = {
-        protocol: a.protocol(),
-        host: a.host(),
-        pathname: a.pathname(),
-        username: a.username(),
-        password: a.password(),
-        searchApi: 'post'
-      };
-
-      if (esUri.pathname.endsWith('/')) {
-        esUri.pathname = esUri.pathname.substring(0, esUri.pathname.length - 1);
-      }
-
-      if (esUri.pathname.endsWith('_msearch')) {
-        esUri.searchApi = 'bulk';
-      }
-
-      return esUri;
-    }
-
-    /**
-     *
-     * Builds ES URL of the form [protocol]://[host][:port]/[index]/[type]/[id]
-     * for an ES document.
-     *
-     */
-    function buildDocUrl (uri, doc) {
-      var index = doc._index;
-      var type  = doc._type;
-      var id    = doc._id;
-
-      var url = self.buildBaseUrl(uri);
-      url = url + '/' + index + '/' + type + '/' + id;
-
-      return url;
-    }
-
-    /**
-     *
-     * Builds ES URL for a search query.
-     * Adds any query params if present: /_search?from=10&size=10
-     */
-    function buildUrl (uri) {
-      var self = this;
-
-      var url = self.buildBaseUrl(uri);
-      url = url + uri.pathname;
-
-      // Return original URL if no params to append.
-      if ( angular.isUndefined(uri.params) ) {
+      /**
+       *
+       * private method fixURLProtocol
+       * Adds 'http://' to the beginning of the URL if no protocol was specified.
+       *
+       */
+      var protocolRegex = /^https{0,1}\:/;
+      function fixURLProtocol(url) {
+        if (!protocolRegex.test(url)) {
+          url = 'http://' + url;
+        }
         return url;
       }
 
-      var paramsAsStrings = [];
+      /**
+       *
+       * Parses an ES URL of the form [http|https]://[username@password:][host][:port]/[collectionName]/_search
+       * Splits up the different parts of the URL.
+       *
+       */
+      function parseUrl (url) {
+        url = fixURLProtocol(url);
+        var a = new URI(url);
+        url = a;
 
-      angular.forEach(uri.params, function(value, key) {
-        paramsAsStrings.push(key + '=' + value);
-      });
+        var esUri = {
+          protocol: a.protocol(),
+          host: a.host(),
+          pathname: a.pathname(),
+          username: a.username(),
+          password: a.password(),
+          searchApi: 'post'
+        };
 
-      // Return original URL if no params to append.
-      if ( paramsAsStrings.length === 0 ) {
+        if (esUri.pathname.endsWith('/')) {
+          esUri.pathname = esUri.pathname.substring(0, esUri.pathname.length - 1);
+        }
+
+        if (esUri.pathname.endsWith('_msearch')) {
+          esUri.searchApi = 'bulk';
+        }
+
+        return esUri;
+      }
+
+      /**
+       *
+       * Builds ES URL of the form [protocol]://[host][:port]/[index]/[type]/[id]
+       * for an ES document.
+       *
+       */
+      function buildDocUrl (uri, doc) {
+        var index = doc._index;
+        var type  = doc._type;
+        var id    = doc._id;
+
+        var url = self.buildBaseUrl(uri);
+        url = url + '/' + index + '/' + type + '/' + id;
+
         return url;
       }
 
-      var finalUrl = url;
+      /**
+       *
+       * Builds ES URL for a search query.
+       * Adds any query params if present: /_search?from=10&size=10
+       */
+      function buildUrl (uri) {
+        var self = this;
 
-      if (finalUrl.substring(finalUrl.length - 1) === '?') {
-        finalUrl += paramsAsStrings.join('&');
-      } else {
-        finalUrl += '?' + paramsAsStrings.join('&');
+        var url = self.buildBaseUrl(uri);
+        url = url + uri.pathname;
+
+        // Return original URL if no params to append.
+        if ( angular.isUndefined(uri.params) ) {
+          return url;
+        }
+
+        var paramsAsStrings = [];
+
+        angular.forEach(uri.params, function(value, key) {
+          paramsAsStrings.push(key + '=' + value);
+        });
+
+        // Return original URL if no params to append.
+        if ( paramsAsStrings.length === 0 ) {
+          return url;
+        }
+
+        var finalUrl = url;
+
+        if (finalUrl.substring(finalUrl.length - 1) === '?') {
+          finalUrl += paramsAsStrings.join('&');
+        } else {
+          finalUrl += '?' + paramsAsStrings.join('&');
+        }
+
+        return finalUrl;
       }
 
-      return finalUrl;
-    }
+      function buildBaseUrl(uri) {
+        var url = uri.protocol + '://' + uri.host;
 
-    function buildBaseUrl(uri) {
-      var url = uri.protocol + '://' + uri.host;
+        return url;
+      }
 
-      return url;
+      function setParams (uri, params) {
+        uri.params = params;
+      }
     }
-
-    function setParams (uri, params) {
-      uri.params = params;
-    }
-  });
+  ]);
 
 'use strict';
 
 // Factory for explains
 // really ties the room together
 angular.module('o19s.splainer-search')
-  .service('explainSvc', function explainSvc(baseExplainSvc, queryExplainSvc, simExplainSvc) {
+  .service('explainSvc', [
+    'baseExplainSvc',
+    'queryExplainSvc',
+    'simExplainSvc',
+    function explainSvc(baseExplainSvc, queryExplainSvc, simExplainSvc) {
 
-    var Explain = baseExplainSvc.Explain;
-    var ConstantScoreExplain = queryExplainSvc.ConstantScoreExplain;
-    var MatchAllDocsExplain = queryExplainSvc.MatchAllDocsExplain;
-    var WeightExplain = queryExplainSvc.WeightExplain;
-    var FunctionQueryExplain = queryExplainSvc.FunctionQueryExplain;
-    var DismaxTieExplain = queryExplainSvc.DismaxTieExplain;
-    var DismaxExplain = queryExplainSvc.DismaxExplain;
-    var SumExplain = queryExplainSvc.SumExplain;
-    var CoordExplain = queryExplainSvc.CoordExplain;
-    var ProductExplain = queryExplainSvc.ProductExplain;
+      var Explain = baseExplainSvc.Explain;
+      var ConstantScoreExplain = queryExplainSvc.ConstantScoreExplain;
+      var MatchAllDocsExplain = queryExplainSvc.MatchAllDocsExplain;
+      var WeightExplain = queryExplainSvc.WeightExplain;
+      var FunctionQueryExplain = queryExplainSvc.FunctionQueryExplain;
+      var DismaxTieExplain = queryExplainSvc.DismaxTieExplain;
+      var DismaxExplain = queryExplainSvc.DismaxExplain;
+      var SumExplain = queryExplainSvc.SumExplain;
+      var CoordExplain = queryExplainSvc.CoordExplain;
+      var ProductExplain = queryExplainSvc.ProductExplain;
 
-    var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
-    var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
-    var DefaultSimTfExplain = simExplainSvc.DefaultSimTfExplain;
-    var DefaultSimIdfExplain = simExplainSvc.DefaultSimIdfExplain;
-    var ScoreExplain = simExplainSvc.ScoreExplain;
+      var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
+      var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
+      var DefaultSimTfExplain = simExplainSvc.DefaultSimTfExplain;
+      var DefaultSimIdfExplain = simExplainSvc.DefaultSimIdfExplain;
+      var ScoreExplain = simExplainSvc.ScoreExplain;
 
-    var meOrOnlyChild = function(explain) {
-      var infl = explain.influencers();
-      if (infl.length === 1) {
-        return infl[0]; //only child
-      } else {
-        return explain;
-      }
-    };
-
-    var replaceBadJson = function(explJson) {
-      var explJsonIfBad = {
-        details: [],
-        description: 'no explain for doc',
-        value: 0.0,
-        match: true
-      };
-      if (!explJson) {
-        return explJsonIfBad;
-      } else {
-        return explJson;
-      }
-    };
-
-    var tieRegex = /max plus ([0-9.]+) times/;
-    var createExplain = function(explJson) {
-      explJson = replaceBadJson(explJson);
-      var base = new Explain(explJson, createExplain);
-      var description = explJson.description;
-      var details = [];
-      var tieMatch = description.match(tieRegex);
-      if (explJson.hasOwnProperty('details')) {
-        details = explJson.details;
-      }
-      if (description.startsWith('score(')) {
-        ScoreExplain.prototype = base;
-        return new ScoreExplain(explJson);
-      }
-      if (description.startsWith('tf(')) {
-        DefaultSimTfExplain.prototype = base;
-        return new DefaultSimTfExplain(explJson);
-      }
-      else if (description.startsWith('idf(')) {
-        DefaultSimIdfExplain.prototype = base;
-        return new DefaultSimIdfExplain(explJson);
-      }
-      else if (description.startsWith('fieldWeight')) {
-        FieldWeightExplain.prototype = base;
-        return new FieldWeightExplain(explJson);
-      }
-      else if (description.startsWith('queryWeight')) {
-        QueryWeightExplain.prototype = base;
-        return new QueryWeightExplain(explJson);
-      }
-      if (description.startsWith('ConstantScore')) {
-        ConstantScoreExplain.prototype = base;
-        return new ConstantScoreExplain(explJson);
-      }
-      else if (description.startsWith('MatchAllDocsQuery')) {
-        MatchAllDocsExplain.prototype = base;
-        return new MatchAllDocsExplain(explJson);
-      }
-      else if (description.startsWith('weight(')) {
-        WeightExplain.prototype = base;
-        return new WeightExplain(explJson);
-      }
-      else if (description.startsWith('FunctionQuery')) {
-        FunctionQueryExplain.prototype = base;
-        return new FunctionQueryExplain(explJson);
-      }
-      else if (tieMatch && tieMatch.length > 1) {
-        var tie = parseFloat(tieMatch[1]);
-        DismaxTieExplain.prototype = base;
-        return new DismaxTieExplain(explJson, tie);
-      }
-      else if (description.hasSubstr('max of')) {
-        DismaxExplain.prototype = base;
-        return meOrOnlyChild(new DismaxExplain(explJson));
-      }
-      else if (description.hasSubstr('sum of')) {
-        SumExplain.prototype = base;
-        return meOrOnlyChild(new SumExplain(explJson));
-      }
-      else if (description.hasSubstr('product of')) {
-        var coordExpl = null;
-        if (details.length === 2) {
-          angular.forEach(details, function(detail) {
-            if (detail.description.startsWith('coord(')) {
-              CoordExplain.prototype = base;
-              coordExpl = new CoordExplain(explJson, parseFloat(detail.value));
-            }
-          });
-        }
-        if (coordExpl !== null) {
-          return coordExpl;
+      var meOrOnlyChild = function(explain) {
+        var infl = explain.influencers();
+        if (infl.length === 1) {
+          return infl[0]; //only child
         } else {
-          ProductExplain.prototype = base;
-          return meOrOnlyChild(new ProductExplain(explJson));
+          return explain;
         }
-      }
-      return base;
+      };
 
-    };
-    
-    this.createExplain = function(explJson) {
-      return createExplain(explJson);
-    };
+      var replaceBadJson = function(explJson) {
+        var explJsonIfBad = {
+          details: [],
+          description: 'no explain for doc',
+          value: 0.0,
+          match: true
+        };
+        if (!explJson) {
+          return explJsonIfBad;
+        } else {
+          return explJson;
+        }
+      };
 
+      var tieRegex = /max plus ([0-9.]+) times/;
+      var createExplain = function(explJson) {
+        explJson = replaceBadJson(explJson);
+        var base = new Explain(explJson, createExplain);
+        var description = explJson.description;
+        var details = [];
+        var tieMatch = description.match(tieRegex);
+        if (explJson.hasOwnProperty('details')) {
+          details = explJson.details;
+        }
+        if (description.startsWith('score(')) {
+          ScoreExplain.prototype = base;
+          return new ScoreExplain(explJson);
+        }
+        if (description.startsWith('tf(')) {
+          DefaultSimTfExplain.prototype = base;
+          return new DefaultSimTfExplain(explJson);
+        }
+        else if (description.startsWith('idf(')) {
+          DefaultSimIdfExplain.prototype = base;
+          return new DefaultSimIdfExplain(explJson);
+        }
+        else if (description.startsWith('fieldWeight')) {
+          FieldWeightExplain.prototype = base;
+          return new FieldWeightExplain(explJson);
+        }
+        else if (description.startsWith('queryWeight')) {
+          QueryWeightExplain.prototype = base;
+          return new QueryWeightExplain(explJson);
+        }
+        if (description.startsWith('ConstantScore')) {
+          ConstantScoreExplain.prototype = base;
+          return new ConstantScoreExplain(explJson);
+        }
+        else if (description.startsWith('MatchAllDocsQuery')) {
+          MatchAllDocsExplain.prototype = base;
+          return new MatchAllDocsExplain(explJson);
+        }
+        else if (description.startsWith('weight(')) {
+          WeightExplain.prototype = base;
+          return new WeightExplain(explJson);
+        }
+        else if (description.startsWith('FunctionQuery')) {
+          FunctionQueryExplain.prototype = base;
+          return new FunctionQueryExplain(explJson);
+        }
+        else if (tieMatch && tieMatch.length > 1) {
+          var tie = parseFloat(tieMatch[1]);
+          DismaxTieExplain.prototype = base;
+          return new DismaxTieExplain(explJson, tie);
+        }
+        else if (description.hasSubstr('max of')) {
+          DismaxExplain.prototype = base;
+          return meOrOnlyChild(new DismaxExplain(explJson));
+        }
+        else if (description.hasSubstr('sum of')) {
+          SumExplain.prototype = base;
+          return meOrOnlyChild(new SumExplain(explJson));
+        }
+        else if (description.hasSubstr('product of')) {
+          var coordExpl = null;
+          if (details.length === 2) {
+            angular.forEach(details, function(detail) {
+              if (detail.description.startsWith('coord(')) {
+                CoordExplain.prototype = base;
+                coordExpl = new CoordExplain(explJson, parseFloat(detail.value));
+              }
+            });
+          }
+          if (coordExpl !== null) {
+            return coordExpl;
+          } else {
+            ProductExplain.prototype = base;
+            return meOrOnlyChild(new ProductExplain(explJson));
+          }
+        }
+        return base;
 
-  });
+      };
+
+      this.createExplain = function(explJson) {
+        return createExplain(explJson);
+      };
+    }
+  ]);
 
 'use strict';
 
 angular.module('o19s.splainer-search')
-  .service('fieldSpecSvc', function fieldSpecSvc() {
-    // AngularJS will instantiate a singleton by calling 'new' on this function
-
-    var addFieldOfType = function(fieldSpec, fieldType, fieldName) {
-      if (fieldType === 'sub') {
-        if (!fieldSpec.hasOwnProperty('subs')) {
-          fieldSpec.subs = [];
-        }
-        if (fieldSpec.subs !== '*') {
-          fieldSpec.subs.push(fieldName);
-        }
-        if (fieldName === '*') {
-          fieldSpec.subs = '*';
-        }
-      }
-      else if (!fieldSpec.hasOwnProperty(fieldType)) {
-        fieldSpec[fieldType] = fieldName;
-      }
-      fieldSpec.fields.push(fieldName);
-    };
-
-    // Populate field spec from a field spec string
-    var populateFieldSpec = function(fieldSpec, fieldSpecStr) {
-      var fieldSpecs = fieldSpecStr.split('+').join(' ').split(/[\s,]+/);
-      angular.forEach(fieldSpecs, function(aField) {
-        var typeAndField = aField.split(':');
-        var fieldType = null;
-        var fieldName = null;
-        if (typeAndField.length === 2) {
-          fieldType = typeAndField[0];
-          fieldName = typeAndField[1];
-        }
-        else if (typeAndField.length === 1) {
-          fieldName = typeAndField[0];
-          if (fieldSpec.hasOwnProperty('title')) {
-            fieldType = 'sub';
+  .service('fieldSpecSvc', [
+    function fieldSpecSvc() {
+      var addFieldOfType = function(fieldSpec, fieldType, fieldName) {
+        if (fieldType === 'sub') {
+          if (!fieldSpec.hasOwnProperty('subs')) {
+            fieldSpec.subs = [];
           }
-          else {
-            fieldType = 'title';
+          if (fieldSpec.subs !== '*') {
+            fieldSpec.subs.push(fieldName);
+          }
+          if (fieldName === '*') {
+            fieldSpec.subs = '*';
           }
         }
-        if (fieldType && fieldName) {
-          addFieldOfType(fieldSpec, fieldType, fieldName);
+        else if (!fieldSpec.hasOwnProperty(fieldType)) {
+          fieldSpec[fieldType] = fieldName;
         }
-      });
-    };
-
-
-    var FieldSpec = function(fieldSpecStr) {
-      this.fields = [];
-      this.fieldSpecStr = fieldSpecStr;
-      populateFieldSpec(this, fieldSpecStr);
-      if (!this.hasOwnProperty('id')) {
-        this.id = 'id';
-        this.fields.push('id');
-      }
-
-      if (!this.hasOwnProperty('title')) {
-        this.title = this.id;
-      }
-
-      this.fieldList = function() {
-        if (this.hasOwnProperty('subs') && this.subs === '*') {
-          return '*';
-        }
-        var rVal = [this.id];
-        this.forEachField(function(fieldName) {
-          rVal.push(fieldName);
-        });
-        return rVal;
+        fieldSpec.fields.push(fieldName);
       };
 
-      // Execute innerBody for each (non id) field
-      this.forEachField = function(innerBody) {
-        if (this.hasOwnProperty('title')) {
-          innerBody(this.title);
-        }
-        if (this.hasOwnProperty('thumb')) {
-          innerBody(this.thumb);
-        }
-        angular.forEach(this.subs, function(sub) {
-          innerBody(sub);
+      // Populate field spec from a field spec string
+      var populateFieldSpec = function(fieldSpec, fieldSpecStr) {
+        var fieldSpecs = fieldSpecStr.split('+').join(' ').split(/[\s,]+/);
+        angular.forEach(fieldSpecs, function(aField) {
+          var typeAndField = aField.split(':');
+          var fieldType = null;
+          var fieldName = null;
+          if (typeAndField.length === 2) {
+            fieldType = typeAndField[0];
+            fieldName = typeAndField[1];
+          }
+          else if (typeAndField.length === 1) {
+            fieldName = typeAndField[0];
+            if (fieldSpec.hasOwnProperty('title')) {
+              fieldType = 'sub';
+            }
+            else {
+              fieldType = 'title';
+            }
+          }
+          if (fieldType && fieldName) {
+            addFieldOfType(fieldSpec, fieldType, fieldName);
+          }
         });
       };
-    };
 
-    var transformFieldSpec = function(fieldSpecStr) {
-      var defFieldSpec = 'id:id title:id *';
-      var fieldSpecs = fieldSpecStr.split(/[\s,]+/);
-      if (fieldSpecStr.trim().length === 0) {
-        return defFieldSpec;
-      }
-      if (fieldSpecs[0] === '*') {
-        return defFieldSpec;
-      }
-      return fieldSpecStr;
-    };
 
-    this.createFieldSpec = function(fieldSpecStr) {
-      fieldSpecStr = transformFieldSpec(fieldSpecStr);
-      return new FieldSpec(fieldSpecStr);
-    };
+      var FieldSpec = function(fieldSpecStr) {
+        this.fields = [];
+        this.fieldSpecStr = fieldSpecStr;
+        populateFieldSpec(this, fieldSpecStr);
+        if (!this.hasOwnProperty('id')) {
+          this.id = 'id';
+          this.fields.push('id');
+        }
 
-  });
+        if (!this.hasOwnProperty('title')) {
+          this.title = this.id;
+        }
+
+        this.fieldList = function() {
+          if (this.hasOwnProperty('subs') && this.subs === '*') {
+            return '*';
+          }
+          var rVal = [this.id];
+          this.forEachField(function(fieldName) {
+            rVal.push(fieldName);
+          });
+          return rVal;
+        };
+
+        // Execute innerBody for each (non id) field
+        this.forEachField = function(innerBody) {
+          if (this.hasOwnProperty('title')) {
+            innerBody(this.title);
+          }
+          if (this.hasOwnProperty('thumb')) {
+            innerBody(this.thumb);
+          }
+          angular.forEach(this.subs, function(sub) {
+            innerBody(sub);
+          });
+        };
+      };
+
+      var transformFieldSpec = function(fieldSpecStr) {
+        var defFieldSpec = 'id:id title:id *';
+        var fieldSpecs = fieldSpecStr.split(/[\s,]+/);
+        if (fieldSpecStr.trim().length === 0) {
+          return defFieldSpec;
+        }
+        if (fieldSpecs[0] === '*') {
+          return defFieldSpec;
+        }
+        return fieldSpecStr;
+      };
+
+      this.createFieldSpec = function(fieldSpecStr) {
+        fieldSpecStr = transformFieldSpec(fieldSpecStr);
+        return new FieldSpec(fieldSpecStr);
+      };
+
+    }
+  ]);
 
 'use strict';
 
@@ -572,200 +584,201 @@ angular.module('o19s.splainer-search')
 // each doc has an id, a title, possibly a thumbnail field
 // and possibly a list of sub fields
 angular.module('o19s.splainer-search')
-  .service('normalDocsSvc', function normalDocsSvc(explainSvc) {
-    var entityMap = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '\"': '&quot;',
-      '\'': '&#39;',
-      '/': '&#x2F;'
-    };
-
-    var escapeHtml = function(string) {
-      return String(string).replace(/[&<>"'\/]/g, function (s) {
-        return entityMap[s];
-      });
-    };
-
-    var assignSingleField = function(normalDoc, doc, field, toProperty) {
-      if (doc.hasOwnProperty(field)) {
-        normalDoc[toProperty] = ('' + doc[field]);
-      }
-    };
-
-    var assignFields = function(normalDoc, doc, fieldSpec) {
-      assignSingleField(normalDoc, doc, fieldSpec.id, 'id');
-      assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
-      assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
-      normalDoc.subs = {};
-      if (fieldSpec.subs === '*') {
-        angular.forEach(doc, function(value, fieldName) {
-          if (typeof(value) !== 'function') {
-            if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
-                fieldName !== fieldSpec.thumb) {
-              normalDoc.subs[fieldName] = '' + value;
-            }
-          }
-        });
-      }
-      else {
-        angular.forEach(fieldSpec.subs, function(subFieldName) {
-          if (doc.hasOwnProperty(subFieldName)) {
-            normalDoc.subs[subFieldName] = '' + doc[subFieldName];
-          }
-        });
-      }
-    };
-
-    // A document within a query
-    var NormalDoc = function(fieldSpec, doc) {
-      this.doc = doc;
-      assignFields(this, this.doc.source(), fieldSpec);
-      var hasThumb = false;
-      if (this.hasOwnProperty('thumb')) {
-        hasThumb = true;
-      }
-      this.subsList = [];
-      var thisNormalDoc = this;
-      angular.forEach(this.subs, function(subValue, subField) {
-        var expanded = {field: subField, value: subValue};
-        thisNormalDoc.subsList.push(expanded);
-      });
-
-      this.hasThumb = function() {
-        return hasThumb;
+  .service('normalDocsSvc', [
+    'explainSvc',
+    function normalDocsSvc(explainSvc) {
+      var entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '\"': '&quot;',
+        '\'': '&#39;',
+        '/': '&#x2F;'
       };
 
-      this.url = function() {
-        return this.doc.url(fieldSpec.id, this.id);
+      var escapeHtml = function(string) {
+        return String(string).replace(/[&<>"'\/]/g, function (s) {
+          return entityMap[s];
+        });
       };
 
-    };
+      var assignSingleField = function(normalDoc, doc, field, toProperty) {
+        if (doc.hasOwnProperty(field)) {
+          normalDoc[toProperty] = ('' + doc[field]);
+        }
+      };
 
-    // layer on highlighting features
-    var snippitable = function(doc) {
-      var aDoc = doc.doc;
-
-      var lastSubSnips = {};
-      var lastHlPre = null;
-      var lastHlPost = null;
-      doc.subSnippets = function(hlPre, hlPost) {
-        if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
-          angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
-            var snip = aDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
-            if (snip === null) {
-              snip = escapeHtml(subFieldValue.slice(0, 200));
+      var assignFields = function(normalDoc, doc, fieldSpec) {
+        assignSingleField(normalDoc, doc, fieldSpec.id, 'id');
+        assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
+        assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
+        normalDoc.subs = {};
+        if (fieldSpec.subs === '*') {
+          angular.forEach(doc, function(value, fieldName) {
+            if (typeof(value) !== 'function') {
+              if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
+                  fieldName !== fieldSpec.thumb) {
+                normalDoc.subs[fieldName] = '' + value;
+              }
             }
-            lastSubSnips[subFieldName] = snip;
           });
         }
-        return lastSubSnips;
-      };
-      return doc;
-    };
-
-    // layer on explain features
-    var explainable = function(doc, explainJson) {
-
-      var simplerExplain = null;// explainSvc.createExplain(explainJson);
-      var hotMatches = null;//simplerExplain.vectorize();
-      var matchDetails = null;
-
-      var initExplain = function() {
-        if (!simplerExplain) {
-          simplerExplain = explainSvc.createExplain(explainJson);
-          hotMatches = simplerExplain.vectorize();
-          matchDetails = simplerExplain.matchDetails();
-        }
-      };
-
-      doc.explain = function() {
-        initExplain();
-        return simplerExplain;
-      };
-
-      doc.hotMatches = function() {
-        initExplain();
-        return hotMatches;
-      };
-
-      doc.matchDetails = function() {
-        initExplain();
-        return matchDetails;
-      };
-
-      var hotOutOf = [];
-      var lastMaxScore = -1;
-      doc.hotMatchesOutOf = function(maxScore) {
-        initExplain();
-        if (maxScore !== lastMaxScore) {
-          hotOutOf.length = 0;
-        }
-        lastMaxScore = maxScore;
-        if (hotOutOf.length === 0) {
-          angular.forEach(hotMatches.vecObj, function(value, key) {
-            var percentage = ((0.0 + value) / maxScore) * 100.0;
-            hotOutOf.push({description: key, metadata: matchDetails[key], percentage: percentage});
+        else {
+          angular.forEach(fieldSpec.subs, function(subFieldName) {
+            if (doc.hasOwnProperty(subFieldName)) {
+              normalDoc.subs[subFieldName] = '' + doc[subFieldName];
+            }
           });
-          hotOutOf.sort(function(a,b) {return b.percentage - a.percentage;});
         }
-        return hotOutOf;
       };
 
-      doc.score = function() {
-        initExplain();
-        return simplerExplain.contribution();
-      };
-      return doc;
-    };
-
-    var getDocExplain = function(doc, nDoc) {
-      var explJson = doc.explain(nDoc.id);
-      if (explJson === null) {
-        if (doc.source().hasOwnProperty('id')) {
-          return doc.explain(doc.source().id);
+      // A document within a query
+      var NormalDoc = function(fieldSpec, doc) {
+        this.doc = doc;
+        assignFields(this, this.doc.source(), fieldSpec);
+        var hasThumb = false;
+        if (this.hasOwnProperty('thumb')) {
+          hasThumb = true;
         }
-      }
-      return explJson;
-    };
+        this.subsList = [];
+        var thisNormalDoc = this;
+        angular.forEach(this.subs, function(subValue, subField) {
+          var expanded = {field: subField, value: subValue};
+          thisNormalDoc.subsList.push(expanded);
+        });
 
-    this.createNormalDoc = function(fieldSpec, doc, altExplainJson) {
-      var nDoc = new NormalDoc(fieldSpec, doc);
-      var explJson;
-      if (altExplainJson) {
-        explJson = altExplainJson;
-      } else {
-        explJson = getDocExplain(doc, nDoc);
-      }
-      return this.snippetDoc(this.explainDoc(nDoc, explJson));
-    };
+        this.hasThumb = function() {
+          return hasThumb;
+        };
 
-    // Decorate doc with an explain/field values/etc other
-    // than what came back from the search engine
-    this.explainDoc = function(doc, explainJson) {
-      return explainable(doc, explainJson);
-    };
+        this.url = function() {
+          return this.doc.url(fieldSpec.id, this.id);
+        };
 
-    this.snippetDoc = function(doc) {
-      return snippitable(doc);
-    };
+      };
 
-    // A stub, used to display a result that we expected
-    // to find, but isn't there
-    this.createPlaceholderDoc = function(docId, stubTitle, explainJson) {
-      var placeHolder = {id: docId,
-                         title: stubTitle};
-      if (explainJson) {
-        return snippitable(explainable(placeHolder, explainJson));
-      } else {
-        placeHolder.subSnippets = function() {return '';};
-        return placeHolder;
-      }
-    };
+      // layer on highlighting features
+      var snippitable = function(doc) {
+        var aDoc = doc.doc;
 
+        var lastSubSnips = {};
+        var lastHlPre = null;
+        var lastHlPost = null;
+        doc.subSnippets = function(hlPre, hlPost) {
+          if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
+            angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
+              var snip = aDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
+              if (snip === null) {
+                snip = escapeHtml(subFieldValue.slice(0, 200));
+              }
+              lastSubSnips[subFieldName] = snip;
+            });
+          }
+          return lastSubSnips;
+        };
+        return doc;
+      };
 
-  });
+      // layer on explain features
+      var explainable = function(doc, explainJson) {
+
+        var simplerExplain = null;// explainSvc.createExplain(explainJson);
+        var hotMatches = null;//simplerExplain.vectorize();
+        var matchDetails = null;
+
+        var initExplain = function() {
+          if (!simplerExplain) {
+            simplerExplain = explainSvc.createExplain(explainJson);
+            hotMatches = simplerExplain.vectorize();
+            matchDetails = simplerExplain.matchDetails();
+          }
+        };
+
+        doc.explain = function() {
+          initExplain();
+          return simplerExplain;
+        };
+
+        doc.hotMatches = function() {
+          initExplain();
+          return hotMatches;
+        };
+
+        doc.matchDetails = function() {
+          initExplain();
+          return matchDetails;
+        };
+
+        var hotOutOf = [];
+        var lastMaxScore = -1;
+        doc.hotMatchesOutOf = function(maxScore) {
+          initExplain();
+          if (maxScore !== lastMaxScore) {
+            hotOutOf.length = 0;
+          }
+          lastMaxScore = maxScore;
+          if (hotOutOf.length === 0) {
+            angular.forEach(hotMatches.vecObj, function(value, key) {
+              var percentage = ((0.0 + value) / maxScore) * 100.0;
+              hotOutOf.push({description: key, metadata: matchDetails[key], percentage: percentage});
+            });
+            hotOutOf.sort(function(a,b) {return b.percentage - a.percentage;});
+          }
+          return hotOutOf;
+        };
+
+        doc.score = function() {
+          initExplain();
+          return simplerExplain.contribution();
+        };
+        return doc;
+      };
+
+      var getDocExplain = function(doc, nDoc) {
+        var explJson = doc.explain(nDoc.id);
+        if (explJson === null) {
+          if (doc.source().hasOwnProperty('id')) {
+            return doc.explain(doc.source().id);
+          }
+        }
+        return explJson;
+      };
+
+      this.createNormalDoc = function(fieldSpec, doc, altExplainJson) {
+        var nDoc = new NormalDoc(fieldSpec, doc);
+        var explJson;
+        if (altExplainJson) {
+          explJson = altExplainJson;
+        } else {
+          explJson = getDocExplain(doc, nDoc);
+        }
+        return this.snippetDoc(this.explainDoc(nDoc, explJson));
+      };
+
+      // Decorate doc with an explain/field values/etc other
+      // than what came back from the search engine
+      this.explainDoc = function(doc, explainJson) {
+        return explainable(doc, explainJson);
+      };
+
+      this.snippetDoc = function(doc) {
+        return snippitable(doc);
+      };
+
+      // A stub, used to display a result that we expected
+      // to find, but isn't there
+      this.createPlaceholderDoc = function(docId, stubTitle, explainJson) {
+        var placeHolder = {id: docId,
+                           title: stubTitle};
+        if (explainJson) {
+          return snippitable(explainable(placeHolder, explainJson));
+        } else {
+          placeHolder.subSnippets = function() {return '';};
+          return placeHolder;
+        }
+      };
+    }
+  ]);
 
 'use strict';
 // basic promise
@@ -824,367 +837,380 @@ angular.module('o19s.splainer-search')
 
 // Explains that exist before you get to the match level
 angular.module('o19s.splainer-search')
-  .service('queryExplainSvc', function explainSvc(baseExplainSvc, vectorSvc, simExplainSvc) {
-    var DefaultSimilarityMatch = simExplainSvc.DefaultSimilarityMatch;
+  .service('queryExplainSvc', [
+    'baseExplainSvc',
+    'vectorSvc',
+    'simExplainSvc',
+    function explainSvc(baseExplainSvc, vectorSvc, simExplainSvc) {
+      var DefaultSimilarityMatch = simExplainSvc.DefaultSimilarityMatch;
 
-    this.MatchAllDocsExplain = function() {
-      this.realExplanation = 'Match All Docs (*:*)';
-    };
-    
-    this.ConstantScoreExplain = function() {
-      this.realExplanation = 'Constant Scored Query';
-    };
-
-    var shallowArrayCopy = function(src) {
-      return src.slice(0);
-    };
-
-
-    this.WeightExplain = function(explJson) {
-      // take weight(text:foo in 1234), extract text:foo,
-      // this actually deliniates a "match" so the stuff 
-      // underneath this level in the explain is search nerd trivia
-      // tf, idf, norms, etc. 
-      // We break that out separately, not part of the main explain
-      // tree, but as a different hiererarchy
-      var weightRegex = /weight\((.*?)\s+in\s+\d+?\)/;
-      var description = explJson.description;
-      
-      var match = description.match(weightRegex);
-      if (match !== null && match.length > 1) {
-        this.realExplanation = match[1];
-      } else {
-        this.realExplanation = description;
-      }
-
-      this.hasMatch = function() {
-        return true;
+      this.MatchAllDocsExplain = function() {
+        this.realExplanation = 'Match All Docs (*:*)';
       };
 
-      this.getMatch = function() {
-        // Match has lots of goodies based on similarity used
-        if (this.description.hasSubstr('DefaultSimilarity')) {
-          return new DefaultSimilarityMatch(this.children);
+      this.ConstantScoreExplain = function() {
+        this.realExplanation = 'Constant Scored Query';
+      };
+
+      var shallowArrayCopy = function(src) {
+        return src.slice(0);
+      };
+
+
+      this.WeightExplain = function(explJson) {
+        // take weight(text:foo in 1234), extract text:foo,
+        // this actually deliniates a "match" so the stuff
+        // underneath this level in the explain is search nerd trivia
+        // tf, idf, norms, etc.
+        // We break that out separately, not part of the main explain
+        // tree, but as a different hiererarchy
+        var weightRegex = /weight\((.*?)\s+in\s+\d+?\)/;
+        var description = explJson.description;
+
+        var match = description.match(weightRegex);
+        if (match !== null && match.length > 1) {
+          this.realExplanation = match[1];
+        } else {
+          this.realExplanation = description;
         }
-        return null;
+
+        this.hasMatch = function() {
+          return true;
+        };
+
+        this.getMatch = function() {
+          // Match has lots of goodies based on similarity used
+          if (this.description.hasSubstr('DefaultSimilarity')) {
+            return new DefaultSimilarityMatch(this.children);
+          }
+          return null;
+        };
+
+        this.explanation = function() {
+          var match = this.getMatch();
+          var matchStr = '';
+          if (match !== null) {
+            matchStr = '\n' + match.formulaStr();
+          }
+          return this.realExplanation;
+        };
+
+        this.matchDetails = function() {
+          var rVal = {};
+          rVal[this.explanation()] = this.rawStr(); //match.formulaStr();
+          return rVal;
+        };
       };
 
-      this.explanation = function() {
-        var match = this.getMatch();
-        var matchStr = '';
-        if (match !== null) {
-          matchStr = '\n' + match.formulaStr();
+      this.FunctionQueryExplain = function(explJson) {
+        var funcQueryRegex = /FunctionQuery\((.*)\)/;
+        var description = explJson.description;
+        var match = description.match(funcQueryRegex);
+        if (match !== null && match.length > 1) {
+          this.realExplanation = match[1];
+        } else {
+          this.realExplanation = description;
         }
-        return this.realExplanation;
       };
 
-      this.matchDetails = function() {
-        var rVal = {};
-        rVal[this.explanation()] = this.rawStr(); //match.formulaStr();
-        return rVal;
+      this.CoordExplain = function(explJson, coordFactor) {
+        if (coordFactor < 1.0) {
+          this.realExplanation = 'Matches Punished by ' + coordFactor + ' (not all query terms matched)';
+
+          this.influencers = function() {
+            var infl = [];
+            for (var i = 0; i < this.children.length; i++) {
+              if (this.children[i].description.hasSubstr('coord')) {
+                continue;
+              } else {
+                infl.push(this.children[i]);
+              }
+            }
+            return infl;
+          };
+
+          this.vectorize = function() {
+            // scale the others by coord factor
+            var rVal = vectorSvc.create();
+            angular.forEach(this.influencers(), function(infl) {
+              rVal = vectorSvc.add(rVal, infl.vectorize());
+            });
+            rVal = vectorSvc.scale(rVal, coordFactor);
+            return rVal;
+          };
+        }
       };
-    };
 
-    this.FunctionQueryExplain = function(explJson) {
-      var funcQueryRegex = /FunctionQuery\((.*)\)/;
-      var description = explJson.description;
-      var match = description.match(funcQueryRegex);
-      if (match !== null && match.length > 1) {
-        this.realExplanation = match[1];
-      } else {
-        this.realExplanation = description;
-      }
-    };
-
-    this.CoordExplain = function(explJson, coordFactor) {
-      if (coordFactor < 1.0) {
-        this.realExplanation = 'Matches Punished by ' + coordFactor + ' (not all query terms matched)';
+      this.DismaxTieExplain = function(explJson, tie) {
+        this.realExplanation = 'Dismax (max plus:' + tie + ' times others';
 
         this.influencers = function() {
-          var infl = [];
-          for (var i = 0; i < this.children.length; i++) {
-            if (this.children[i].description.hasSubstr('coord')) {
-              continue;
-            } else {
-              infl.push(this.children[i]);
-            }
-          }
+          var infl = shallowArrayCopy(this.children);
+          infl.sort(function(a, b) {return b.score - a.score;});
           return infl;
         };
 
         this.vectorize = function() {
-          // scale the others by coord factor
+          var infl = this.influencers();
+          // infl[0] is the winner of the dismax competition
+          var rVal = infl[0].vectorize();
+          angular.forEach(infl.slice(1), function(currInfl) {
+            var vInfl = currInfl.vectorize();
+            var vInflScaled = vectorSvc.scale(vInfl, tie);
+            rVal = vectorSvc.add(rVal, vInflScaled);
+          });
+          return rVal;
+        };
+      };
+
+
+      this.DismaxExplain = function() {
+        this.realExplanation = 'Dismax (take winner of below)';
+
+        this.influencers = function() {
+          var infl = shallowArrayCopy(this.children);
+          infl.sort(function(a, b) {return b.score - a.score;});
+          return infl;
+        };
+
+        this.vectorize = function() {
+          var infl = this.influencers();
+          // Dismax, winner takes all, influencers
+          // are sorted by influence
+          return infl[0].vectorize();
+        };
+      };
+
+      this.SumExplain = function() {
+        this.realExplanation = 'Sum of the following:';
+        this.isSumExplain = true;
+
+        this.influencers = function() {
+          // Well then the child is the real influencer, we're taking sum
+          // of one thing
+          var infl = [];
+          angular.forEach(this.children, function(child) {
+            // take advantage of commutative property
+            if (child.hasOwnProperty('isSumExplain') && child.isSumExplain) {
+              angular.forEach(child.influencers(), function(grandchild) {
+                infl.push(grandchild);
+              });
+            } else {
+              infl.push(child);
+            }
+          });
+          return infl.sort(function(a, b) {return b.score - a.score;});
+        };
+
+        this.vectorize = function() {
+          // vector sum all the components
           var rVal = vectorSvc.create();
           angular.forEach(this.influencers(), function(infl) {
             rVal = vectorSvc.add(rVal, infl.vectorize());
           });
-          rVal = vectorSvc.scale(rVal, coordFactor);
           return rVal;
         };
-      }
-    };
-
-    this.DismaxTieExplain = function(explJson, tie) {
-      this.realExplanation = 'Dismax (max plus:' + tie + ' times others';
-
-      this.influencers = function() {
-        var infl = shallowArrayCopy(this.children);
-        infl.sort(function(a, b) {return b.score - a.score;});
-        return infl;
       };
 
-      this.vectorize = function() {
-        var infl = this.influencers();
-        // infl[0] is the winner of the dismax competition
-        var rVal = infl[0].vectorize();
-        angular.forEach(infl.slice(1), function(currInfl) {
-          var vInfl = currInfl.vectorize();
-          var vInflScaled = vectorSvc.scale(vInfl, tie);
-          rVal = vectorSvc.add(rVal, vInflScaled);
-        });
-        return rVal;
-      };
-    };
+      this.ProductExplain = function() {
+        this.realExplanation = 'Product of following:';
 
+        var oneFilled = function(length) {
+          return Array.apply(null, new Array(length)).map(Number.prototype.valueOf,1);
+        };
 
-    this.DismaxExplain = function() {
-      this.realExplanation = 'Dismax (take winner of below)';
-      
-      this.influencers = function() {
-        var infl = shallowArrayCopy(this.children);
-        infl.sort(function(a, b) {return b.score - a.score;});
-        return infl;
-      };
+        this.influencers = function() {
+          var infl = shallowArrayCopy(this.children);
+          infl.sort(function(a, b) {return b.score - a.score;});
+          return infl;
+        };
+        this.vectorize = function() {
+          // vector sum all the components
+          var rVal = vectorSvc.create();
 
-      this.vectorize = function() {
-        var infl = this.influencers();
-        // Dismax, winner takes all, influencers
-        // are sorted by influence
-        return infl[0].vectorize();
-      };
-    };
+          var infl = this.influencers();
 
-    this.SumExplain = function() {
-      this.realExplanation = 'Sum of the following:';
-      this.isSumExplain = true;
-      
-      this.influencers = function() {
-        // Well then the child is the real influencer, we're taking sum
-        // of one thing
-        var infl = [];
-        angular.forEach(this.children, function(child) {
-          // take advantage of commutative property
-          if (child.hasOwnProperty('isSumExplain') && child.isSumExplain) {
-            angular.forEach(child.influencers(), function(grandchild) {
-              infl.push(grandchild);
-            });
-          } else {
-            infl.push(child);
-          }
-        });
-        return infl.sort(function(a, b) {return b.score - a.score;});
-      };
+          var inflFactors = oneFilled(infl.length);
 
-      this.vectorize = function() {
-        // vector sum all the components
-        var rVal = vectorSvc.create();
-        angular.forEach(this.influencers(), function(infl) {
-          rVal = vectorSvc.add(rVal, infl.vectorize());
-        });
-        return rVal;
-      };
-    };
-
-    this.ProductExplain = function() {
-      this.realExplanation = 'Product of following:';
-
-      var oneFilled = function(length) {
-        return Array.apply(null, new Array(length)).map(Number.prototype.valueOf,1);
-      };
-      
-      this.influencers = function() {
-        var infl = shallowArrayCopy(this.children);
-        infl.sort(function(a, b) {return b.score - a.score;});
-        return infl;
-      };
-      this.vectorize = function() {
-        // vector sum all the components
-        var rVal = vectorSvc.create();
-
-        var infl = this.influencers();
-
-        var inflFactors = oneFilled(infl.length);
-
-        for (var factorInfl = 0; factorInfl < infl.length; factorInfl++) {
-          for (var currMult = 0; currMult < infl.length; currMult++) {
-            if (currMult !== factorInfl) {
-              inflFactors[factorInfl] = (inflFactors[factorInfl] * infl[currMult].contribution());
+          for (var factorInfl = 0; factorInfl < infl.length; factorInfl++) {
+            for (var currMult = 0; currMult < infl.length; currMult++) {
+              if (currMult !== factorInfl) {
+                inflFactors[factorInfl] = (inflFactors[factorInfl] * infl[currMult].contribution());
+              }
             }
           }
-        }
 
-        for (var currInfl = 0; currInfl < infl.length; currInfl++) {
-          var i = infl[currInfl];
-          var thisVec = i.vectorize();
-          var thisScaledByOthers = vectorSvc.scale(thisVec, inflFactors[currInfl]);
-          rVal = vectorSvc.add(rVal, thisScaledByOthers);
-        }
+          for (var currInfl = 0; currInfl < infl.length; currInfl++) {
+            var i = infl[currInfl];
+            var thisVec = i.vectorize();
+            var thisScaledByOthers = vectorSvc.scale(thisVec, inflFactors[currInfl]);
+            rVal = vectorSvc.add(rVal, thisScaledByOthers);
+          }
 
-        return rVal;
+          return rVal;
+        };
       };
-    };
 
-  });
+    }
+  ]);
 
 'use strict';
 
 angular.module('o19s.splainer-search')
-  .service('queryTemplateSvc', function queryTemplateSvc() {
-    var self      = this;
-    self.hydrate = hydrate;
+  .service('queryTemplateSvc', [
+    function queryTemplateSvc() {
+      var self      = this;
+      self.hydrate = hydrate;
 
-    var defaultConfig = {
-      encodeURI: false,
-      defaultKw: '""',
-    };
+      var defaultConfig = {
+        encodeURI: false,
+        defaultKw: '""',
+      };
 
-    function encode(queryPart, config) {
-      if (config.encodeURI) {
-        return encodeURIComponent(queryPart);
-      } else {
-        return queryPart;
-      }
-    }
-
-    function getKeywordDefaults(template, config) {
-      var keywordMatch = /#\$keyword(\d)(\|.*?){0,1}##/g;
-      var match = keywordMatch.exec(template);
-      var maxKw = 0;
-      var defaults = [];
-      while (match !== null) {
-        var kwNum = parseInt(match[1]);
-        if (kwNum) {
-          if (kwNum > maxKw) {
-            maxKw = kwNum;
-          }
-        }
-        var def = match[2];
-        if (def) {
-          defaults[kwNum] = def.slice(1);
-        }
-        else {
-          defaults[kwNum] = config.defaultKw;
-        }
-        match = keywordMatch.exec(template);
-      }
-      return defaults;
-    }
-
-    function keywordMapping(queryText, maxKeywords) {
-      var queryTerms    = queryText.split(/[ ,]+/);
-      var numTerms = queryTerms.length;
-      for (var i = numTerms; i < maxKeywords; i++) {
-        queryTerms.push(null);
-      }
-      return queryTerms;
-    }
-
-    function hydrate(template, queryText, config) {
-      if (!config) {
-        config = defaultConfig;
-      }
-
-      if (queryText === null || angular.isUndefined(queryText)) {
-        return template;
-      }
-
-      var replaced  = template.replace(/#\$query##/g, encode(queryText, config));
-      var idx = 0;
-      var defaults = getKeywordDefaults(template, config);
-      var maxKeywords = defaults.length;
-      angular.forEach(keywordMapping(queryText, maxKeywords), function(queryTerm) {
-        var regex = new RegExp('#\\$keyword' + (idx + 1) + '(.*?)##', 'g');
-        var def = defaults[idx + 1];
-        if (angular.isUndefined(def)) {
-          def = config.defaultKw;
-        }
-        if (queryTerm === null) {
-          queryTerm = def;
+      function encode(queryPart, config) {
+        if (config.encodeURI) {
+          return encodeURIComponent(queryPart);
         } else {
-          queryTerm = encode(queryTerm, config);
+          return queryPart;
         }
-        replaced = replaced.replace(regex, queryTerm);
-        idx += 1;
-      });
-      return replaced;
+      }
+
+      function getKeywordDefaults(template, config) {
+        var keywordMatch = /#\$keyword(\d)(\|.*?){0,1}##/g;
+        var match = keywordMatch.exec(template);
+        var maxKw = 0;
+        var defaults = [];
+        while (match !== null) {
+          var kwNum = parseInt(match[1]);
+          if (kwNum) {
+            if (kwNum > maxKw) {
+              maxKw = kwNum;
+            }
+          }
+          var def = match[2];
+          if (def) {
+            defaults[kwNum] = def.slice(1);
+          }
+          else {
+            defaults[kwNum] = config.defaultKw;
+          }
+          match = keywordMatch.exec(template);
+        }
+        return defaults;
+      }
+
+      function keywordMapping(queryText, maxKeywords) {
+        var queryTerms    = queryText.split(/[ ,]+/);
+        var numTerms = queryTerms.length;
+        for (var i = numTerms; i < maxKeywords; i++) {
+          queryTerms.push(null);
+        }
+        return queryTerms;
+      }
+
+      function hydrate(template, queryText, config) {
+        if (!config) {
+          config = defaultConfig;
+        }
+
+        if (queryText === null || angular.isUndefined(queryText)) {
+          return template;
+        }
+
+        var replaced  = template.replace(/#\$query##/g, encode(queryText, config));
+        var idx = 0;
+        var defaults = getKeywordDefaults(template, config);
+        var maxKeywords = defaults.length;
+        angular.forEach(keywordMapping(queryText, maxKeywords), function(queryTerm) {
+          var regex = new RegExp('#\\$keyword' + (idx + 1) + '(.*?)##', 'g');
+          var def = defaults[idx + 1];
+          if (angular.isUndefined(def)) {
+            def = config.defaultKw;
+          }
+          if (queryTerm === null) {
+            queryTerm = def;
+          } else {
+            queryTerm = encode(queryTerm, config);
+          }
+          replaced = replaced.replace(regex, queryTerm);
+          idx += 1;
+        });
+        return replaced;
+      }
     }
-  });
+  ]);
 
 'use strict';
 
 // Executes a solr search and returns
 // a set of solr documents
 angular.module('o19s.splainer-search')
-  .service('searchSvc', function searchSvc(
-    SolrSearcherFactory,
-    EsSearcherFactory,
-    activeQueries,
-    defaultSolrConfig
-  ) {
-    var svc = this;
+  .service('searchSvc', [
+    'SolrSearcherFactory',
+    'EsSearcherFactory',
+    'activeQueries',
+    'defaultSolrConfig',
+    function searchSvc(
+      SolrSearcherFactory,
+      EsSearcherFactory,
+      activeQueries,
+      defaultSolrConfig
+    ) {
+      var svc = this;
 
-    // PRE and POST strings, can't just use HTML
-    // because Solr doesn't appear to support escaping
-    // XML/HTML tags in the content. So we do this stupid thing
-    svc.HIGHLIGHTING_PRE    = 'aouaoeuCRAZY_STRING!8_______';
-    svc.HIGHLIGHTING_POST   = '62362iueaiCRAZY_POST_STRING!_______';
+      // PRE and POST strings, can't just use HTML
+      // because Solr doesn't appear to support escaping
+      // XML/HTML tags in the content. So we do this stupid thing
+      svc.HIGHLIGHTING_PRE    = 'aouaoeuCRAZY_STRING!8_______';
+      svc.HIGHLIGHTING_POST   = '62362iueaiCRAZY_POST_STRING!_______';
 
-    this.configFromDefault = function() {
-      return angular.copy(defaultSolrConfig);
-    };
-
-    this.createSearcherFromSettings = function(settings, queryText, searchEngine) {
-      return this.createSearcher(
-        settings.createFieldSpec().fieldList(),
-        settings.url,
-        settings.selectedTry.args,
-        queryText,
-        {},
-        searchEngine
-      );
-    };
-
-    this.createSearcher = function (fieldList, url, args, queryText, config, searchEngine) {
-      if ( searchEngine === undefined ) {
-        searchEngine = 'solr';
-      }
-
-      var options = {
-        fieldList:      fieldList,
-        url:            url,
-        args:           args,
-        queryText:      queryText,
-        config:         config
+      this.configFromDefault = function() {
+        return angular.copy(defaultSolrConfig);
       };
 
-      var searcher;
+      this.createSearcherFromSettings = function(settings, queryText, searchEngine) {
+        return this.createSearcher(
+          settings.createFieldSpec().fieldList(),
+          settings.url,
+          settings.selectedTry.args,
+          queryText,
+          {},
+          searchEngine
+        );
+      };
 
-      if ( searchEngine === 'solr') {
-        options.HIGHLIGHTING_PRE  = svc.HIGHLIGHTING_PRE;
-        options.HIGHLIGHTING_POST = svc.HIGHLIGHTING_POST;
+      this.createSearcher = function (fieldList, url, args, queryText, config, searchEngine) {
+        if ( searchEngine === undefined ) {
+          searchEngine = 'solr';
+        }
 
-        searcher = new SolrSearcherFactory(options);
-      } else if ( searchEngine === 'es') {
-        searcher = new EsSearcherFactory(options);
-      }
+        var options = {
+          fieldList:      fieldList,
+          url:            url,
+          args:           args,
+          queryText:      queryText,
+          config:         config
+        };
 
-      return searcher;
-    };
+        var searcher;
 
-    this.activeQueries = function() {
-      return activeQueries.count;
-    };
-  });
+        if ( searchEngine === 'solr') {
+          options.HIGHLIGHTING_PRE  = svc.HIGHLIGHTING_PRE;
+          options.HIGHLIGHTING_POST = svc.HIGHLIGHTING_POST;
+
+          searcher = new SolrSearcherFactory(options);
+        } else if ( searchEngine === 'es') {
+          searcher = new EsSearcherFactory(options);
+        }
+
+        return searcher;
+      };
+
+      this.activeQueries = function() {
+        return activeQueries.count;
+      };
+    }
+  ]);
 
 'use strict';
 
@@ -1193,356 +1219,364 @@ angular.module('o19s.splainer-search')
 // Here we implement default similarity, we will need to split this out for
 // more similarity types (ie sweet spot, bm25) as needed
 angular.module('o19s.splainer-search')
-  .service('simExplainSvc', function explainSvc() {
+  .service('simExplainSvc', [
+    function explainSvc() {
 
-    this.DefaultSimilarityMatch = function(children) {
-      var infl = children;
-      if (children.length === 1 && children[0].explanation().startsWith('Score')) {
-        infl = children[0].children;
-      }
-
-      this.fieldWeight = null;
-      this.queryWeight = null;
-      var match = this;
-      angular.forEach(infl, function(child) {
-        if (child.explanation() === 'Field Weight') {
-          match.fieldWeight = child;
-        } else if (child.explanation() === 'Query Weight') {
-          match.queryWeight = child;
+      this.DefaultSimilarityMatch = function(children) {
+        var infl = children;
+        if (children.length === 1 && children[0].explanation().startsWith('Score')) {
+          infl = children[0].children;
         }
-      });
 
-      this.formulaStr = function() {
-        return 'TF=' + this.fieldWeight.tf().contribution() +
-               ' * IDF=' + this.fieldWeight.idf().contribution();
-      };
-    };
+        this.fieldWeight = null;
+        this.queryWeight = null;
+        var match = this;
+        angular.forEach(infl, function(child) {
+          if (child.explanation() === 'Field Weight') {
+            match.fieldWeight = child;
+          } else if (child.explanation() === 'Query Weight') {
+            match.queryWeight = child;
+          }
+        });
 
-    var tfIdfable = function(explain) {
-      var tfExpl = null;
-      var idfExpl = null;
-      angular.forEach(explain.children, function(child) {
-        if (child.explanation().startsWith('Term')) {
-          tfExpl = child;
-        } else if (child.explanation().startsWith('IDF')) {
-          idfExpl = child;
-        }
-      });
-
-      explain.tf = function() {
-        return tfExpl;
-      };
-
-      explain.idf = function() {
-        return idfExpl;
-      };
-      return explain;
-    };
-
-    this.ScoreExplain = function() {
-      this.realExplanation = 'Score';
-    };
-
-    this.FieldWeightExplain = function() {
-      this.realExplanation = 'Field Weight';
-      tfIdfable(this);
-
-      /*this.fieldNorm = function() {
-      };*/
-    };
-
-    this.QueryWeightExplain = function() {
-      this.realExplanation = 'Query Weight';
-      tfIdfable(this);
-    };
-
-    // For default similarity, tf in the score is actually
-    // is sqrt(termFreq) where termFreq is the frequency of
-    // a term in a document.
-    this.DefaultSimTfExplain = function() {
-
-      // Should have a single child with actual term frequency
-      // Notes TODO:
-      // 1. For strict phrase queries, ie "one two" this is
-      //    phraseFreq, not a big deal just labeling
-      // 2. For sloppy phrase queries gets more complicated,
-      //     sloppyFreq is (1 / (distance + 1))
-      //      where distance min distance in doc between "one ... two"
-      //      for every set of phrases in document
-      var termFreq = this.children[0].contribution();
-      this.realExplanation = 'Term Freq Score (' + termFreq + ')';
-    };
-
-    // For default similarity, IDF of the term being searched
-    // in the case of phrase queries, this is a sum of
-    // all the members of the phrase.
-    //
-    // TODO -- the underlying idf for each member of a phrase
-    // does not identify the term corresponding to that idf,
-    // Lucene patch?
-    //
-    // The formula for IDF in default similarity is
-    //  1 + log( numDocs / (docFreq + 1))
-    //
-    // or taken the idf explanation:
-    //   idf(docFreq=4743, maxDocs=20148)
-    // in python:
-    // >> 1 + log(20148.0 / (4753 + 1))
-    //
-    this.DefaultSimIdfExplain = function(explJson) {
-      var desc = explJson.description;
-      if (this.children.length > 1 && desc.hasSubstr('sum of:')) {
-        // then each child is an idf explain
-        this.realExplanation = 'IDF Score';
-        this.influencers = function() {
-          return this.children;
+        this.formulaStr = function() {
+          return 'TF=' + this.fieldWeight.tf().contribution() +
+                 ' * IDF=' + this.fieldWeight.idf().contribution();
         };
-      }
-      else {
-        var idfRegex = /idf\(docFreq=(\d+),.*maxDocs=(\d+)\)/;
-        var matches = desc.match(idfRegex);
-        if (matches !== null && matches.length > 1) {
-          /*var docFreq = parseInt(matches[1], 10);
-          var maxDocs = parseInt(matches[2], 10);*/
+      };
+
+      var tfIdfable = function(explain) {
+        var tfExpl = null;
+        var idfExpl = null;
+        angular.forEach(explain.children, function(child) {
+          if (child.explanation().startsWith('Term')) {
+            tfExpl = child;
+          } else if (child.explanation().startsWith('IDF')) {
+            idfExpl = child;
+          }
+        });
+
+        explain.tf = function() {
+          return tfExpl;
+        };
+
+        explain.idf = function() {
+          return idfExpl;
+        };
+        return explain;
+      };
+
+      this.ScoreExplain = function() {
+        this.realExplanation = 'Score';
+      };
+
+      this.FieldWeightExplain = function() {
+        this.realExplanation = 'Field Weight';
+        tfIdfable(this);
+
+        /*this.fieldNorm = function() {
+        };*/
+      };
+
+      this.QueryWeightExplain = function() {
+        this.realExplanation = 'Query Weight';
+        tfIdfable(this);
+      };
+
+      // For default similarity, tf in the score is actually
+      // is sqrt(termFreq) where termFreq is the frequency of
+      // a term in a document.
+      this.DefaultSimTfExplain = function() {
+
+        // Should have a single child with actual term frequency
+        // Notes TODO:
+        // 1. For strict phrase queries, ie "one two" this is
+        //    phraseFreq, not a big deal just labeling
+        // 2. For sloppy phrase queries gets more complicated,
+        //     sloppyFreq is (1 / (distance + 1))
+        //      where distance min distance in doc between "one ... two"
+        //      for every set of phrases in document
+        var termFreq = this.children[0].contribution();
+        this.realExplanation = 'Term Freq Score (' + termFreq + ')';
+      };
+
+      // For default similarity, IDF of the term being searched
+      // in the case of phrase queries, this is a sum of
+      // all the members of the phrase.
+      //
+      // TODO -- the underlying idf for each member of a phrase
+      // does not identify the term corresponding to that idf,
+      // Lucene patch?
+      //
+      // The formula for IDF in default similarity is
+      //  1 + log( numDocs / (docFreq + 1))
+      //
+      // or taken the idf explanation:
+      //   idf(docFreq=4743, maxDocs=20148)
+      // in python:
+      // >> 1 + log(20148.0 / (4753 + 1))
+      //
+      this.DefaultSimIdfExplain = function(explJson) {
+        var desc = explJson.description;
+        if (this.children.length > 1 && desc.hasSubstr('sum of:')) {
+          // then each child is an idf explain
           this.realExplanation = 'IDF Score';
+          this.influencers = function() {
+            return this.children;
+          };
         }
         else {
-          this.realExplanation = desc;
-        }
-      }
-    };
-});
-
-'use strict';
-
-angular.module('o19s.splainer-search')
-  .service('solrSearcherPreprocessorSvc', function solrSearcherPreprocessorSvc(solrUrlSvc, defaultSolrConfig, queryTemplateSvc) {
-    var self      = this;
-    self.prepare  = prepare;
-
-    var withoutUnsupported = function (argsToUse, sanitize) {
-      var argsRemoved = angular.copy(argsToUse);
-      if (sanitize === true) {
-        solrUrlSvc.removeUnsupported(argsRemoved);
-      }
-      return argsRemoved;
-    };
-
-    // the full URL we'll use to call Solr
-    var buildCallUrl = function(searcher) {
-      var fieldList = searcher.fieldList;
-      var url       = searcher.url;
-      var config    = searcher.config;
-      var args      = withoutUnsupported(searcher.args, config.sanitize);
-      var queryText = searcher.queryText;
-
-
-      args.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
-      args.wt = ['json'];
-
-      if (config.debug) {
-        args.debug = ['true'];
-        args['debug.explain.structured'] = ['true'];
-      }
-
-      if (config.highlight) {
-        args.hl                 = ['true'];
-        args['hl.fl']           = args.fl;
-        args['hl.simple.pre']   = [searcher.HIGHLIGHTING_PRE];
-        args['hl.simple.post']  = [searcher.HIGHLIGHTING_POST];
-      }
-
-      if (config.escapeQuery) {
-        queryText = solrUrlSvc.escapeUserQuery(queryText);
-      }
-
-      var baseUrl = solrUrlSvc.buildUrl(url, args);
-      baseUrl = queryTemplateSvc.hydrate(baseUrl, queryText, {encodeURI: true, defaultKw: '""'});
-
-      return baseUrl;
-    };
-
-    function prepare (searcher) {
-      if (searcher.config === undefined) {
-        searcher.config = defaultSolrConfig;
-      } else {
-        // make sure config params that weren't passed through are set from
-        // the default config object.
-        searcher.config = angular.merge({}, defaultSolrConfig, searcher.config);
-      }
-
-      searcher.callUrl = buildCallUrl(searcher);
-
-      searcher.linkUrl = searcher.callUrl.replace('wt=json', 'wt=xml');
-      searcher.linkUrl = searcher.linkUrl + '&indent=true&echoParams=all';
-    }
-  });
-
-'use strict';
-
-angular.module('o19s.splainer-search')
-  .service('solrUrlSvc', function solrUrlSvc() {
-
-    /* private method fixURLProtocol
-     * add 'http://' to the begining of the url if no protocol was
-     * specified
-     * */
-    var protocolRegex = /^https{0,1}\:/;
-    function fixURLProtocol(url) {
-      if (!protocolRegex.test(url)) {
-        url = 'http://' + url;
-      }
-      return url;
-    }
-    this.buildUrl = function(url, urlArgs) {
-      url = fixURLProtocol(url);
-      var baseUrl = url + '?';
-      baseUrl += this.formatSolrArgs(urlArgs);
-      return baseUrl;
-    };
-
-    /* Given arguments of the form {q: ['*:*'], fq: ['title:foo', 'text:bar']}
-     * turn into string suitable for URL query param q=*:*&fq=title:foo&fq=text:bar
-     *
-     * */
-    this.formatSolrArgs = function(argsObj) {
-      var rVal = '';
-      angular.forEach(argsObj, function(values, param) {
-        angular.forEach(values, function(value) {
-          rVal += param + '=' + value + '&';
-        });
-      });
-      // percentages need to be escaped before
-      // url escaping
-      rVal = rVal.replace(/%/g, '%25');
-      return rVal.slice(0, -1); // take out last & or trailing ? if no args
-    };
-
-    /* Given string of the form [?]q=*:*&fq=title:foo&fq=title:bar
-     * turn into object of the form:
-     * {q:['*:*'], fq:['title:foo', 'title:bar']}
-     *
-     * */
-    this.parseSolrArgs = function(argsStr) {
-      var splitUp = argsStr.split('?');
-      if (splitUp.length === 2) {
-        argsStr = splitUp[1];
-      }
-      var vars = argsStr.split('&');
-      var rVal = {};
-      angular.forEach(vars, function(qVar) {
-        var nameAndValue = qVar.split('=');
-        if (nameAndValue.length >= 2) {
-          var name = nameAndValue[0];
-          var value = nameAndValue.slice(1).join('=');
-          var decodedValue = decodeURIComponent(value);
-          if (!rVal.hasOwnProperty(name)) {
-            rVal[name] = [decodedValue];
-          } else {
-            rVal[name].push(decodedValue);
+          var idfRegex = /idf\(docFreq=(\d+),.*maxDocs=(\d+)\)/;
+          var matches = desc.match(idfRegex);
+          if (matches !== null && matches.length > 1) {
+            /*var docFreq = parseInt(matches[1], 10);
+            var maxDocs = parseInt(matches[2], 10);*/
+            this.realExplanation = 'IDF Score';
+          }
+          else {
+            this.realExplanation = desc;
           }
         }
-      });
-      return rVal;
-    };
+      };
+    }
+  ]);
 
-    /* Parse a Solr URL of the form [/]solr/[collectionName]/[requestHandler]
-     * return object with {collectionName: <collectionName>, requestHandler: <requestHandler>}
-     * return null on failure to parse as above solr url
-     * */
-    this.parseSolrPath = function(pathStr) {
-      if (pathStr.startsWith('/')) {
-        pathStr = pathStr.slice(1);
-      }
+'use strict';
 
-      var pathComponents = pathStr.split('/');
-      var pcLen = pathComponents.length;
-      if (pcLen >= 2) {
+angular.module('o19s.splainer-search')
+  .service('solrSearcherPreprocessorSvc', [
+    'solrUrlSvc',
+    'defaultSolrConfig',
+    'queryTemplateSvc',
+    function solrSearcherPreprocessorSvc(solrUrlSvc, defaultSolrConfig, queryTemplateSvc) {
+      var self      = this;
+      self.prepare  = prepare;
 
-        var reqHandler = pathComponents[pcLen - 1];
-        var collection = pathComponents[pcLen - 2];
-        return {requestHandler: reqHandler, collectionName: collection};
-      }
-      return null;
-    };
-
-    /* Parse a Sor URL of the form [http|https]://[host]/solr/[collectionName]/[requestHandler]?[args]
-     * return null on failure to parse
-     * */
-    this.parseSolrUrl = function(solrReq) {
-      solrReq = fixURLProtocol(solrReq);
-      var parseUrl = function(url) {
-        // this is the crazy way you parse URLs in JS who am I to question the wisdom
-        var a = document.createElement('a');
-        a.href = url;
-        return a;
+      var withoutUnsupported = function (argsToUse, sanitize) {
+        var argsRemoved = angular.copy(argsToUse);
+        if (sanitize === true) {
+          solrUrlSvc.removeUnsupported(argsRemoved);
+        }
+        return argsRemoved;
       };
 
-      var parsedUrl = parseUrl(solrReq);
-      parsedUrl.solrArgs = this.parseSolrArgs(parsedUrl.search);
-      var pathParsed = this.parseSolrPath(parsedUrl.pathname);
-      if (pathParsed) {
-        parsedUrl.collectionName = pathParsed.collectionName;
-        parsedUrl.requestHandler = pathParsed.requestHandler;
-      } else {
+      // the full URL we'll use to call Solr
+      var buildCallUrl = function(searcher) {
+        var fieldList = searcher.fieldList;
+        var url       = searcher.url;
+        var config    = searcher.config;
+        var args      = withoutUnsupported(searcher.args, config.sanitize);
+        var queryText = searcher.queryText;
+
+
+        args.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
+        args.wt = ['json'];
+
+        if (config.debug) {
+          args.debug = ['true'];
+          args['debug.explain.structured'] = ['true'];
+        }
+
+        if (config.highlight) {
+          args.hl                 = ['true'];
+          args['hl.fl']           = args.fl;
+          args['hl.simple.pre']   = [searcher.HIGHLIGHTING_PRE];
+          args['hl.simple.post']  = [searcher.HIGHLIGHTING_POST];
+        }
+
+        if (config.escapeQuery) {
+          queryText = solrUrlSvc.escapeUserQuery(queryText);
+        }
+
+        var baseUrl = solrUrlSvc.buildUrl(url, args);
+        baseUrl = queryTemplateSvc.hydrate(baseUrl, queryText, {encodeURI: true, defaultKw: '""'});
+
+        return baseUrl;
+      };
+
+      function prepare (searcher) {
+        if (searcher.config === undefined) {
+          searcher.config = defaultSolrConfig;
+        } else {
+          // make sure config params that weren't passed through are set from
+          // the default config object.
+          searcher.config = angular.merge({}, defaultSolrConfig, searcher.config);
+        }
+
+        searcher.callUrl = buildCallUrl(searcher);
+
+        searcher.linkUrl = searcher.callUrl.replace('wt=json', 'wt=xml');
+        searcher.linkUrl = searcher.linkUrl + '&indent=true&echoParams=all';
+      }
+    }
+  ]);
+
+'use strict';
+
+angular.module('o19s.splainer-search')
+  .service('solrUrlSvc', [
+    function solrUrlSvc() {
+
+      /* private method fixURLProtocol
+       * add 'http://' to the begining of the url if no protocol was
+       * specified
+       * */
+      var protocolRegex = /^https{0,1}\:/;
+      function fixURLProtocol(url) {
+        if (!protocolRegex.test(url)) {
+          url = 'http://' + url;
+        }
+        return url;
+      }
+      this.buildUrl = function(url, urlArgs) {
+        url = fixURLProtocol(url);
+        var baseUrl = url + '?';
+        baseUrl += this.formatSolrArgs(urlArgs);
+        return baseUrl;
+      };
+
+      /* Given arguments of the form {q: ['*:*'], fq: ['title:foo', 'text:bar']}
+       * turn into string suitable for URL query param q=*:*&fq=title:foo&fq=text:bar
+       *
+       * */
+      this.formatSolrArgs = function(argsObj) {
+        var rVal = '';
+        angular.forEach(argsObj, function(values, param) {
+          angular.forEach(values, function(value) {
+            rVal += param + '=' + value + '&';
+          });
+        });
+        // percentages need to be escaped before
+        // url escaping
+        rVal = rVal.replace(/%/g, '%25');
+        return rVal.slice(0, -1); // take out last & or trailing ? if no args
+      };
+
+      /* Given string of the form [?]q=*:*&fq=title:foo&fq=title:bar
+       * turn into object of the form:
+       * {q:['*:*'], fq:['title:foo', 'title:bar']}
+       *
+       * */
+      this.parseSolrArgs = function(argsStr) {
+        var splitUp = argsStr.split('?');
+        if (splitUp.length === 2) {
+          argsStr = splitUp[1];
+        }
+        var vars = argsStr.split('&');
+        var rVal = {};
+        angular.forEach(vars, function(qVar) {
+          var nameAndValue = qVar.split('=');
+          if (nameAndValue.length >= 2) {
+            var name = nameAndValue[0];
+            var value = nameAndValue.slice(1).join('=');
+            var decodedValue = decodeURIComponent(value);
+            if (!rVal.hasOwnProperty(name)) {
+              rVal[name] = [decodedValue];
+            } else {
+              rVal[name].push(decodedValue);
+            }
+          }
+        });
+        return rVal;
+      };
+
+      /* Parse a Solr URL of the form [/]solr/[collectionName]/[requestHandler]
+       * return object with {collectionName: <collectionName>, requestHandler: <requestHandler>}
+       * return null on failure to parse as above solr url
+       * */
+      this.parseSolrPath = function(pathStr) {
+        if (pathStr.startsWith('/')) {
+          pathStr = pathStr.slice(1);
+        }
+
+        var pathComponents = pathStr.split('/');
+        var pcLen = pathComponents.length;
+        if (pcLen >= 2) {
+
+          var reqHandler = pathComponents[pcLen - 1];
+          var collection = pathComponents[pcLen - 2];
+          return {requestHandler: reqHandler, collectionName: collection};
+        }
         return null;
-      }
-      var solrEndpoint = function() {
-        return parsedUrl.protocol + '//' + parsedUrl.host + parsedUrl.pathname;
       };
 
-      parsedUrl.solrEndpoint = solrEndpoint;
-      return parsedUrl;
+      /* Parse a Sor URL of the form [http|https]://[host]/solr/[collectionName]/[requestHandler]?[args]
+       * return null on failure to parse
+       * */
+      this.parseSolrUrl = function(solrReq) {
+        solrReq = fixURLProtocol(solrReq);
+        var parseUrl = function(url) {
+          // this is the crazy way you parse URLs in JS who am I to question the wisdom
+          var a = document.createElement('a');
+          a.href = url;
+          return a;
+        };
 
-    };
+        var parsedUrl = parseUrl(solrReq);
+        parsedUrl.solrArgs = this.parseSolrArgs(parsedUrl.search);
+        var pathParsed = this.parseSolrPath(parsedUrl.pathname);
+        if (pathParsed) {
+          parsedUrl.collectionName = pathParsed.collectionName;
+          parsedUrl.requestHandler = pathParsed.requestHandler;
+        } else {
+          return null;
+        }
+        var solrEndpoint = function() {
+          return parsedUrl.protocol + '//' + parsedUrl.host + parsedUrl.pathname;
+        };
 
-    /*optionally escape user query text, ie
-     * q=punctuation:: clearly can't search for the
-     * term ":" (colon) because colon has meaning in the query syntax
-     * so instead, you've got to search for
-     * q=punctuation:\:
-     * */
-    this.escapeUserQuery = function(queryText) {
-      var escapeChars = ['+', '-', '&', '!', '(', ')', '[', ']',
-                         '{', '}', '^', '"', '~', '*', '?', ':', '\\'];
-      var regexp = new RegExp('(\\' + escapeChars.join('|\\') + ')', 'g');
-      var symsRepl = queryText.replace(regexp, '\\$1');
-      var regexpAnd = new RegExp('(^|\\s+)(and)($|\\s+)', 'g');
-      var andRepl = symsRepl.replace(regexpAnd, '$1\\\\$2$3');
-      var regexOr = new RegExp('(^|\\s+)(or)($|\\s+)', 'g');
-      var orRepl = andRepl.replace(regexOr, '$1\\\\$2$3');
-      return orRepl;
-    };
+        parsedUrl.solrEndpoint = solrEndpoint;
+        return parsedUrl;
 
-    /* This method is a bit tied to how the searchSvc behaves, but
-     * as this module is probably what you're using to chop up a user's SolrURL
-     * its placed here
-     *
-     * It strips arguments out that are not supported by searchSvc and
-     * generally interfere with its operation (ie fl, rows, etc). searchSvc
-     * removes these itself, but this is placed here for convenience to remove
-     * from user input (ie an fl may confuse the user when fl is actually supplied
-     * elsewhere)
-     * */
-    this.removeUnsupported = function(solrArgs) {
-        var warnings = {};
-        // Stuff I think we can safely remove without warning the user
-        delete solrArgs['json.wrf'];
-        delete solrArgs.facet;
-        delete solrArgs['facet.field'];
-        delete solrArgs.fl;
-        delete solrArgs.hl;
-        delete solrArgs['hl.simple.pre'];
-        delete solrArgs['hl.simple.post'];
-        delete solrArgs.wt;
-        delete solrArgs.rows;
-        delete solrArgs.debug;
+      };
 
-        // Unsupported stuff to remove and provide a friendly warning
-        return warnings;
-    };
+      /*optionally escape user query text, ie
+       * q=punctuation:: clearly can't search for the
+       * term ":" (colon) because colon has meaning in the query syntax
+       * so instead, you've got to search for
+       * q=punctuation:\:
+       * */
+      this.escapeUserQuery = function(queryText) {
+        var escapeChars = ['+', '-', '&', '!', '(', ')', '[', ']',
+                           '{', '}', '^', '"', '~', '*', '?', ':', '\\'];
+        var regexp = new RegExp('(\\' + escapeChars.join('|\\') + ')', 'g');
+        var symsRepl = queryText.replace(regexp, '\\$1');
+        var regexpAnd = new RegExp('(^|\\s+)(and)($|\\s+)', 'g');
+        var andRepl = symsRepl.replace(regexpAnd, '$1\\\\$2$3');
+        var regexOr = new RegExp('(^|\\s+)(or)($|\\s+)', 'g');
+        var orRepl = andRepl.replace(regexOr, '$1\\\\$2$3');
+        return orRepl;
+      };
 
-  });
+      /* This method is a bit tied to how the searchSvc behaves, but
+       * as this module is probably what you're using to chop up a user's SolrURL
+       * its placed here
+       *
+       * It strips arguments out that are not supported by searchSvc and
+       * generally interfere with its operation (ie fl, rows, etc). searchSvc
+       * removes these itself, but this is placed here for convenience to remove
+       * from user input (ie an fl may confuse the user when fl is actually supplied
+       * elsewhere)
+       * */
+      this.removeUnsupported = function(solrArgs) {
+          var warnings = {};
+          // Stuff I think we can safely remove without warning the user
+          delete solrArgs['json.wrf'];
+          delete solrArgs.facet;
+          delete solrArgs['facet.field'];
+          delete solrArgs.fl;
+          delete solrArgs.hl;
+          delete solrArgs['hl.simple.pre'];
+          delete solrArgs['hl.simple.post'];
+          delete solrArgs.wt;
+          delete solrArgs.rows;
+          delete solrArgs.debug;
+
+          // Unsupported stuff to remove and provide a friendly warning
+          return warnings;
+      };
+    }
+  ]);
 
 'use strict';
 
@@ -1568,19 +1602,23 @@ if (typeof String.prototype.endsWith !== 'function') {
 'use strict';
 
 angular.module('o19s.splainer-search')
-  .service('transportSvc', function transportSvc(HttpPostTransportFactory, BulkTransportFactory) {
-    var self = this;
-    self.getTransport = getTransport;
-    var bulkTransport = new BulkTransportFactory({});
-    var httpPostTransport = new HttpPostTransportFactory({});
+  .service('transportSvc', [
+    'HttpPostTransportFactory',
+    'BulkTransportFactory',
+    function transportSvc(HttpPostTransportFactory, BulkTransportFactory) {
+      var self = this;
+      self.getTransport = getTransport;
+      var bulkTransport = new BulkTransportFactory({});
+      var httpPostTransport = new HttpPostTransportFactory({});
 
-    function getTransport(options) {
-      if (options.searchApi === 'bulk') {
-        return bulkTransport;
+      function getTransport(options) {
+        if (options.searchApi === 'bulk') {
+          return bulkTransport;
+        }
+        return httpPostTransport;
       }
-      return httpPostTransport;
     }
-  });
+  ]);
 
 'use strict';
 
@@ -1589,69 +1627,71 @@ angular.module('o19s.splainer-search')
  *
  * */
 angular.module('o19s.splainer-search')
-  .service('vectorSvc', function vectorSvc() {
+  .service('vectorSvc', [
+    function vectorSvc() {
 
-    var SparseVector = function() {
-      this.vecObj = {};
+      var SparseVector = function() {
+        this.vecObj = {};
 
-      var asStr = '';
-      var setDirty = function() {
-        asStr = '';
+        var asStr = '';
+        var setDirty = function() {
+          asStr = '';
+        };
+
+        this.set = function(key, value) {
+          this.vecObj[key] = value;
+          setDirty();
+        };
+
+        this.get = function(key) {
+          if (this.vecObj.hasOwnProperty(key)) {
+            return this.vecObj[key];
+          }
+          return undefined;
+        };
+
+        this.toStr = function() {
+          // memoize the toStr conversion
+          if (asStr === '') {
+            // sort
+            var sortedL = [];
+            angular.forEach(this.vecObj, function(value, key) {
+              sortedL.push([key, value]);
+            });
+            sortedL.sort(function(lhs, rhs) {return rhs[1] - lhs[1];});
+            angular.forEach(sortedL, function(keyVal) {
+              asStr += (keyVal[1] + ' ' + keyVal[0] + '\n');
+            });
+          }
+          return asStr;
+        };
+
       };
 
-      this.set = function(key, value) {
-        this.vecObj[key] = value;
-        setDirty();
+      this.create = function() {
+        return new SparseVector();
       };
 
-      this.get = function(key) {
-        if (this.vecObj.hasOwnProperty(key)) {
-          return this.vecObj[key];
-        }
-        return undefined;
+      this.add = function(lhs, rhs) {
+        var rVal = this.create();
+        angular.forEach(lhs.vecObj, function(value, key) {
+          rVal.set(key, value);
+        });
+        angular.forEach(rhs.vecObj, function(value, key) {
+          rVal.set(key, value);
+        });
+        return rVal;
       };
 
-      this.toStr = function() {
-        // memoize the toStr conversion
-        if (asStr === '') {
-          // sort
-          var sortedL = [];
-          angular.forEach(this.vecObj, function(value, key) {
-            sortedL.push([key, value]);
-          });
-          sortedL.sort(function(lhs, rhs) {return rhs[1] - lhs[1];});
-          angular.forEach(sortedL, function(keyVal) {
-            asStr += (keyVal[1] + ' ' + keyVal[0] + '\n');
-          });
-        }
-        return asStr;
+      this.scale = function(lhs, scalar) {
+        var rVal = this.create();
+        angular.forEach(lhs.vecObj, function(value, key) {
+          rVal.set(key, value * scalar);
+        });
+        return rVal;
       };
-
-    };
-
-    this.create = function() {
-      return new SparseVector();
-    };
-
-    this.add = function(lhs, rhs) {
-      var rVal = this.create();
-      angular.forEach(lhs.vecObj, function(value, key) {
-        rVal.set(key, value);
-      });
-      angular.forEach(rhs.vecObj, function(value, key) {
-        rVal.set(key, value);
-      });
-      return rVal;
-    };
-
-    this.scale = function(lhs, scalar) {
-      var rVal = this.create();
-      angular.forEach(lhs.vecObj, function(value, key) {
-        rVal.set(key, value * scalar);
-      });
-      return rVal;
-    };
-  });
+    }
+  ]);
 
 'use strict';
 

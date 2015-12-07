@@ -1,16 +1,20 @@
 'use strict';
 
 angular.module('o19s.splainer-search')
-  .service('transportSvc', function transportSvc(HttpPostTransportFactory, BulkTransportFactory) {
-    var self = this;
-    self.getTransport = getTransport;
-    var bulkTransport = new BulkTransportFactory({});
-    var httpPostTransport = new HttpPostTransportFactory({});
+  .service('transportSvc', [
+    'HttpPostTransportFactory',
+    'BulkTransportFactory',
+    function transportSvc(HttpPostTransportFactory, BulkTransportFactory) {
+      var self = this;
+      self.getTransport = getTransport;
+      var bulkTransport = new BulkTransportFactory({});
+      var httpPostTransport = new HttpPostTransportFactory({});
 
-    function getTransport(options) {
-      if (options.searchApi === 'bulk') {
-        return bulkTransport;
+      function getTransport(options) {
+        if (options.searchApi === 'bulk') {
+          return bulkTransport;
+        }
+        return httpPostTransport;
       }
-      return httpPostTransport;
     }
-  });
+  ]);
