@@ -19,7 +19,7 @@ angular.module('o19s.splainer-search')
     }
 
     function getMaxKws(template) {
-      var keywordMatch = /#\$keyword(\d)(\|.*?){0,1}##/g;
+      var keywordMatch = /#\$keyword\d|(.*?)##/g;
       var match = keywordMatch.exec(template);
       var maxKw = 0;
       while (match !== null) {
@@ -47,7 +47,7 @@ angular.module('o19s.splainer-search')
       // Though its possible this link gets out of link, this was the origin
       // of the regex below
       // http://www.regexpal.com/?fam=93576
-      replaced = replaced.replace(/#\$keyword\d(\|(.*?)){1}##/g, '$2'); // regex
+      replaced = replaced.replace(/#\$keyword\d\|(.*?)##/g, '$1'); // regex
       // anything left, use config defaults
       replaced = replaced.replace(/#\$keyword\d(\|(.*?)){0,1}##/g, config.defaultKw); // regex
       return replaced;
