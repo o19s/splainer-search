@@ -78,20 +78,20 @@ angular.module('o19s.splainer-search')
         }
       };
 
-      this.EsFunctionQueryExplain = function() {
-        this.realExplanation = this.description;
+      this.EsFieldFunctionQueryExplain = function(explJson) {
+        var funcQueryRegex = /Function for field (.*?):/;
+        var description = explJson.description;
+        var match = description.match(funcQueryRegex);
+        var fieldName = 'unknown';
+        if (match !== null && match.length > 1) {
+          fieldName = match[1];
+        }
+        var explText = 'f(' + fieldName + ') = ';
+        angular.forEach(this.children, function(child) {
+          explText += child.description + ' ';
+        });
+        this.realExplanation = explText;
 
-        this.influencers = function() {
-          return this.children;
-        };
-
-        this.vectorize = function() {
-          var rVal = vectorSvc.create();
-          angular.forEach(this.influencers(), function(infl) {
-            rVal = vectorSvc.add(rVal, infl.vectorize());
-          });
-          return rVal;
-        };
       };
 
       this.MinExplain = function() {

@@ -354,7 +354,7 @@ angular.module('o19s.splainer-search')
       var CoordExplain = queryExplainSvc.CoordExplain;
       var ProductExplain = queryExplainSvc.ProductExplain;
       var MinExplain = queryExplainSvc.MinExplain;
-      var EsFunctionQueryExplain = queryExplainSvc.EsFunctionQueryExplain;
+      var EsFieldFunctionQueryExplain = queryExplainSvc.EsFieldFunctionQueryExplain;
 
       var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
       var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
@@ -431,9 +431,9 @@ angular.module('o19s.splainer-search')
           FunctionQueryExplain.prototype = base;
           return new FunctionQueryExplain(explJson);
         }
-        else if (description.startsWith('Function ')) {
-          EsFunctionQueryExplain.prototype = base;
-          return new EsFunctionQueryExplain(explJson);
+        else if (description.startsWith('Function for field')) {
+          EsFieldFunctionQueryExplain.prototype = base;
+          return new EsFieldFunctionQueryExplain(explJson);
         }
         else if (tieMatch && tieMatch.length > 1) {
           var tie = parseFloat(tieMatch[1]);
@@ -923,20 +923,20 @@ angular.module('o19s.splainer-search')
         }
       };
 
-      this.EsFunctionQueryExplain = function() {
-        this.realExplanation = this.description;
+      this.EsFieldFunctionQueryExplain = function(explJson) {
+        var funcQueryRegex = /Function for field (.*?):/;
+        var description = explJson.description;
+        var match = description.match(funcQueryRegex);
+        var fieldName = 'unknown';
+        if (match !== null && match.length > 1) {
+          fieldName = match[1];
+        }
+        var explText = 'f(' + fieldName + ') = ';
+        angular.forEach(this.children, function(child) {
+          explText += child.description + ' ';
+        });
+        this.realExplanation = explText;
 
-        this.influencers = function() {
-          return this.children;
-        };
-
-        this.vectorize = function() {
-          var rVal = vectorSvc.create();
-          angular.forEach(this.influencers(), function(infl) {
-            rVal = vectorSvc.add(rVal, infl.vectorize());
-          });
-          return rVal;
-        };
       };
 
       this.MinExplain = function() {

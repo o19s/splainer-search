@@ -20,7 +20,7 @@ angular.module('o19s.splainer-search')
       var CoordExplain = queryExplainSvc.CoordExplain;
       var ProductExplain = queryExplainSvc.ProductExplain;
       var MinExplain = queryExplainSvc.MinExplain;
-      var EsFunctionQueryExplain = queryExplainSvc.EsFunctionQueryExplain;
+      var EsFieldFunctionQueryExplain = queryExplainSvc.EsFieldFunctionQueryExplain;
 
       var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
       var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
@@ -97,9 +97,9 @@ angular.module('o19s.splainer-search')
           FunctionQueryExplain.prototype = base;
           return new FunctionQueryExplain(explJson);
         }
-        else if (description.startsWith('Function ')) {
-          EsFunctionQueryExplain.prototype = base;
-          return new EsFunctionQueryExplain(explJson);
+        else if (description.startsWith('Function for field')) {
+          EsFieldFunctionQueryExplain.prototype = base;
+          return new EsFieldFunctionQueryExplain(explJson);
         }
         else if (tieMatch && tieMatch.length > 1) {
           var tie = parseFloat(tieMatch[1]);

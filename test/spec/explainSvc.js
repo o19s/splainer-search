@@ -127,7 +127,6 @@ describe('Service: explainSvc', function () {
     // Elasticsearch explain
 
     it('deals with Math.minOf', function() {
-      /*global esExplain*/
       var minOfExpl = {
           'value': 0.033063494,
           'description': 'Math.min of',
@@ -144,13 +143,66 @@ describe('Service: explainSvc', function () {
           }]
         };
       var simplerExplain = explainSvc.createExplain(minOfExpl);
+      // the minof is ignored, as it has one child we jump straight to the function query
       var infl = simplerExplain.influencers();
 
-      expect(infl.length).toEqual(1);
+      //
+      expect(infl.length).toEqual(0);
+      expect(simplerExplain.explanation()).toContain('exp');
+      expect(simplerExplain.explanation()).toContain('f(created_at)');
 
       var matches = simplerExplain.vectorize();
       expect(Object.keys(matches.vecObj).length).toBe(1); // get down to just the function query
       expect(Object.keys(matches.vecObj)[0]).toContain('exp'); // get down to just the function query
+    });
+
+    xit('ignores meaningless queryBoost', function() {
+      /* This test is currently ignored, however I'm debating what to do
+       * with this scenario. The queryBoost of 1 is only meaningless if there's a function
+       * score query with product of.
+       *
+       * So its sort of an aesthetics debate
+       *
+       * */
+
+      var funcScoreQuery = {
+        'value': 0.033157118,
+        'description': 'function score, product of:',
+        'details': [{
+          'value': 0.033063494,
+          'description': 'Math.min of',
+          'details': [{
+            'value': 0.033063494,
+            'description': 'Function for field created_at:',
+            'details': [{
+              'value': 0.033063494,
+              'description': 'exp(- MIN[Math.max(Math.abs(1.399894202E12(=doc value) - 1.450890423697E12(=origin))) - 0.0(=offset), 0)] * 6.68544734336367E-11)'
+            }]
+          }, {
+            'value': 3.4028235E38,
+            'description': 'maxBoost'
+          }]
+        },
+        {
+          'value': 1.0,
+          'description': 'queryBoost'
+        }
+
+        ]
+      };
+      var simplerExplain = explainSvc.createExplain(funcScoreQuery);
+
+      var infl = simplerExplain.influencers();
+      expect(infl.length).toEqual(1);
+      expect(infl[0].explanation()).toContain('exp');
+      expect(infl[0].explanation()).toContain('f(created_at)');
+
+      // we only surface the innermost important function query
+      var matches = simplerExplain.vectorize();
+      expect(Object.keys(matches.vecObj).length).toBe(1); // get down to just the function query
+      expect(Object.keys(matches.vecObj)[0]).toContain('exp'); // get down to just the function query
+
+
     });
 
 
