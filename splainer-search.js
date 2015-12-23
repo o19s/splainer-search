@@ -353,6 +353,8 @@ angular.module('o19s.splainer-search')
       var SumExplain = queryExplainSvc.SumExplain;
       var CoordExplain = queryExplainSvc.CoordExplain;
       var ProductExplain = queryExplainSvc.ProductExplain;
+      var MinExplain = queryExplainSvc.MinExplain;
+      var EsFunctionQueryExplain = queryExplainSvc.EsFunctionQueryExplain;
 
       var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
       var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
@@ -429,6 +431,10 @@ angular.module('o19s.splainer-search')
           FunctionQueryExplain.prototype = base;
           return new FunctionQueryExplain(explJson);
         }
+        else if (description.startsWith('Function ')) {
+          EsFunctionQueryExplain.prototype = base;
+          return new EsFunctionQueryExplain(explJson);
+        }
         else if (tieMatch && tieMatch.length > 1) {
           var tie = parseFloat(tieMatch[1]);
           DismaxTieExplain.prototype = base;
@@ -441,6 +447,10 @@ angular.module('o19s.splainer-search')
         else if (description.hasSubstr('sum of')) {
           SumExplain.prototype = base;
           return meOrOnlyChild(new SumExplain(explJson));
+        }
+        else if (description.hasSubstr('Math.min of')) {
+          MinExplain.prototype = base;
+          return meOrOnlyChild(new MinExplain(explJson));
         }
         else if (description.hasSubstr('product of')) {
           var coordExpl = null;
@@ -913,6 +923,39 @@ angular.module('o19s.splainer-search')
         }
       };
 
+      this.EsFunctionQueryExplain = function() {
+        this.realExplanation = this.description;
+
+        this.influencers = function() {
+          return this.children;
+        };
+
+        this.vectorize = function() {
+          var rVal = vectorSvc.create();
+          angular.forEach(this.influencers(), function(infl) {
+            rVal = vectorSvc.add(rVal, infl.vectorize());
+          });
+          return rVal;
+        };
+      };
+
+      this.MinExplain = function() {
+        this.realExplaination = 'Minimum Of:';
+
+        this.influencers = function() {
+          var infl = shallowArrayCopy(this.children);
+          infl.sort(function(a, b) {return a.score - b.score;});
+          return [infl[0]];
+        };
+
+        this.vectorize = function() {
+          // pick the minimum, which is sorted by influencers
+          var infl = this.influencers();
+          var minInfl = infl[0];
+          return minInfl.vectorize();
+          };
+      };
+
       this.CoordExplain = function(explJson, coordFactor) {
         if (coordFactor < 1.0) {
           this.realExplanation = 'Matches Punished by ' + coordFactor + ' (not all query terms matched)';
@@ -942,7 +985,7 @@ angular.module('o19s.splainer-search')
       };
 
       this.DismaxTieExplain = function(explJson, tie) {
-        this.realExplanation = 'Dismax (max plus:' + tie + ' times others';
+        this.realExplanation = 'Dismax (max plus:' + tie + ' times others)';
 
         this.influencers = function() {
           var infl = shallowArrayCopy(this.children);

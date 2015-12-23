@@ -19,6 +19,8 @@ angular.module('o19s.splainer-search')
       var SumExplain = queryExplainSvc.SumExplain;
       var CoordExplain = queryExplainSvc.CoordExplain;
       var ProductExplain = queryExplainSvc.ProductExplain;
+      var MinExplain = queryExplainSvc.MinExplain;
+      var EsFunctionQueryExplain = queryExplainSvc.EsFunctionQueryExplain;
 
       var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
       var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
@@ -95,6 +97,10 @@ angular.module('o19s.splainer-search')
           FunctionQueryExplain.prototype = base;
           return new FunctionQueryExplain(explJson);
         }
+        else if (description.startsWith('Function ')) {
+          EsFunctionQueryExplain.prototype = base;
+          return new EsFunctionQueryExplain(explJson);
+        }
         else if (tieMatch && tieMatch.length > 1) {
           var tie = parseFloat(tieMatch[1]);
           DismaxTieExplain.prototype = base;
@@ -107,6 +113,10 @@ angular.module('o19s.splainer-search')
         else if (description.hasSubstr('sum of')) {
           SumExplain.prototype = base;
           return meOrOnlyChild(new SumExplain(explJson));
+        }
+        else if (description.hasSubstr('Math.min of')) {
+          MinExplain.prototype = base;
+          return meOrOnlyChild(new MinExplain(explJson));
         }
         else if (description.hasSubstr('product of')) {
           var coordExpl = null;

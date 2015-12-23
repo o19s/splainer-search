@@ -78,6 +78,39 @@ angular.module('o19s.splainer-search')
         }
       };
 
+      this.EsFunctionQueryExplain = function() {
+        this.realExplanation = this.description;
+
+        this.influencers = function() {
+          return this.children;
+        };
+
+        this.vectorize = function() {
+          var rVal = vectorSvc.create();
+          angular.forEach(this.influencers(), function(infl) {
+            rVal = vectorSvc.add(rVal, infl.vectorize());
+          });
+          return rVal;
+        };
+      };
+
+      this.MinExplain = function() {
+        this.realExplaination = 'Minimum Of:';
+
+        this.influencers = function() {
+          var infl = shallowArrayCopy(this.children);
+          infl.sort(function(a, b) {return a.score - b.score;});
+          return [infl[0]];
+        };
+
+        this.vectorize = function() {
+          // pick the minimum, which is sorted by influencers
+          var infl = this.influencers();
+          var minInfl = infl[0];
+          return minInfl.vectorize();
+          };
+      };
+
       this.CoordExplain = function(explJson, coordFactor) {
         if (coordFactor < 1.0) {
           this.realExplanation = 'Matches Punished by ' + coordFactor + ' (not all query terms matched)';
@@ -107,7 +140,7 @@ angular.module('o19s.splainer-search')
       };
 
       this.DismaxTieExplain = function(explJson, tie) {
-        this.realExplanation = 'Dismax (max plus:' + tie + ' times others';
+        this.realExplanation = 'Dismax (max plus:' + tie + ' times others)';
 
         this.influencers = function() {
           var infl = shallowArrayCopy(this.children);
