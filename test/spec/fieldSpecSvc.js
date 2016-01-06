@@ -132,4 +132,55 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.fieldList()).toEqual('*');
   });
 
+  it('preserves certain computed fields', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('catch_line,text,function:someFunctionQuery');
+    expect(fieldSpec.subs).toContain('text');
+    expect(fieldSpec.subs).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldSpec.id).toEqual('id');
+    expect(fieldSpec.title).toEqual('catch_line');
+
+    var fieldList = fieldSpec.fieldList();
+    expect(fieldList).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldList).toContain('text');
+    expect(fieldList).toContain('catch_line');
+  });
+
+  it('tolerates $ in function field name', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('catch_line,text,function:$someFunctionQuery');
+    expect(fieldSpec.subs).toContain('text');
+    expect(fieldSpec.subs).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldSpec.id).toEqual('id');
+    expect(fieldSpec.title).toEqual('catch_line');
+
+    var fieldList = fieldSpec.fieldList();
+    expect(fieldList).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldList).toContain('text');
+    expect(fieldList).toContain('catch_line');
+  });
+
+  it('respects function aliases', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('catch_line,text,func:someFunctionQuery');
+    expect(fieldSpec.subs).toContain('text');
+    expect(fieldSpec.subs).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldSpec.id).toEqual('id');
+    expect(fieldSpec.title).toEqual('catch_line');
+
+    var fieldList = fieldSpec.fieldList();
+    expect(fieldList).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldList).toContain('text');
+    expect(fieldList).toContain('catch_line');
+
+    fieldSpec = fieldList = undefined;
+    fieldSpec = fieldSpecSvc.createFieldSpec('catch_line,text,f:someFunctionQuery');
+    expect(fieldSpec.subs).toContain('text');
+    expect(fieldSpec.subs).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldSpec.id).toEqual('id');
+    expect(fieldSpec.title).toEqual('catch_line');
+
+    fieldList = fieldSpec.fieldList();
+    expect(fieldList).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldList).toContain('text');
+    expect(fieldList).toContain('catch_line');
+  });
+
 });
