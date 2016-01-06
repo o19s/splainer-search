@@ -5,12 +5,15 @@ angular.module('o19s.splainer-search')
     function fieldSpecSvc() {
       var addFieldOfType = function(fieldSpec, fieldType, fieldName) {
         if (fieldType === 'function') {
+          if (!fieldSpec.hasOwnProperty('functions')) {
+            fieldSpec.functions = [];
+          }
           // a function query function:foo is really foo:$foo
-          fieldType = 'sub';
           if (fieldName.startsWith('$')) {
             fieldName = fieldName.slice(1);
           }
           fieldName = fieldName + ':$' + fieldName;
+          fieldSpec.functions.push(fieldName);
         }
         if (fieldType === 'sub') {
           if (!fieldSpec.hasOwnProperty('subs')) {
@@ -97,6 +100,9 @@ angular.module('o19s.splainer-search')
           }
           angular.forEach(this.subs, function(sub) {
             innerBody(sub);
+          });
+          angular.forEach(this.functions, function(func) {
+            innerBody(func);
           });
         };
       };

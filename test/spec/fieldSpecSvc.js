@@ -135,7 +135,7 @@ describe('Service: fieldSpecSvc', function () {
   it('preserves certain computed fields', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('catch_line,text,function:someFunctionQuery');
     expect(fieldSpec.subs).toContain('text');
-    expect(fieldSpec.subs).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldSpec.functions).toContain('someFunctionQuery:$someFunctionQuery');
     expect(fieldSpec.id).toEqual('id');
     expect(fieldSpec.title).toEqual('catch_line');
 
@@ -148,7 +148,7 @@ describe('Service: fieldSpecSvc', function () {
   it('tolerates $ in function field name', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('catch_line,text,function:$someFunctionQuery');
     expect(fieldSpec.subs).toContain('text');
-    expect(fieldSpec.subs).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldSpec.functions).toContain('someFunctionQuery:$someFunctionQuery');
     expect(fieldSpec.id).toEqual('id');
     expect(fieldSpec.title).toEqual('catch_line');
 
@@ -161,7 +161,7 @@ describe('Service: fieldSpecSvc', function () {
   it('respects function aliases', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('catch_line,text,func:someFunctionQuery');
     expect(fieldSpec.subs).toContain('text');
-    expect(fieldSpec.subs).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldSpec.functions).toContain('someFunctionQuery:$someFunctionQuery');
     expect(fieldSpec.id).toEqual('id');
     expect(fieldSpec.title).toEqual('catch_line');
 
@@ -173,7 +173,7 @@ describe('Service: fieldSpecSvc', function () {
     fieldSpec = fieldList = undefined;
     fieldSpec = fieldSpecSvc.createFieldSpec('catch_line,text,f:someFunctionQuery');
     expect(fieldSpec.subs).toContain('text');
-    expect(fieldSpec.subs).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldSpec.functions).toContain('someFunctionQuery:$someFunctionQuery');
     expect(fieldSpec.id).toEqual('id');
     expect(fieldSpec.title).toEqual('catch_line');
 
