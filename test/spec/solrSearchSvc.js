@@ -965,7 +965,115 @@ describe('Service: searchSvc: Solr', function () {
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
-    })
+    });
+
+    it('handles all types of vars', function() {
+      // Start off with a simple phrase and make sure the replacement
+      // gets handled correctly here
+      var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciouness taco bell cannot run away from me crazy muhahahaa peanut';
+      var mockSolrParams = {
+        phrase: [
+          'jobTitle:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
+        ],
+        q: [
+          '_val_:"product($phraseFunc,1)"'
+        ],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.phrase[0] = 'jobTitle:("burrito taco" OR "taco nacho")';
+
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText
+      );
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+        .respond(200, mockResults);
+
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+
+      // Add more params
+      var mockSolrParams = {
+        phrase: [
+          'jobTitle:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
+        ],
+        keywords: [
+          '{!edismax qf="jobTitle^10 jobDesc" tie=1.0}#$query##'
+        ],
+        phraseFunc: [
+          'if(query($phrase),1.5,1)'
+        ],
+        q: [
+          '_val_:"product($phraseFunc,1)"'
+        ],
+        fq: [
+          '{!edismax qf="jobTitle jobDesc"}#$query##'
+        ],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.phrase[0] = 'jobTitle:("burrito taco" OR "taco nacho")';
+      expectedParams.keywords[0] = '{!edismax qf="jobTitle^10 jobDesc" tie=1.0}' + encodeURIComponent(mockQueryText);
+      expectedParams.fq[0] = '{!edismax qf="jobTitle jobDesc"}' + encodeURIComponent(mockQueryText);
+
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText
+      );
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+        .respond(200, mockResults);
+
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+
+
+      // Add the rest of the params
+      var mockSolrParams = {
+        phrase: [
+          'jobTitle:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
+        ],
+        keywords: [
+          '{!edismax qf="jobTitle^10 jobDesc" tie=1.0}#$query##'
+        ],
+        phraseScore: [
+          'div(product(sum(##k##,1),query($phrase)),product(query($phrase),##k##))'
+        ],
+        phraseFunc: [
+          'if(query($phrase),1.5,1)'
+        ],
+        q: [
+          '_val_:"product($phraseFunc,1)"'
+        ],
+        fq: [
+          '{!edismax qf="jobTitle jobDesc"}#$query##'
+        ],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.phrase[0] = 'jobTitle:("burrito taco" OR "taco nacho")';
+      expectedParams.keywords[0] = '{!edismax qf="jobTitle^10 jobDesc" tie=1.0}' + encodeURIComponent(mockQueryText);
+      expectedParams.fq[0] = '{!edismax qf="jobTitle jobDesc"}' + encodeURIComponent(mockQueryText);
+
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText
+      );
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+        .respond(200, mockResults);
+
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
   });
 
   describe('paging', function() {
