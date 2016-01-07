@@ -1508,11 +1508,11 @@ angular.module('o19s.splainer-search')
         var vars = argsStr.split('&');
         var rVal = {};
         angular.forEach(vars, function(qVar) {
-          var nameAndValue = qVar.split(/=(.*)/)
-            .filter(function(el) { return el.length !== 0; });
+          var nameAndValue = qVar.split(/=(.*)/);
+            // .filter(function(el) { return el.length !== 0; });
           if (nameAndValue.length >= 2) {
-            var name = nameAndValue[0];
-            var value = nameAndValue.slice(1).join('=');
+            var name  = nameAndValue[0];
+            var value = nameAndValue[1];
             var decodedValue = decodeURIComponent(value);
             if (!rVal.hasOwnProperty(name)) {
               rVal[name] = [decodedValue];
