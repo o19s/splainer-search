@@ -356,6 +356,90 @@ describe('Service: searchSvc: ElasticSearch', function() {
       timed_out:  false
     };
 
+    it('asks for highlighting by default', function() {
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery           = angular.fromJson(data);
+        var expectedHighlight = {
+          fields: {
+            _id:    {},
+            title:  {},
+          }
+        };
+        return (
+          esQuery.hasOwnProperty('highlight') &&
+          angular.equals( esQuery.highlight, expectedHighlight )
+        );
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('specifies highlighting for specified fields', function() {
+      mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title section tags');
+
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery           = angular.fromJson(data);
+        var expectedHighlight = {
+          fields: {
+            _id:      {},
+            title:    {},
+            section:  {},
+            tags:     {},
+          }
+        };
+        return (
+          esQuery.hasOwnProperty('highlight') &&
+          angular.equals( esQuery.highlight, expectedHighlight )
+        );
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('does not override manual highlighting options', function() {
+      var expectedHighlight = {
+        fields: {
+          foo: {},
+          bar: {},
+        }
+      };
+
+      mockEsParams.highlight = expectedHighlight;
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        return (
+          esQuery.hasOwnProperty('highlight') &&
+          angular.equals( esQuery.highlight, expectedHighlight )
+        );
+      }).
+      respond(200, mockResults);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
     it('gets highlight snippet field values if returned', function() {
       $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
 
