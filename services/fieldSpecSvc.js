@@ -4,6 +4,17 @@ angular.module('o19s.splainer-search')
   .service('fieldSpecSvc', [
     function fieldSpecSvc() {
       var addFieldOfType = function(fieldSpec, fieldType, fieldName) {
+        if (fieldType === 'function') {
+          if (!fieldSpec.hasOwnProperty('functions')) {
+            fieldSpec.functions = [];
+          }
+          // a function query function:foo is really foo:$foo
+          if (fieldName.startsWith('$')) {
+            fieldName = fieldName.slice(1);
+          }
+          fieldName = fieldName + ':$' + fieldName;
+          fieldSpec.functions.push(fieldName);
+        }
         if (fieldType === 'sub') {
           if (!fieldSpec.hasOwnProperty('subs')) {
             fieldSpec.subs = [];
@@ -21,6 +32,13 @@ angular.module('o19s.splainer-search')
         fieldSpec.fields.push(fieldName);
       };
 
+      var normalizeFieldTypeAliases = function(fieldType) {
+        if (fieldType === 'func' || fieldType === 'f') {
+          return 'function';
+        }
+        return fieldType;
+      };
+
       // Populate field spec from a field spec string
       var populateFieldSpec = function(fieldSpec, fieldSpecStr) {
         var fieldSpecs = fieldSpecStr.split('+').join(' ').split(/[\s,]+/);
@@ -29,7 +47,7 @@ angular.module('o19s.splainer-search')
           var fieldType = null;
           var fieldName = null;
           if (typeAndField.length === 2) {
-            fieldType = typeAndField[0];
+            fieldType = normalizeFieldTypeAliases(typeAndField[0]);
             fieldName = typeAndField[1];
           }
           else if (typeAndField.length === 1) {
@@ -82,6 +100,9 @@ angular.module('o19s.splainer-search')
           }
           angular.forEach(this.subs, function(sub) {
             innerBody(sub);
+          });
+          angular.forEach(this.functions, function(func) {
+            innerBody(func);
           });
         };
       };

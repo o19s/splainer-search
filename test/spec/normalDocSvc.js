@@ -315,6 +315,7 @@ describe('Service: normalDocsSvc', function () {
                  'title_field': 'a title',
                  'sub1': 'sub1_val',
                  'sub2': 'sub2_val',
+                 'fn': 2.0,
                  source: function() {
                    return this;
                  },
@@ -333,18 +334,36 @@ describe('Service: normalDocsSvc', function () {
     it('captures sub values no highlights', function() {
       var fieldSpec = {id: 'custom_id_field', title: 'title_field', subs: '*'};
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
-      expect(Object.keys(normalDoc.subs).length).toEqual(2);
+      expect(Object.keys(normalDoc.subs).length).toEqual(3);
       expect(normalDoc.subs.sub1).toEqual('sub1_val');
       expect(normalDoc.subs.sub2).toEqual('sub2_val');
+    });
+
+    it('captures function values as subs', function() {
+      var fieldSpec = {id: 'custom_id_field', title: 'title_field', subs: ['sub2'], functions: ['fn:$fn']};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(Object.keys(normalDoc.subs).length).toEqual(2);
+      expect(normalDoc.subs.sub2).toEqual('sub2_val');
+      expect(normalDoc.subs.fn).toEqual('2');
+    });
+
+    it('captures function values with wildcard subs', function() {
+      var fieldSpec = {id: 'custom_id_field', title: 'title_field', subs: '*', functions: ['fn:$fn']};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(Object.keys(normalDoc.subs).length).toEqual(3);
+      expect(normalDoc.subs.sub1).toEqual('sub1_val');
+      expect(normalDoc.subs.sub2).toEqual('sub2_val');
+      expect(normalDoc.subs.fn).toEqual('2');
     });
 
     it('captures sub values w/ highlight', function() {
       var fieldSpec = {id: 'custom_id_field', title: 'title_field', subs: '*'};
       availableHighlights.sub1 = 'sub1_hl';
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
-      expect(Object.keys(normalDoc.subs).length).toEqual(2);
+      expect(Object.keys(normalDoc.subs).length).toEqual(3);
       expect(normalDoc.subs.sub1).toEqual('sub1_val');
       expect(normalDoc.subs.sub2).toEqual('sub2_val');
+      expect(normalDoc.subs.fn).toEqual('2');
 
       expect(normalDoc.subSnippets('<b>', '</b>').sub1).toEqual('<b>sub1_hl</b>');
       expect(normalDoc.subSnippets('<b>', '</b>').sub2).toEqual('sub2_val');
