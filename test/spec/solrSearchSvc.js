@@ -951,7 +951,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('super long query', function() {
-      var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciouness taco bell cannot run away from me crazy muhahahaa peanut';
+      var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciousness taco bell cannot run away from me crazy muhahahaa peanut';
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
       };
@@ -970,17 +970,17 @@ describe('Service: searchSvc: Solr', function () {
     it('handles all types of vars', function() {
       // Start off with a simple phrase and make sure the replacement
       // gets handled correctly here
-      var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciouness taco bell cannot run away from me crazy muhahahaa peanut';
+      var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciousness taco bell cannot run away from me crazy muhahahaa peanut';
       var mockSolrParams = {
         phrase: [
-          'jobTitle:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
+          'bowl:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
         ],
         q: [
-          '_val_:"product($phraseFunc,1)"'
+          '_val_:"product($texmexFunc,1)"'
         ],
       };
       var expectedParams = angular.copy(mockSolrParams);
-      expectedParams.phrase[0] = 'jobTitle:("burrito taco" OR "taco nacho")';
+      expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
 
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
@@ -999,25 +999,25 @@ describe('Service: searchSvc: Solr', function () {
       // Add more params
       var mockSolrParams = {
         phrase: [
-          'jobTitle:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
+          'bowl:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
         ],
         keywords: [
-          '{!edismax qf="jobTitle^10 jobDesc" tie=1.0}#$query##'
+          '{!edismax qf="bowl^10 sofritas" tie=1.0}#$query##'
         ],
-        phraseFunc: [
+        texmexFunc: [
           'if(query($phrase),1.5,1)'
         ],
         q: [
-          '_val_:"product($phraseFunc,1)"'
+          '_val_:"product($texmexFunc,1)"'
         ],
         fq: [
-          '{!edismax qf="jobTitle jobDesc"}#$query##'
+          '{!edismax qf="bowl sofritas"}#$query##'
         ],
       };
       var expectedParams = angular.copy(mockSolrParams);
-      expectedParams.phrase[0] = 'jobTitle:("burrito taco" OR "taco nacho")';
-      expectedParams.keywords[0] = '{!edismax qf="jobTitle^10 jobDesc" tie=1.0}' + encodeURIComponent(mockQueryText);
-      expectedParams.fq[0] = '{!edismax qf="jobTitle jobDesc"}' + encodeURIComponent(mockQueryText);
+      expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
+      expectedParams.keywords[0] = '{!edismax qf="bowl^10 sofritas" tie=1.0}' + encodeURIComponent(mockQueryText);
+      expectedParams.fq[0] = '{!edismax qf="bowl sofritas"}' + encodeURIComponent(mockQueryText);
 
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
@@ -1037,28 +1037,28 @@ describe('Service: searchSvc: Solr', function () {
       // Add the rest of the params
       var mockSolrParams = {
         phrase: [
-          'jobTitle:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
+          'bowl:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
         ],
         keywords: [
-          '{!edismax qf="jobTitle^10 jobDesc" tie=1.0}#$query##'
+          '{!edismax qf="bowl^10 sofritas" tie=1.0}#$query##'
         ],
         phraseScore: [
           'div(product(sum(##k##,1),query($phrase)),product(query($phrase),##k##))'
         ],
-        phraseFunc: [
+        texmexFunc: [
           'if(query($phrase),1.5,1)'
         ],
         q: [
-          '_val_:"product($phraseFunc,1)"'
+          '_val_:"product($texmexFunc,1)"'
         ],
         fq: [
-          '{!edismax qf="jobTitle jobDesc"}#$query##'
+          '{!edismax qf="bowl sofritas"}#$query##'
         ],
       };
       var expectedParams = angular.copy(mockSolrParams);
-      expectedParams.phrase[0] = 'jobTitle:("burrito taco" OR "taco nacho")';
-      expectedParams.keywords[0] = '{!edismax qf="jobTitle^10 jobDesc" tie=1.0}' + encodeURIComponent(mockQueryText);
-      expectedParams.fq[0] = '{!edismax qf="jobTitle jobDesc"}' + encodeURIComponent(mockQueryText);
+      expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
+      expectedParams.keywords[0] = '{!edismax qf="bowl^10 sofritas" tie=1.0}' + encodeURIComponent(mockQueryText);
+      expectedParams.fq[0] = '{!edismax qf="bowl sofritas"}' + encodeURIComponent(mockQueryText);
 
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
