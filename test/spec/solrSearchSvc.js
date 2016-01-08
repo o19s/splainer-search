@@ -951,7 +951,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('super long query', function() {
-      var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciouness taco bell cannot run away from me crazy muhahahaa peanut';
+      var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciousness taco bell cannot run away from me crazy muhahahaa peanut';
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
       };
@@ -965,7 +965,115 @@ describe('Service: searchSvc: Solr', function () {
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
-    })
+    });
+
+    it('handles all types of vars', function() {
+      // Start off with a simple phrase and make sure the replacement
+      // gets handled correctly here
+      var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciousness taco bell cannot run away from me crazy muhahahaa peanut';
+      var mockSolrParams = {
+        phrase: [
+          'bowl:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
+        ],
+        q: [
+          '_val_:"product($texmexFunc,1)"'
+        ],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
+
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText
+      );
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+        .respond(200, mockResults);
+
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+
+      // Add more params
+      var mockSolrParams = {
+        phrase: [
+          'bowl:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
+        ],
+        keywords: [
+          '{!edismax qf="bowl^10 sofritas" tie=1.0}#$query##'
+        ],
+        texmexFunc: [
+          'if(query($phrase),1.5,1)'
+        ],
+        q: [
+          '_val_:"product($texmexFunc,1)"'
+        ],
+        fq: [
+          '{!edismax qf="bowl sofritas"}#$query##'
+        ],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
+      expectedParams.keywords[0] = '{!edismax qf="bowl^10 sofritas" tie=1.0}' + encodeURIComponent(mockQueryText);
+      expectedParams.fq[0] = '{!edismax qf="bowl sofritas"}' + encodeURIComponent(mockQueryText);
+
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText
+      );
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+        .respond(200, mockResults);
+
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+
+
+      // Add the rest of the params
+      var mockSolrParams = {
+        phrase: [
+          'bowl:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
+        ],
+        keywords: [
+          '{!edismax qf="bowl^10 sofritas" tie=1.0}#$query##'
+        ],
+        phraseScore: [
+          'div(product(sum(##k##,1),query($phrase)),product(query($phrase),##k##))'
+        ],
+        texmexFunc: [
+          'if(query($phrase),1.5,1)'
+        ],
+        q: [
+          '_val_:"product($texmexFunc,1)"'
+        ],
+        fq: [
+          '{!edismax qf="bowl sofritas"}#$query##'
+        ],
+      };
+      var expectedParams = angular.copy(mockSolrParams);
+      expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
+      expectedParams.keywords[0] = '{!edismax qf="bowl^10 sofritas" tie=1.0}' + encodeURIComponent(mockQueryText);
+      expectedParams.fq[0] = '{!edismax qf="bowl sofritas"}' + encodeURIComponent(mockQueryText);
+
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText
+      );
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+        .respond(200, mockResults);
+
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
   });
 
   describe('paging', function() {

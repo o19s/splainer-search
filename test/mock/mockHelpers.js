@@ -7,7 +7,7 @@ window.parseUrlParams = function(queryString) {
   var queryParams = queryString.split('&');
   var parsedParams = {};
   angular.forEach(queryParams, function(queryParam) {
-    var qpSplit = queryParam.split('=');
+    var qpSplit = queryParam.split(/=(.*)/);
     var param = qpSplit[0];
     var value = qpSplit[1];
     if (!parsedParams.hasOwnProperty(param)) {
