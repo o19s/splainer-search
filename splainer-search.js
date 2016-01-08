@@ -486,12 +486,15 @@ angular.module('o19s.splainer-search')
     function fieldSpecSvc() {
       var addFieldOfType = function(fieldSpec, fieldType, fieldName) {
         if (fieldType === 'function') {
+          if (!fieldSpec.hasOwnProperty('functions')) {
+            fieldSpec.functions = [];
+          }
           // a function query function:foo is really foo:$foo
-          fieldType = 'sub';
           if (fieldName.startsWith('$')) {
             fieldName = fieldName.slice(1);
           }
           fieldName = fieldName + ':$' + fieldName;
+          fieldSpec.functions.push(fieldName);
         }
         if (fieldType === 'sub') {
           if (!fieldSpec.hasOwnProperty('subs')) {
@@ -579,6 +582,9 @@ angular.module('o19s.splainer-search')
           angular.forEach(this.subs, function(sub) {
             innerBody(sub);
           });
+          angular.forEach(this.functions, function(func) {
+            innerBody(func);
+          });
         };
       };
 
@@ -633,11 +639,12 @@ angular.module('o19s.splainer-search')
         }
       };
 
-      var assignFields = function(normalDoc, doc, fieldSpec) {
-        assignSingleField(normalDoc, doc, fieldSpec.id, 'id');
-        assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
-        assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
-        normalDoc.subs = {};
+      var fieldDisplayName = function(funcFieldQuery) {
+        // to Solr this is sent as foo:$foo, we just want to display "foo"
+        return funcFieldQuery.split(':')[0];
+      };
+
+      var assignSubs = function(normalDoc, doc, fieldSpec) {
         if (fieldSpec.subs === '*') {
           angular.forEach(doc, function(value, fieldName) {
             if (typeof(value) !== 'function') {
@@ -654,7 +661,23 @@ angular.module('o19s.splainer-search')
               normalDoc.subs[subFieldName] = '' + doc[subFieldName];
             }
           });
+          angular.forEach(fieldSpec.functions, function(functionField) {
+            // for foo:$foo, look for foo
+            var dispName = fieldDisplayName(functionField);
+            if (doc.hasOwnProperty(dispName)) {
+              normalDoc.subs[dispName] = '' + doc[dispName];
+            }
+
+          });
         }
+      };
+
+      var assignFields = function(normalDoc, doc, fieldSpec) {
+        assignSingleField(normalDoc, doc, fieldSpec.id, 'id');
+        assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
+        assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
+        normalDoc.subs = {};
+        assignSubs(normalDoc, doc, fieldSpec);
       };
 
       // A document within a query
@@ -1524,7 +1547,6 @@ angular.module('o19s.splainer-search')
         var rVal = {};
         angular.forEach(vars, function(qVar) {
           var nameAndValue = qVar.split(/=(.*)/);
-            // .filter(function(el) { return el.length !== 0; });
           if (nameAndValue.length >= 2) {
             var name  = nameAndValue[0];
             var value = nameAndValue[1];
