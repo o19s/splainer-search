@@ -21,6 +21,28 @@ angular.module('o19s.splainer-search')
         return replaced;
       };
 
+      var prepareHighlighting = function (args, fields) {
+        if ( angular.isDefined(fields) && fields.hasOwnProperty('fields') ) {
+          fields = fields.fields;
+        }
+
+        if ( angular.isDefined(fields) && fields.length > 0 ) {
+          var hl = { fields: {} };
+
+          angular.forEach(fields, function(fieldName) {
+            hl.fields[fieldName] = {};
+          });
+
+          return hl;
+        } else {
+          return {
+            fields: {
+              _all: {}
+            }
+          };
+        }
+      };
+
       function prepare (searcher) {
         var pagerArgs       = angular.copy(searcher.args.pager);
         searcher.pagerArgs  = pagerArgs;
@@ -33,6 +55,10 @@ angular.module('o19s.splainer-search')
         }
 
         queryDsl.explain    = true;
+
+        if ( !queryDsl.hasOwnProperty('highlight') ) {
+          queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl.fields);
+        }
 
         searcher.queryDsl   = queryDsl;
       }
