@@ -64,15 +64,15 @@ describe('Service: esUrlSvc', function () {
     it('understands when bulk endpoint used', function() {
       var url = 'http://es.quepid.com/tmdb/_search';
       var uri = esUrlSvc.parseUrl(url);
-      expect(uri.searchApi).toBe('post');
+      expect(esUrlSvc.isBulkCall(uri)).toBe(false);
 
       url = 'http://es.quepid.com/tmdb/_msearch';
       uri = esUrlSvc.parseUrl(url);
-      expect(uri.searchApi).toBe('bulk');
+      expect(esUrlSvc.isBulkCall(uri)).toBe(true);
 
       url = 'http://es.quepid.com/tmdb/_msearch/';
       uri = esUrlSvc.parseUrl(url);
-      expect(uri.searchApi).toBe('bulk');
+      expect(esUrlSvc.isBulkCall(uri)).toBe(true);
     });
   });
 

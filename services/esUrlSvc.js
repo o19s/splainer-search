@@ -7,11 +7,14 @@ angular.module('o19s.splainer-search')
 
       var self      = this;
 
-      self.parseUrl     = parseUrl;
-      self.buildDocUrl  = buildDocUrl;
-      self.buildUrl     = buildUrl;
-      self.buildBaseUrl = buildBaseUrl;
-      self.setParams    = setParams;
+      self.parseUrl         = parseUrl;
+      self.buildDocUrl      = buildDocUrl;
+      self.buildExplainUrl  = buildExplainUrl;
+      self.buildUrl         = buildUrl;
+      self.buildBaseUrl     = buildBaseUrl;
+      self.setParams        = setParams;
+      self.getHeaders       = getHeaders;
+      self.isBulkCall       = isBulkCall;
 
       /**
        *
@@ -36,23 +39,18 @@ angular.module('o19s.splainer-search')
       function parseUrl (url) {
         url = fixURLProtocol(url);
         var a = new URI(url);
-        url = a;
 
         var esUri = {
           protocol: a.protocol(),
-          host: a.host(),
+          host:     a.host(),
           pathname: a.pathname(),
           username: a.username(),
           password: a.password(),
-          searchApi: 'post'
+          query:    a.query(),
         };
 
         if (esUri.pathname.endsWith('/')) {
           esUri.pathname = esUri.pathname.substring(0, esUri.pathname.length - 1);
-        }
-
-        if (esUri.pathname.endsWith('_msearch')) {
-          esUri.searchApi = 'bulk';
         }
 
         return esUri;
@@ -75,6 +73,21 @@ angular.module('o19s.splainer-search')
         return url;
       }
 
+
+      /**
+       *
+       * Builds ES URL of the form [protocol]://[host][:port]/[index]/[type]/[id]/_explain
+       * for an ES document.
+       *
+       */
+      function buildExplainUrl (uri, doc) {
+        var docUrl = self.buildDocUrl(uri, doc);
+
+        var url = docUrl + '/_explain';
+
+        return url;
+      }
+
       /**
        *
        * Builds ES URL for a search query.
@@ -87,7 +100,7 @@ angular.module('o19s.splainer-search')
         url = url + uri.pathname;
 
         // Return original URL if no params to append.
-        if ( angular.isUndefined(uri.params) ) {
+        if ( angular.isUndefined(uri.params) && angular.isUndefined(uri.query) ) {
           return url;
         }
 
@@ -96,6 +109,10 @@ angular.module('o19s.splainer-search')
         angular.forEach(uri.params, function(value, key) {
           paramsAsStrings.push(key + '=' + value);
         });
+
+        if ( angular.isDefined(uri.query) && uri.query !== '' ) {
+          paramsAsStrings.push(uri.query);
+        }
 
         // Return original URL if no params to append.
         if ( paramsAsStrings.length === 0 ) {
@@ -113,7 +130,7 @@ angular.module('o19s.splainer-search')
         return finalUrl;
       }
 
-      function buildBaseUrl(uri) {
+      function buildBaseUrl (uri) {
         var url = uri.protocol + '://' + uri.host;
 
         return url;
@@ -121,6 +138,22 @@ angular.module('o19s.splainer-search')
 
       function setParams (uri, params) {
         uri.params = params;
+      }
+
+      function getHeaders (uri) {
+        var headers = {};
+
+        if ( angular.isDefined(uri.username) && uri.username !== '' &&
+          angular.isDefined(uri.password) && uri.password !== '') {
+          var authorization = 'Basic ' + btoa(uri.username + ':' + uri.password);
+          headers = { 'Authorization': authorization };
+        }
+
+        return headers;
+      }
+
+      function isBulkCall (uri) {
+        return uri.pathname.endsWith('_msearch');
       }
     }
   ]);

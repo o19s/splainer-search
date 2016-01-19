@@ -3,7 +3,8 @@
 angular.module('o19s.splainer-search')
   .service('esSearcherPreprocessorSvc', [
     'queryTemplateSvc',
-    function esSearcherPreprocessorSvc(queryTemplateSvc) {
+    'defaultESConfig',
+    function esSearcherPreprocessorSvc(queryTemplateSvc, defaultESConfig) {
       var self      = this;
       self.prepare  = prepare;
 
@@ -43,7 +44,7 @@ angular.module('o19s.splainer-search')
         }
       };
 
-      function prepare (searcher) {
+      var preparePostRequest = function (searcher) {
         var pagerArgs       = angular.copy(searcher.args.pager);
         searcher.pagerArgs  = pagerArgs;
         delete searcher.args.pager;
@@ -61,6 +62,26 @@ angular.module('o19s.splainer-search')
         }
 
         searcher.queryDsl   = queryDsl;
+      };
+
+      var prepareGetRequest = function (searcher) {
+        searcher.url = searcher.url + '?q=' + searcher.queryText;
+      };
+
+      function prepare (searcher) {
+        if (searcher.config === undefined) {
+          searcher.config = defaultESConfig;
+        } else {
+          // make sure config params that weren't passed through are set from
+          // the default config object.
+          searcher.config = angular.merge({}, defaultESConfig, searcher.config);
+        }
+
+        if ( searcher.config.apiMethod === 'post') {
+          preparePostRequest(searcher);
+        } else if ( searcher.config.apiMethod === 'get') {
+          prepareGetRequest(searcher);
+        }
       }
     }
   ]);
