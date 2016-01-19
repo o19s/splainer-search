@@ -762,4 +762,122 @@ describe('Service: searchSvc: ElasticSearch', function() {
       expect(errorCalled).toEqual(1);
     });
   });
+
+  describe('explain other', function() {
+    beforeEach(inject(function () {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+    }));
+
+    var basicExplain1 = {
+      value: 1.5,
+      description: 'weight(text:law in 1234)',
+    };
+    var basicExplain2 = {
+      value: 0.5,
+      description: 'weight(text:order in 1234)',
+    };
+
+    var sumExplain = {
+      matched:      true,
+      explanation:  {
+        value:        1.5,
+        description:  'weight(_all:law in 1234)',
+        details:      [basicExplain1, basicExplain2]
+      }
+    };
+
+    var otherQuery = 'message:foo';
+
+    var expectedDocs = [
+      {
+        '_index': 'statedecoded',
+        '_type':  'law',
+        '_id':    'l_1',
+        '_score': 5.0,
+        'fields': {
+          'field':  ['1--field value'],
+          'field1': ['1--field1 value']
+        },
+      },
+      {
+        '_index': 'statedecoded',
+        '_type':  'law',
+        '_id':    'l_1',
+        '_score': 3.0,
+        'fields': {
+          'field':  ['2--field value'],
+          'field1': ['2--field1 value']
+        }
+      }
+    ];
+
+    var expectedResponse = {
+      hits: {
+        total: 2,
+        'max_score': 1.0,
+        hits: expectedDocs
+      }
+    };
+
+    var expectedExplainResponse = sumExplain;
+
+    it('makes one search request and one explain request per resulting doc', function () {
+      var url = mockEsUrl + '?fields=' + mockFieldSpec.fieldList().join(',');
+      url += '&q=' + otherQuery;
+
+      $httpBackend.expectGET(url).respond(200, expectedResponse);
+
+      angular.forEach(expectedDocs, function(doc) {
+        var explainUrl = "http://localhost:9200/statedecoded/law/";
+        explainUrl += doc._id + '/_explain';
+        $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
+      });
+
+      searcher.explainOther(otherQuery, mockFieldSpec);
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('sets the array of docs', function () {
+      var url = mockEsUrl + '?fields=' + mockFieldSpec.fieldList().join(',');
+      url += '&q=' + otherQuery;
+
+      $httpBackend.expectGET(url).respond(200, expectedResponse);
+
+      angular.forEach(expectedDocs, function(doc) {
+        var explainUrl = "http://localhost:9200/statedecoded/law/";
+        explainUrl += doc._id + '/_explain';
+        $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
+      });
+
+      searcher.explainOther(otherQuery, mockFieldSpec)
+        .then(function() {
+          expect(searcher.numFound).toBe(2);
+          expect(searcher.docs.length).toBe(2);
+
+          expect(Object.keys(searcher.docs[0].hotMatches().vecObj).length).toBe(1);
+
+          // console.log('searcher.docs[0].explain(): ', searcher.docs[0].explain());
+          // console.log('sumExplain: ', sumExplain);
+          // expect(searcher.docs[0].explain().match).toEqual(sumExplain.matched);
+          // expect(
+          //   angular.equals( searcher.docs[0].explain().description, sumExplain.description )
+          // ).toBe(true);
+          // expect(
+          //   angular.equals( searcher.docs[0].explain().explanation, sumExplain.explanation )
+          // ).toBe(true);
+        });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+  });
 });

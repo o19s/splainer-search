@@ -13,10 +13,18 @@
       'esUrlSvc',
       'SearcherFactory',
       'transportSvc',
+      'normalDocsSvc',
       EsSearcherFactory
     ]);
 
-  function EsSearcherFactory($http, $q, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory, transportSvc) {
+  function EsSearcherFactory(
+    $http, $q,
+    EsDocFactory,
+    activeQueries,
+    esSearcherPreprocessorSvc, esUrlSvc,
+    SearcherFactory,
+    transportSvc, normalDocsSvc
+  ) {
 
     var Searcher = function(options) {
       SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
@@ -29,6 +37,8 @@
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
+    Searcher.prototype.explainOther     = explainOther;
+    Searcher.prototype.explain          = explain;
 
 
     function addDocToGroup (groupedBy, group, solrDoc) {
@@ -182,7 +192,75 @@
         self.inError = true;
         return $q.reject(msg);
       });
-    }
+    } // end of search()
+
+    function explainOther (otherQuery, fieldSpec) {
+      /*jslint validthis:true*/
+      var self = this;
+
+      var otherSearcherOptions = {
+        fieldList:  self.fieldList,
+        url:        self.url,
+        args:       self.args,
+        queryText:  otherQuery,
+        config:     { apiMethod: 'get' }
+      };
+
+      var otherSearcher = new Searcher(otherSearcherOptions);
+
+      return otherSearcher.search()
+        .then(function() {
+          self.numFound = otherSearcher.numFound;
+
+          var defer     = $q.defer();
+          var promises  = [];
+          var docs      = [];
+
+          angular.forEach(otherSearcher.docs, function(doc) {
+            var promise = self.explain(doc)
+              .then(function(parsedDoc) {
+                var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, parsedDoc);
+                docs.push(normalDoc);
+              });
+
+            promises.push(promise);
+          });
+
+          $q.all(promises)
+            .then(function () {
+              self.docs = docs;
+              defer.resolve();
+            });
+
+          return defer.promise;
+        });
+    } // end of explainOther()
+
+    function explain(doc) {
+      /*jslint validthis:true*/
+      var self    = this;
+      var uri     = esUrlSvc.parseUrl(self.url);
+      var url     = esUrlSvc.buildExplainUrl(uri, doc);
+      var headers = esUrlSvc.getHeaders(uri);
+
+      return $http.post(url, { query: self.queryDsl.query }, {headers: headers})
+        .then(function(response) {
+          var explDict  = {
+            match:        response.data.matched,
+            explanation:  response.data.explanation,
+            description:  response.data.explanation.description,
+            value:        response.data.explanation.value,
+          };
+
+          var options = {
+            fieldList: self.fieldList,
+            url:       self.url,
+            explDict:  explDict,
+          };
+
+          return new EsDocFactory(doc, options);
+        });
+    } // end of explain()
 
     // Return factory object
     return Searcher;
