@@ -47,7 +47,8 @@ angular.module('o19s.splainer-search')
           url:            url,
           args:           args,
           queryText:      queryText,
-          config:         config
+          config:         config,
+          type:           searchEngine
         };
 
         var searcher;

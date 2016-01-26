@@ -862,18 +862,6 @@ describe('Service: searchSvc: ElasticSearch', function() {
         .then(function() {
           expect(searcher.numFound).toBe(2);
           expect(searcher.docs.length).toBe(2);
-
-          expect(Object.keys(searcher.docs[0].hotMatches().vecObj).length).toBe(1);
-
-          // console.log('searcher.docs[0].explain(): ', searcher.docs[0].explain());
-          // console.log('sumExplain: ', sumExplain);
-          // expect(searcher.docs[0].explain().match).toEqual(sumExplain.matched);
-          // expect(
-          //   angular.equals( searcher.docs[0].explain().description, sumExplain.description )
-          // ).toBe(true);
-          // expect(
-          //   angular.equals( searcher.docs[0].explain().explanation, sumExplain.explanation )
-          // ).toBe(true);
         });
 
       $httpBackend.flush();

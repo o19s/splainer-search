@@ -1238,12 +1238,6 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.flush();
 
       expect(searcher.docs.length).toBe(2);
-      expect(Object.keys(searcher.docs[0].hotMatches().vecObj).length).toBe(1);
-      expect(Object.keys(searcher.docs[0].hotMatches().vecObj)).toContain('no matching term');
-      expect(searcher.docs[0].hotMatches().vecObj['no matching term']).toBe(0);
-      expect(searcher.docs[0].score()).toBe(0);
-      expect(Object.keys(searcher.docs[1].hotMatches().vecObj).length).toBe(1);
-      expect(searcher.docs[1].score()).toBe(3.3733945);
       $httpBackend.verifyNoOutstandingExpectation();
     });
 

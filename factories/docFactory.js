@@ -16,7 +16,7 @@
 
       self.groupedBy  = groupedBy;
       self.group      = group;
-      self.options      = options;
+      self.options    = options;
 
       function groupedBy () {
         if (opts.groupedBy === undefined) {

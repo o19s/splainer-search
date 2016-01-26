@@ -167,6 +167,30 @@ angular.module('o19s.splainer-search')
 'use strict';
 
 angular.module('o19s.splainer-search')
+  .service('esExplainExtractorSvc', [
+    'normalDocsSvc',
+    function esExplainExtractorSvc(normalDocsSvc) {
+      var self = this;
+
+      // Functions
+      self.docsWithExplainOther = docsWithExplainOther;
+
+      function docsWithExplainOther(docs, fieldSpec) {
+        var parsedDocs = [];
+
+        angular.forEach(docs, function(doc) {
+          var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc);
+          parsedDocs.push(normalDoc);
+        });
+
+        return parsedDocs;
+      }
+    }
+  ]);
+
+'use strict';
+
+angular.module('o19s.splainer-search')
   .service('esSearcherPreprocessorSvc', [
     'queryTemplateSvc',
     'defaultESConfig',
@@ -1350,7 +1374,8 @@ angular.module('o19s.splainer-search')
           url:            url,
           args:           args,
           queryText:      queryText,
-          config:         config
+          config:         config,
+          type:           searchEngine
         };
 
         var searcher;
@@ -1499,6 +1524,44 @@ angular.module('o19s.splainer-search')
           }
         }
       };
+    }
+  ]);
+
+'use strict';
+
+angular.module('o19s.splainer-search')
+  .service('solrExplainExtractorSvc', [
+    'normalDocsSvc',
+    function solrExplainExtractorSvc(normalDocsSvc) {
+      var self = this;
+
+      // Functions
+      self.getOverridingExplain   = getOverridingExplain;
+      self.docsWithExplainOther   = docsWithExplainOther;
+
+      function getOverridingExplain(doc, fieldSpec, explainData) {
+        var idFieldName = fieldSpec.id;
+        var id          = doc[idFieldName];
+
+        if (id && explainData && explainData.hasOwnProperty(id)) {
+          return explainData[id];
+        }
+
+        return null;
+      }
+
+      function docsWithExplainOther(docs, fieldSpec, explainData) {
+        var parsedDocs = [];
+
+        angular.forEach(docs, function(doc) {
+          var overridingExplain = self.getOverridingExplain(doc, fieldSpec, explainData);
+          var normalDoc         = normalDocsSvc.createNormalDoc(fieldSpec, doc, overridingExplain);
+
+          parsedDocs.push(normalDoc);
+        });
+
+        return parsedDocs;
+      }
     }
   ]);
 
@@ -2037,7 +2100,7 @@ angular.module('o19s.splainer-search')
 
       self.groupedBy  = groupedBy;
       self.group      = group;
-      self.options      = options;
+      self.options    = options;
 
       function groupedBy () {
         if (opts.groupedBy === undefined) {
@@ -2186,7 +2249,6 @@ angular.module('o19s.splainer-search')
       'esUrlSvc',
       'SearcherFactory',
       'transportSvc',
-      'normalDocsSvc',
       EsSearcherFactory
     ]);
 
@@ -2196,7 +2258,7 @@ angular.module('o19s.splainer-search')
     activeQueries,
     esSearcherPreprocessorSvc, esUrlSvc,
     SearcherFactory,
-    transportSvc, normalDocsSvc
+    transportSvc
   ) {
 
     var Searcher = function(options) {
@@ -2367,7 +2429,7 @@ angular.module('o19s.splainer-search')
       });
     } // end of search()
 
-    function explainOther (otherQuery, fieldSpec) {
+    function explainOther (otherQuery) {
       /*jslint validthis:true*/
       var self = this;
 
@@ -2392,8 +2454,7 @@ angular.module('o19s.splainer-search')
           angular.forEach(otherSearcher.docs, function(doc) {
             var promise = self.explain(doc)
               .then(function(parsedDoc) {
-                var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, parsedDoc);
-                docs.push(normalDoc);
+                docs.push(parsedDoc);
               });
 
             promises.push(promise);
@@ -2658,6 +2719,7 @@ angular.module('o19s.splainer-search')
       self.args               = options.args;
       self.queryText          = options.queryText;
       self.config             = options.config;
+      self.type               = options.type;
 
       self.docs               = [];
       self.grouped            = {};
@@ -2912,7 +2974,6 @@ angular.module('o19s.splainer-search')
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
-      'normalDocsSvc',
       SolrSearcherFactory
     ]);
 
@@ -2920,7 +2981,7 @@ angular.module('o19s.splainer-search')
     $http,
     SolrDocFactory, SearcherFactory,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc, normalDocsSvc
+    solrSearcherPreprocessorSvc
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -3083,28 +3144,6 @@ angular.module('o19s.splainer-search')
       /*jslint validthis:true*/
       var self = this;
 
-      var getOverridingExplain = function(doc, fieldSpec, overridingExplains) {
-        var idFieldName = fieldSpec.id;
-        var id = doc[idFieldName];
-
-        if (id && overridingExplains && overridingExplains.hasOwnProperty(id)) {
-          return overridingExplains[id];
-        }
-        return null;
-      };
-
-      var docsWithExplainOther = function(newDocs, fieldSpec, othersExplained) {
-        var docs = [];
-
-        angular.forEach(newDocs, function(doc) {
-          var overridingExplain = getOverridingExplain(doc, fieldSpec, othersExplained);
-          var normalDoc         = normalDocsSvc.createNormalDoc(fieldSpec, doc, overridingExplain);
-          docs.push(normalDoc);
-        });
-
-        return docs;
-      };
-
       // var args = angular.copy(self.args);
       self.args.explainOther = [otherQuery];
       solrSearcherPreprocessorSvc.prepare(self);
@@ -3130,7 +3169,7 @@ angular.module('o19s.splainer-search')
           return otherSearcher.search()
             .then(function() {
               self.numFound        = otherSearcher.numFound;
-              self.docs            = docsWithExplainOther(otherSearcher.docs, fieldSpec, self.othersExplained);
+              self.docs            = otherSearcher.docs;
             });
         });
     }

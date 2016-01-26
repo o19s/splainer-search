@@ -11,7 +11,6 @@
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
-      'normalDocsSvc',
       SolrSearcherFactory
     ]);
 
@@ -19,7 +18,7 @@
     $http,
     SolrDocFactory, SearcherFactory,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc, normalDocsSvc
+    solrSearcherPreprocessorSvc
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -182,28 +181,6 @@
       /*jslint validthis:true*/
       var self = this;
 
-      var getOverridingExplain = function(doc, fieldSpec, overridingExplains) {
-        var idFieldName = fieldSpec.id;
-        var id = doc[idFieldName];
-
-        if (id && overridingExplains && overridingExplains.hasOwnProperty(id)) {
-          return overridingExplains[id];
-        }
-        return null;
-      };
-
-      var docsWithExplainOther = function(newDocs, fieldSpec, othersExplained) {
-        var docs = [];
-
-        angular.forEach(newDocs, function(doc) {
-          var overridingExplain = getOverridingExplain(doc, fieldSpec, othersExplained);
-          var normalDoc         = normalDocsSvc.createNormalDoc(fieldSpec, doc, overridingExplain);
-          docs.push(normalDoc);
-        });
-
-        return docs;
-      };
-
       // var args = angular.copy(self.args);
       self.args.explainOther = [otherQuery];
       solrSearcherPreprocessorSvc.prepare(self);
@@ -229,7 +206,7 @@
           return otherSearcher.search()
             .then(function() {
               self.numFound        = otherSearcher.numFound;
-              self.docs            = docsWithExplainOther(otherSearcher.docs, fieldSpec, self.othersExplained);
+              self.docs            = otherSearcher.docs;
             });
         });
     }

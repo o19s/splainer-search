@@ -13,7 +13,6 @@
       'esUrlSvc',
       'SearcherFactory',
       'transportSvc',
-      'normalDocsSvc',
       EsSearcherFactory
     ]);
 
@@ -23,7 +22,7 @@
     activeQueries,
     esSearcherPreprocessorSvc, esUrlSvc,
     SearcherFactory,
-    transportSvc, normalDocsSvc
+    transportSvc
   ) {
 
     var Searcher = function(options) {
@@ -194,7 +193,7 @@
       });
     } // end of search()
 
-    function explainOther (otherQuery, fieldSpec) {
+    function explainOther (otherQuery) {
       /*jslint validthis:true*/
       var self = this;
 
@@ -219,8 +218,7 @@
           angular.forEach(otherSearcher.docs, function(doc) {
             var promise = self.explain(doc)
               .then(function(parsedDoc) {
-                var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, parsedDoc);
-                docs.push(normalDoc);
+                docs.push(parsedDoc);
               });
 
             promises.push(promise);
