@@ -85,7 +85,8 @@
         url:        self.url,
         args:       nextArgs,
         queryText:  self.queryText,
-        config:     pageConfig
+        config:     pageConfig,
+        type:       self.type
       };
 
       var nextSearcher = new Searcher(options);
@@ -198,7 +199,8 @@
             url:        self.url,
             args:       solrParams,
             queryText:  otherQuery,
-            config:     {}
+            config:     {},
+            type:       self.type,
           };
 
           var otherSearcher = new Searcher(otherSearcherOptions);

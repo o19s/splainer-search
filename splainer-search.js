@@ -2333,6 +2333,7 @@ angular.module('o19s.splainer-search')
         url:        self.url,
         args:       nextArgs,
         queryText:  self.queryText,
+        type:       self.type,
       };
 
       var nextSearcher = new Searcher(options);
@@ -2438,7 +2439,8 @@ angular.module('o19s.splainer-search')
         url:        self.url,
         args:       self.args,
         queryText:  otherQuery,
-        config:     { apiMethod: 'get' }
+        config:     { apiMethod: 'get' },
+        type:       self.type,
       };
 
       var otherSearcher = new Searcher(otherSearcherOptions);
@@ -3048,7 +3050,8 @@ angular.module('o19s.splainer-search')
         url:        self.url,
         args:       nextArgs,
         queryText:  self.queryText,
-        config:     pageConfig
+        config:     pageConfig,
+        type:       self.type
       };
 
       var nextSearcher = new Searcher(options);
@@ -3161,7 +3164,8 @@ angular.module('o19s.splainer-search')
             url:        self.url,
             args:       solrParams,
             queryText:  otherQuery,
-            config:     {}
+            config:     {},
+            type:       self.type,
           };
 
           var otherSearcher = new Searcher(otherSearcherOptions);

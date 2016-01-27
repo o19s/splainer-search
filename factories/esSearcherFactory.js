@@ -97,6 +97,7 @@
         url:        self.url,
         args:       nextArgs,
         queryText:  self.queryText,
+        type:       self.type,
       };
 
       var nextSearcher = new Searcher(options);
@@ -202,7 +203,8 @@
         url:        self.url,
         args:       self.args,
         queryText:  otherQuery,
-        config:     { apiMethod: 'get' }
+        config:     { apiMethod: 'get' },
+        type:       self.type,
       };
 
       var otherSearcher = new Searcher(otherSearcherOptions);
