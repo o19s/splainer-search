@@ -79,6 +79,76 @@ searcher.search()
 });
 ```
 
+## Explain Other
+
+Let's say you have performed a search for `tacos` and you get a bunch of results, but the chef comes back to you and says:
+
+> Hey! My new creation "La Bomba" is not showing up, fix it!!!!
+
+So you are puzzled as to why it is not showing up, since it's clearly marked as a `taco` in the db. Wouldn't it be nice if `splainer-search` gave you some help?
+
+Don't worry, we've got your back :)
+
+### Solr
+
+So assuming you already have something like this:
+
+```js
+var options = {
+  fields:       ['id', 'title', 'price'],
+  url:          'http://localhost:8983/solr/select',
+  args:         { 'q': ['#$query##'] },
+  query:        'tacos',
+  config:       {},
+  searchEngine: 'solr'
+};
+var searcher = searchSvc.createSearcher(options.fields, options.url, options.args, options.query, options.config, options.searchEngine);
+
+searcher.search();
+```
+
+You would want to create a new searcher with the same options/context, and use the `explainOther()` function:
+
+```js
+var fieldSpec       = fieldSpecSvc.createFieldSpec(options.fields);
+var explainSearcher = searchSvc.createSearcher(options.fields, options.url, options.args, options.query, options.config, options.searchEngine); # same options as above
+
+ # assuming that we know "El Bomba" has id 63148
+explainSearcher.explainOther('id:63148', fieldSpec);
+```
+
+The `explainOther()` function returns the same promise as the `search()` function so you can you retrieve the results in the same way.
+
+### ElasticSearch
+
+In ES, the `explainOther()` function behaves the same way, except that it does not need a `fieldSpec` param to be passed in.
+
+```js
+var options = {
+  fields:       ['id', 'title', 'price'],
+  url:          'http://localhost:9200/tacos/_search',
+  args:         {
+    'query': {
+      'match': {
+        'title': '#$query##'
+      }
+    }
+  },
+  query:        'tacos',
+  config:       {},
+  searchEngine: 'es'
+};
+var searcher = searchSvc.createSearcher(options.fields, options.url, options.args, options.query, options.config, options.searchEngine);
+
+searcher.search();
+
+var explainSearcher = searchSvc.createSearcher(options.fields, options.url, options.args, options.query, options.config, options.searchEngine); # same options as above
+
+ # assuming that we know "El Bomba" has id 63148
+explainSearcher.explainOther('id:63148');
+```
+
+The `explainOther()` function returns the same promise as the `search()` function so you can you retrieve the results in the same way.
 
 ## Normalizing docs with normalDocs/fieldSpec
 

@@ -186,6 +186,8 @@
       self.args.explainOther = [otherQuery];
       solrSearcherPreprocessorSvc.prepare(self);
 
+      // TODO: revisit why we perform the first search, doesn't seem to have
+      // any use!
       return self.search()
         .then(function() {
           var solrParams = {
