@@ -15,6 +15,7 @@
       self.args               = options.args;
       self.queryText          = options.queryText;
       self.config             = options.config;
+      self.type               = options.type;
 
       self.docs               = [];
       self.grouped            = {};

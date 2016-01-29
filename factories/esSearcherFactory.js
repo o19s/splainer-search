@@ -16,7 +16,14 @@
       EsSearcherFactory
     ]);
 
-  function EsSearcherFactory($http, $q, EsDocFactory, activeQueries, esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory, transportSvc) {
+  function EsSearcherFactory(
+    $http, $q,
+    EsDocFactory,
+    activeQueries,
+    esSearcherPreprocessorSvc, esUrlSvc,
+    SearcherFactory,
+    transportSvc
+  ) {
 
     var Searcher = function(options) {
       SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
@@ -29,6 +36,8 @@
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
+    Searcher.prototype.explainOther     = explainOther;
+    Searcher.prototype.explain          = explain;
 
 
     function addDocToGroup (groupedBy, group, solrDoc) {
@@ -88,6 +97,7 @@
         url:        self.url,
         args:       nextArgs,
         queryText:  self.queryText,
+        type:       self.type,
       };
 
       var nextSearcher = new Searcher(options);
@@ -100,18 +110,27 @@
     function search () {
       /*jslint validthis:true*/
       var self      = this;
-      var url       = self.url;
-      var uri = esUrlSvc.parseUrl(url);
-      url = esUrlSvc.buildUrl(uri);
-      var transport = transportSvc.getTransport({searchApi: uri.searchApi});
+      var uri       = esUrlSvc.parseUrl(self.url);
+      var apiMethod = self.config.apiMethod;
+
+      if ( esUrlSvc.isBulkCall(uri) ) {
+        apiMethod = 'bulk';
+      }
+
+      if (apiMethod === 'get' ) {
+        esUrlSvc.setParams(uri, { fields: self.fieldList.join(',') });
+      }
+
+      var url       = esUrlSvc.buildUrl(uri);
+      var transport = transportSvc.getTransport({apiMethod: apiMethod});
+
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);
       if (self.pagerArgs) {
         queryDslWithPagerArgs.from = self.pagerArgs.from;
         queryDslWithPagerArgs.size = self.pagerArgs.size;
       }
-      self.inError  = false;
 
-      var thisSearcher  = self;
+      self.inError  = false;
 
       var getExplData = function(doc) {
         if (doc.hasOwnProperty('_explanation')) {
@@ -135,13 +154,7 @@
       // Eg. with params:     /_search?size=5&from=5
       //esUrlSvc.setParams(uri, self.pagerArgs);
 
-      var headers = {};
-
-      if ( angular.isDefined(uri.username) && uri.username !== '' &&
-        angular.isDefined(uri.password) && uri.password !== '') {
-        var authorization = 'Basic ' + btoa(uri.username + ':' + uri.password);
-        headers = { 'Authorization': authorization };
-      }
+      var headers = esUrlSvc.getHeaders(uri);
 
       activeQueries.count++;
       return transport.query(url, queryDslWithPagerArgs, headers)
@@ -168,7 +181,7 @@
 
         angular.forEach(data.hits.hits, function(hit) {
           var doc = parseDoc(hit);
-          thisSearcher.docs.push(doc);
+          self.docs.push(doc);
         });
 
         if ( angular.isDefined(data._shards) && data._shards.failed > 0 ) {
@@ -176,10 +189,78 @@
         }
       }, function error(msg) {
         activeQueries.count--;
-        thisSearcher.inError = true;
+        self.inError = true;
         return $q.reject(msg);
       });
-    }
+    } // end of search()
+
+    function explainOther (otherQuery) {
+      /*jslint validthis:true*/
+      var self = this;
+
+      var otherSearcherOptions = {
+        fieldList:  self.fieldList,
+        url:        self.url,
+        args:       self.args,
+        queryText:  otherQuery,
+        config:     { apiMethod: 'get' },
+        type:       self.type,
+      };
+
+      var otherSearcher = new Searcher(otherSearcherOptions);
+
+      return otherSearcher.search()
+        .then(function() {
+          self.numFound = otherSearcher.numFound;
+
+          var defer     = $q.defer();
+          var promises  = [];
+          var docs      = [];
+
+          angular.forEach(otherSearcher.docs, function(doc) {
+            var promise = self.explain(doc)
+              .then(function(parsedDoc) {
+                docs.push(parsedDoc);
+              });
+
+            promises.push(promise);
+          });
+
+          $q.all(promises)
+            .then(function () {
+              self.docs = docs;
+              defer.resolve();
+            });
+
+          return defer.promise;
+        });
+    } // end of explainOther()
+
+    function explain(doc) {
+      /*jslint validthis:true*/
+      var self    = this;
+      var uri     = esUrlSvc.parseUrl(self.url);
+      var url     = esUrlSvc.buildExplainUrl(uri, doc);
+      var headers = esUrlSvc.getHeaders(uri);
+
+      return $http.post(url, { query: self.queryDsl.query }, {headers: headers})
+        .then(function(response) {
+          var explDict  = {
+            match:        response.data.matched,
+            explanation:  response.data.explanation,
+            description:  response.data.explanation.description,
+            value:        response.data.explanation.value,
+          };
+
+          var options = {
+            fieldList: self.fieldList,
+            url:       self.url,
+            explDict:  explDict,
+          };
+
+          return new EsDocFactory(doc, options);
+        });
+    } // end of explain()
 
     // Return factory object
     return Searcher;

@@ -64,15 +64,15 @@ describe('Service: esUrlSvc', function () {
     it('understands when bulk endpoint used', function() {
       var url = 'http://es.quepid.com/tmdb/_search';
       var uri = esUrlSvc.parseUrl(url);
-      expect(uri.searchApi).toBe('post');
+      expect(esUrlSvc.isBulkCall(uri)).toBe(false);
 
       url = 'http://es.quepid.com/tmdb/_msearch';
       uri = esUrlSvc.parseUrl(url);
-      expect(uri.searchApi).toBe('bulk');
+      expect(esUrlSvc.isBulkCall(uri)).toBe(true);
 
       url = 'http://es.quepid.com/tmdb/_msearch/';
       uri = esUrlSvc.parseUrl(url);
-      expect(uri.searchApi).toBe('bulk');
+      expect(esUrlSvc.isBulkCall(uri)).toBe(true);
     });
   });
 
@@ -94,6 +94,27 @@ describe('Service: esUrlSvc', function () {
       var docUrl = esUrlSvc.buildDocUrl(uri, doc);
 
       expect(docUrl).toBe('http://localhost:9200/tmdb/movies/1');
+    });
+  });
+
+  describe('build doc explain URL', function() {
+    var url = 'http://localhost:9200/tmdb/_search';
+
+    var doc = {
+      _index: 'tmdb',
+      _type:  'movies',
+      _id:    '1'
+    };
+
+    var uri = null;
+    beforeEach( function () {
+      uri = esUrlSvc.parseUrl(url);
+    });
+
+    it('builds a proper doc explain URL from the doc info', function() {
+      var docUrl = esUrlSvc.buildExplainUrl(uri, doc);
+
+      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/1/_explain');
     });
   });
 

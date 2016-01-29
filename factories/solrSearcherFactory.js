@@ -7,14 +7,19 @@
     .factory('SolrSearcherFactory', [
       '$http',
       'SolrDocFactory',
+      'SearcherFactory',
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
-      'SearcherFactory',
       SolrSearcherFactory
     ]);
 
-  function SolrSearcherFactory($http, SolrDocFactory, activeQueries, defaultSolrConfig, solrSearcherPreprocessorSvc, SearcherFactory) {
+  function SolrSearcherFactory(
+    $http,
+    SolrDocFactory, SearcherFactory,
+    activeQueries, defaultSolrConfig,
+    solrSearcherPreprocessorSvc
+  ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
     };
@@ -25,6 +30,7 @@
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
+    Searcher.prototype.explainOther     = explainOther;
 
     function addDocToGroup (groupedBy, group, solrDoc) {
       /*jslint validthis:true*/
@@ -79,7 +85,8 @@
         url:        self.url,
         args:       nextArgs,
         queryText:  self.queryText,
-        config:     pageConfig
+        config:     pageConfig,
+        type:       self.type
       };
 
       var nextSearcher = new Searcher(options);
@@ -169,6 +176,43 @@
         activeQueries.count--;
         thisSearcher.inError = true;
       });
+    }
+
+    function explainOther (otherQuery, fieldSpec) {
+      /*jslint validthis:true*/
+      var self = this;
+
+      // var args = angular.copy(self.args);
+      self.args.explainOther = [otherQuery];
+      solrSearcherPreprocessorSvc.prepare(self);
+
+      // TODO: revisit why we perform the first search, doesn't seem to have
+      // any use!
+      return self.search()
+        .then(function() {
+          var solrParams = {
+            qf:   [fieldSpec.title + ' ' + fieldSpec.id],
+            rows: [5],
+            q:    [otherQuery]
+          };
+
+          var otherSearcherOptions = {
+            fieldList:  self.fieldList,
+            url:        self.url,
+            args:       solrParams,
+            queryText:  otherQuery,
+            config:     {},
+            type:       self.type,
+          };
+
+          var otherSearcher = new Searcher(otherSearcherOptions);
+
+          return otherSearcher.search()
+            .then(function() {
+              self.numFound        = otherSearcher.numFound;
+              self.docs            = otherSearcher.docs;
+            });
+        });
     }
 
     // Return factory object
