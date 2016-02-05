@@ -197,12 +197,14 @@
           };
 
           var otherSearcherOptions = {
-            fieldList:  self.fieldList,
-            url:        self.url,
-            args:       solrParams,
-            queryText:  otherQuery,
-            config:     {},
-            type:       self.type,
+            fieldList:          self.fieldList,
+            url:                self.url,
+            args:               solrParams,
+            queryText:          otherQuery,
+            config:             {},
+            type:               self.type,
+            HIGHLIGHTING_PRE:   self.HIGHLIGHTING_PRE,
+            HIGHLIGHTING_POST:  self.HIGHLIGHTING_POST,
           };
 
           var otherSearcher = new Searcher(otherSearcherOptions);

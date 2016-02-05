@@ -1241,6 +1241,38 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
+    it('highlights explain other', function() {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText
+      );
+
+      var expectedParams = {
+        q: ['title:doc1'],
+        hl: ['true'],
+        'hl.simple.pre': [searchSvc.HIGHLIGHTING_PRE],
+        'hl.simple.post': [searchSvc.HIGHLIGHTING_POST]
+      };
+
+      var expectedExplOtherParams = {
+        explainOther: ['title:doc1']
+      };
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
+        .respond(200, mockSolrExplOtherResp);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+        .respond(200, mockSolrResp);
+
+      searcher.explainOther('title:doc1', mockFieldSpec);
+
+      $httpBackend.flush();
+
+      expect(searcher.docs.length).toBe(2);
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
     it('does not throw an error if both queries are empty', function () {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
