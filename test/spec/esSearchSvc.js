@@ -867,5 +867,27 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
     });
+
+    it('paginates for explain other searches', function () {
+      var url = mockEsUrl + '?fields=' + mockFieldSpec.fieldList().join(',');
+      url += '&q=' + otherQuery;
+      url += '&from=10&size=10';
+
+      $httpBackend.expectGET(url).respond(200, expectedResponse);
+
+      angular.forEach(expectedDocs, function(doc) {
+        var explainUrl = "http://localhost:9200/statedecoded/law/";
+        explainUrl += doc._id + '/_explain';
+        $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
+      });
+
+      searcher.numFound = 100;
+      searcher = searcher.pager();
+
+      searcher.explainOther(otherQuery, mockFieldSpec);
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
   });
 });

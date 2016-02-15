@@ -66,6 +66,14 @@ angular.module('o19s.splainer-search')
 
       var prepareGetRequest = function (searcher) {
         searcher.url = searcher.url + '?q=' + searcher.queryText;
+
+        var pagerArgs = angular.copy(searcher.args.pager);
+        delete searcher.args.pager;
+
+        if ( angular.isDefined(pagerArgs) && pagerArgs !== null ) {
+          searcher.url += '&from=' + pagerArgs.from;
+          searcher.url += '&size=' + pagerArgs.size;
+        }
       };
 
       function prepare (searcher) {
