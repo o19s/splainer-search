@@ -11,6 +11,7 @@
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
+      '$q',
       SolrSearcherFactory
     ]);
 
@@ -18,7 +19,7 @@
     $http,
     SolrDocFactory, SearcherFactory,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc
+    solrSearcherPreprocessorSvc, $q
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -131,7 +132,8 @@
       };
 
       activeQueries.count++;
-      return $http.jsonp(url).success(function(solrResp) {
+      return $http.jsonp(url).then(function success(resp) {
+        var solrResp = resp.data;
         activeQueries.count--;
 
         var explDict  = getExplData(solrResp);
@@ -172,9 +174,10 @@
             });
           });
         }
-      }).error(function() {
+      }, function error(msg) {
         activeQueries.count--;
         thisSearcher.inError = true;
+        $q.reject(msg);
       });
     }
 
