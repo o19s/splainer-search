@@ -174,10 +174,10 @@
             });
           });
         }
-      }, function error(msg) {
+      }, function error() {
         activeQueries.count--;
         thisSearcher.inError = true;
-        $q.reject(msg);
+        $q.reject();
       });
     }
 
