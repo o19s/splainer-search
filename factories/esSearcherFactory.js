@@ -179,8 +179,9 @@
               errorMsg += 'http.cors.allow-origin: "/.*/"\n';
               errorMsg += 'http.cors.enabled: true\n';
             }
+            msg.searchError = errorMsg;
           }
-          return errorMsg;
+          return msg;
       };
 
       // Build URL with params if any

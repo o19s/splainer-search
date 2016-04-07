@@ -116,10 +116,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
       .then(function success() {
         errorCalled--;
       }, function failure(msg) {
-        expect(msg.indexOf('HTTP')).toBe(-1);
-        expect(msg.indexOf('200')).toBe(-1);
-        expect(msg.indexOf('foo')).toBeGreaterThan(-1);
-        expect(msg.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('HTTP')).toBe(-1);
+        expect(msg.searchError.indexOf('200')).toBe(-1);
+        expect(msg.searchError.indexOf('foo')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
         errorCalled++;
       });
 
@@ -139,10 +139,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
       .then(function success() {
         errorCalled--;
       }, function failure(msg) {
-        expect(msg.indexOf('HTTP')).toBeGreaterThan(-1);
-        expect(msg.indexOf('400')).toBeGreaterThan(-1);
-        expect(msg.indexOf('someMsg')).toBeGreaterThan(-1);
-        expect(msg.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('HTTP')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('400')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('someMsg')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
         errorCalled++;
       });
 
@@ -161,8 +161,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
       .then(function success() {
         errorCalled--;
       }, function failure(msg) {
-        expect(msg.indexOf('Network Error')).toBeGreaterThan(-1);
-        expect(msg.indexOf('CORS')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('Network Error')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('CORS')).toBeGreaterThan(-1);
         errorCalled++;
       });
 
@@ -799,7 +799,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       .then(function success() {
         errorCalled--;
       }, function failure(msg) {
-        expect(msg).toContain("ElasticsearchIllegalArgumentException[field [cast] isn't a leaf field]");
+        expect(msg.searchError).toContain("ElasticsearchIllegalArgumentException[field [cast] isn't a leaf field]");
         errorCalled++;
       });
 

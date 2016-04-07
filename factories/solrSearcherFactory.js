@@ -132,53 +132,58 @@
       };
 
       activeQueries.count++;
-      return $http.jsonp(url).then(function success(resp) {
-        var solrResp = resp.data;
-        activeQueries.count--;
+      return $q(function(resolve, reject) {
+          $http.jsonp(url).then(function success(resp) {
+          var solrResp = resp.data;
+          activeQueries.count--;
 
-        var explDict  = getExplData(solrResp);
-        var hlDict    = getHlData(solrResp);
-        thisSearcher.othersExplained = getOthersExplained(solrResp);
+          var explDict  = getExplData(solrResp);
+          var hlDict    = getHlData(solrResp);
+          thisSearcher.othersExplained = getOthersExplained(solrResp);
 
-        var parseSolrDoc = function(solrDoc, groupedBy, group) {
-          var options = {
-            groupedBy:          groupedBy,
-            group:              group,
-            fieldList:          self.fieldList,
-            url:                self.url,
-            explDict:           explDict,
-            hlDict:             hlDict,
-            highlightingPre:    self.HIGHLIGHTING_PRE,
-            highlightingPost:   self.HIGHLIGHTING_POST
+          var parseSolrDoc = function(solrDoc, groupedBy, group) {
+            var options = {
+              groupedBy:          groupedBy,
+              group:              group,
+              fieldList:          self.fieldList,
+              url:                self.url,
+              explDict:           explDict,
+              hlDict:             hlDict,
+              highlightingPre:    self.HIGHLIGHTING_PRE,
+              highlightingPost:   self.HIGHLIGHTING_POST
+            };
+
+            return new SolrDocFactory(solrDoc, options);
           };
 
-          return new SolrDocFactory(solrDoc, options);
-        };
-
-        if (solrResp.hasOwnProperty('response')) {
-          angular.forEach(solrResp.response.docs, function(solrDoc) {
-            var doc = parseSolrDoc(solrDoc);
-            thisSearcher.numFound = solrResp.response.numFound;
-            thisSearcher.docs.push(doc);
-          });
-        } else if (solrResp.hasOwnProperty('grouped')) {
-          angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
-            thisSearcher.numFound = groupedBy.matches;
-            angular.forEach(groupedBy.groups, function(groupResp) {
-              var groupValue = groupResp.groupValue;
-              angular.forEach(groupResp.doclist.docs, function(solrDoc) {
-                var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
-                thisSearcher.docs.push(doc);
-                thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
+          if (solrResp.hasOwnProperty('response')) {
+            angular.forEach(solrResp.response.docs, function(solrDoc) {
+              var doc = parseSolrDoc(solrDoc);
+              thisSearcher.numFound = solrResp.response.numFound;
+              thisSearcher.docs.push(doc);
+            });
+          } else if (solrResp.hasOwnProperty('grouped')) {
+            angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
+              thisSearcher.numFound = groupedBy.matches;
+              angular.forEach(groupedBy.groups, function(groupResp) {
+                var groupValue = groupResp.groupValue;
+                angular.forEach(groupResp.doclist.docs, function(solrDoc) {
+                  var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
+                  thisSearcher.docs.push(doc);
+                  thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
+                });
               });
             });
-          });
-        }
-      }, function error() {
-        activeQueries.count--;
-        thisSearcher.inError = true;
-        $q.reject();
+          }
+          resolve();
+        }, function error(msg) {
+          activeQueries.count--;
+          thisSearcher.inError = true;
+          msg.searchError = 'Error with Solr query or server. Contact Solr directly to inspect the error';
+          reject(msg);
+        });
       });
+
     }
 
     function explainOther (otherQuery, fieldSpec) {
