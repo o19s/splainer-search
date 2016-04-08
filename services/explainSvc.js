@@ -57,6 +57,7 @@ angular.module('o19s.splainer-search')
         var base = new Explain(explJson, createExplain);
         var description = explJson.description;
         var details = [];
+        var IGNORED = null;
         var tieMatch = description.match(tieRegex);
         if (explJson.hasOwnProperty('details')) {
           details = explJson.details;
@@ -101,6 +102,17 @@ angular.module('o19s.splainer-search')
           EsFieldFunctionQueryExplain.prototype = base;
           return new EsFieldFunctionQueryExplain(explJson);
         }
+        else if (description.startsWith('match on required clause') || description.startsWith('match filter')) {
+          return IGNORED; // because Elasticsearch funciton queries filter when they apply boosts (this doesn't matter in scoring)
+        }
+        else if (description.startsWith('queryBoost')) {
+          if (explJson.value === 1.0) {
+            return IGNORED; // because Elasticsearch function queries always add 'queryBoost' of 1, even when boost not specified
+          }
+        }
+        else if (description.hasSubstr('constant score') && description.hasSubstr('no function provided')) {
+          return IGNORED;
+        }
         else if (tieMatch && tieMatch.length > 1) {
           var tie = parseFloat(tieMatch[1]);
           DismaxTieExplain.prototype = base;
@@ -117,6 +129,14 @@ angular.module('o19s.splainer-search')
         else if (description.hasSubstr('Math.min of')) {
           MinExplain.prototype = base;
           return meOrOnlyChild(new MinExplain(explJson));
+        }
+        else if (description.hasSubstr('min of')) {
+          MinExplain.prototype = base;
+          return meOrOnlyChild(new MinExplain(explJson));
+        }
+        else if (description.hasSubstr('score mode [multiply]')) {
+          ProductExplain.prototype = base;
+          return meOrOnlyChild(new ProductExplain(explJson));
         }
         else if (description.hasSubstr('product of')) {
           var coordExpl = null;
