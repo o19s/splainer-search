@@ -462,7 +462,6 @@ angular.module('o19s.splainer-search')
       var ProductExplain = queryExplainSvc.ProductExplain;
       var MinExplain = queryExplainSvc.MinExplain;
       var EsFieldFunctionQueryExplain = queryExplainSvc.EsFieldFunctionQueryExplain;
-      var PrefixExplain = queryExplainSvc.PrefixExplain;
 
       var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
       var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
@@ -547,8 +546,8 @@ angular.module('o19s.splainer-search')
           return new EsFieldFunctionQueryExplain(explJson);
         }
         else if (prefixMatch && prefixMatch.length > 1) {
-          PrefixExplain.prototype = base;
-          return new PrefixExplain(explJson);
+          WeightExplain.prototype = base;
+          return new WeightExplain(explJson);
         }
         else if (description.startsWith('match on required clause') || description.startsWith('match filter')) {
           return IGNORED; // because Elasticsearch funciton queries filter when they apply boosts (this doesn't matter in scoring)
@@ -1054,6 +1053,11 @@ angular.module('o19s.splainer-search')
           this.realExplanation = match[1];
         } else {
           this.realExplanation = description;
+          var prodOf = ', product of:';
+          if (description.endsWith(prodOf)) {
+            var len = description.length - prodOf.length;
+            this.realExplanation = description.substring(0, len);
+          }
         }
 
         this.hasMatch = function() {
@@ -1109,10 +1113,6 @@ angular.module('o19s.splainer-search')
         });
         this.realExplanation = explText;
 
-      };
-
-      this.PrefixExplain = function(explJson) {
-        this.realExplanation = explJson.description.replace(/, product of\:$/, '');
       };
 
       this.MinExplain = function() {

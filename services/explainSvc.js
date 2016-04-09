@@ -21,7 +21,6 @@ angular.module('o19s.splainer-search')
       var ProductExplain = queryExplainSvc.ProductExplain;
       var MinExplain = queryExplainSvc.MinExplain;
       var EsFieldFunctionQueryExplain = queryExplainSvc.EsFieldFunctionQueryExplain;
-      var PrefixExplain = queryExplainSvc.PrefixExplain;
 
       var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
       var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
@@ -106,8 +105,8 @@ angular.module('o19s.splainer-search')
           return new EsFieldFunctionQueryExplain(explJson);
         }
         else if (prefixMatch && prefixMatch.length > 1) {
-          PrefixExplain.prototype = base;
-          return new PrefixExplain(explJson);
+          WeightExplain.prototype = base;
+          return new WeightExplain(explJson);
         }
         else if (description.startsWith('match on required clause') || description.startsWith('match filter')) {
           return IGNORED; // because Elasticsearch funciton queries filter when they apply boosts (this doesn't matter in scoring)

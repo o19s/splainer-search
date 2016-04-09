@@ -37,6 +37,11 @@ angular.module('o19s.splainer-search')
           this.realExplanation = match[1];
         } else {
           this.realExplanation = description;
+          var prodOf = ', product of:';
+          if (description.endsWith(prodOf)) {
+            var len = description.length - prodOf.length;
+            this.realExplanation = description.substring(0, len);
+          }
         }
 
         this.hasMatch = function() {
@@ -92,10 +97,6 @@ angular.module('o19s.splainer-search')
         });
         this.realExplanation = explText;
 
-      };
-
-      this.PrefixExplain = function(explJson) {
-        this.realExplanation = explJson.description.replace(/, product of\:$/, '');
       };
 
       this.MinExplain = function() {
