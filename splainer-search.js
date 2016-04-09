@@ -2393,6 +2393,41 @@ angular.module('o19s.splainer-search')
         }
       };
 
+      var formatError = function(msg) {
+          var errorMsg = '';
+          if (msg) {
+            if (msg.status >= 400) {
+              errorMsg = 'HTTP Error: ' + msg.status + ' ' + msg.statusText;
+            }
+            if (msg.status > 0) {
+              if (msg.hasOwnProperty('data') && msg.data) {
+
+                if (msg.data.hasOwnProperty('error')) {
+                  errorMsg += '\n' + JSON.stringify(msg.data.error, null, 2);
+                }
+                if (msg.data.hasOwnProperty('_shards')) {
+                  angular.forEach(msg.data._shards.failures, function(failure) {
+                    errorMsg += '\n' + JSON.stringify(failure, null, 2);
+                  });
+                }
+
+              }
+            }
+            else if (msg.status === -1) {
+              errorMsg +=  'Network Error! (host not found)\n';
+              errorMsg += '\n';
+              errorMsg +=  'or CORS needs to be configured for your Elasticsearch\n';
+              errorMsg +=  '\n';
+              errorMsg +=  'Enable CORS in elasticsearch.yml:\n';
+              errorMsg += '\n';
+              errorMsg += 'http.cors.allow-origin: "/https?:\\/\\/(.*?\\.)?(quepid\\.com|splainer\\.io)/"';
+              errorMsg += 'http.cors.enabled: true\n';
+            }
+            msg.searchError = errorMsg;
+          }
+          return msg;
+      };
+
       // Build URL with params if any
       // Eg. without params:  /_search
       // Eg. with params:     /_search?size=5&from=5
@@ -2429,12 +2464,12 @@ angular.module('o19s.splainer-search')
         });
 
         if ( angular.isDefined(data._shards) && data._shards.failed > 0 ) {
-          return $q.reject(data._shards.failures[0]);
+          return $q.reject(formatError(httpConfig));
         }
       }, function error(msg) {
         activeQueries.count--;
         self.inError = true;
-        return $q.reject(msg);
+        return $q.reject(formatError(msg));
       });
     } // end of search()
 
@@ -2988,6 +3023,7 @@ angular.module('o19s.splainer-search')
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
+      '$q',
       SolrSearcherFactory
     ]);
 
@@ -2995,7 +3031,7 @@ angular.module('o19s.splainer-search')
     $http,
     SolrDocFactory, SearcherFactory,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc
+    solrSearcherPreprocessorSvc, $q
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -3108,51 +3144,58 @@ angular.module('o19s.splainer-search')
       };
 
       activeQueries.count++;
-      return $http.jsonp(url).success(function(solrResp) {
-        activeQueries.count--;
+      return $q(function(resolve, reject) {
+          $http.jsonp(url).then(function success(resp) {
+          var solrResp = resp.data;
+          activeQueries.count--;
 
-        var explDict  = getExplData(solrResp);
-        var hlDict    = getHlData(solrResp);
-        thisSearcher.othersExplained = getOthersExplained(solrResp);
+          var explDict  = getExplData(solrResp);
+          var hlDict    = getHlData(solrResp);
+          thisSearcher.othersExplained = getOthersExplained(solrResp);
 
-        var parseSolrDoc = function(solrDoc, groupedBy, group) {
-          var options = {
-            groupedBy:          groupedBy,
-            group:              group,
-            fieldList:          self.fieldList,
-            url:                self.url,
-            explDict:           explDict,
-            hlDict:             hlDict,
-            highlightingPre:    self.HIGHLIGHTING_PRE,
-            highlightingPost:   self.HIGHLIGHTING_POST
+          var parseSolrDoc = function(solrDoc, groupedBy, group) {
+            var options = {
+              groupedBy:          groupedBy,
+              group:              group,
+              fieldList:          self.fieldList,
+              url:                self.url,
+              explDict:           explDict,
+              hlDict:             hlDict,
+              highlightingPre:    self.HIGHLIGHTING_PRE,
+              highlightingPost:   self.HIGHLIGHTING_POST
+            };
+
+            return new SolrDocFactory(solrDoc, options);
           };
 
-          return new SolrDocFactory(solrDoc, options);
-        };
-
-        if (solrResp.hasOwnProperty('response')) {
-          angular.forEach(solrResp.response.docs, function(solrDoc) {
-            var doc = parseSolrDoc(solrDoc);
-            thisSearcher.numFound = solrResp.response.numFound;
-            thisSearcher.docs.push(doc);
-          });
-        } else if (solrResp.hasOwnProperty('grouped')) {
-          angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
-            thisSearcher.numFound = groupedBy.matches;
-            angular.forEach(groupedBy.groups, function(groupResp) {
-              var groupValue = groupResp.groupValue;
-              angular.forEach(groupResp.doclist.docs, function(solrDoc) {
-                var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
-                thisSearcher.docs.push(doc);
-                thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
+          if (solrResp.hasOwnProperty('response')) {
+            angular.forEach(solrResp.response.docs, function(solrDoc) {
+              var doc = parseSolrDoc(solrDoc);
+              thisSearcher.numFound = solrResp.response.numFound;
+              thisSearcher.docs.push(doc);
+            });
+          } else if (solrResp.hasOwnProperty('grouped')) {
+            angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
+              thisSearcher.numFound = groupedBy.matches;
+              angular.forEach(groupedBy.groups, function(groupResp) {
+                var groupValue = groupResp.groupValue;
+                angular.forEach(groupResp.doclist.docs, function(solrDoc) {
+                  var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
+                  thisSearcher.docs.push(doc);
+                  thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
+                });
               });
             });
-          });
-        }
-      }).error(function() {
-        activeQueries.count--;
-        thisSearcher.inError = true;
+          }
+          resolve();
+        }, function error(msg) {
+          activeQueries.count--;
+          thisSearcher.inError = true;
+          msg.searchError = 'Error with Solr query or server. Contact Solr directly to inspect the error';
+          reject(msg);
+        });
       });
+
     }
 
     function explainOther (otherQuery, fieldSpec) {

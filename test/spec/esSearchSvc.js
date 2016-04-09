@@ -105,10 +105,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
       expect(called).toEqual(1);
     });
 
-    it('reports errors for the search', function() {
-      var errorMsg = 'your query just plain stunk';
+    it('reports pretty printed errors for ES errors but HTTP success', function() {
+      var errorMsg = {hits: [], _shards: {failed: 1, failures: [{foo: 'your query just plain stunk'}]}};
       $httpBackend.expectPOST(mockEsUrl).
-      respond(400, errorMsg);
+      respond(200, errorMsg);
 
       var errorCalled = 0;
 
@@ -116,7 +116,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
       .then(function success() {
         errorCalled--;
       }, function failure(msg) {
-        expect(msg.data).toBe(errorMsg);
+        expect(msg.searchError.indexOf('HTTP')).toBe(-1);
+        expect(msg.searchError.indexOf('200')).toBe(-1);
+        expect(msg.searchError.indexOf('foo')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
         errorCalled++;
       });
 
@@ -124,6 +127,49 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(errorCalled).toEqual(1);
     });
+
+    it('reports pretty printed errors for HTTP errors', function() {
+      var errorMsg = {'someMsg': 'your query just plain stunk'};
+      $httpBackend.expectPOST(mockEsUrl).
+      respond(400, {error: errorMsg});
+
+      var errorCalled = 0;
+
+      searcher.search()
+      .then(function success() {
+        errorCalled--;
+      }, function failure(msg) {
+        expect(msg.searchError.indexOf('HTTP')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('400')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('someMsg')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
+        errorCalled++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(errorCalled).toEqual(1);
+    });
+
+    it('network or CORS error', function() {
+      $httpBackend.expectPOST(mockEsUrl).
+      respond(-1);
+
+      var errorCalled = 0;
+
+      searcher.search()
+      .then(function success() {
+        errorCalled--;
+      }, function failure(msg) {
+        expect(msg.searchError.indexOf('Network Error')).toBeGreaterThan(-1);
+        expect(msg.searchError.indexOf('CORS')).toBeGreaterThan(-1);
+        errorCalled++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(errorCalled).toEqual(1);
+    })
 
     it('sets the proper headers for auth', function() {
       searcher = searchSvc.createSearcher(
@@ -753,7 +799,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       .then(function success() {
         errorCalled--;
       }, function failure(msg) {
-        expect(msg.reason).toBe("ElasticsearchIllegalArgumentException[field [cast] isn't a leaf field]");
+        expect(msg.searchError).toContain("ElasticsearchIllegalArgumentException[field [cast] isn't a leaf field]");
         errorCalled++;
       });
 

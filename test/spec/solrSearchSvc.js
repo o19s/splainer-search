@@ -1074,6 +1074,32 @@ describe('Service: searchSvc: Solr', function () {
     });
   });
 
+  describe('errors', function() {
+    var fieldSpec = null;
+    var searcher = null;
+
+    beforeEach(function() {
+      fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+    });
+
+    it('adds searchError text', function() {
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(-1);
+      var errorCnt = 0;
+      searcher.search().then(function() {
+        errorCnt--;
+      },
+      function error(msg) {
+        errorCnt++;
+        expect(msg.searchError.length).toBeGreaterThan(1);
+      });
+      $httpBackend.flush();
+      expect(errorCnt).toBe(1);
+    });
+  });
+
   describe('paging', function() {
     var fullSolrResp = {'responseHeader':{
       'status':0,
