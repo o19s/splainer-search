@@ -94,15 +94,8 @@ angular.module('o19s.splainer-search')
 
       };
 
-      this.IgnoredExplain = function(/*explJson*/) {
-        this.realExplanation = '';
-        this.vectorize = function() {
-          var rVal = vectorSvc.create();
-          return rVal;
-        };
-
-        this.influencers = function() {
-        };
+      this.PrefixExplain = function(explJson) {
+        this.realExplanation = explJson.description.replace(/, product of\:$/, '');
       };
 
       this.MinExplain = function() {

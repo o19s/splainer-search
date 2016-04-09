@@ -21,6 +21,7 @@ angular.module('o19s.splainer-search')
       var ProductExplain = queryExplainSvc.ProductExplain;
       var MinExplain = queryExplainSvc.MinExplain;
       var EsFieldFunctionQueryExplain = queryExplainSvc.EsFieldFunctionQueryExplain;
+      var PrefixExplain = queryExplainSvc.PrefixExplain;
 
       var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
       var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
@@ -52,6 +53,7 @@ angular.module('o19s.splainer-search')
       };
 
       var tieRegex = /max plus ([0-9.]+) times/;
+      var prefixRegex = /\:.*?\*(\^.+?)?, product of/;
       var createExplain = function(explJson) {
         explJson = replaceBadJson(explJson);
         var base = new Explain(explJson, createExplain);
@@ -59,6 +61,7 @@ angular.module('o19s.splainer-search')
         var details = [];
         var IGNORED = null;
         var tieMatch = description.match(tieRegex);
+        var prefixMatch = description.match(prefixRegex);
         if (explJson.hasOwnProperty('details')) {
           details = explJson.details;
         }
@@ -101,6 +104,10 @@ angular.module('o19s.splainer-search')
         else if (description.startsWith('Function for field')) {
           EsFieldFunctionQueryExplain.prototype = base;
           return new EsFieldFunctionQueryExplain(explJson);
+        }
+        else if (prefixMatch && prefixMatch.length > 1) {
+          PrefixExplain.prototype = base;
+          return new PrefixExplain(explJson);
         }
         else if (description.startsWith('match on required clause') || description.startsWith('match filter')) {
           return IGNORED; // because Elasticsearch funciton queries filter when they apply boosts (this doesn't matter in scoring)
