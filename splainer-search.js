@@ -20,7 +20,10 @@ angular.module('o19s.splainer-search')
         }
         this.children = [];
         angular.forEach(details, function(detail) {
-          datExplain.children.push(explFactory(detail));
+          var expl = explFactory(detail);
+          if (expl) {
+            datExplain.children.push(expl);
+          }
         });
 
         /* Each explain defines influencers,
@@ -467,6 +470,7 @@ angular.module('o19s.splainer-search')
       var ProductExplain = queryExplainSvc.ProductExplain;
       var MinExplain = queryExplainSvc.MinExplain;
       var EsFieldFunctionQueryExplain = queryExplainSvc.EsFieldFunctionQueryExplain;
+      var EsFuncWeightExplain = queryExplainSvc.EsFuncWeightExplain;
 
       var FieldWeightExplain = simExplainSvc.FieldWeightExplain;
       var QueryWeightExplain = simExplainSvc.QueryWeightExplain;
@@ -498,12 +502,15 @@ angular.module('o19s.splainer-search')
       };
 
       var tieRegex = /max plus ([0-9.]+) times/;
+      var prefixRegex = /\:.*?\*(\^.+?)?, product of/;
       var createExplain = function(explJson) {
         explJson = replaceBadJson(explJson);
         var base = new Explain(explJson, createExplain);
         var description = explJson.description;
         var details = [];
+        var IGNORED = null;
         var tieMatch = description.match(tieRegex);
+        var prefixMatch = description.match(prefixRegex);
         if (explJson.hasOwnProperty('details')) {
           details = explJson.details;
         }
@@ -547,6 +554,25 @@ angular.module('o19s.splainer-search')
           EsFieldFunctionQueryExplain.prototype = base;
           return new EsFieldFunctionQueryExplain(explJson);
         }
+        else if (prefixMatch && prefixMatch.length > 1) {
+          WeightExplain.prototype = base;
+          return new WeightExplain(explJson);
+        }
+        else if (description.startsWith('match on required clause') || description.startsWith('match filter')) {
+          return IGNORED; // because Elasticsearch funciton queries filter when they apply boosts (this doesn't matter in scoring)
+        }
+        else if (description.startsWith('queryBoost')) {
+          if (explJson.value === 1.0) {
+            return IGNORED; // because Elasticsearch function queries always add 'queryBoost' of 1, even when boost not specified
+          }
+        }
+        else if (description.hasSubstr('constant score') && description.hasSubstr('no function provided')) {
+          return IGNORED;
+        }
+        else if (description === 'weight') {
+          EsFuncWeightExplain.prototype = base;
+          return new EsFuncWeightExplain(explJson);
+        }
         else if (tieMatch && tieMatch.length > 1) {
           var tie = parseFloat(tieMatch[1]);
           DismaxTieExplain.prototype = base;
@@ -563,6 +589,14 @@ angular.module('o19s.splainer-search')
         else if (description.hasSubstr('Math.min of')) {
           MinExplain.prototype = base;
           return meOrOnlyChild(new MinExplain(explJson));
+        }
+        else if (description.hasSubstr('min of')) {
+          MinExplain.prototype = base;
+          return meOrOnlyChild(new MinExplain(explJson));
+        }
+        else if (description.hasSubstr('score mode [multiply]')) {
+          ProductExplain.prototype = base;
+          return meOrOnlyChild(new ProductExplain(explJson));
         }
         else if (description.hasSubstr('product of')) {
           var coordExpl = null;
@@ -1012,6 +1046,10 @@ angular.module('o19s.splainer-search')
         this.realExplanation = 'Constant Scored Query';
       };
 
+      this.EsFuncWeightExplain = function(explJson) {
+        this.realExplanation = 'f( -- constant weight -- ) = ' + explJson.value;
+      };
+
       var shallowArrayCopy = function(src) {
         return src.slice(0);
       };
@@ -1032,6 +1070,11 @@ angular.module('o19s.splainer-search')
           this.realExplanation = match[1];
         } else {
           this.realExplanation = description;
+          var prodOf = ', product of:';
+          if (description.endsWith(prodOf)) {
+            var len = description.length - prodOf.length;
+            this.realExplanation = description.substring(0, len);
+          }
         }
 
         this.hasMatch = function() {

@@ -17,6 +17,10 @@ angular.module('o19s.splainer-search')
         this.realExplanation = 'Constant Scored Query';
       };
 
+      this.EsFuncWeightExplain = function(explJson) {
+        this.realExplanation = 'f( -- constant weight -- ) = ' + explJson.value;
+      };
+
       var shallowArrayCopy = function(src) {
         return src.slice(0);
       };
@@ -37,6 +41,11 @@ angular.module('o19s.splainer-search')
           this.realExplanation = match[1];
         } else {
           this.realExplanation = description;
+          var prodOf = ', product of:';
+          if (description.endsWith(prodOf)) {
+            var len = description.length - prodOf.length;
+            this.realExplanation = description.substring(0, len);
+          }
         }
 
         this.hasMatch = function() {

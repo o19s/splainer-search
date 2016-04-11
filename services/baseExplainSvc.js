@@ -18,7 +18,10 @@ angular.module('o19s.splainer-search')
         }
         this.children = [];
         angular.forEach(details, function(detail) {
-          datExplain.children.push(explFactory(detail));
+          var expl = explFactory(detail);
+          if (expl) {
+            datExplain.children.push(expl);
+          }
         });
 
         /* Each explain defines influencers,
