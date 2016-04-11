@@ -17,6 +17,10 @@ angular.module('o19s.splainer-search')
         this.realExplanation = 'Constant Scored Query';
       };
 
+      this.EsFuncWeightExplain = function(explJson) {
+        this.realExplanation = 'f( -- constant weight -- ) = ' + explJson.value;
+      };
+
       var shallowArrayCopy = function(src) {
         return src.slice(0);
       };
