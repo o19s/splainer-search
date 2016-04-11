@@ -198,10 +198,21 @@
       // any use!
       return self.search()
         .then(function() {
+          var start = 0;
+          var rows  = 10;
+
+          if ( angular.isDefined(self.args.rows) && self.args.rows !== null ) {
+            rows = self.args.rows;
+          }
+
+          if ( angular.isDefined(self.args.start) && self.args.start !== null ) {
+            start = self.args.start;
+          }
           var solrParams = {
-            qf:   [fieldSpec.title + ' ' + fieldSpec.id],
-            rows: [5],
-            q:    [otherQuery]
+            qf:     [fieldSpec.title + ' ' + fieldSpec.id],
+            rows:   [rows],
+            start:  [start],
+            q:      [otherQuery]
           };
 
           var otherSearcherOptions = {

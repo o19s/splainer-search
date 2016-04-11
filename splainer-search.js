@@ -259,6 +259,14 @@ angular.module('o19s.splainer-search')
 
       var prepareGetRequest = function (searcher) {
         searcher.url = searcher.url + '?q=' + searcher.queryText;
+
+        var pagerArgs = angular.copy(searcher.args.pager);
+        delete searcher.args.pager;
+
+        if ( angular.isDefined(pagerArgs) && pagerArgs !== null ) {
+          searcher.url += '&from=' + pagerArgs.from;
+          searcher.url += '&size=' + pagerArgs.size;
+        }
       };
 
       function prepare (searcher) {
@@ -2521,6 +2529,10 @@ angular.module('o19s.splainer-search')
         type:       self.type,
       };
 
+      if ( angular.isDefined(self.pagerArgs) && self.pagerArgs !== null ) {
+        otherSearcherOptions.args.pager = self.pagerArgs;
+      }
+
       var otherSearcher = new Searcher(otherSearcherOptions);
 
       return otherSearcher.search()
@@ -3241,10 +3253,21 @@ angular.module('o19s.splainer-search')
       // any use!
       return self.search()
         .then(function() {
+          var start = 0;
+          var rows  = 10;
+
+          if ( angular.isDefined(self.args.rows) && self.args.rows !== null ) {
+            rows = self.args.rows;
+          }
+
+          if ( angular.isDefined(self.args.start) && self.args.start !== null ) {
+            start = self.args.start;
+          }
           var solrParams = {
-            qf:   [fieldSpec.title + ' ' + fieldSpec.id],
-            rows: [5],
-            q:    [otherQuery]
+            qf:     [fieldSpec.title + ' ' + fieldSpec.id],
+            rows:   [rows],
+            start:  [start],
+            q:      [otherQuery]
           };
 
           var otherSearcherOptions = {

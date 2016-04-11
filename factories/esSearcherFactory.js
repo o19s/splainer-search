@@ -242,6 +242,10 @@
         type:       self.type,
       };
 
+      if ( angular.isDefined(self.pagerArgs) && self.pagerArgs !== null ) {
+        otherSearcherOptions.args.pager = self.pagerArgs;
+      }
+
       var otherSearcher = new Searcher(otherSearcherOptions);
 
       return otherSearcher.search()
