@@ -149,6 +149,41 @@
         }
       };
 
+      var formatError = function(msg) {
+          var errorMsg = '';
+          if (msg) {
+            if (msg.status >= 400) {
+              errorMsg = 'HTTP Error: ' + msg.status + ' ' + msg.statusText;
+            }
+            if (msg.status > 0) {
+              if (msg.hasOwnProperty('data') && msg.data) {
+
+                if (msg.data.hasOwnProperty('error')) {
+                  errorMsg += '\n' + JSON.stringify(msg.data.error, null, 2);
+                }
+                if (msg.data.hasOwnProperty('_shards')) {
+                  angular.forEach(msg.data._shards.failures, function(failure) {
+                    errorMsg += '\n' + JSON.stringify(failure, null, 2);
+                  });
+                }
+
+              }
+            }
+            else if (msg.status === -1) {
+              errorMsg +=  'Network Error! (host not found)\n';
+              errorMsg += '\n';
+              errorMsg +=  'or CORS needs to be configured for your Elasticsearch\n';
+              errorMsg +=  '\n';
+              errorMsg +=  'Enable CORS in elasticsearch.yml:\n';
+              errorMsg += '\n';
+              errorMsg += 'http.cors.allow-origin: "/https?:\\/\\/(.*?\\.)?(quepid\\.com|splainer\\.io)/"';
+              errorMsg += 'http.cors.enabled: true\n';
+            }
+            msg.searchError = errorMsg;
+          }
+          return msg;
+      };
+
       // Build URL with params if any
       // Eg. without params:  /_search
       // Eg. with params:     /_search?size=5&from=5
@@ -185,12 +220,12 @@
         });
 
         if ( angular.isDefined(data._shards) && data._shards.failed > 0 ) {
-          return $q.reject(data._shards.failures[0]);
+          return $q.reject(formatError(httpConfig));
         }
       }, function error(msg) {
         activeQueries.count--;
         self.inError = true;
-        return $q.reject(msg);
+        return $q.reject(formatError(msg));
       });
     } // end of search()
 
@@ -206,6 +241,10 @@
         config:     { apiMethod: 'get' },
         type:       self.type,
       };
+
+      if ( angular.isDefined(self.pagerArgs) && self.pagerArgs !== null ) {
+        otherSearcherOptions.args.pager = self.pagerArgs;
+      }
 
       var otherSearcher = new Searcher(otherSearcherOptions);
 

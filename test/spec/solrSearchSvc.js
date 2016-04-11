@@ -1074,6 +1074,32 @@ describe('Service: searchSvc: Solr', function () {
     });
   });
 
+  describe('errors', function() {
+    var fieldSpec = null;
+    var searcher = null;
+
+    beforeEach(function() {
+      fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);
+    });
+
+    it('adds searchError text', function() {
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(-1);
+      var errorCnt = 0;
+      searcher.search().then(function() {
+        errorCnt--;
+      },
+      function error(msg) {
+        errorCnt++;
+        expect(msg.searchError.length).toBeGreaterThan(1);
+      });
+      $httpBackend.flush();
+      expect(errorCnt).toBe(1);
+    });
+  });
+
   describe('paging', function() {
     var fullSolrResp = {'responseHeader':{
       'status':0,
@@ -1289,6 +1315,40 @@ describe('Service: searchSvc: Solr', function () {
       searcher.explainOther('', mockFieldSpec);
 
       $httpBackend.flush();
+      expect(searcher.docs.length).toBe(2);
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('paginates for explain other seraches', function() {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText
+      );
+
+      searcher.numFound = 100;
+      searcher = searcher.pager();
+
+      var expectedParams = {
+        q:      ['title:doc1'],
+        start:  ['10'],
+        rows:   ['10']
+      };
+
+      var expectedExplOtherParams = {
+        explainOther: ['title:doc1']
+      };
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
+        .respond(200, mockSolrExplOtherResp);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+        .respond(200, mockSolrResp);
+
+      searcher.explainOther('title:doc1', mockFieldSpec);
+
+      $httpBackend.flush();
+
       expect(searcher.docs.length).toBe(2);
       $httpBackend.verifyNoOutstandingExpectation();
     });

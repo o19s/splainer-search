@@ -11,6 +11,7 @@
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
+      '$q',
       SolrSearcherFactory
     ]);
 
@@ -18,7 +19,7 @@
     $http,
     SolrDocFactory, SearcherFactory,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc
+    solrSearcherPreprocessorSvc, $q
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -131,51 +132,58 @@
       };
 
       activeQueries.count++;
-      return $http.jsonp(url).success(function(solrResp) {
-        activeQueries.count--;
+      return $q(function(resolve, reject) {
+          $http.jsonp(url).then(function success(resp) {
+          var solrResp = resp.data;
+          activeQueries.count--;
 
-        var explDict  = getExplData(solrResp);
-        var hlDict    = getHlData(solrResp);
-        thisSearcher.othersExplained = getOthersExplained(solrResp);
+          var explDict  = getExplData(solrResp);
+          var hlDict    = getHlData(solrResp);
+          thisSearcher.othersExplained = getOthersExplained(solrResp);
 
-        var parseSolrDoc = function(solrDoc, groupedBy, group) {
-          var options = {
-            groupedBy:          groupedBy,
-            group:              group,
-            fieldList:          self.fieldList,
-            url:                self.url,
-            explDict:           explDict,
-            hlDict:             hlDict,
-            highlightingPre:    self.HIGHLIGHTING_PRE,
-            highlightingPost:   self.HIGHLIGHTING_POST
+          var parseSolrDoc = function(solrDoc, groupedBy, group) {
+            var options = {
+              groupedBy:          groupedBy,
+              group:              group,
+              fieldList:          self.fieldList,
+              url:                self.url,
+              explDict:           explDict,
+              hlDict:             hlDict,
+              highlightingPre:    self.HIGHLIGHTING_PRE,
+              highlightingPost:   self.HIGHLIGHTING_POST
+            };
+
+            return new SolrDocFactory(solrDoc, options);
           };
 
-          return new SolrDocFactory(solrDoc, options);
-        };
-
-        if (solrResp.hasOwnProperty('response')) {
-          angular.forEach(solrResp.response.docs, function(solrDoc) {
-            var doc = parseSolrDoc(solrDoc);
-            thisSearcher.numFound = solrResp.response.numFound;
-            thisSearcher.docs.push(doc);
-          });
-        } else if (solrResp.hasOwnProperty('grouped')) {
-          angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
-            thisSearcher.numFound = groupedBy.matches;
-            angular.forEach(groupedBy.groups, function(groupResp) {
-              var groupValue = groupResp.groupValue;
-              angular.forEach(groupResp.doclist.docs, function(solrDoc) {
-                var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
-                thisSearcher.docs.push(doc);
-                thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
+          if (solrResp.hasOwnProperty('response')) {
+            angular.forEach(solrResp.response.docs, function(solrDoc) {
+              var doc = parseSolrDoc(solrDoc);
+              thisSearcher.numFound = solrResp.response.numFound;
+              thisSearcher.docs.push(doc);
+            });
+          } else if (solrResp.hasOwnProperty('grouped')) {
+            angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
+              thisSearcher.numFound = groupedBy.matches;
+              angular.forEach(groupedBy.groups, function(groupResp) {
+                var groupValue = groupResp.groupValue;
+                angular.forEach(groupResp.doclist.docs, function(solrDoc) {
+                  var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
+                  thisSearcher.docs.push(doc);
+                  thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
+                });
               });
             });
-          });
-        }
-      }).error(function() {
-        activeQueries.count--;
-        thisSearcher.inError = true;
+          }
+          resolve();
+        }, function error(msg) {
+          activeQueries.count--;
+          thisSearcher.inError = true;
+          msg.searchError = 'Error with Solr query or server. Contact Solr directly to inspect the error';
+          reject(msg);
+        });
       });
+
     }
 
     function explainOther (otherQuery, fieldSpec) {
@@ -190,10 +198,21 @@
       // any use!
       return self.search()
         .then(function() {
+          var start = 0;
+          var rows  = 10;
+
+          if ( angular.isDefined(self.args.rows) && self.args.rows !== null ) {
+            rows = self.args.rows;
+          }
+
+          if ( angular.isDefined(self.args.start) && self.args.start !== null ) {
+            start = self.args.start;
+          }
           var solrParams = {
-            qf:   [fieldSpec.title + ' ' + fieldSpec.id],
-            rows: [5],
-            q:    [otherQuery]
+            qf:     [fieldSpec.title + ' ' + fieldSpec.id],
+            rows:   [rows],
+            start:  [start],
+            q:      [otherQuery]
           };
 
           var otherSearcherOptions = {
