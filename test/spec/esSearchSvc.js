@@ -104,6 +104,23 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toEqual(1);
     });
+    it('source has no "doc" property', function() {
+      $httpBackend.expectPOST(mockEsUrl).
+      respond(200, mockResults);
+
+      var called = 0;
+
+      searcher.search()
+      .then(function() {
+        var docs = searcher.docs;
+        expect(docs[0].source().doc).toBe(undefined);
+        called++;
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+    });
+
 
     it('reports pretty printed errors for ES errors but HTTP success', function() {
       var errorMsg = {hits: [], _shards: {failed: 1, failures: [{foo: 'your query just plain stunk'}]}};
@@ -265,6 +282,23 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toEqual(1);
 
+    });
+
+    it('source has no _explanation', function() {
+      var mockResultsWithExpl = angular.copy(mockResults);
+      mockResultsWithExpl.hits.hits[0]._explanation = sumExplain;
+      var called = 0;
+      $httpBackend.expectPOST(mockEsUrl).
+        respond(200, mockResultsWithExpl);
+      searcher.search()
+      .then(function() {
+        var docs = searcher.docs;
+        expect(docs[0].source()._explanation).toBe(undefined);
+        called++;
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
     });
   });
 
@@ -535,6 +569,20 @@ describe('Service: searchSvc: ElasticSearch', function() {
         expect(docs[1].highlight("AU8pXbemwjf9yCj9Xh4e", 'foo', '<b>', '</b>')).toEqual(expectedHl);
       });
 
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
+
+    it('source has no highlighting property', function() {
+      $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
+
+      var called = 0;
+      searcher.search().then(function() {
+        var docs = searcher.docs;
+        expect(docs[0].source().highlight).toBe(undefined);
+        called++;
+      });
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
