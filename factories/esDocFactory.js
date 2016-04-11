@@ -81,6 +81,7 @@
         }
       });
       delete src.doc;
+      delete src.fields;
       delete src._explanation;
       delete src.highlight;
       return src;
