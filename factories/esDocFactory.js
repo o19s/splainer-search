@@ -74,7 +74,16 @@
       // Usually you would return _source, but since we are specifying the
       // fields to display, ES only returns those specific fields.
       // And we are assigning the fields to the doc itself in this case.
-      return angular.copy(self);
+      var src = {};
+      angular.forEach(self, function(value, field) {
+        if (!angular.isFunction(value)) {
+          src[field] = value;
+        }
+      });
+      delete src.doc;
+      delete src._explanation;
+      delete src.highlight;
+      return src;
     }
 
     function highlight (docId, fieldName, preText, postText) {
