@@ -104,7 +104,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toEqual(1);
     });
-    it('source has no "doc" property', function() {
+    it('source has no "doc" or "field" property', function() {
       $httpBackend.expectPOST(mockEsUrl).
       respond(200, mockResults);
 
@@ -114,6 +114,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       .then(function() {
         var docs = searcher.docs;
         expect(docs[0].source().doc).toBe(undefined);
+        expect(docs[0].source().fields).toBe(undefined);
         called++;
       });
       $httpBackend.flush();
