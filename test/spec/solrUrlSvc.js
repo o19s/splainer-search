@@ -106,6 +106,26 @@ describe('Service: solrUrlSvc', function () {
       expect(parsedSolrUrl.requestHandler).toEqual('select');
       expect(parsedSolrUrl.solrArgs.q).toContain('*:*');
     });
+
+    it('avoids escaping obviously non URI decoded params (ie mm=50%)', function() {
+      var urlStr = 'http://localhost:8080/la-solr/tt/select?mm=50%';
+      var parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);
+      expect(parsedSolrUrl.protocol).toEqual('http:');
+      expect(parsedSolrUrl.host).toEqual('localhost:8080');
+      expect(parsedSolrUrl.collectionName).toEqual('tt');
+      expect(parsedSolrUrl.requestHandler).toEqual('select');
+      expect(parsedSolrUrl.solrArgs.mm).toContain('50%');
+    });
+
+    it('escapes URI decoded params', function() {
+      var urlStr = 'http://localhost:8080/la-solr/tt/select?mm=50%25';
+      var parsedSolrUrl = solrUrlSvc.parseSolrUrl(urlStr);
+      expect(parsedSolrUrl.protocol).toEqual('http:');
+      expect(parsedSolrUrl.host).toEqual('localhost:8080');
+      expect(parsedSolrUrl.collectionName).toEqual('tt');
+      expect(parsedSolrUrl.requestHandler).toEqual('select');
+      expect(parsedSolrUrl.solrArgs.mm).toContain('50%');
+    });
   });
 
   describe('build URL', function() {
