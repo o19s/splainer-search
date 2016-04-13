@@ -15,6 +15,7 @@ angular.module('o19s.splainer-search')
         }
         return url;
       }
+
       this.buildUrl = function(url, urlArgs) {
         url = fixURLProtocol(url);
         var baseUrl = url + '?';
@@ -56,7 +57,12 @@ angular.module('o19s.splainer-search')
           if (nameAndValue.length >= 2) {
             var name  = nameAndValue[0];
             var value = nameAndValue[1];
-            var decodedValue = decodeURIComponent(value);
+            var decodedValue = value;
+            try {
+              decodedValue = decodeURIComponent(value);
+            } catch (URIError) { // expected if the string is not actually URL encoded has a stray %, ie mm=50%
+              console.warn('Parameter ' + value + ' could not be URI decoded, this might be ok');
+            }
             if (!rVal.hasOwnProperty(name)) {
               rVal[name] = [decodedValue];
             } else {
