@@ -49,10 +49,19 @@ module.exports = function(config) {
 
     // Which plugins to enable
     plugins: [
+      'karma-coverage',
       'karma-phantomjs-launcher',
       'karma-chrome-launcher',
       'karma-jasmine'
     ],
+
+    preprocessors: {
+      'services/**/*.js': ['coverage'],
+      'factories/**/*.js': ['coverage'],
+      'values/**/*.js': ['coverage']
+    },
+
+    reporters: ['progress', 'coverage'],
 
     // Continuous Integration mode
     // if true, it capture browsers, run tests and exit
