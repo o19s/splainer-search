@@ -17,6 +17,9 @@ node_modules
 
 bower_components
 
+# karma's coverage reporting
+coverage
+
 #vim
 *.swp
 
