@@ -3171,12 +3171,14 @@ angular.module('o19s.splainer-search')
       pageConfig.sanitize = false;
 
       var options = {
-        fieldList:  self.fieldList,
-        url:        self.url,
-        args:       nextArgs,
-        queryText:  self.queryText,
-        config:     pageConfig,
-        type:       self.type
+        fieldList:          self.fieldList,
+        url:                self.url,
+        args:               nextArgs,
+        queryText:          self.queryText,
+        config:             pageConfig,
+        type:               self.type,
+        HIGHLIGHTING_PRE:   self.HIGHLIGHTING_PRE,
+        HIGHLIGHTING_POST:  self.HIGHLIGHTING_POST,
       };
 
       var nextSearcher = new Searcher(options);
@@ -3239,7 +3241,7 @@ angular.module('o19s.splainer-search')
               explDict:           explDict,
               hlDict:             hlDict,
               highlightingPre:    self.HIGHLIGHTING_PRE,
-              highlightingPost:   self.HIGHLIGHTING_POST
+              highlightingPost:   self.HIGHLIGHTING_POST,
             };
 
             return new SolrDocFactory(solrDoc, options);
