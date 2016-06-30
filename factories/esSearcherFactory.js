@@ -235,7 +235,10 @@
         url:        self.url,
         args:       self.args,
         queryText:  otherQuery,
-        config:     { apiMethod: 'get' },
+        config:     {
+          apiMethod:    'get',
+          numberOfRows: self.config.numberOfRows,
+        },
         type:       self.type,
       };
 

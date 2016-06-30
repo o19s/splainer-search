@@ -2551,7 +2551,10 @@ angular.module('o19s.splainer-search')
         url:        self.url,
         args:       self.args,
         queryText:  otherQuery,
-        config:     { apiMethod: 'get' },
+        config:     {
+          apiMethod:    'get',
+          numberOfRows: self.config.numberOfRows,
+        },
         type:       self.type,
       };
 
@@ -3284,7 +3287,7 @@ angular.module('o19s.splainer-search')
       return self.search()
         .then(function() {
           var start = 0;
-          var rows  = 10;
+          var rows  = self.config.numberOfRows;
 
           if ( angular.isDefined(self.args.rows) && self.args.rows !== null ) {
             rows = self.args.rows;
@@ -3305,7 +3308,9 @@ angular.module('o19s.splainer-search')
             url:                self.url,
             args:               solrParams,
             queryText:          otherQuery,
-            config:             {},
+            config:             {
+              numberOfRows: self.config.numberOfRows
+            },
             type:               self.type,
             HIGHLIGHTING_PRE:   self.HIGHLIGHTING_PRE,
             HIGHLIGHTING_POST:  self.HIGHLIGHTING_POST,

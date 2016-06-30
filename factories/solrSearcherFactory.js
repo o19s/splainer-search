@@ -203,7 +203,7 @@
       return self.search()
         .then(function() {
           var start = 0;
-          var rows  = 10;
+          var rows  = self.config.numberOfRows;
 
           if ( angular.isDefined(self.args.rows) && self.args.rows !== null ) {
             rows = self.args.rows;
@@ -224,7 +224,9 @@
             url:                self.url,
             args:               solrParams,
             queryText:          otherQuery,
-            config:             {},
+            config:             {
+              numberOfRows: self.config.numberOfRows
+            },
             type:               self.type,
             HIGHLIGHTING_PRE:   self.HIGHLIGHTING_PRE,
             HIGHLIGHTING_POST:  self.HIGHLIGHTING_POST,
