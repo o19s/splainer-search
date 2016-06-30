@@ -238,8 +238,17 @@ angular.module('o19s.splainer-search')
       };
 
       var preparePostRequest = function (searcher) {
-        var pagerArgs       = angular.copy(searcher.args.pager);
-        searcher.pagerArgs  = pagerArgs;
+        var pagerArgs = angular.copy(searcher.args.pager);
+        if ( angular.isUndefined(pagerArgs) || pagerArgs === null ) {
+          pagerArgs = {};
+        }
+
+        var defaultPagerArgs = {
+          from: 0,
+          size: searcher.config.numberOfRows,
+        };
+
+        searcher.pagerArgs  = angular.merge({}, defaultPagerArgs, pagerArgs);
         delete searcher.args.pager;
 
         var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
@@ -266,6 +275,8 @@ angular.module('o19s.splainer-search')
         if ( angular.isDefined(pagerArgs) && pagerArgs !== null ) {
           searcher.url += '&from=' + pagerArgs.from;
           searcher.url += '&size=' + pagerArgs.size;
+        } else {
+          searcher.url += '&size=' + searcher.config.numberOfRows;
         }
       };
 
@@ -2374,7 +2385,7 @@ angular.module('o19s.splainer-search')
     function pager () {
       /*jslint validthis:true*/
       var self      = this;
-      var pagerArgs = { from: 0, size: 10 };
+      var pagerArgs = { from: 0, size: self.config.numberOfRows };
       var nextArgs  = angular.copy(self.args);
 
       if (nextArgs.hasOwnProperty('pager') && nextArgs.pager !== undefined) {
@@ -2384,20 +2395,17 @@ angular.module('o19s.splainer-search')
       }
 
       if (pagerArgs.hasOwnProperty('from')) {
-        pagerArgs.from = parseInt(pagerArgs.from) + 10;
+        pagerArgs.from = parseInt(pagerArgs.from) + pagerArgs.size;
 
         if (pagerArgs.from >= self.numFound) {
           return null; // no more results
         }
       } else {
-        pagerArgs.from = 10;
+        pagerArgs.from = pagerArgs.size;
       }
 
-      var remaining       = self.numFound - pagerArgs.from;
-      pagerArgs.size      = Math.min(pagerArgs.size, remaining);
       nextArgs.pager      = pagerArgs;
-
-      var options = {
+      var options         = {
         fieldList:  self.fieldList,
         url:        self.url,
         args:       nextArgs,
@@ -3139,22 +3147,21 @@ angular.module('o19s.splainer-search')
       var rows      = self.config.numberOfRows;
       var nextArgs  = angular.copy(self.args);
 
+      if (nextArgs.hasOwnProperty('rows')) {
+        rows = parseInt(nextArgs.rows);
+      }
+
       if (nextArgs.hasOwnProperty('start')) {
-        start = parseInt(nextArgs.start) + 10;
+        start = parseInt(nextArgs.start) + rows;
 
         if (start >= self.numFound) {
           return null; // no more results
         }
       } else {
-        start = 10;
+        start = rows;
       }
 
-      if (nextArgs.hasOwnProperty('rows')) {
-        rows = parseInt(nextArgs.rows);
-      }
-
-      var remaining       = self.numFound - start;
-      nextArgs.rows       = ['' + Math.min(rows, remaining)];
+      nextArgs.rows       = ['' + rows];
       nextArgs.start      = ['' + start];
       var pageConfig      = defaultSolrConfig;
       pageConfig.sanitize = false;

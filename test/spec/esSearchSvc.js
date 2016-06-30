@@ -21,6 +21,15 @@ describe('Service: searchSvc: ElasticSearch', function() {
     }
   };
 
+  function rowsValidator(expectedParams) {
+    return {
+      test: function(data) {
+        var data = JSON.parse(data);
+        return data.size === expectedParams.size;
+      }
+    }
+  };
+
   beforeEach(inject(function($injector) {
     $httpBackend = $injector.get('$httpBackend');
   }));
@@ -72,6 +81,39 @@ describe('Service: searchSvc: ElasticSearch', function() {
       );
     }));
 
+    it('passes the rows param and sets it to 10 by default', function() {
+      var expectedParams = {
+        size: 10
+      };
+
+      $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
+        .respond(200, mockResults);
+
+      searcher.search();
+      $httpBackend.flush();
+    });
+
+    it('passes the rows param and sets it to what is passed in the config', function() {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        { numberOfRows: 20 },
+        'es'
+      );
+
+      var expectedParams = {
+        size: 20
+      };
+
+      $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
+        .respond(200, mockResults);
+
+      searcher.search();
+      $httpBackend.flush();
+    });
+
     it('accesses es with mock es params', function () {
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
         var esQuery = angular.fromJson(data);
@@ -104,6 +146,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toEqual(1);
     });
+
     it('source has no "doc" or "field" property', function() {
       $httpBackend.expectPOST(mockEsUrl).
       respond(200, mockResults);
@@ -121,7 +164,6 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toEqual(1);
     });
-
 
     it('reports pretty printed errors for ES errors but HTTP success', function() {
       var errorMsg = {hits: [], _shards: {failed: 1, failures: [{foo: 'your query just plain stunk'}]}};
@@ -804,6 +846,39 @@ describe('Service: searchSvc: ElasticSearch', function() {
       nextSearcher = nextSearcher.pager();
       expect(nextSearcher).toBe(null);
     });
+
+    it('accounts for custom rows count', function() {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        { numberOfRows: 20 },
+        'es'
+      );
+
+      $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
+
+      searcher.search();
+      $httpBackend.flush();
+
+      // get page 2
+      var nextSearcher = searcher.pager();
+      var expectedPageParams = {
+        size: 20,
+        from: 20
+      };
+
+      $httpBackend.expectPOST(mockEsUrl, pagerValidator(expectedPageParams))
+        .respond(200, fullResponse);
+
+      nextSearcher.search();
+      $httpBackend.flush();
+
+      // done
+      nextSearcher = nextSearcher.pager();
+      expect(nextSearcher).toBe(null);
+    });
   });
 
   describe('failures', function () {
@@ -926,6 +1001,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     it('makes one search request and one explain request per resulting doc', function () {
       var url = mockEsUrl + '?fields=' + mockFieldSpec.fieldList().join(',');
       url += '&q=' + otherQuery;
+      url += '&from=0&size=10';
 
       $httpBackend.expectGET(url).respond(200, expectedResponse);
 
@@ -944,6 +1020,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     it('sets the array of docs', function () {
       var url = mockEsUrl + '?fields=' + mockFieldSpec.fieldList().join(',');
       url += '&q=' + otherQuery;
+      url += '&from=0&size=10';
 
       $httpBackend.expectGET(url).respond(200, expectedResponse);
 

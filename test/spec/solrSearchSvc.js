@@ -1202,10 +1202,58 @@ describe('Service: searchSvc: Solr', function () {
 
       // get page 3
       nextSearcher = nextSearcher.pager();
-      expectedPageParams.rows = ['1'];
+      expectedPageParams.rows = ['10'];
       expectedPageParams.start =['20'];
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
                               .respond(200, fullSolrResp);
+      nextSearcher.search();
+      $httpBackend.flush();
+
+      // done
+      nextSearcher = nextSearcher.pager();
+      expect(nextSearcher).toBe(null);
+    });
+
+    it('accounts for custom rows count', function() {
+      fullSolrResp.response.numFound = 61;
+
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText,
+        { numberOfRows: 30 }
+      );
+
+      var expectedPageParams = angular.copy(expectedParams);
+      expectedPageParams.rows = ['30'];
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+        .respond(200, fullSolrResp);
+
+      searcher.search();
+      $httpBackend.flush();
+
+      // get page 2
+      var nextSearcher = searcher.pager();
+      var expectedPageParams = angular.copy(expectedParams);
+      expectedPageParams.rows = ['30'];
+      expectedPageParams.start = ['30'];
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+        .respond(200, fullSolrResp);
+
+      nextSearcher.search();
+      $httpBackend.flush();
+
+      // get page 3
+      nextSearcher = nextSearcher.pager();
+      expectedPageParams.rows = ['30'];
+      expectedPageParams.start =['60'];
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+        .respond(200, fullSolrResp);
+
       nextSearcher.search();
       $httpBackend.flush();
 

@@ -66,22 +66,21 @@
       var rows      = self.config.numberOfRows;
       var nextArgs  = angular.copy(self.args);
 
+      if (nextArgs.hasOwnProperty('rows')) {
+        rows = parseInt(nextArgs.rows);
+      }
+
       if (nextArgs.hasOwnProperty('start')) {
-        start = parseInt(nextArgs.start) + 10;
+        start = parseInt(nextArgs.start) + rows;
 
         if (start >= self.numFound) {
           return null; // no more results
         }
       } else {
-        start = 10;
+        start = rows;
       }
 
-      if (nextArgs.hasOwnProperty('rows')) {
-        rows = parseInt(nextArgs.rows);
-      }
-
-      var remaining       = self.numFound - start;
-      nextArgs.rows       = ['' + Math.min(rows, remaining)];
+      nextArgs.rows       = ['' + rows];
       nextArgs.start      = ['' + start];
       var pageConfig      = defaultSolrConfig;
       pageConfig.sanitize = false;

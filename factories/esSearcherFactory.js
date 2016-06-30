@@ -69,7 +69,7 @@
     function pager () {
       /*jslint validthis:true*/
       var self      = this;
-      var pagerArgs = { from: 0, size: 10 };
+      var pagerArgs = { from: 0, size: self.config.numberOfRows };
       var nextArgs  = angular.copy(self.args);
 
       if (nextArgs.hasOwnProperty('pager') && nextArgs.pager !== undefined) {
@@ -79,20 +79,17 @@
       }
 
       if (pagerArgs.hasOwnProperty('from')) {
-        pagerArgs.from = parseInt(pagerArgs.from) + 10;
+        pagerArgs.from = parseInt(pagerArgs.from) + pagerArgs.size;
 
         if (pagerArgs.from >= self.numFound) {
           return null; // no more results
         }
       } else {
-        pagerArgs.from = 10;
+        pagerArgs.from = pagerArgs.size;
       }
 
-      var remaining       = self.numFound - pagerArgs.from;
-      pagerArgs.size      = Math.min(pagerArgs.size, remaining);
       nextArgs.pager      = pagerArgs;
-
-      var options = {
+      var options         = {
         fieldList:  self.fieldList,
         url:        self.url,
         args:       nextArgs,
