@@ -5,5 +5,6 @@ angular.module('o19s.splainer-search')
     sanitize:     true,
     highlight:    true,
     debug:        true,
+    numberOfRows: 10,
     escapeQuery:  true
   });

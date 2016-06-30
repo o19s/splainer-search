@@ -513,6 +513,53 @@ describe('Service: searchSvc: Solr', function () {
   });
 
   describe('search' ,function() {
+    it('passes the rows param and sets it to 10 by default', function() {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText
+      );
+
+      var expectedSearchParams = angular.copy(expectedParams);
+      expectedSearchParams.rows = ['10'];
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedSearchParams))
+        .respond(200, mockResults);
+
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
+
+    it('passes the rows param and sets it to what is passed in the config', function() {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText,
+        { numberOfRows: 30 }
+      );
+
+      var expectedSearchParams = angular.copy(expectedParams);
+      expectedSearchParams.rows = ['30'];
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedSearchParams))
+        .respond(200, mockResults);
+
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
+
     it('makes querydocs with tokensUrl', function() {
       var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);

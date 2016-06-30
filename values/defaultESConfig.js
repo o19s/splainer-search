@@ -6,5 +6,6 @@ angular.module('o19s.splainer-search')
     highlight:    true,
     debug:        true,
     escapeQuery:  true,
+    numberOfRows: 10,
     apiMethod:    'post'
   });

@@ -1643,7 +1643,6 @@ angular.module('o19s.splainer-search')
         var args      = withoutUnsupported(searcher.args, config.sanitize);
         var queryText = searcher.queryText;
 
-
         args.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
         args.wt = ['json'];
 
@@ -1661,6 +1660,10 @@ angular.module('o19s.splainer-search')
 
         if (config.escapeQuery) {
           queryText = solrUrlSvc.escapeUserQuery(queryText);
+        }
+
+        if ( !args.rows ) {
+          args.rows = [config.numberOfRows];
         }
 
         var baseUrl = solrUrlSvc.buildUrl(url, args);
@@ -1834,7 +1837,7 @@ angular.module('o19s.splainer-search')
        * its placed here
        *
        * It strips arguments out that are not supported by searchSvc and
-       * generally interfere with its operation (ie fl, rows, etc). searchSvc
+       * generally interfere with its operation (ie fl, facet, etc). searchSvc
        * removes these itself, but this is placed here for convenience to remove
        * from user input (ie an fl may confuse the user when fl is actually supplied
        * elsewhere)
@@ -1850,7 +1853,6 @@ angular.module('o19s.splainer-search')
           delete solrArgs['hl.simple.pre'];
           delete solrArgs['hl.simple.post'];
           delete solrArgs.wt;
-          delete solrArgs.rows;
           delete solrArgs.debug;
 
           // Unsupported stuff to remove and provide a friendly warning
@@ -2472,7 +2474,7 @@ angular.module('o19s.splainer-search')
 
               }
             }
-            else if (msg.status === -1) {
+            else if (msg.status === -1 || msg.status === 0) {
               errorMsg +=  'Network Error! (host not found)\n';
               errorMsg += '\n';
               errorMsg +=  'or CORS needs to be configured for your Elasticsearch\n';
@@ -3134,6 +3136,7 @@ angular.module('o19s.splainer-search')
       /*jslint validthis:true*/
       var self      = this;
       var start     = 0;
+      var rows      = self.config.numberOfRows;
       var nextArgs  = angular.copy(self.args);
 
       if (nextArgs.hasOwnProperty('start')) {
@@ -3146,8 +3149,12 @@ angular.module('o19s.splainer-search')
         start = 10;
       }
 
+      if (nextArgs.hasOwnProperty('rows')) {
+        rows = parseInt(nextArgs.rows);
+      }
+
       var remaining       = self.numFound - start;
-      nextArgs.rows       = ['' + Math.min(10, remaining)];
+      nextArgs.rows       = ['' + Math.min(rows, remaining)];
       nextArgs.start      = ['' + start];
       var pageConfig      = defaultSolrConfig;
       pageConfig.sanitize = false;
@@ -3352,6 +3359,7 @@ angular.module('o19s.splainer-search')
     highlight:    true,
     debug:        true,
     escapeQuery:  true,
+    numberOfRows: 10,
     apiMethod:    'post'
   });
 
@@ -3362,5 +3370,6 @@ angular.module('o19s.splainer-search')
     sanitize:     true,
     highlight:    true,
     debug:        true,
+    numberOfRows: 10,
     escapeQuery:  true
   });

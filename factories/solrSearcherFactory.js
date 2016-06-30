@@ -63,6 +63,7 @@
       /*jslint validthis:true*/
       var self      = this;
       var start     = 0;
+      var rows      = self.config.numberOfRows;
       var nextArgs  = angular.copy(self.args);
 
       if (nextArgs.hasOwnProperty('start')) {
@@ -75,8 +76,12 @@
         start = 10;
       }
 
+      if (nextArgs.hasOwnProperty('rows')) {
+        rows = parseInt(nextArgs.rows);
+      }
+
       var remaining       = self.numFound - start;
-      nextArgs.rows       = ['' + Math.min(10, remaining)];
+      nextArgs.rows       = ['' + Math.min(rows, remaining)];
       nextArgs.start      = ['' + start];
       var pageConfig      = defaultSolrConfig;
       pageConfig.sanitize = false;

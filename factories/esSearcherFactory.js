@@ -169,7 +169,7 @@
 
               }
             }
-            else if (msg.status === -1) {
+            else if (msg.status === -1 || msg.status === 0) {
               errorMsg +=  'Network Error! (host not found)\n';
               errorMsg += '\n';
               errorMsg +=  'or CORS needs to be configured for your Elasticsearch\n';
