@@ -45,8 +45,17 @@ angular.module('o19s.splainer-search')
       };
 
       var preparePostRequest = function (searcher) {
-        var pagerArgs       = angular.copy(searcher.args.pager);
-        searcher.pagerArgs  = pagerArgs;
+        var pagerArgs = angular.copy(searcher.args.pager);
+        if ( angular.isUndefined(pagerArgs) || pagerArgs === null ) {
+          pagerArgs = {};
+        }
+
+        var defaultPagerArgs = {
+          from: 0,
+          size: searcher.config.numberOfRows,
+        };
+
+        searcher.pagerArgs  = angular.merge({}, defaultPagerArgs, pagerArgs);
         delete searcher.args.pager;
 
         var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
@@ -73,6 +82,8 @@ angular.module('o19s.splainer-search')
         if ( angular.isDefined(pagerArgs) && pagerArgs !== null ) {
           searcher.url += '&from=' + pagerArgs.from;
           searcher.url += '&size=' + pagerArgs.size;
+        } else {
+          searcher.url += '&size=' + searcher.config.numberOfRows;
         }
       };
 

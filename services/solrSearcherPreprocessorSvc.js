@@ -25,7 +25,6 @@ angular.module('o19s.splainer-search')
         var args      = withoutUnsupported(searcher.args, config.sanitize);
         var queryText = searcher.queryText;
 
-
         args.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
         args.wt = ['json'];
 
@@ -43,6 +42,10 @@ angular.module('o19s.splainer-search')
 
         if (config.escapeQuery) {
           queryText = solrUrlSvc.escapeUserQuery(queryText);
+        }
+
+        if ( !args.rows ) {
+          args.rows = [config.numberOfRows];
         }
 
         var baseUrl = solrUrlSvc.buildUrl(url, args);

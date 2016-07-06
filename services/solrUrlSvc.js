@@ -146,7 +146,7 @@ angular.module('o19s.splainer-search')
        * its placed here
        *
        * It strips arguments out that are not supported by searchSvc and
-       * generally interfere with its operation (ie fl, rows, etc). searchSvc
+       * generally interfere with its operation (ie fl, facet, etc). searchSvc
        * removes these itself, but this is placed here for convenience to remove
        * from user input (ie an fl may confuse the user when fl is actually supplied
        * elsewhere)
@@ -162,7 +162,6 @@ angular.module('o19s.splainer-search')
           delete solrArgs['hl.simple.pre'];
           delete solrArgs['hl.simple.post'];
           delete solrArgs.wt;
-          delete solrArgs.rows;
           delete solrArgs.debug;
 
           // Unsupported stuff to remove and provide a friendly warning

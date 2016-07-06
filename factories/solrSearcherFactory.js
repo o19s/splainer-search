@@ -63,20 +63,24 @@
       /*jslint validthis:true*/
       var self      = this;
       var start     = 0;
+      var rows      = self.config.numberOfRows;
       var nextArgs  = angular.copy(self.args);
 
+      if (nextArgs.hasOwnProperty('rows')) {
+        rows = parseInt(nextArgs.rows);
+      }
+
       if (nextArgs.hasOwnProperty('start')) {
-        start = parseInt(nextArgs.start) + 10;
+        start = parseInt(nextArgs.start) + rows;
 
         if (start >= self.numFound) {
           return null; // no more results
         }
       } else {
-        start = 10;
+        start = rows;
       }
 
-      var remaining       = self.numFound - start;
-      nextArgs.rows       = ['' + Math.min(10, remaining)];
+      nextArgs.rows       = ['' + rows];
       nextArgs.start      = ['' + start];
       var pageConfig      = defaultSolrConfig;
       pageConfig.sanitize = false;
@@ -199,7 +203,7 @@
       return self.search()
         .then(function() {
           var start = 0;
-          var rows  = 10;
+          var rows  = self.config.numberOfRows;
 
           if ( angular.isDefined(self.args.rows) && self.args.rows !== null ) {
             rows = self.args.rows;
@@ -220,7 +224,9 @@
             url:                self.url,
             args:               solrParams,
             queryText:          otherQuery,
-            config:             {},
+            config:             {
+              numberOfRows: self.config.numberOfRows
+            },
             type:               self.type,
             HIGHLIGHTING_PRE:   self.HIGHLIGHTING_PRE,
             HIGHLIGHTING_POST:  self.HIGHLIGHTING_POST,

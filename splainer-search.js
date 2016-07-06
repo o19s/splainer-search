@@ -238,8 +238,17 @@ angular.module('o19s.splainer-search')
       };
 
       var preparePostRequest = function (searcher) {
-        var pagerArgs       = angular.copy(searcher.args.pager);
-        searcher.pagerArgs  = pagerArgs;
+        var pagerArgs = angular.copy(searcher.args.pager);
+        if ( angular.isUndefined(pagerArgs) || pagerArgs === null ) {
+          pagerArgs = {};
+        }
+
+        var defaultPagerArgs = {
+          from: 0,
+          size: searcher.config.numberOfRows,
+        };
+
+        searcher.pagerArgs  = angular.merge({}, defaultPagerArgs, pagerArgs);
         delete searcher.args.pager;
 
         var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
@@ -266,6 +275,8 @@ angular.module('o19s.splainer-search')
         if ( angular.isDefined(pagerArgs) && pagerArgs !== null ) {
           searcher.url += '&from=' + pagerArgs.from;
           searcher.url += '&size=' + pagerArgs.size;
+        } else {
+          searcher.url += '&size=' + searcher.config.numberOfRows;
         }
       };
 
@@ -1643,7 +1654,6 @@ angular.module('o19s.splainer-search')
         var args      = withoutUnsupported(searcher.args, config.sanitize);
         var queryText = searcher.queryText;
 
-
         args.fl = (fieldList === '*') ? '*' : [fieldList.join(' ')];
         args.wt = ['json'];
 
@@ -1661,6 +1671,10 @@ angular.module('o19s.splainer-search')
 
         if (config.escapeQuery) {
           queryText = solrUrlSvc.escapeUserQuery(queryText);
+        }
+
+        if ( !args.rows ) {
+          args.rows = [config.numberOfRows];
         }
 
         var baseUrl = solrUrlSvc.buildUrl(url, args);
@@ -1834,7 +1848,7 @@ angular.module('o19s.splainer-search')
        * its placed here
        *
        * It strips arguments out that are not supported by searchSvc and
-       * generally interfere with its operation (ie fl, rows, etc). searchSvc
+       * generally interfere with its operation (ie fl, facet, etc). searchSvc
        * removes these itself, but this is placed here for convenience to remove
        * from user input (ie an fl may confuse the user when fl is actually supplied
        * elsewhere)
@@ -1850,7 +1864,6 @@ angular.module('o19s.splainer-search')
           delete solrArgs['hl.simple.pre'];
           delete solrArgs['hl.simple.post'];
           delete solrArgs.wt;
-          delete solrArgs.rows;
           delete solrArgs.debug;
 
           // Unsupported stuff to remove and provide a friendly warning
@@ -2372,7 +2385,7 @@ angular.module('o19s.splainer-search')
     function pager () {
       /*jslint validthis:true*/
       var self      = this;
-      var pagerArgs = { from: 0, size: 10 };
+      var pagerArgs = { from: 0, size: self.config.numberOfRows };
       var nextArgs  = angular.copy(self.args);
 
       if (nextArgs.hasOwnProperty('pager') && nextArgs.pager !== undefined) {
@@ -2382,20 +2395,17 @@ angular.module('o19s.splainer-search')
       }
 
       if (pagerArgs.hasOwnProperty('from')) {
-        pagerArgs.from = parseInt(pagerArgs.from) + 10;
+        pagerArgs.from = parseInt(pagerArgs.from) + pagerArgs.size;
 
         if (pagerArgs.from >= self.numFound) {
           return null; // no more results
         }
       } else {
-        pagerArgs.from = 10;
+        pagerArgs.from = pagerArgs.size;
       }
 
-      var remaining       = self.numFound - pagerArgs.from;
-      pagerArgs.size      = Math.min(pagerArgs.size, remaining);
       nextArgs.pager      = pagerArgs;
-
-      var options = {
+      var options         = {
         fieldList:  self.fieldList,
         url:        self.url,
         args:       nextArgs,
@@ -2472,7 +2482,7 @@ angular.module('o19s.splainer-search')
 
               }
             }
-            else if (msg.status === -1) {
+            else if (msg.status === -1 || msg.status === 0) {
               errorMsg +=  'Network Error! (host not found)\n';
               errorMsg += '\n';
               errorMsg +=  'or CORS needs to be configured for your Elasticsearch\n';
@@ -2541,7 +2551,10 @@ angular.module('o19s.splainer-search')
         url:        self.url,
         args:       self.args,
         queryText:  otherQuery,
-        config:     { apiMethod: 'get' },
+        config:     {
+          apiMethod:    'get',
+          numberOfRows: self.config.numberOfRows,
+        },
         type:       self.type,
       };
 
@@ -2735,6 +2748,7 @@ angular.module('o19s.splainer-search')
         highlight:    false,
         debug:        false,
         escapeQuery:  false,
+        numberOfRows: ids.length,
       };
 
       self.searcher = searchSvc.createSearcher(
@@ -3134,20 +3148,24 @@ angular.module('o19s.splainer-search')
       /*jslint validthis:true*/
       var self      = this;
       var start     = 0;
+      var rows      = self.config.numberOfRows;
       var nextArgs  = angular.copy(self.args);
 
+      if (nextArgs.hasOwnProperty('rows')) {
+        rows = parseInt(nextArgs.rows);
+      }
+
       if (nextArgs.hasOwnProperty('start')) {
-        start = parseInt(nextArgs.start) + 10;
+        start = parseInt(nextArgs.start) + rows;
 
         if (start >= self.numFound) {
           return null; // no more results
         }
       } else {
-        start = 10;
+        start = rows;
       }
 
-      var remaining       = self.numFound - start;
-      nextArgs.rows       = ['' + Math.min(10, remaining)];
+      nextArgs.rows       = ['' + rows];
       nextArgs.start      = ['' + start];
       var pageConfig      = defaultSolrConfig;
       pageConfig.sanitize = false;
@@ -3270,7 +3288,7 @@ angular.module('o19s.splainer-search')
       return self.search()
         .then(function() {
           var start = 0;
-          var rows  = 10;
+          var rows  = self.config.numberOfRows;
 
           if ( angular.isDefined(self.args.rows) && self.args.rows !== null ) {
             rows = self.args.rows;
@@ -3291,7 +3309,9 @@ angular.module('o19s.splainer-search')
             url:                self.url,
             args:               solrParams,
             queryText:          otherQuery,
-            config:             {},
+            config:             {
+              numberOfRows: self.config.numberOfRows
+            },
             type:               self.type,
             HIGHLIGHTING_PRE:   self.HIGHLIGHTING_PRE,
             HIGHLIGHTING_POST:  self.HIGHLIGHTING_POST,
@@ -3352,6 +3372,7 @@ angular.module('o19s.splainer-search')
     highlight:    true,
     debug:        true,
     escapeQuery:  true,
+    numberOfRows: 10,
     apiMethod:    'post'
   });
 
@@ -3362,5 +3383,6 @@ angular.module('o19s.splainer-search')
     sanitize:     true,
     highlight:    true,
     debug:        true,
+    numberOfRows: 10,
     escapeQuery:  true
   });
