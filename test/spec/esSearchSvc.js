@@ -212,8 +212,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
 
     it('network or CORS error', function() {
-      $httpBackend.expectPOST(mockEsUrl).
-      respond(-1);
+      $httpBackend.expectPOST(mockEsUrl)
+        .respond(-1);
 
       var errorCalled = 0;
 

@@ -1261,6 +1261,32 @@ describe('Service: searchSvc: Solr', function () {
       nextSearcher = nextSearcher.pager();
       expect(nextSearcher).toBe(null);
     });
+
+    it('highlights new page', function() {
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                  .respond(200, fullSolrResp);
+      searcher.search();
+      $httpBackend.flush();
+
+      // get page 2
+      var nextSearcher        = searcher.pager();
+      var expectedPageParams  = angular.copy(expectedParams);
+
+      expectedPageParams.rows       = ['10'];
+      expectedPageParams.start      = ['10'];
+      expectedPageParams.hl         = ['true'];
+      expectedPageParams.hl.simple  = {
+        pre:  [searchSvc.HIGHLIGHTING_PRE],
+        post: [searchSvc.HIGHLIGHTING_POST],
+      };
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+                              .respond(200, fullSolrResp);
+      nextSearcher.search();
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
   });
 
   describe('explain other', function() {
