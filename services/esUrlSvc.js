@@ -131,7 +131,11 @@ angular.module('o19s.splainer-search')
       }
 
       function buildBaseUrl (uri) {
-        var url = uri.protocol + '://' + uri.host;
+        var url = uri.protocol + '://';
+        if (uri.password && uri.username) {
+          url += uri.username + ':' + uri.password + '@';
+        }
+        url += (uri.host);
 
         return url;
       }

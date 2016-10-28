@@ -59,6 +59,13 @@ describe('Service: esUrlSvc', function () {
 
       expect(uri.username).toBe('username');
       expect(uri.password).toBe('password');
+
+      var rebuiltUri = esUrlSvc.buildUrl(uri);
+      var uriAgain = esUrlSvc.parseUrl(rebuiltUri);
+
+      expect(uriAgain.username).toBe('username');
+      expect(uriAgain.password).toBe('password');
+
     });
 
     it('understands when bulk endpoint used', function() {
