@@ -187,19 +187,20 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
       expect(errorCalled).toEqual(1);
-    })
+    });
 
     it('sets the proper headers for auth', function() {
+      var authEsUrl = 'http://username:password@localhost:9200/statedecoded/_search';
       searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList,
-        'http://username:password@localhost:9200/statedecoded/_search',
+        authEsUrl,
         mockEsParams,
         mockQueryText,
         {},
         'es'
       );
 
-      $httpBackend.expectPOST(mockEsUrl, undefined, function(headers) {
+      $httpBackend.expectPOST(authEsUrl, undefined, function(headers) {
         return headers['Authorization'] == 'Basic ' + btoa('username:password');
       }).
       respond(200, mockResults);
