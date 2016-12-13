@@ -133,6 +133,37 @@ describe('Service: solrUrlSvc', function () {
       var url = solrUrlSvc.buildUrl('www.example.com', {a: 'b', c: 'd'});
       expect(url).toEqual('http://www.example.com?a=b&c=d');
     });
+
+    it('appends the args properly', function() {
+      var url = solrUrlSvc.buildUrl('www.example.com', {a: 'bb', c: 'd'});
+      expect(url).toEqual('http://www.example.com?a=bb&c=d');
+
+      url = solrUrlSvc.buildUrl('www.example.com', {a: ['b', 'b'], c: 'd'});
+      expect(url).toEqual('http://www.example.com?a=b&a=b&c=d');
+    });
+
+    it('does not re-escape escaped values inside double quotes', function() {
+      var urlStr = 'http://localhost:8080/solr/index/select';
+      var args   = {
+        q:  '*:*',
+        bq: '(*:* AND -meta_contentType_ms:"Faculty%20%26%20Research%20Work")^100',
+        p:  '50%',
+        p1: '"Faculty%20%26%20Research%20Work"'
+      };
+      var url    = solrUrlSvc.buildUrl(urlStr, args);
+
+      expect(url).toEqual('http://localhost:8080/solr/index/select?q=*:*&bq=(*:* AND -meta_contentType_ms:"Faculty%20%26%20Research%20Work")^100&p=50%25&p1="Faculty%20%26%20Research%20Work"');
+
+      args   = {
+        q:  '*:*',
+        bq: '(*:* AND -meta_contentType_ms:"Faculty %26 Research Work")^100',
+        p:  '50%',
+        p1: '"Faculty %26 Research Work"'
+      };
+      url    = solrUrlSvc.buildUrl(urlStr, args);
+
+      expect(url).toEqual('http://localhost:8080/solr/index/select?q=*:*&bq=(*:* AND -meta_contentType_ms:"Faculty %26 Research Work")^100&p=50%25&p1="Faculty %26 Research Work"');
+    })
   });
 
   describe('escape user query', function() {

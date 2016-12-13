@@ -29,14 +29,22 @@ angular.module('o19s.splainer-search')
        * */
       this.formatSolrArgs = function(argsObj) {
         var rVal = '';
+
         angular.forEach(argsObj, function(values, param) {
-          angular.forEach(values, function(value) {
-            rVal += param + '=' + value + '&';
-          });
+          if ( angular.isString(values) ) {
+            rVal += param + '=' + values + '&';
+          } else {
+            angular.forEach(values, function(value) {
+              rVal += param + '=' + value + '&';
+            });
+          }
         });
-        // percentages need to be escaped before
-        // url escaping
-        rVal = rVal.replace(/%/g, '%25');
+
+        // percentages need to be escaped before url escaping
+        // but only if it is not part of a percent encoding character
+        // https://en.wikipedia.org/wiki/Percent-encoding
+        rVal = rVal.replace(/\%(?!(2|3|4|5))/g, '%25');
+
         return rVal.slice(0, -1); // take out last & or trailing ? if no args
       };
 
