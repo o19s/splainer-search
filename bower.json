@@ -28,7 +28,7 @@
     "karma.debug.conf.js",
     "module.js",
     "server.js",
-    "Vagrantfile",
+    "Vagrantfile"
   ],
   "dependencies": {
     "angular": "~1.4.0",
