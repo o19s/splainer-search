@@ -1,6 +1,6 @@
 {
   "name": "splainer-search",
-  "version": "1.10.1",
+  "version": "1.10.3",
   "main": "splainer-search.js",
   "authors": [
     "Doug Turnbull <dturnbull@opensourceconnections.com>",
@@ -14,7 +14,21 @@
     "node_modules",
     "bower_components",
     "test",
-    "tests"
+    "tests",
+    "coverage",
+    "factories",
+    "pages",
+    "provisioning",
+    "services",
+    "values",
+    "app.js",
+    "Gruntfile.js",
+    "index.js",
+    "karma.conf.js",
+    "karma.debug.conf.js",
+    "module.js",
+    "server.js",
+    "Vagrantfile",
   ],
   "dependencies": {
     "angular": "~1.4.0",
