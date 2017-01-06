@@ -38,6 +38,7 @@
     Searcher.prototype.search           = search;
     Searcher.prototype.explainOther     = explainOther;
     Searcher.prototype.explain          = explain;
+    Searcher.prototype.majorVersion     = majorVersion;
 
 
     function addDocToGroup (groupedBy, group, solrDoc) {
@@ -90,11 +91,12 @@
 
       nextArgs.pager      = pagerArgs;
       var options         = {
-        fieldList:  self.fieldList,
-        url:        self.url,
         args:       nextArgs,
+        config:     self.config,
+        fieldList:  self.fieldList,
         queryText:  self.queryText,
         type:       self.type,
+        url:        self.url,
       };
 
       var nextSearcher = new Searcher(options);
@@ -115,7 +117,12 @@
       }
 
       if (apiMethod === 'get' ) {
-        esUrlSvc.setParams(uri, { fields: self.fieldList.join(',') });
+        if ( 5 <= self.majorVersion() ) {
+          /*jshint camelcase: false */
+          esUrlSvc.setParams(uri, { stored_fields: self.fieldList.join(',') });
+        } else {
+          esUrlSvc.setParams(uri, { fields: self.fieldList.join(',') });
+        }
       }
 
       var url       = esUrlSvc.buildUrl(uri);
@@ -238,6 +245,7 @@
         config:     {
           apiMethod:    'get',
           numberOfRows: self.config.numberOfRows,
+          version:      self.config.version,
         },
         type:       self.type,
       };
@@ -300,6 +308,20 @@
           return new EsDocFactory(doc, options);
         });
     } // end of explain()
+
+    function majorVersion() {
+      var self = this;
+
+      if ( angular.isDefined(self.config) &&
+        angular.isDefined(self.config.version) &&
+        self.config.version !== null &&
+        self.config.version !== ''
+      ) {
+        return parseInt(self.config.version.split('.')[0]);
+      } else {
+        return null;
+      }
+    }
 
     // Return factory object
     return Searcher;

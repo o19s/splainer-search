@@ -5,7 +5,12 @@ angular.module('o19s.splainer-search')
     'queryTemplateSvc',
     'defaultESConfig',
     function esSearcherPreprocessorSvc(queryTemplateSvc, defaultESConfig) {
-      var self      = this;
+      var self = this;
+
+      // Attributes
+      self.fieldsParamName = 'stored_fields'; // field name since ES 5.0
+
+      // Functions
       self.prepare  = prepare;
 
       var replaceQuery = function(args, queryText) {
@@ -23,11 +28,11 @@ angular.module('o19s.splainer-search')
       };
 
       var prepareHighlighting = function (args, fields) {
-        if ( angular.isDefined(fields) && fields.hasOwnProperty('fields') ) {
+        if ( angular.isDefined(fields) && fields !== null && fields.hasOwnProperty('fields') ) {
           fields = fields.fields;
         }
 
-        if ( angular.isDefined(fields) && fields.length > 0 ) {
+        if ( angular.isDefined(fields) && fields !== null && fields.length > 0 ) {
           var hl = { fields: {} };
 
           angular.forEach(fields, function(fieldName) {
@@ -61,13 +66,13 @@ angular.module('o19s.splainer-search')
         var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
 
         if ( angular.isDefined(searcher.fieldList) && searcher.fieldList !== null ) {
-          queryDsl.fields   = searcher.fieldList;
+          queryDsl[self.fieldsParamName] = searcher.fieldList;
         }
 
         queryDsl.explain    = true;
 
         if ( !queryDsl.hasOwnProperty('highlight') ) {
-          queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl.fields);
+          queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl[self.fieldsParamName]);
         }
 
         searcher.queryDsl   = queryDsl;
@@ -87,6 +92,14 @@ angular.module('o19s.splainer-search')
         }
       };
 
+      var setFieldsParamName = function(searcher) {
+        if ( 5 <= searcher.majorVersion() ) {
+          self.fieldsParamName = 'stored_fields';
+        } else {
+          self.fieldsParamName = 'fields';
+        }
+      };
+
       function prepare (searcher) {
         if (searcher.config === undefined) {
           searcher.config = defaultESConfig;
@@ -95,6 +108,8 @@ angular.module('o19s.splainer-search')
           // the default config object.
           searcher.config = angular.merge({}, defaultESConfig, searcher.config);
         }
+
+        setFieldsParamName(searcher);
 
         if ( searcher.config.apiMethod === 'post') {
           preparePostRequest(searcher);
