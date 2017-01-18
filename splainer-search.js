@@ -198,7 +198,12 @@ angular.module('o19s.splainer-search')
     'queryTemplateSvc',
     'defaultESConfig',
     function esSearcherPreprocessorSvc(queryTemplateSvc, defaultESConfig) {
-      var self      = this;
+      var self = this;
+
+      // Attributes
+      self.fieldsParamName = 'stored_fields'; // field name since ES 5.0
+
+      // Functions
       self.prepare  = prepare;
 
       var replaceQuery = function(args, queryText) {
@@ -216,11 +221,11 @@ angular.module('o19s.splainer-search')
       };
 
       var prepareHighlighting = function (args, fields) {
-        if ( angular.isDefined(fields) && fields.hasOwnProperty('fields') ) {
+        if ( angular.isDefined(fields) && fields !== null && fields.hasOwnProperty('fields') ) {
           fields = fields.fields;
         }
 
-        if ( angular.isDefined(fields) && fields.length > 0 ) {
+        if ( angular.isDefined(fields) && fields !== null && fields.length > 0 ) {
           var hl = { fields: {} };
 
           angular.forEach(fields, function(fieldName) {
@@ -254,13 +259,13 @@ angular.module('o19s.splainer-search')
         var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
 
         if ( angular.isDefined(searcher.fieldList) && searcher.fieldList !== null ) {
-          queryDsl.fields   = searcher.fieldList;
+          queryDsl[self.fieldsParamName] = searcher.fieldList;
         }
 
         queryDsl.explain    = true;
 
         if ( !queryDsl.hasOwnProperty('highlight') ) {
-          queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl.fields);
+          queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl[self.fieldsParamName]);
         }
 
         searcher.queryDsl   = queryDsl;
@@ -280,6 +285,14 @@ angular.module('o19s.splainer-search')
         }
       };
 
+      var setFieldsParamName = function(searcher) {
+        if ( 5 <= searcher.majorVersion() ) {
+          self.fieldsParamName = 'stored_fields';
+        } else {
+          self.fieldsParamName = 'fields';
+        }
+      };
+
       function prepare (searcher) {
         if (searcher.config === undefined) {
           searcher.config = defaultESConfig;
@@ -288,6 +301,8 @@ angular.module('o19s.splainer-search')
           // the default config object.
           searcher.config = angular.merge({}, defaultESConfig, searcher.config);
         }
+
+        setFieldsParamName(searcher);
 
         if ( searcher.config.apiMethod === 'post') {
           preparePostRequest(searcher);
@@ -2366,6 +2381,7 @@ angular.module('o19s.splainer-search')
     Searcher.prototype.search           = search;
     Searcher.prototype.explainOther     = explainOther;
     Searcher.prototype.explain          = explain;
+    Searcher.prototype.majorVersion     = majorVersion;
 
 
     function addDocToGroup (groupedBy, group, solrDoc) {
@@ -2418,11 +2434,12 @@ angular.module('o19s.splainer-search')
 
       nextArgs.pager      = pagerArgs;
       var options         = {
-        fieldList:  self.fieldList,
-        url:        self.url,
         args:       nextArgs,
+        config:     self.config,
+        fieldList:  self.fieldList,
         queryText:  self.queryText,
         type:       self.type,
+        url:        self.url,
       };
 
       var nextSearcher = new Searcher(options);
@@ -2443,7 +2460,12 @@ angular.module('o19s.splainer-search')
       }
 
       if (apiMethod === 'get' ) {
-        esUrlSvc.setParams(uri, { fields: self.fieldList.join(',') });
+        if ( 5 <= self.majorVersion() ) {
+          /*jshint camelcase: false */
+          esUrlSvc.setParams(uri, { stored_fields: self.fieldList.join(',') });
+        } else {
+          esUrlSvc.setParams(uri, { fields: self.fieldList.join(',') });
+        }
       }
 
       var url       = esUrlSvc.buildUrl(uri);
@@ -2566,6 +2588,7 @@ angular.module('o19s.splainer-search')
         config:     {
           apiMethod:    'get',
           numberOfRows: self.config.numberOfRows,
+          version:      self.config.version,
         },
         type:       self.type,
       };
@@ -2628,6 +2651,20 @@ angular.module('o19s.splainer-search')
           return new EsDocFactory(doc, options);
         });
     } // end of explain()
+
+    function majorVersion() {
+      var self = this;
+
+      if ( angular.isDefined(self.config) &&
+        angular.isDefined(self.config.version) &&
+        self.config.version !== null &&
+        self.config.version !== ''
+      ) {
+        return parseInt(self.config.version.split('.')[0]);
+      } else {
+        return null;
+      }
+    }
 
     // Return factory object
     return Searcher;
@@ -3356,14 +3393,13 @@ angular.module('o19s.splainer-search')
 
   function TransportFactory() {
     var Transporter = function(opts) {
-      var self                = this;
+      var self = this;
 
       self.options = options;
 
       function options() {
         return opts;
       }
-
     };
 
     // Return factory object
@@ -3387,7 +3423,8 @@ angular.module('o19s.splainer-search')
     debug:        true,
     escapeQuery:  true,
     numberOfRows: 10,
-    apiMethod:    'post'
+    apiMethod:    'post',
+    version:      '5.0'
   });
 
 'use strict';

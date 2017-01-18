@@ -7,5 +7,6 @@ angular.module('o19s.splainer-search')
     debug:        true,
     escapeQuery:  true,
     numberOfRows: 10,
-    apiMethod:    'post'
+    apiMethod:    'post',
+    version:      '5.0'
   });

@@ -8,14 +8,13 @@
 
   function TransportFactory() {
     var Transporter = function(opts) {
-      var self                = this;
+      var self = this;
 
       self.options = options;
 
       function options() {
         return opts;
       }
-
     };
 
     // Return factory object

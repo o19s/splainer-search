@@ -431,7 +431,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         mockEsUrl,
         mockEsParams,
         mockQueryText,
-        {},
+        { version: '2.0' },
         'es'
       );
     }));
@@ -508,7 +508,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         mockEsUrl,
         mockEsParams,
         mockQueryText,
-        {},
+        { version: '2.0' },
         'es'
       );
 
@@ -941,7 +941,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         mockEsUrl,
         mockEsParams,
         mockQueryText,
-        {},
+        { version: '2.0' },
         'es'
       );
     }));
@@ -1061,6 +1061,70 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
+    });
+  });
+
+  describe('version', function() {
+    beforeEach(inject(function () {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList().join(','),
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+    }));
+
+    it('defaults to version 5.0 and uses the "stored_fields" params', function() {
+      expect(searcher.config.version).toEqual('5.0');
+
+      var expectedParams = {
+        stored_fields: mockFieldSpec.fieldList().join(',')
+      };
+
+      $httpBackend.when('POST', mockEsUrl,
+        function(postData) {
+          var jsonData = JSON.parse(postData);
+          expect(jsonData.stored_fields).toBe(expectedParams.stored_fields);
+          return true;
+        }
+      ).respond(200, mockResults);
+
+      searcher.search();
+      $httpBackend.flush();
+    });
+
+    describe('prior to 5.0', function() {
+      beforeEach(inject(function () {
+        searcher = searchSvc.createSearcher(
+          mockFieldSpec.fieldList().join(','),
+          mockEsUrl,
+          mockEsParams,
+          mockQueryText,
+          { version: '2.0' },
+          'es'
+        );
+      }));
+
+      it('sets the appropriate version and uses the "fields" params', function() {
+        expect(searcher.config.version).toEqual('2.0');
+
+        var expectedParams = {
+          fields: mockFieldSpec.fieldList().join(',')
+        };
+
+        $httpBackend.when('POST', mockEsUrl,
+          function(postData) {
+            var jsonData = JSON.parse(postData);
+            expect(jsonData.fields).toBe(expectedParams.fields);
+            return true;
+          }
+        ).respond(200, mockResults);
+
+        searcher.search();
+        $httpBackend.flush();
+      });
     });
   });
 });

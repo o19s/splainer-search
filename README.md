@@ -204,8 +204,42 @@ searcher.search()
 });
 ```
 
-### Thanks to...
+## Specifying search engine version number
 
-Development for this library is done primarilly by [OpenSource Connections](http://opensourceconnections.com) for search relevance tools [Splainer](http://splainer.io) and [Quepid](http://quepid.com)
+Most of what splainer-search does should be compatible with all versions of Solr and Elasticsearch. There are times though where one of these projects introducing a breaking change and it becomes necessary to specify the version number used.
+
+For example, ES deprecated the `fields` parameter in favor of `stored_fields` (https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking_50_search_changes.html#_literal_fields_literal_parameter). So it's necessary to tell splainer-search which version you are using in order to send the appropriate request.
+
+To do so you only need to specify the version number in the `config` param when constructing a new searcher:
+
+### ElasticSearch
+
+```js
+var options = {
+  fields:       ['id', 'title', 'price'],
+  url:          'http://localhost:9200/tacos/_search',
+  args:         {
+    'query': {
+      'match': {
+        'title': '#$query##'
+      }
+    }
+  },
+  query:        'tacos',
+  config:       { version: 5.1 },
+  searchEngine: 'es'
+};
+var searcher = searchSvc.createSearcher(options.fields, options.url, options.args, options.query, options.config, options.searchEngine);
+
+searcher.search();
+```
+
+And splainer-search will take care of using the correct name in the parameters.
+
+**NB:** The default behavior will be that of 5.x, so if you are on that version you do not need to do anything, whereas if you are on a previous version number you should provide the version number.
+
+## Thanks to...
+
+Development for this library is done primarily by [OpenSource Connections](http://opensourceconnections.com) for search relevance tools [Splainer](http://splainer.io) and [Quepid](http://quepid.com)
 
 Primary author is [Doug Turnbull](http://softwaredoug.com)

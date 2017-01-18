@@ -24,6 +24,7 @@
     "app.js",
     "Gruntfile.js",
     "index.js",
+    "index.html",
     "karma.conf.js",
     "karma.debug.conf.js",
     "module.js",
