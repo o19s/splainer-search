@@ -8,7 +8,8 @@ angular.module('o19s.splainer-search')
       var self = this;
 
       // Attributes
-      self.fieldsParamName = 'stored_fields'; // field name since ES 5.0
+      // field name since ES 5.0
+      self.fieldsParamNames = [ '_source', 'stored_fields' ];
 
       // Functions
       self.prepare  = prepare;
@@ -28,25 +29,27 @@ angular.module('o19s.splainer-search')
       };
 
       var prepareHighlighting = function (args, fields) {
-        if ( angular.isDefined(fields) && fields !== null && fields.hasOwnProperty('fields') ) {
-          fields = fields.fields;
+        if ( angular.isDefined(fields) && fields !== null ) {
+          if ( fields.hasOwnProperty('fields') ) {
+            fields = fields.fields;
+          }
+
+          if ( fields.length > 0 ) {
+            var hl = { fields: {} };
+
+            angular.forEach(fields, function(fieldName) {
+              hl.fields[fieldName] = { };
+            });
+
+            return hl;
+          }
         }
 
-        if ( angular.isDefined(fields) && fields !== null && fields.length > 0 ) {
-          var hl = { fields: {} };
-
-          angular.forEach(fields, function(fieldName) {
-            hl.fields[fieldName] = {};
-          });
-
-          return hl;
-        } else {
-          return {
-            fields: {
-              _all: {}
-            }
-          };
-        }
+        return {
+          fields: {
+            _all: {}
+          }
+        };
       };
 
       var preparePostRequest = function (searcher) {
@@ -64,15 +67,16 @@ angular.module('o19s.splainer-search')
         delete searcher.args.pager;
 
         var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
-
-        if ( angular.isDefined(searcher.fieldList) && searcher.fieldList !== null ) {
-          queryDsl[self.fieldsParamName] = searcher.fieldList;
-        }
-
         queryDsl.explain    = true;
 
+        if ( angular.isDefined(searcher.fieldList) && searcher.fieldList !== null ) {
+          angular.forEach(self.fieldsParamNames, function(name) {
+            queryDsl[name] = searcher.fieldList;
+          });
+        }
+
         if ( !queryDsl.hasOwnProperty('highlight') ) {
-          queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl[self.fieldsParamName]);
+          queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl[self.fieldsParamNames[0]]);
         }
 
         searcher.queryDsl   = queryDsl;
@@ -94,9 +98,9 @@ angular.module('o19s.splainer-search')
 
       var setFieldsParamName = function(searcher) {
         if ( 5 <= searcher.majorVersion() ) {
-          self.fieldsParamName = 'stored_fields';
+          self.fieldsParamNames = [ '_source', 'stored_fields' ];
         } else {
-          self.fieldsParamName = 'fields';
+          self.fieldsParamNames = [ 'fields' ];
         }
       };
 

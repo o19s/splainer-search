@@ -118,8 +118,12 @@
 
       if (apiMethod === 'get' ) {
         if ( 5 <= self.majorVersion() ) {
+          var fieldList = self.fieldList.join(',');
           /*jshint camelcase: false */
-          esUrlSvc.setParams(uri, { stored_fields: self.fieldList.join(',') });
+          esUrlSvc.setParams(uri, {
+            stored_fields: fieldList,
+            _source:       fieldList,
+          });
         } else {
           esUrlSvc.setParams(uri, { fields: self.fieldList.join(',') });
         }
@@ -213,6 +217,7 @@
             url:                self.url,
             explDict:           explDict,
             hlDict:             hlDict,
+            version:            self.majorVersion(),
           };
 
           return new EsDocFactory(doc, options);
