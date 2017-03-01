@@ -100,7 +100,7 @@ angular.module('o19s.splainer-search')
         if ( 5 <= searcher.majorVersion() ) {
           self.fieldsParamNames = [ '_source', 'stored_fields' ];
         } else {
-          self.fieldsParamNames = [ 'fields' ];
+          self.fieldsParamNames = [ '_source', 'fields' ];
         }
       };
 

@@ -117,15 +117,19 @@
       }
 
       if (apiMethod === 'get' ) {
+        var fieldList = self.fieldList.join(',');
+
         if ( 5 <= self.majorVersion() ) {
-          var fieldList = self.fieldList.join(',');
           /*jshint camelcase: false */
           esUrlSvc.setParams(uri, {
             stored_fields: fieldList,
             _source:       fieldList,
           });
         } else {
-          esUrlSvc.setParams(uri, { fields: self.fieldList.join(',') });
+          esUrlSvc.setParams(uri, {
+            fields:  fieldList,
+            _source: fieldList,
+          });
         }
       }
 

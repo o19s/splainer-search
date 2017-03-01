@@ -293,7 +293,7 @@ angular.module('o19s.splainer-search')
         if ( 5 <= searcher.majorVersion() ) {
           self.fieldsParamNames = [ '_source', 'stored_fields' ];
         } else {
-          self.fieldsParamNames = [ 'fields' ];
+          self.fieldsParamNames = [ '_source', 'fields' ];
         }
       };
 
@@ -2242,7 +2242,11 @@ angular.module('o19s.splainer-search')
             return 'stored_fields';
           }
         } else {
-          return 'fields';
+          if ( self.hasOwnProperty('_source') ) {
+            return '_source';
+          } else {
+            return 'fields';
+          }
         }
       }
 
@@ -2492,15 +2496,19 @@ angular.module('o19s.splainer-search')
       }
 
       if (apiMethod === 'get' ) {
+        var fieldList = self.fieldList.join(',');
+
         if ( 5 <= self.majorVersion() ) {
-          var fieldList = self.fieldList.join(',');
           /*jshint camelcase: false */
           esUrlSvc.setParams(uri, {
             stored_fields: fieldList,
             _source:       fieldList,
           });
         } else {
-          esUrlSvc.setParams(uri, { fields: self.fieldList.join(',') });
+          esUrlSvc.setParams(uri, {
+            fields:  fieldList,
+            _source: fieldList,
+          });
         }
       }
 

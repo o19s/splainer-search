@@ -57,7 +57,11 @@
             return 'stored_fields';
           }
         } else {
-          return 'fields';
+          if ( self.hasOwnProperty('_source') ) {
+            return '_source';
+          } else {
+            return 'fields';
+          }
         }
       }
 
