@@ -40,7 +40,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1');
   }));
 
-  var mockResults = {
+  var mockES4Results = {
     hits: {
       total: 2,
       'max_score': 1.0,
@@ -69,200 +69,434 @@ describe('Service: searchSvc: ElasticSearch', function() {
     }
   };
 
+  var mockES5Results = {
+    hits: {
+      total: 2,
+      'max_score': 1.0,
+      hits: [
+        {
+          '_index': 'statedecoded',
+          '_type':  'law',
+          '_id':    'l_1',
+          '_score': 5.0,
+          'stored_fields': {
+            'field':  ['1--field value'],
+            'field1': ['1--field1 value']
+          },
+        },
+        {
+          '_index': 'statedecoded',
+          '_type':  'law',
+          '_id':    'l_1',
+          '_score': 3.0,
+          'stored_fields': {
+            'field':  ['2--field value'],
+            'field1': ['2--field1 value']
+          }
+        }
+      ]
+    }
+  };
+
   describe('basic search', function () {
-    beforeEach(inject(function () {
-      searcher = searchSvc.createSearcher(
-        mockFieldSpec.fieldList,
-        mockEsUrl,
-        mockEsParams,
-        mockQueryText,
-        {},
-        'es'
-      );
-    }));
+    describe('pre version 5', function() {
+      beforeEach(inject(function () {
+        searcher = searchSvc.createSearcher(
+          mockFieldSpec.fieldList,
+          mockEsUrl,
+          mockEsParams,
+          mockQueryText,
+          { version: '2.0' },
+          'es'
+        );
+      }));
 
-    it('passes the rows param and sets it to 10 by default', function() {
-      var expectedParams = {
-        size: 10
-      };
+      it('passes the rows param and sets it to 10 by default', function() {
+        var expectedParams = {
+          size: 10
+        };
 
-      $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
-        .respond(200, mockResults);
+        $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
+          .respond(200, mockES4Results);
 
-      searcher.search();
-      $httpBackend.flush();
-    });
-
-    it('passes the rows param and sets it to what is passed in the config', function() {
-      searcher = searchSvc.createSearcher(
-        mockFieldSpec.fieldList,
-        mockEsUrl,
-        mockEsParams,
-        mockQueryText,
-        { numberOfRows: 20 },
-        'es'
-      );
-
-      var expectedParams = {
-        size: 20
-      };
-
-      $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
-        .respond(200, mockResults);
-
-      searcher.search();
-      $httpBackend.flush();
-    });
-
-    it('accesses es with mock es params', function () {
-      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-        var esQuery = angular.fromJson(data);
-        return (esQuery.query.term.text === mockQueryText);
-      }).
-      respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-    });
-
-    it('returns docs (they should look just like ES docs)', function() {
-      $httpBackend.expectPOST(mockEsUrl).
-      respond(200, mockResults);
-
-      var called = 0;
-
-      searcher.search()
-      .then(function() {
-        var docs = searcher.docs;
-        expect(docs.length === 2);
-        expect(docs[0].field).toEqual(mockResults.hits.hits[0].fields.field[0]);
-        expect(docs[0].field1).toEqual(mockResults.hits.hits[0].fields.field1[0]);
-        expect(docs[1].field).toEqual(mockResults.hits.hits[1].fields.field[0]);
-        expect(docs[1].field1).toEqual(mockResults.hits.hits[1].fields.field1[0]);
-        called++;
+        searcher.search();
+        $httpBackend.flush();
       });
 
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      expect(called).toEqual(1);
-    });
+      it('passes the rows param and sets it to what is passed in the config', function() {
+        searcher = searchSvc.createSearcher(
+          mockFieldSpec.fieldList,
+          mockEsUrl,
+          mockEsParams,
+          mockQueryText,
+          { version: '2.0', numberOfRows: 20 },
+          'es'
+        );
 
-    it('source has no "doc" or "field" property', function() {
-      $httpBackend.expectPOST(mockEsUrl).
-      respond(200, mockResults);
+        var expectedParams = {
+          size: 20
+        };
 
-      var called = 0;
+        $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
+          .respond(200, mockES4Results);
 
-      searcher.search()
-      .then(function() {
-        var docs = searcher.docs;
-        expect(docs[0].source().doc).toBe(undefined);
-        expect(docs[0].source().fields).toBe(undefined);
-        called++;
-      });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      expect(called).toEqual(1);
-    });
-
-    it('reports pretty printed errors for ES errors but HTTP success', function() {
-      var errorMsg = {hits: [], _shards: {failed: 1, failures: [{foo: 'your query just plain stunk'}]}};
-      $httpBackend.expectPOST(mockEsUrl).
-      respond(200, errorMsg);
-
-      var errorCalled = 0;
-
-      searcher.search()
-      .then(function success() {
-        errorCalled--;
-      }, function failure(msg) {
-        expect(msg.searchError.indexOf('HTTP')).toBe(-1);
-        expect(msg.searchError.indexOf('200')).toBe(-1);
-        expect(msg.searchError.indexOf('foo')).toBeGreaterThan(-1);
-        expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
-        errorCalled++;
+        searcher.search();
+        $httpBackend.flush();
       });
 
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      expect(errorCalled).toEqual(1);
-    });
-
-    it('reports pretty printed errors for HTTP errors', function() {
-      var errorMsg = {'someMsg': 'your query just plain stunk'};
-      $httpBackend.expectPOST(mockEsUrl).
-      respond(400, {error: errorMsg});
-
-      var errorCalled = 0;
-
-      searcher.search()
-      .then(function success() {
-        errorCalled--;
-      }, function failure(msg) {
-        expect(msg.searchError.indexOf('HTTP')).toBeGreaterThan(-1);
-        expect(msg.searchError.indexOf('400')).toBeGreaterThan(-1);
-        expect(msg.searchError.indexOf('someMsg')).toBeGreaterThan(-1);
-        expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
-        errorCalled++;
+      it('accesses es with mock es params', function () {
+        $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+          var esQuery = angular.fromJson(data);
+          return (esQuery.query.term.text === mockQueryText);
+        }).
+        respond(200, mockES4Results);
+        searcher.search();
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
       });
 
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      expect(errorCalled).toEqual(1);
-    });
+      it('returns docs (they should look just like ES docs)', function() {
+        $httpBackend.expectPOST(mockEsUrl).
+        respond(200, mockES4Results);
 
-    it('network or CORS error', function() {
-      $httpBackend.expectPOST(mockEsUrl)
-        .respond(-1);
+        var called = 0;
 
-      var errorCalled = 0;
+        searcher.search()
+        .then(function() {
+          var docs = searcher.docs;
+          expect(docs.length === 2);
+          expect(docs[0].field).toEqual(mockES4Results.hits.hits[0].fields.field[0]);
+          expect(docs[0].field1).toEqual(mockES4Results.hits.hits[0].fields.field1[0]);
+          expect(docs[1].field).toEqual(mockES4Results.hits.hits[1].fields.field[0]);
+          expect(docs[1].field1).toEqual(mockES4Results.hits.hits[1].fields.field1[0]);
+          called++;
+        });
 
-      searcher.search()
-      .then(function success() {
-        errorCalled--;
-      }, function failure(msg) {
-        expect(msg.searchError.indexOf('Network Error')).toBeGreaterThan(-1);
-        expect(msg.searchError.indexOf('CORS')).toBeGreaterThan(-1);
-        errorCalled++;
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toEqual(1);
       });
 
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      expect(errorCalled).toEqual(1);
-    });
+      it('source has no "doc" or "field" property', function() {
+        $httpBackend.expectPOST(mockEsUrl).
+        respond(200, mockES4Results);
 
-    it('sets the proper headers for auth', function() {
-      var authEsUrl = 'http://username:password@localhost:9200/statedecoded/_search';
-      searcher = searchSvc.createSearcher(
-        mockFieldSpec.fieldList,
-        authEsUrl,
-        mockEsParams,
-        mockQueryText,
-        {},
-        'es'
-      );
+        var called = 0;
 
-      $httpBackend.expectPOST(authEsUrl, undefined, function(headers) {
-        return headers['Authorization'] == 'Basic ' + btoa('username:password');
-      }).
-      respond(200, mockResults);
-
-      var called = 0;
-
-      searcher.search()
-      .then(function() {
-        var docs = searcher.docs;
-        expect(docs.length === 2);
-        expect(docs[0].field).toEqual(mockResults.hits.hits[0].fields.field[0]);
-        expect(docs[0].field1).toEqual(mockResults.hits.hits[0].fields.field1[0]);
-        expect(docs[1].field).toEqual(mockResults.hits.hits[1].fields.field[0]);
-        expect(docs[1].field1).toEqual(mockResults.hits.hits[1].fields.field1[0]);
-        called++;
+        searcher.search()
+        .then(function() {
+          var docs = searcher.docs;
+          expect(docs[0].source().doc).toBe(undefined);
+          expect(docs[0].source().fields).toBe(undefined);
+          called++;
+        });
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toEqual(1);
       });
 
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      expect(called).toEqual(1);
+      it('reports pretty printed errors for ES errors but HTTP success', function() {
+        var errorMsg = {hits: [], _shards: {failed: 1, failures: [{foo: 'your query just plain stunk'}]}};
+        $httpBackend.expectPOST(mockEsUrl).
+        respond(200, errorMsg);
+
+        var errorCalled = 0;
+
+        searcher.search()
+        .then(function success() {
+          errorCalled--;
+        }, function failure(msg) {
+          expect(msg.searchError.indexOf('HTTP')).toBe(-1);
+          expect(msg.searchError.indexOf('200')).toBe(-1);
+          expect(msg.searchError.indexOf('foo')).toBeGreaterThan(-1);
+          expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
+          errorCalled++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(errorCalled).toEqual(1);
+      });
+
+      it('reports pretty printed errors for HTTP errors', function() {
+        var errorMsg = {'someMsg': 'your query just plain stunk'};
+        $httpBackend.expectPOST(mockEsUrl).
+        respond(400, {error: errorMsg});
+
+        var errorCalled = 0;
+
+        searcher.search()
+        .then(function success() {
+          errorCalled--;
+        }, function failure(msg) {
+          expect(msg.searchError.indexOf('HTTP')).toBeGreaterThan(-1);
+          expect(msg.searchError.indexOf('400')).toBeGreaterThan(-1);
+          expect(msg.searchError.indexOf('someMsg')).toBeGreaterThan(-1);
+          expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
+          errorCalled++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(errorCalled).toEqual(1);
+      });
+
+      it('network or CORS error', function() {
+        $httpBackend.expectPOST(mockEsUrl)
+          .respond(-1);
+
+        var errorCalled = 0;
+
+        searcher.search()
+        .then(function success() {
+          errorCalled--;
+        }, function failure(msg) {
+          expect(msg.searchError.indexOf('Network Error')).toBeGreaterThan(-1);
+          expect(msg.searchError.indexOf('CORS')).toBeGreaterThan(-1);
+          errorCalled++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(errorCalled).toEqual(1);
+      });
+
+      it('sets the proper headers for auth', function() {
+        var authEsUrl = 'http://username:password@localhost:9200/statedecoded/_search';
+        searcher = searchSvc.createSearcher(
+          mockFieldSpec.fieldList,
+          authEsUrl,
+          mockEsParams,
+          mockQueryText,
+          { version: '2.0' },
+          'es'
+        );
+
+        $httpBackend.expectPOST(authEsUrl, undefined, function(headers) {
+          return headers['Authorization'] == 'Basic ' + btoa('username:password');
+        }).
+        respond(200, mockES4Results);
+
+        var called = 0;
+
+        searcher.search()
+        .then(function() {
+          var docs = searcher.docs;
+          expect(docs.length === 2);
+          expect(docs[0].field).toEqual(mockES4Results.hits.hits[0].fields.field[0]);
+          expect(docs[0].field1).toEqual(mockES4Results.hits.hits[0].fields.field1[0]);
+          expect(docs[1].field).toEqual(mockES4Results.hits.hits[1].fields.field[0]);
+          expect(docs[1].field1).toEqual(mockES4Results.hits.hits[1].fields.field1[0]);
+          called++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toEqual(1);
+      });
+    });
+
+    describe('version 5+', function() {
+      beforeEach(inject(function () {
+        searcher = searchSvc.createSearcher(
+          mockFieldSpec.fieldList,
+          mockEsUrl,
+          mockEsParams,
+          mockQueryText,
+          { },
+          'es'
+        );
+      }));
+
+      it('passes the rows param and sets it to 10 by default', function() {
+        var expectedParams = {
+          size: 10
+        };
+
+        $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
+          .respond(200, mockES5Results);
+
+        searcher.search();
+        $httpBackend.flush();
+      });
+
+      it('passes the rows param and sets it to what is passed in the config', function() {
+        searcher = searchSvc.createSearcher(
+          mockFieldSpec.fieldList,
+          mockEsUrl,
+          mockEsParams,
+          mockQueryText,
+          { numberOfRows: 20 },
+          'es'
+        );
+
+        var expectedParams = {
+          size: 20
+        };
+
+        $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
+          .respond(200, mockES5Results);
+
+        searcher.search();
+        $httpBackend.flush();
+      });
+
+      it('accesses es with mock es params', function () {
+        $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+          var esQuery = angular.fromJson(data);
+          return (esQuery.query.term.text === mockQueryText);
+        }).
+        respond(200, mockES5Results);
+        searcher.search();
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+      });
+
+      it('returns docs (they should look just like ES docs)', function() {
+        $httpBackend.expectPOST(mockEsUrl).
+        respond(200, mockES5Results);
+
+        var called = 0;
+
+        searcher.search()
+        .then(function() {
+          var docs = searcher.docs;
+          expect(docs.length === 2);
+
+          var firstHit  = mockES5Results.hits.hits[0];
+          var secondHit = mockES5Results.hits.hits[1];
+          expect(docs[0].field).toEqual(firstHit.stored_fields.field[0]);
+          expect(docs[0].field1).toEqual(firstHit.stored_fields.field1[0]);
+          expect(docs[1].field).toEqual(secondHit.stored_fields.field[0]);
+          expect(docs[1].field1).toEqual(secondHit.stored_fields.field1[0]);
+          called++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toEqual(1);
+      });
+
+      it('source has no "doc" or "field" property', function() {
+        $httpBackend.expectPOST(mockEsUrl).
+        respond(200, mockES5Results);
+
+        var called = 0;
+
+        searcher.search()
+        .then(function() {
+          var docs = searcher.docs;
+          expect(docs[0].source().doc).toBe(undefined);
+          expect(docs[0].source().fields).toBe(undefined);
+          called++;
+        });
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toEqual(1);
+      });
+
+      it('reports pretty printed errors for ES errors but HTTP success', function() {
+        var errorMsg = {hits: [], _shards: {failed: 1, failures: [{foo: 'your query just plain stunk'}]}};
+        $httpBackend.expectPOST(mockEsUrl).
+        respond(200, errorMsg);
+
+        var errorCalled = 0;
+
+        searcher.search()
+        .then(function success() {
+          errorCalled--;
+        }, function failure(msg) {
+          expect(msg.searchError.indexOf('HTTP')).toBe(-1);
+          expect(msg.searchError.indexOf('200')).toBe(-1);
+          expect(msg.searchError.indexOf('foo')).toBeGreaterThan(-1);
+          expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
+          errorCalled++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(errorCalled).toEqual(1);
+      });
+
+      it('reports pretty printed errors for HTTP errors', function() {
+        var errorMsg = {'someMsg': 'your query just plain stunk'};
+        $httpBackend.expectPOST(mockEsUrl).
+        respond(400, {error: errorMsg});
+
+        var errorCalled = 0;
+
+        searcher.search()
+        .then(function success() {
+          errorCalled--;
+        }, function failure(msg) {
+          expect(msg.searchError.indexOf('HTTP')).toBeGreaterThan(-1);
+          expect(msg.searchError.indexOf('400')).toBeGreaterThan(-1);
+          expect(msg.searchError.indexOf('someMsg')).toBeGreaterThan(-1);
+          expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
+          errorCalled++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(errorCalled).toEqual(1);
+      });
+
+      it('network or CORS error', function() {
+        $httpBackend.expectPOST(mockEsUrl)
+          .respond(-1);
+
+        var errorCalled = 0;
+
+        searcher.search()
+        .then(function success() {
+          errorCalled--;
+        }, function failure(msg) {
+          expect(msg.searchError.indexOf('Network Error')).toBeGreaterThan(-1);
+          expect(msg.searchError.indexOf('CORS')).toBeGreaterThan(-1);
+          errorCalled++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(errorCalled).toEqual(1);
+      });
+
+      it('sets the proper headers for auth', function() {
+        var authEsUrl = 'http://username:password@localhost:9200/statedecoded/_search';
+        searcher = searchSvc.createSearcher(
+          mockFieldSpec.fieldList,
+          authEsUrl,
+          mockEsParams,
+          mockQueryText,
+          { },
+          'es'
+        );
+
+        $httpBackend.expectPOST(authEsUrl, undefined, function(headers) {
+          return headers['Authorization'] == 'Basic ' + btoa('username:password');
+        }).
+        respond(200, mockES5Results);
+
+        var called = 0;
+
+        searcher.search()
+        .then(function() {
+          var docs = searcher.docs;
+          expect(docs.length === 2);
+
+          var firstHit  = mockES5Results.hits.hits[0];
+          var secondHit = mockES5Results.hits.hits[1];
+          expect(docs[0].field).toEqual(firstHit.stored_fields.field[0]);
+          expect(docs[0].field1).toEqual(firstHit.stored_fields.field1[0]);
+          expect(docs[1].field).toEqual(secondHit.stored_fields.field[0]);
+          expect(docs[1].field1).toEqual(secondHit.stored_fields.field1[0]);
+          called++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toEqual(1);
+      });
     });
   });
 
@@ -303,18 +537,18 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery = angular.fromJson(data);
         return (esQuery.hasOwnProperty('explain') && esQuery.explain === true);
       }).
-      respond(200, mockResults);
+      respond(200, mockES4Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
     it('it populates explain', function() {
-      var mockResultsWithExpl = angular.copy(mockResults);
-      mockResultsWithExpl.hits.hits[0]._explanation = sumExplain;
+      var mockES4ResultsWithExpl = angular.copy(mockES4Results);
+      mockES4ResultsWithExpl.hits.hits[0]._explanation = sumExplain;
       var called = 0;
       $httpBackend.expectPOST(mockEsUrl).
-        respond(200, mockResultsWithExpl);
+        respond(200, mockES4ResultsWithExpl);
       searcher.search()
       .then(function() {
         var docs = searcher.docs;
@@ -329,11 +563,11 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
 
     it('source has no _explanation', function() {
-      var mockResultsWithExpl = angular.copy(mockResults);
-      mockResultsWithExpl.hits.hits[0]._explanation = sumExplain;
+      var mockES4ResultsWithExpl = angular.copy(mockES4Results);
+      mockES4ResultsWithExpl.hits.hits[0]._explanation = sumExplain;
       var called = 0;
       $httpBackend.expectPOST(mockEsUrl).
-        respond(200, mockResultsWithExpl);
+        respond(200, mockES4ResultsWithExpl);
       searcher.search()
       .then(function() {
         var docs = searcher.docs;
@@ -485,8 +719,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery           = angular.fromJson(data);
         var expectedHighlight = {
           fields: {
-            _id:    {},
-            title:  {},
+            _id:    { },
+            title:  { },
           }
         };
         return (
@@ -494,7 +728,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           angular.equals( esQuery.highlight, expectedHighlight )
         );
       }).
-      respond(200, mockResults);
+      respond(200, mockES4Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -516,10 +750,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery           = angular.fromJson(data);
         var expectedHighlight = {
           fields: {
-            _id:      {},
-            title:    {},
-            section:  {},
-            tags:     {},
+            _id:      { },
+            title:    { },
+            section:  { },
+            tags:     { },
           }
         };
         return (
@@ -527,7 +761,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           angular.equals( esQuery.highlight, expectedHighlight )
         );
       }).
-      respond(200, mockResults);
+      respond(200, mockES4Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -558,7 +792,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           angular.equals( esQuery.highlight, expectedHighlight )
         );
       }).
-      respond(200, mockResults);
+      respond(200, mockES4Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -655,7 +889,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery = angular.fromJson(data);
         return (esQuery.query.term.text === mockQueryText);
       }).
-      respond(200, mockResults);
+      respond(200, mockES4Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -682,7 +916,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery = angular.fromJson(data);
         return (esQuery.query.term.text === 'taco&burrito taco&burrito purina headphone purina');
       }).
-      respond(200, mockResults);
+      respond(200, mockES4Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -709,7 +943,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery = angular.fromJson(data);
         return (esQuery.query.term.text === 'lovely bunnies');
       }).
-      respond(200, mockResults);
+      respond(200, mockES4Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -737,7 +971,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         console.log(esQuery.query.term.text);
         return (esQuery.query.term.text === 'purina \"\"');
       }).
-      respond(200, mockResults);
+      respond(200, mockES4Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -1000,7 +1234,9 @@ describe('Service: searchSvc: ElasticSearch', function() {
     var expectedExplainResponse = sumExplain;
 
     it('makes one search request and one explain request per resulting doc', function () {
-      var url = mockEsUrl + '?fields=' + mockFieldSpec.fieldList().join(',');
+      var fieldList = mockFieldSpec.fieldList().join(',');
+      var url       = mockEsUrl + '?fields=' + fieldList;
+      url += '&_source=' + fieldList;
       url += '&q=' + otherQuery;
       url += '&from=0&size=10';
 
@@ -1019,7 +1255,9 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
 
     it('sets the array of docs', function () {
-      var url = mockEsUrl + '?fields=' + mockFieldSpec.fieldList().join(',');
+      var fieldList = mockFieldSpec.fieldList().join(',');
+      var url       = mockEsUrl + '?fields=' + fieldList;
+      url += '&_source=' + fieldList;
       url += '&q=' + otherQuery;
       url += '&from=0&size=10';
 
@@ -1042,7 +1280,9 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
 
     it('paginates for explain other searches', function () {
-      var url = mockEsUrl + '?fields=' + mockFieldSpec.fieldList().join(',');
+      var fieldList = mockFieldSpec.fieldList().join(',');
+      var url       = mockEsUrl + '?fields=' + fieldList;
+      url += '&_source=' + fieldList;
       url += '&q=' + otherQuery;
       url += '&from=10&size=10';
 
@@ -1076,20 +1316,22 @@ describe('Service: searchSvc: ElasticSearch', function() {
       );
     }));
 
-    it('defaults to version 5.0 and uses the "stored_fields" params', function() {
+    it('defaults to version 5.0 and uses the "stored_fields" & "_source" params', function() {
       expect(searcher.config.version).toEqual('5.0');
 
       var expectedParams = {
-        stored_fields: mockFieldSpec.fieldList().join(',')
+        stored_fields: mockFieldSpec.fieldList().join(','),
+        _source:       mockFieldSpec.fieldList().join(',')
       };
 
       $httpBackend.when('POST', mockEsUrl,
         function(postData) {
           var jsonData = JSON.parse(postData);
           expect(jsonData.stored_fields).toBe(expectedParams.stored_fields);
+          expect(jsonData._source).toBe(expectedParams._source);
           return true;
         }
-      ).respond(200, mockResults);
+      ).respond(200, mockES4Results);
 
       searcher.search();
       $httpBackend.flush();
@@ -1120,7 +1362,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
             expect(jsonData.fields).toBe(expectedParams.fields);
             return true;
           }
-        ).respond(200, mockResults);
+        ).respond(200, mockES4Results);
 
         searcher.search();
         $httpBackend.flush();

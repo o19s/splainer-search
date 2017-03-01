@@ -15,7 +15,8 @@
       DocFactory.call(this, doc, options);
 
       var self = this;
-      angular.forEach(self.fields, function(fieldValue, fieldName) {
+
+      angular.forEach(self.fieldsProperty(), function(fieldValue, fieldName) {
         if ( fieldValue.length === 1 && typeof(fieldValue) === 'object' ) {
           self[fieldName] = fieldValue[0];
         } else {

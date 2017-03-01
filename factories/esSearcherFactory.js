@@ -117,11 +117,19 @@
       }
 
       if (apiMethod === 'get' ) {
+        var fieldList = self.fieldList.join(',');
+
         if ( 5 <= self.majorVersion() ) {
           /*jshint camelcase: false */
-          esUrlSvc.setParams(uri, { stored_fields: self.fieldList.join(',') });
+          esUrlSvc.setParams(uri, {
+            stored_fields: fieldList,
+            _source:       fieldList,
+          });
         } else {
-          esUrlSvc.setParams(uri, { fields: self.fieldList.join(',') });
+          esUrlSvc.setParams(uri, {
+            fields:  fieldList,
+            _source: fieldList,
+          });
         }
       }
 
@@ -213,6 +221,7 @@
             url:                self.url,
             explDict:           explDict,
             hlDict:             hlDict,
+            version:            self.majorVersion(),
           };
 
           return new EsDocFactory(doc, options);

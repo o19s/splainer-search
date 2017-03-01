@@ -12,11 +12,14 @@
 
       angular.copy(doc, self);
 
-      self.doc        = doc;
+      self.doc             = doc;
 
-      self.groupedBy  = groupedBy;
-      self.group      = group;
-      self.options    = options;
+      self.groupedBy       = groupedBy;
+      self.group           = group;
+      self.options         = options;
+      self.version         = version;
+      self.fieldsAttrName  = fieldsAttrName;
+      self.fieldsProperty  = fieldsProperty;
 
       function groupedBy () {
         if (opts.groupedBy === undefined) {
@@ -36,6 +39,34 @@
         } else {
           return opts.group;
         }
+      }
+
+      function version () {
+        if (opts.version === undefined) {
+          return null;
+        } else {
+          return opts.version;
+        }
+      }
+
+      function fieldsAttrName() {
+        if ( 5 <= self.version() ) {
+          if ( self.hasOwnProperty('_source') ) {
+            return '_source';
+          } else {
+            return 'stored_fields';
+          }
+        } else {
+          if ( self.hasOwnProperty('_source') ) {
+            return '_source';
+          } else {
+            return 'fields';
+          }
+        }
+      }
+
+      function fieldsProperty() {
+        return self[self.fieldsAttrName()];
       }
     };
 
