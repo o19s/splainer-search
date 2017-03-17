@@ -1444,7 +1444,9 @@ angular.module('o19s.splainer-search')
           settings.url,
           settings.selectedTry.args,
           queryText,
-          {},
+          {
+            version: settings.version,
+          },
           searchEngine
         );
       };
@@ -2843,6 +2845,7 @@ angular.module('o19s.splainer-search')
         debug:        false,
         escapeQuery:  false,
         numberOfRows: ids.length,
+        version:      self.settings.version,
       };
 
       self.searcher = searchSvc.createSearcher(
@@ -2971,6 +2974,7 @@ angular.module('o19s.splainer-search')
 
       self.searchUrl    = settings.searchUrl;
       self.searchEngine = settings.searchEngine;
+      self.version      = settings.version;
 
       self.searcher = null;
       self.fields   = [];
@@ -2996,7 +3000,9 @@ angular.module('o19s.splainer-search')
           self.searchUrl,
           args,
           '',
-          {},
+          {
+            version: self.version,
+          },
           self.searchEngine
         );
       }
