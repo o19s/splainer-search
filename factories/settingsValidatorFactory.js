@@ -15,6 +15,7 @@
 
       self.searchUrl    = settings.searchUrl;
       self.searchEngine = settings.searchEngine;
+      self.version      = settings.version;
 
       self.searcher = null;
       self.fields   = [];
@@ -40,7 +41,9 @@
           self.searchUrl,
           args,
           '',
-          {},
+          {
+            version: self.version,
+          },
           self.searchEngine
         );
       }

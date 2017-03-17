@@ -63,6 +63,7 @@
         debug:        false,
         escapeQuery:  false,
         numberOfRows: ids.length,
+        version:      self.settings.version,
       };
 
       self.searcher = searchSvc.createSearcher(
