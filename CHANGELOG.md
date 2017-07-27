@@ -1,6 +1,6 @@
 Version numbers correspond to `bower.json` version
 
-# 2.0.4
+# 2.0.5
 - Support simple grouping in Solr
 
 # 1.2.0
