@@ -1,6 +1,6 @@
 'use strict';
 
--/*jslint latedef:false*/
+/*jslint latedef:false*/
 
 (function() {
   angular.module('o19s.splainer-search')
