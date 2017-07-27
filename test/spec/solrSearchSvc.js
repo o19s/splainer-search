@@ -700,9 +700,71 @@ describe('Service: searchSvc: Solr', function () {
   });
 
   describe('group-by', function() {
-    var groupedSolrResp = { responseHeader:{
+    var simpleGroupedSolrResponse = {
+      "responseHeader": {
+        "status": 0,
+        "QTime": 17
+      },
+      "grouped": {
+        "BUS_LISTING_ID": {
+          "matches": 19,
+          "ngroups": 6,
+          "doclist": {
+            "numFound": 19,
+            "start": 0,
+            "docs": [{
+              "id": "58356",
+              "BUS_LISTING_ID": "1"
+            }, {
+              "id": "86192",
+              "BUS_LISTING_ID": "2"
+            }, {
+              "id": "158752",
+              "BUS_LISTING_ID": "3"
+            }, {
+              "id": "190993",
+              "BUS_LISTING_ID": "4"
+            }, {
+              "id": "156334",
+              "BUS_LISTING_ID": "5"
+            }, {
+              "id": "45291",
+              "BUS_LISTING_ID": "6"
+            }]
+          }
+        }
+      },
+      "facet_counts": {
+        "facet_queries": {},
+        "facet_fields": {
+          "BUS_GROUP_ID": ["222221", 12, "168504", 2, "359033", 2, "832532", 1, "840097", 1, "956094", 1],
+          "BUS_LISTING_ID": ["222221", 12, "168504", 2, "359033", 2, "832532", 1, "840097", 1, "956094", 1],
+          "BUS_BUSINESS_NAME_FIRSTCHR": ["a", 16, "r", 2, "h", 1],
+          "BUS_FEATURES": ["Ads", 3, "Business Hours", 3, "Business Information", 3, "Website", 3],
+          "BUS_CITY_EXACT": ["Prince Albert", 13, "Beauval Forks", 2, "Saskatoon", 2, "Humboldt", 1, "Indian Head", 1],
+          "BUS_HEADING_CODE": ["000000", 9, "005120", 4, "023200", 4, "018360", 1, "020350", 1],
+          "BUS_HEADING_RELATED_CATEGORIES": ["Delicatessens", 8, "Halls &amp; Auditoriums", 8, "Hotel &amp; Motel Equipment &amp; Supplies", 8, "Restaurant Equipment &amp; Supplies", 8, "Hotels", 5, "Caterers", 4, "Chairs Renting", 4, "Chinese Foods", 4, "Coffee Houses", 4, "Dinner Theatres", 4, "Doughnuts", 4, "Fish &amp; Chips", 4, "Food Products", 4, "Food Service Management &amp; Supplies", 4, "Foods Ready To Serve", 4, "Gourmet Shops", 4, "Health Food Products", 4, "Maid Service", 4, "Night Clubs", 4, "Party Planning Service", 4, "Pizza", 4, "Restaurants", 4, "Sandwiches", 4, "Tea Rooms", 4, "Wedding Planning, Supplies &amp; Service", 4, "Hotels &amp; Motels Reservations Out of Town", 1, "Nursing Homes", 1]
+        },
+        "facet_dates": {},
+        "facet_ranges": {},
+        "facet_intervals": {},
+        "facet_heatmaps": {}
+      },
+      "highlighting": {
+        "58356": {},
+        "86192": {},
+        "158752": {},
+        "190993": {},
+        "156334": {},
+        "45291": {}
+      }
+    };
+
+    var groupedSolrResp = {
+      responseHeader:{
           'status':0,
-          'QTime':3},
+          'QTime':3
+      },
         'grouped':{
           'catch_line':{
             'matches':20148,
@@ -845,6 +907,20 @@ describe('Service: searchSvc: Solr', function () {
       fieldSpec = fieldSpecSvc.createFieldSpec('id catch_line');
       searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                               mockSolrParams, mockQueryText);
+    });
+
+
+    it('parses an simple grouped response', function() {
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+        .respond(200, simpleGroupedSolrResponse);
+      var called = 0;
+      var q = searcher.search().then(function () {
+          expect(searcher.docs.length).toEqual(6);
+          expect(searcher.grouped.hasOwnProperty('BUS_LISTING_ID')).toBeTruthy();
+          var gpd = searcher.grouped;
+          expect(gpd['BUS_LISTING_ID'][0].value).toEqual('1');
+        });
+      $httpBackend.flush();
     });
 
     it('parses a grouped response', function() {

@@ -170,7 +170,19 @@
             });
           } else if (solrResp.hasOwnProperty('grouped')) {
             angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
+
               thisSearcher.numFound = groupedBy.matches;
+              // add docs for a top level group
+              //console.log(groupedBy.doclist.docs);
+              if (groupedBy.hasOwnProperty('doclist')) {
+                angular.forEach(groupedBy.doclist.docs, function (solrDoc) {
+                  var doc = parseSolrDoc(solrDoc, groupedByName, solrDoc[groupedByName]);
+                  thisSearcher.docs.push(doc);
+                  thisSearcher.addDocToGroup(groupedByName, solrDoc[groupedByName], doc);
+                });
+              }
+
+              // add docs for Field Collapsing results
               angular.forEach(groupedBy.groups, function(groupResp) {
                 var groupValue = groupResp.groupValue;
                 angular.forEach(groupResp.doclist.docs, function(solrDoc) {

@@ -1,5 +1,8 @@
 Version numbers correspond to `bower.json` version
 
+# 2.0.4
+- Support simple grouping in Solr
+
 # 1.2.0
 - Elasticsearch bulk search support
 
