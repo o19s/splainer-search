@@ -122,12 +122,10 @@
         if ( 5 <= self.majorVersion() ) {
           /*jshint camelcase: false */
           esUrlSvc.setParams(uri, {
-            stored_fields: fieldList,
             _source:       fieldList,
           });
         } else {
           esUrlSvc.setParams(uri, {
-            fields:  fieldList,
             _source: fieldList,
           });
         }

@@ -202,7 +202,7 @@ angular.module('o19s.splainer-search')
 
       // Attributes
       // field name since ES 5.0
-      self.fieldsParamNames = [ '_source', 'stored_fields' ];
+      self.fieldsParamNames = [ '_source'];
 
       // Functions
       self.prepare  = prepare;
@@ -289,12 +289,8 @@ angular.module('o19s.splainer-search')
         }
       };
 
-      var setFieldsParamName = function(searcher) {
-        if ( 5 <= searcher.majorVersion() ) {
-          self.fieldsParamNames = [ '_source', 'stored_fields' ];
-        } else {
-          self.fieldsParamNames = [ '_source', 'fields' ];
-        }
+      var setFieldsParamName = function() {
+        self.fieldsParamNames = [ '_source'];
       };
 
       function prepare (searcher) {
@@ -2491,12 +2487,10 @@ angular.module('o19s.splainer-search')
         if ( 5 <= self.majorVersion() ) {
           /*jshint camelcase: false */
           esUrlSvc.setParams(uri, {
-            stored_fields: fieldList,
             _source:       fieldList,
           });
         } else {
           esUrlSvc.setParams(uri, {
-            fields:  fieldList,
             _source: fieldList,
           });
         }

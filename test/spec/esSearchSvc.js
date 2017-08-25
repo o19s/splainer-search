@@ -1235,8 +1235,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
     it('makes one search request and one explain request per resulting doc', function () {
       var fieldList = mockFieldSpec.fieldList().join(',');
-      var url       = mockEsUrl + '?fields=' + fieldList;
-      url += '&_source=' + fieldList;
+      var url       = mockEsUrl;
+      url += '?_source=' + fieldList;
       url += '&q=' + otherQuery;
       url += '&from=0&size=10';
 
@@ -1256,8 +1256,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
     it('sets the array of docs', function () {
       var fieldList = mockFieldSpec.fieldList().join(',');
-      var url       = mockEsUrl + '?fields=' + fieldList;
-      url += '&_source=' + fieldList;
+      var url       = mockEsUrl;
+      url += '?_source=' + fieldList;
       url += '&q=' + otherQuery;
       url += '&from=0&size=10';
 
@@ -1281,8 +1281,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
     it('paginates for explain other searches', function () {
       var fieldList = mockFieldSpec.fieldList().join(',');
-      var url       = mockEsUrl + '?fields=' + fieldList;
-      url += '&_source=' + fieldList;
+      var url       = mockEsUrl;
+      url += '?_source=' + fieldList;
       url += '&q=' + otherQuery;
       url += '&from=10&size=10';
 
@@ -1335,36 +1335,5 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.flush();
     });
 
-    describe('prior to 5.0', function() {
-      beforeEach(inject(function () {
-        searcher = searchSvc.createSearcher(
-          mockFieldSpec.fieldList().join(','),
-          mockEsUrl,
-          mockEsParams,
-          mockQueryText,
-          { version: '2.0' },
-          'es'
-        );
-      }));
-
-      it('sets the appropriate version and uses the "fields" params', function() {
-        expect(searcher.config.version).toEqual('2.0');
-
-        var expectedParams = {
-          fields: mockFieldSpec.fieldList().join(',')
-        };
-
-        $httpBackend.when('POST', mockEsUrl,
-          function(postData) {
-            var jsonData = JSON.parse(postData);
-            expect(jsonData.fields).toBe(expectedParams.fields);
-            return true;
-          }
-        ).respond(200, mockES4Results);
-
-        searcher.search();
-        $httpBackend.flush();
-      });
-    });
   });
 });
