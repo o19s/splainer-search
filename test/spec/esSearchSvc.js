@@ -50,7 +50,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           '_type':  'law',
           '_id':    'l_1',
           '_score': 5.0,
-          'fields': {
+          '_source': {
             'field':  ['1--field value'],
             'field1': ['1--field1 value']
           },
@@ -60,7 +60,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           '_type':  'law',
           '_id':    'l_1',
           '_score': 3.0,
-          'fields': {
+          '_source': {
             'field':  ['2--field value'],
             'field1': ['2--field1 value']
           }
@@ -79,7 +79,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           '_type':  'law',
           '_id':    'l_1',
           '_score': 5.0,
-          'stored_fields': {
+          '_source': {
             'field':  ['1--field value'],
             'field1': ['1--field1 value']
           },
@@ -89,7 +89,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           '_type':  'law',
           '_id':    'l_1',
           '_score': 3.0,
-          'stored_fields': {
+          '_source': {
             'field':  ['2--field value'],
             'field1': ['2--field1 value']
           }
@@ -165,10 +165,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
         .then(function() {
           var docs = searcher.docs;
           expect(docs.length === 2);
-          expect(docs[0].field).toEqual(mockES4Results.hits.hits[0].fields.field[0]);
-          expect(docs[0].field1).toEqual(mockES4Results.hits.hits[0].fields.field1[0]);
-          expect(docs[1].field).toEqual(mockES4Results.hits.hits[1].fields.field[0]);
-          expect(docs[1].field1).toEqual(mockES4Results.hits.hits[1].fields.field1[0]);
+          expect(docs[0].field).toEqual(mockES4Results.hits.hits[0]._source.field[0]);
+          expect(docs[0].field1).toEqual(mockES4Results.hits.hits[0]._source.field1[0]);
+          expect(docs[1].field).toEqual(mockES4Results.hits.hits[1]._source.field[0]);
+          expect(docs[1].field1).toEqual(mockES4Results.hits.hits[1]._source.field1[0]);
           called++;
         });
 
@@ -283,10 +283,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
         .then(function() {
           var docs = searcher.docs;
           expect(docs.length === 2);
-          expect(docs[0].field).toEqual(mockES4Results.hits.hits[0].fields.field[0]);
-          expect(docs[0].field1).toEqual(mockES4Results.hits.hits[0].fields.field1[0]);
-          expect(docs[1].field).toEqual(mockES4Results.hits.hits[1].fields.field[0]);
-          expect(docs[1].field1).toEqual(mockES4Results.hits.hits[1].fields.field1[0]);
+          expect(docs[0].field).toEqual(mockES4Results.hits.hits[0]._source.field[0]);
+          expect(docs[0].field1).toEqual(mockES4Results.hits.hits[0]._source.field1[0]);
+          expect(docs[1].field).toEqual(mockES4Results.hits.hits[1]._source.field[0]);
+          expect(docs[1].field1).toEqual(mockES4Results.hits.hits[1]._source.field1[0]);
           called++;
         });
 
@@ -365,10 +365,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
           var firstHit  = mockES5Results.hits.hits[0];
           var secondHit = mockES5Results.hits.hits[1];
-          expect(docs[0].field).toEqual(firstHit.stored_fields.field[0]);
-          expect(docs[0].field1).toEqual(firstHit.stored_fields.field1[0]);
-          expect(docs[1].field).toEqual(secondHit.stored_fields.field[0]);
-          expect(docs[1].field1).toEqual(secondHit.stored_fields.field1[0]);
+          expect(docs[0].field).toEqual(firstHit._source.field[0]);
+          expect(docs[0].field1).toEqual(firstHit._source.field1[0]);
+          expect(docs[1].field).toEqual(secondHit._source.field[0]);
+          expect(docs[1].field1).toEqual(secondHit._source.field1[0]);
           called++;
         });
 
@@ -486,10 +486,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
           var firstHit  = mockES5Results.hits.hits[0];
           var secondHit = mockES5Results.hits.hits[1];
-          expect(docs[0].field).toEqual(firstHit.stored_fields.field[0]);
-          expect(docs[0].field1).toEqual(firstHit.stored_fields.field1[0]);
-          expect(docs[1].field).toEqual(secondHit.stored_fields.field[0]);
-          expect(docs[1].field1).toEqual(secondHit.stored_fields.field1[0]);
+          expect(docs[0].field).toEqual(firstHit._source.field[0]);
+          expect(docs[0].field1).toEqual(firstHit._source.field1[0]);
+          expect(docs[1].field).toEqual(secondHit._source.field[0]);
+          expect(docs[1].field1).toEqual(secondHit._source.field1[0]);
           called++;
         });
 
@@ -1316,18 +1316,16 @@ describe('Service: searchSvc: ElasticSearch', function() {
       );
     }));
 
-    it('defaults to version 5.0 and uses the "stored_fields" & "_source" params', function() {
+    it('defaults to version 5.0 and uses the "_source" params', function() {
       expect(searcher.config.version).toEqual('5.0');
 
       var expectedParams = {
-        stored_fields: mockFieldSpec.fieldList().join(','),
         _source:       mockFieldSpec.fieldList().join(',')
       };
 
       $httpBackend.when('POST', mockEsUrl,
         function(postData) {
           var jsonData = JSON.parse(postData);
-          expect(jsonData.stored_fields).toBe(expectedParams.stored_fields);
           expect(jsonData._source).toBe(expectedParams._source);
           return true;
         }

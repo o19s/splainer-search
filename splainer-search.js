@@ -2237,19 +2237,7 @@ angular.module('o19s.splainer-search')
       }
 
       function fieldsAttrName() {
-        if ( 5 <= self.version() ) {
-          if ( self.hasOwnProperty('_source') ) {
-            return '_source';
-          } else {
-            return 'stored_fields';
-          }
-        } else {
-          if ( self.hasOwnProperty('_source') ) {
-            return '_source';
-          } else {
-            return 'fields';
-          }
-        }
+        return '_source';
       }
 
       function fieldsProperty() {
