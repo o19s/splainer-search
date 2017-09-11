@@ -809,9 +809,48 @@ angular.module('o19s.splainer-search')
         });
       };
 
+      //
+      // Takes an array of keys and fetches the nested value
+      // by traversing the object map in parallel as the list of keys.
+      //
+      // @param obj,  Object, the object we want to fetch value from.
+      // @param keys, Array,  the list of keys.
+      //
+      // Example:
+      // obj:  { a: { b: 'c' } }
+      // keys: [ 'a', 'b' ]
+      // returns: obj['a']['b'] => c
+      //
+      var multiIndex = function(obj, keys) {
+        return keys.length ? multiIndex(obj[keys[0]], keys.slice(1)) : obj;
+      };
+
+      //
+      // Takes a dot notation and returns the value of the object by
+      // traversing the key map.
+      //
+      // @param obj,  Object, the object we want to fetch value from.
+      // @param keys, String, the dot notation of the keys.
+      //
+      // Example:
+      // obj:  { a: { b: 'c' } }
+      // keys: 'a.b'
+      // returns: obj['a']['b'] => c
+      //
+      var pathIndex = function(obj, keys) {
+        return multiIndex(obj, keys.split('.'));
+      };
+
       var assignSingleField = function(normalDoc, doc, field, toProperty) {
-        if (doc.hasOwnProperty(field)) {
-          normalDoc[toProperty] = ('' + doc[field]);
+        if ( /./.test(field) ) {
+          try {
+            var value = pathIndex(doc, field);
+            normalDoc[toProperty] = '' + value;
+          } catch (e) {
+            normalDoc[toProperty] = '';
+          }
+        } else if ( doc.hasOwnProperty(field) ) {
+          normalDoc[toProperty] = '' + doc[field];
         }
       };
 
@@ -833,7 +872,14 @@ angular.module('o19s.splainer-search')
         }
         else {
           angular.forEach(fieldSpec.subs, function(subFieldName) {
-            if (doc.hasOwnProperty(subFieldName)) {
+            if ( /./.test(subFieldName) ) {
+              try {
+                var value = pathIndex(doc, subFieldName);
+                normalDoc.subs[subFieldName] = '' + value;
+              } catch (e) {
+                normalDoc.subs[subFieldName] = '';
+              }
+            } else if ( doc.hasOwnProperty(subFieldName) ) {
               normalDoc.subs[subFieldName] = '' + doc[subFieldName];
             }
           });
@@ -2265,7 +2311,7 @@ angular.module('o19s.splainer-search')
       var self = this;
 
       angular.forEach(self.fieldsProperty(), function(fieldValue, fieldName) {
-        if ( fieldValue !== null && fieldValue.length === 1 && typeof(fieldValue) === 'object' ) {
+        if ( fieldValue !== null && fieldValue.constructor === Array && fieldValue.length === 1 ) {
           self[fieldName] = fieldValue[0];
         } else {
           self[fieldName] = fieldValue;
