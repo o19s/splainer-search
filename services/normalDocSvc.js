@@ -56,7 +56,7 @@ angular.module('o19s.splainer-search')
       };
 
       var assignSingleField = function(normalDoc, doc, field, toProperty) {
-        if ( /./.test(field) ) {
+        if ( /\./.test(field) ) {
           try {
             var value = pathIndex(doc, field);
             normalDoc[toProperty] = '' + value;
@@ -86,7 +86,7 @@ angular.module('o19s.splainer-search')
         }
         else {
           angular.forEach(fieldSpec.subs, function(subFieldName) {
-            if ( /./.test(subFieldName) ) {
+            if ( /\./.test(subFieldName) ) {
               try {
                 var value = pathIndex(doc, subFieldName);
                 normalDoc.subs[subFieldName] = '' + value;

@@ -1,5 +1,8 @@
 Version numbers correspond to `bower.json` version
 
+# 2.2.1
+- Bugfix: check for whether field name had a '.' was matching everything. D'oh!
+
 # 2.2.0
 - Adds support for neste fields
 
