@@ -25,3 +25,4 @@ coverage
 
 # Vagrant
 .vagrant
+provisioning/playbook.retry
