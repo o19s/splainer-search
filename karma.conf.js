@@ -61,7 +61,8 @@ module.exports = function(config) {
       'values/**/*.js': ['coverage']
     },
 
-    reporters: ['progress', 'coverage'],
+//    reporters: ['progress', 'coverage'],
+    reporters: ['dots', 'coverage'],
 
     // Continuous Integration mode
     // if true, it capture browsers, run tests and exit

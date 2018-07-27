@@ -16,6 +16,7 @@
       self.queryText          = options.queryText;
       self.config             = options.config;
       self.type               = options.type;
+      self.searchEngine       = options.searchEngine;
 
       self.docs               = [];
       self.grouped            = {};
@@ -25,10 +26,10 @@
 
       self.HIGHLIGHTING_PRE   = options.HIGHLIGHTING_PRE;
       self.HIGHLIGHTING_POST  = options.HIGHLIGHTING_POST;
-
-      preprocessor.prepare(self);
+      if (preprocessor) {
+        preprocessor.prepare(self);
+      }
     };
-
     // Return factory object
     return Searcher;
   }
