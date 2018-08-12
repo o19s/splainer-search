@@ -1,4 +1,4 @@
-Version numbers correspond to `bower.json` version
+Version numbers correspond to `package.json` version
 
 # 2.2.1
 - Bugfix: check for whether field name had a '.' was matching everything. D'oh!
