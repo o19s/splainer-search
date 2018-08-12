@@ -860,12 +860,20 @@ angular.module('o19s.splainer-search')
       };
 
       var assignSubs = function(normalDoc, doc, fieldSpec) {
+        var parseValue = function(value) {
+          if ( typeof value === 'object' ) {
+            return value;
+          } else {
+            return '' + value;
+          }
+        };
+
         if (fieldSpec.subs === '*') {
           angular.forEach(doc, function(value, fieldName) {
             if (typeof(value) !== 'function') {
               if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
                   fieldName !== fieldSpec.thumb) {
-                normalDoc.subs[fieldName] = '' + value;
+                normalDoc.subs[fieldName] = parseValue(value);
               }
             }
           });
@@ -875,21 +883,21 @@ angular.module('o19s.splainer-search')
             if ( /\./.test(subFieldName) ) {
               try {
                 var value = pathIndex(doc, subFieldName);
-                normalDoc.subs[subFieldName] = '' + value;
+                normalDoc.subs[subFieldName] = parseValue(value);
               } catch (e) {
                 normalDoc.subs[subFieldName] = '';
               }
             } else if ( doc.hasOwnProperty(subFieldName) ) {
-              normalDoc.subs[subFieldName] = '' + doc[subFieldName];
+              normalDoc.subs[subFieldName] = parseValue(doc[subFieldName]);
             }
           });
           angular.forEach(fieldSpec.functions, function(functionField) {
             // for foo:$foo, look for foo
             var dispName = fieldDisplayName(functionField);
-            if (doc.hasOwnProperty(dispName)) {
-              normalDoc.subs[dispName] = '' + doc[dispName];
-            }
 
+            if (doc.hasOwnProperty(dispName)) {
+              normalDoc.subs[dispName] = parseValue(doc[dispName]);
+            }
           });
         }
       };
@@ -937,11 +945,22 @@ angular.module('o19s.splainer-search')
         doc.subSnippets = function(hlPre, hlPost) {
           if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
             angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
-              var snip = aDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
-              if (snip === null) {
-                snip = escapeHtml(subFieldValue.slice(0, 200));
+              if ( typeof subFieldValue === 'object' ) {
+                lastSubSnips[subFieldName] = subFieldValue;
+              } else {
+                var snip = aDoc.highlight(
+                  doc.id,
+                  subFieldName,
+                  hlPre,
+                  hlPost
+                );
+
+                if (snip === null) {
+                  snip = escapeHtml(subFieldValue.slice(0, 200));
+                }
+
+                lastSubSnips[subFieldName] = snip;
               }
-              lastSubSnips[subFieldName] = snip;
             });
           }
           return lastSubSnips;
