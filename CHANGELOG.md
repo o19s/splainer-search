@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version
 
+# 2.2.3
+- Bugfix: fixes bug when field name conflicts with url function name
+
 # 2.2.2
 - Bugfix: fixes formatting of json fields instead of returning [object Object]
 
