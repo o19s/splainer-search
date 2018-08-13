@@ -929,8 +929,8 @@ angular.module('o19s.splainer-search')
           return hasThumb;
         };
 
-        this.url = function() {
-          return this.doc.url(fieldSpec.id, this.id);
+        this._url = function() {
+          return this.doc._url(fieldSpec.id, this.id);
         };
 
       };
@@ -2346,13 +2346,13 @@ angular.module('o19s.splainer-search')
     Doc.prototype = Object.create(DocFactory.prototype);
     Doc.prototype.constructor = Doc; // Reset the constructor
 
-    Doc.prototype.url        = url;
+    Doc.prototype._url       = _url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
     Doc.prototype.source     = source;
     Doc.prototype.highlight  = highlight;
 
-    function url () {
+    function _url () {
       /*jslint validthis:true*/
       var self  = this;
       var doc   = self.doc;
@@ -3129,7 +3129,7 @@ angular.module('o19s.splainer-search')
     Doc.prototype.constructor = Doc; // Reset the constructor
 
 
-    Doc.prototype.url        = url;
+    Doc.prototype._url       = _url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
     Doc.prototype.source     = source;
@@ -3173,7 +3173,7 @@ angular.module('o19s.splainer-search')
       return solrUrlSvc.buildUrl(url, tokensArgs) + '&q=' + idField + ':'  + escId;
     };
 
-    function url (idField, docId) {
+    function _url (idField, docId) {
       /*jslint validthis:true*/
       var self = this;
       return buildTokensUrl(self.options().fieldList, self.options().url, idField, docId);

@@ -647,7 +647,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         called++;
         var docs = searcher.docs;
         var expectedUrl = 'http://localhost:9200/tmdb/movie/AU8pXbemwjf9yCj9Xh4e';
-        expect(docs[0].url()).toEqual(expectedUrl);
+        expect(docs[0]._url()).toEqual(expectedUrl);
       });
 
       $httpBackend.flush();

@@ -33,13 +33,13 @@
     Doc.prototype = Object.create(DocFactory.prototype);
     Doc.prototype.constructor = Doc; // Reset the constructor
 
-    Doc.prototype.url        = url;
+    Doc.prototype._url       = _url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
     Doc.prototype.source     = source;
     Doc.prototype.highlight  = highlight;
 
-    function url () {
+    function _url () {
       /*jslint validthis:true*/
       var self  = this;
       var doc   = self.doc;

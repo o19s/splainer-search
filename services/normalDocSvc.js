@@ -143,8 +143,8 @@ angular.module('o19s.splainer-search')
           return hasThumb;
         };
 
-        this.url = function() {
-          return this.doc.url(fieldSpec.id, this.id);
+        this._url = function() {
+          return this.doc._url(fieldSpec.id, this.id);
         };
 
       };

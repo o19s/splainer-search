@@ -199,7 +199,7 @@ searcher.search()
     var normalDoc.matchesOutOf(bestScore);
 
     // a link to the document in Solr is handy:
-    console.log(normalDoc.url())
+    console.log(normalDoc._url())
   })
 });
 ```
