@@ -1291,7 +1291,8 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('accounts for custom rows count', function() {
-      fullSolrResp.response.numFound = 61;
+      var solrRespCustRows = angular.copy(fullSolrResp)
+      solrRespCustRows.response.numFound = 61;
 
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
@@ -1305,7 +1306,7 @@ describe('Service: searchSvc: Solr', function () {
       expectedPageParams.rows = ['30'];
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
-        .respond(200, fullSolrResp);
+        .respond(200, solrRespCustRows);
 
       searcher.search();
       $httpBackend.flush();
@@ -1317,7 +1318,7 @@ describe('Service: searchSvc: Solr', function () {
       expectedPageParams.start = ['30'];
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
-        .respond(200, fullSolrResp);
+        .respond(200, solrRespCustRows);
 
       nextSearcher.search();
       $httpBackend.flush();
@@ -1328,7 +1329,7 @@ describe('Service: searchSvc: Solr', function () {
       expectedPageParams.start =['60'];
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
-        .respond(200, fullSolrResp);
+        .respond(200, solrRespCustRows);
 
       nextSearcher.search();
       $httpBackend.flush();
