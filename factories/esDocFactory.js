@@ -17,7 +17,7 @@
       var self = this;
 
       angular.forEach(self.fieldsProperty(), function(fieldValue, fieldName) {
-        if ( fieldValue !== null && fieldValue.length === 1 && typeof(fieldValue) === 'object' ) {
+        if ( fieldValue !== null && fieldValue.constructor === Array && fieldValue.length === 1 ) {
           self[fieldName] = fieldValue[0];
         } else {
           self[fieldName] = fieldValue;
@@ -33,13 +33,13 @@
     Doc.prototype = Object.create(DocFactory.prototype);
     Doc.prototype.constructor = Doc; // Reset the constructor
 
-    Doc.prototype.url        = url;
+    Doc.prototype._url       = _url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
     Doc.prototype.source     = source;
     Doc.prototype.highlight  = highlight;
 
-    function url () {
+    function _url () {
       /*jslint validthis:true*/
       var self  = this;
       var doc   = self.doc;

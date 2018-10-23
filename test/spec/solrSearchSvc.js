@@ -479,7 +479,7 @@ describe('Service: searchSvc: Solr', function () {
         expect(numDocs).toEqual(2);
         // sanity check on these docs
         angular.forEach(solrDocs, function(queryDoc) {
-          var generatedUrl = queryDoc.url('altId', queryDoc.altId);
+          var generatedUrl = queryDoc._url('altId', queryDoc.altId);
           expect(generatedUrl.indexOf('q=altId:' + queryDoc.altId)).not.toBe(-1);
         });
       });
@@ -571,7 +571,7 @@ describe('Service: searchSvc: Solr', function () {
           'facet.field': ['field1', 'field']
         };
         angular.forEach(solrDocs, function(doc) {
-          expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc.url('id', '12'))).toBeTruthy();
+          expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc._url('id', '12'))).toBeTruthy();
         });
       });
       $httpBackend.flush();
@@ -586,7 +586,7 @@ describe('Service: searchSvc: Solr', function () {
       searcher.search().then(function() {
         var solrDocs = searcher.docs;
         angular.forEach(solrDocs, function(doc) {
-          var tokenUrl = doc.url('id', 'http://12');
+          var tokenUrl = doc._url('id', 'http://12');
           expect(tokenUrl.indexOf('http://12')).toBe(-1);
           var encId = encodeURIComponent('http\\://12');
           expect(tokenUrl.indexOf(encId)).not.toBe(-1);
@@ -608,8 +608,8 @@ describe('Service: searchSvc: Solr', function () {
           'facet.field': ['field1', 'field']
         };
         angular.forEach(solrDocs, function(doc) {
-          expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc.url('id', 'foo'))).toBeTruthy();
-          expect(doc.url('id', 'foo').match(/facet.field=score/)).toBeFalsy();
+          expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc._url('id', 'foo'))).toBeTruthy();
+          expect(doc._url('id', 'foo').match(/facet.field=score/)).toBeFalsy();
         });
       });
 

@@ -23,9 +23,48 @@ angular.module('o19s.splainer-search')
         });
       };
 
+      //
+      // Takes an array of keys and fetches the nested value
+      // by traversing the object map in parallel as the list of keys.
+      //
+      // @param obj,  Object, the object we want to fetch value from.
+      // @param keys, Array,  the list of keys.
+      //
+      // Example:
+      // obj:  { a: { b: 'c' } }
+      // keys: [ 'a', 'b' ]
+      // returns: obj['a']['b'] => c
+      //
+      var multiIndex = function(obj, keys) {
+        return keys.length ? multiIndex(obj[keys[0]], keys.slice(1)) : obj;
+      };
+
+      //
+      // Takes a dot notation and returns the value of the object by
+      // traversing the key map.
+      //
+      // @param obj,  Object, the object we want to fetch value from.
+      // @param keys, String, the dot notation of the keys.
+      //
+      // Example:
+      // obj:  { a: { b: 'c' } }
+      // keys: 'a.b'
+      // returns: obj['a']['b'] => c
+      //
+      var pathIndex = function(obj, keys) {
+        return multiIndex(obj, keys.split('.'));
+      };
+
       var assignSingleField = function(normalDoc, doc, field, toProperty) {
-        if (doc.hasOwnProperty(field)) {
-          normalDoc[toProperty] = ('' + doc[field]);
+        if ( /\./.test(field) ) {
+          try {
+            var value = pathIndex(doc, field);
+            normalDoc[toProperty] = '' + value;
+          } catch (e) {
+            normalDoc[toProperty] = '';
+          }
+        } else if ( doc.hasOwnProperty(field) ) {
+          normalDoc[toProperty] = '' + doc[field];
         }
       };
 
@@ -35,29 +74,44 @@ angular.module('o19s.splainer-search')
       };
 
       var assignSubs = function(normalDoc, doc, fieldSpec) {
+        var parseValue = function(value) {
+          if ( typeof value === 'object' ) {
+            return value;
+          } else {
+            return '' + value;
+          }
+        };
+
         if (fieldSpec.subs === '*') {
           angular.forEach(doc, function(value, fieldName) {
             if (typeof(value) !== 'function') {
               if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
                   fieldName !== fieldSpec.thumb) {
-                normalDoc.subs[fieldName] = '' + value;
+                normalDoc.subs[fieldName] = parseValue(value);
               }
             }
           });
         }
         else {
           angular.forEach(fieldSpec.subs, function(subFieldName) {
-            if (doc.hasOwnProperty(subFieldName)) {
-              normalDoc.subs[subFieldName] = '' + doc[subFieldName];
+            if ( /\./.test(subFieldName) ) {
+              try {
+                var value = pathIndex(doc, subFieldName);
+                normalDoc.subs[subFieldName] = parseValue(value);
+              } catch (e) {
+                normalDoc.subs[subFieldName] = '';
+              }
+            } else if ( doc.hasOwnProperty(subFieldName) ) {
+              normalDoc.subs[subFieldName] = parseValue(doc[subFieldName]);
             }
           });
           angular.forEach(fieldSpec.functions, function(functionField) {
             // for foo:$foo, look for foo
             var dispName = fieldDisplayName(functionField);
-            if (doc.hasOwnProperty(dispName)) {
-              normalDoc.subs[dispName] = '' + doc[dispName];
-            }
 
+            if (doc.hasOwnProperty(dispName)) {
+              normalDoc.subs[dispName] = parseValue(doc[dispName]);
+            }
           });
         }
       };
@@ -89,8 +143,8 @@ angular.module('o19s.splainer-search')
           return hasThumb;
         };
 
-        this.url = function() {
-          return this.doc.url(fieldSpec.id, this.id);
+        this._url = function() {
+          return this.doc._url(fieldSpec.id, this.id);
         };
 
       };
@@ -105,11 +159,22 @@ angular.module('o19s.splainer-search')
         doc.subSnippets = function(hlPre, hlPost) {
           if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
             angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
-              var snip = aDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
-              if (snip === null) {
-                snip = escapeHtml(subFieldValue.slice(0, 200));
+              if ( typeof subFieldValue === 'object' ) {
+                lastSubSnips[subFieldName] = subFieldValue;
+              } else {
+                var snip = aDoc.highlight(
+                  doc.id,
+                  subFieldName,
+                  hlPre,
+                  hlPost
+                );
+
+                if (snip === null) {
+                  snip = escapeHtml(subFieldValue.slice(0, 200));
+                }
+
+                lastSubSnips[subFieldName] = snip;
               }
-              lastSubSnips[subFieldName] = snip;
             });
           }
           return lastSubSnips;

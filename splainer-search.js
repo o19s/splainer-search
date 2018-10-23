@@ -202,7 +202,7 @@ angular.module('o19s.splainer-search')
 
       // Attributes
       // field name since ES 5.0
-      self.fieldsParamNames = [ '_source', 'stored_fields' ];
+      self.fieldsParamNames = [ '_source'];
 
       // Functions
       self.prepare  = prepare;
@@ -289,12 +289,8 @@ angular.module('o19s.splainer-search')
         }
       };
 
-      var setFieldsParamName = function(searcher) {
-        if ( 5 <= searcher.majorVersion() ) {
-          self.fieldsParamNames = [ '_source', 'stored_fields' ];
-        } else {
-          self.fieldsParamNames = [ '_source', 'fields' ];
-        }
+      var setFieldsParamName = function() {
+        self.fieldsParamNames = [ '_source'];
       };
 
       function prepare (searcher) {
@@ -813,9 +809,48 @@ angular.module('o19s.splainer-search')
         });
       };
 
+      //
+      // Takes an array of keys and fetches the nested value
+      // by traversing the object map in parallel as the list of keys.
+      //
+      // @param obj,  Object, the object we want to fetch value from.
+      // @param keys, Array,  the list of keys.
+      //
+      // Example:
+      // obj:  { a: { b: 'c' } }
+      // keys: [ 'a', 'b' ]
+      // returns: obj['a']['b'] => c
+      //
+      var multiIndex = function(obj, keys) {
+        return keys.length ? multiIndex(obj[keys[0]], keys.slice(1)) : obj;
+      };
+
+      //
+      // Takes a dot notation and returns the value of the object by
+      // traversing the key map.
+      //
+      // @param obj,  Object, the object we want to fetch value from.
+      // @param keys, String, the dot notation of the keys.
+      //
+      // Example:
+      // obj:  { a: { b: 'c' } }
+      // keys: 'a.b'
+      // returns: obj['a']['b'] => c
+      //
+      var pathIndex = function(obj, keys) {
+        return multiIndex(obj, keys.split('.'));
+      };
+
       var assignSingleField = function(normalDoc, doc, field, toProperty) {
-        if (doc.hasOwnProperty(field)) {
-          normalDoc[toProperty] = ('' + doc[field]);
+        if ( /\./.test(field) ) {
+          try {
+            var value = pathIndex(doc, field);
+            normalDoc[toProperty] = '' + value;
+          } catch (e) {
+            normalDoc[toProperty] = '';
+          }
+        } else if ( doc.hasOwnProperty(field) ) {
+          normalDoc[toProperty] = '' + doc[field];
         }
       };
 
@@ -825,29 +860,44 @@ angular.module('o19s.splainer-search')
       };
 
       var assignSubs = function(normalDoc, doc, fieldSpec) {
+        var parseValue = function(value) {
+          if ( typeof value === 'object' ) {
+            return value;
+          } else {
+            return '' + value;
+          }
+        };
+
         if (fieldSpec.subs === '*') {
           angular.forEach(doc, function(value, fieldName) {
             if (typeof(value) !== 'function') {
               if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
                   fieldName !== fieldSpec.thumb) {
-                normalDoc.subs[fieldName] = '' + value;
+                normalDoc.subs[fieldName] = parseValue(value);
               }
             }
           });
         }
         else {
           angular.forEach(fieldSpec.subs, function(subFieldName) {
-            if (doc.hasOwnProperty(subFieldName)) {
-              normalDoc.subs[subFieldName] = '' + doc[subFieldName];
+            if ( /\./.test(subFieldName) ) {
+              try {
+                var value = pathIndex(doc, subFieldName);
+                normalDoc.subs[subFieldName] = parseValue(value);
+              } catch (e) {
+                normalDoc.subs[subFieldName] = '';
+              }
+            } else if ( doc.hasOwnProperty(subFieldName) ) {
+              normalDoc.subs[subFieldName] = parseValue(doc[subFieldName]);
             }
           });
           angular.forEach(fieldSpec.functions, function(functionField) {
             // for foo:$foo, look for foo
             var dispName = fieldDisplayName(functionField);
-            if (doc.hasOwnProperty(dispName)) {
-              normalDoc.subs[dispName] = '' + doc[dispName];
-            }
 
+            if (doc.hasOwnProperty(dispName)) {
+              normalDoc.subs[dispName] = parseValue(doc[dispName]);
+            }
           });
         }
       };
@@ -879,8 +929,8 @@ angular.module('o19s.splainer-search')
           return hasThumb;
         };
 
-        this.url = function() {
-          return this.doc.url(fieldSpec.id, this.id);
+        this._url = function() {
+          return this.doc._url(fieldSpec.id, this.id);
         };
 
       };
@@ -895,11 +945,22 @@ angular.module('o19s.splainer-search')
         doc.subSnippets = function(hlPre, hlPost) {
           if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
             angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
-              var snip = aDoc.highlight(doc.id, subFieldName, hlPre, hlPost);
-              if (snip === null) {
-                snip = escapeHtml(subFieldValue.slice(0, 200));
+              if ( typeof subFieldValue === 'object' ) {
+                lastSubSnips[subFieldName] = subFieldValue;
+              } else {
+                var snip = aDoc.highlight(
+                  doc.id,
+                  subFieldName,
+                  hlPre,
+                  hlPost
+                );
+
+                if (snip === null) {
+                  snip = escapeHtml(subFieldValue.slice(0, 200));
+                }
+
+                lastSubSnips[subFieldName] = snip;
               }
-              lastSubSnips[subFieldName] = snip;
             });
           }
           return lastSubSnips;
@@ -2237,19 +2298,7 @@ angular.module('o19s.splainer-search')
       }
 
       function fieldsAttrName() {
-        if ( 5 <= self.version() ) {
-          if ( self.hasOwnProperty('_source') ) {
-            return '_source';
-          } else {
-            return 'stored_fields';
-          }
-        } else {
-          if ( self.hasOwnProperty('_source') ) {
-            return '_source';
-          } else {
-            return 'fields';
-          }
-        }
+        return '_source';
       }
 
       function fieldsProperty() {
@@ -2281,7 +2330,7 @@ angular.module('o19s.splainer-search')
       var self = this;
 
       angular.forEach(self.fieldsProperty(), function(fieldValue, fieldName) {
-        if ( fieldValue !== null && fieldValue.length === 1 && typeof(fieldValue) === 'object' ) {
+        if ( fieldValue !== null && fieldValue.constructor === Array && fieldValue.length === 1 ) {
           self[fieldName] = fieldValue[0];
         } else {
           self[fieldName] = fieldValue;
@@ -2297,13 +2346,13 @@ angular.module('o19s.splainer-search')
     Doc.prototype = Object.create(DocFactory.prototype);
     Doc.prototype.constructor = Doc; // Reset the constructor
 
-    Doc.prototype.url        = url;
+    Doc.prototype._url       = _url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
     Doc.prototype.source     = source;
     Doc.prototype.highlight  = highlight;
 
-    function url () {
+    function _url () {
       /*jslint validthis:true*/
       var self  = this;
       var doc   = self.doc;
@@ -2503,12 +2552,10 @@ angular.module('o19s.splainer-search')
         if ( 5 <= self.majorVersion() ) {
           /*jshint camelcase: false */
           esUrlSvc.setParams(uri, {
-            stored_fields: fieldList,
             _source:       fieldList,
           });
         } else {
           esUrlSvc.setParams(uri, {
-            fields:  fieldList,
             _source: fieldList,
           });
         }
@@ -2569,7 +2616,11 @@ angular.module('o19s.splainer-search')
               errorMsg +=  '\n';
               errorMsg +=  'Enable CORS in elasticsearch.yml:\n';
               errorMsg += '\n';
+<<<<<<< HEAD
               errorMsg += 'http.cors.allow-origin: "/https?:\\\\/\\\\/(.*?\\\\.)?(quepid\\\\.com|splainer\\\\.io)/"';
+=======
+              errorMsg += 'http.cors.allow-origin: "/https?:\\/\\/(.*?\\.)?(quepid\\.com|splainer\\.io)/"\n';
+>>>>>>> origin/master
               errorMsg += 'http.cors.enabled: true\n';
             }
             msg.searchError = errorMsg;
@@ -3082,7 +3133,7 @@ angular.module('o19s.splainer-search')
     Doc.prototype.constructor = Doc; // Reset the constructor
 
 
-    Doc.prototype.url        = url;
+    Doc.prototype._url       = _url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
     Doc.prototype.source     = source;
@@ -3126,7 +3177,7 @@ angular.module('o19s.splainer-search')
       return solrUrlSvc.buildUrl(url, tokensArgs) + '&q=' + idField + ':'  + escId;
     };
 
-    function url (idField, docId) {
+    function _url (idField, docId) {
       /*jslint validthis:true*/
       var self = this;
       return buildTokensUrl(self.options().fieldList, self.options().url, idField, docId);

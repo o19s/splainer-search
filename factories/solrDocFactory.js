@@ -19,7 +19,7 @@
     Doc.prototype.constructor = Doc; // Reset the constructor
 
 
-    Doc.prototype.url        = url;
+    Doc.prototype._url       = _url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
     Doc.prototype.source     = source;
@@ -63,7 +63,7 @@
       return solrUrlSvc.buildUrl(url, tokensArgs) + '&q=' + idField + ':'  + escId;
     };
 
-    function url (idField, docId) {
+    function _url (idField, docId) {
       /*jslint validthis:true*/
       var self = this;
       return buildTokensUrl(self.options().fieldList, self.options().url, idField, docId);

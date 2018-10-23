@@ -22,22 +22,24 @@ describe('Service: normalDocsSvc', function () {
     var lastFieldName = null;
     var lastFieldValue = null;
     beforeEach(function() {
-      solrDoc = {'custom_id_field': '1234',
-                 'title_field': 'a title',
-                 source: function() {
-                   return this;
-                 },
-                 url: function(fieldName, fieldValue) {
-                    lastFieldName = fieldName;
-                    lastFieldValue = fieldValue;
-                  },
-                 explain: function() {return mockExplain;} };
+      solrDoc = {
+        'custom_id_field': '1234',
+        'title_field': 'a title',
+        source: function() {
+          return this;
+        },
+        _url: function(fieldName, fieldValue) {
+          lastFieldName = fieldName;
+          lastFieldValue = fieldValue;
+        },
+        explain: function() {return mockExplain;}
+      };
       var fieldSpec = {id: 'custom_id_field', title: 'title_field'};
       normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
     });
 
     it('requests url correctly', function() {
-      normalDoc.url();
+      normalDoc._url();
       expect(lastFieldName).toEqual('custom_id_field');
       expect(lastFieldValue).toEqual('1234');
     });
