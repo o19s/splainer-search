@@ -186,7 +186,7 @@
               errorMsg +=  '\n';
               errorMsg +=  'Enable CORS in elasticsearch.yml:\n';
               errorMsg += '\n';
-              errorMsg += 'http.cors.allow-origin: "/https?:\\/\\/(.*?\\.)?(quepid\\.com|splainer\\.io)/"\n';
+              errorMsg += 'http.cors.allow-origin: "/https?:\\\\/\\\\/(.*?\\\\.)?(quepid\\\\.com|splainer\\\\.io)/"\n';
               errorMsg += 'http.cors.enabled: true\n';
             }
             msg.searchError = errorMsg;

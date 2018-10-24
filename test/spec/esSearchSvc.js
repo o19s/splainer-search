@@ -774,12 +774,13 @@ describe('Service: searchSvc: ElasticSearch', function() {
           bar: {},
         }
       };
+      var esParamsWithHl = angular.copy(mockEsParams)
 
-      mockEsParams.highlight = expectedHighlight;
+      esParamsWithHl.highlight = expectedHighlight;
       searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockEsUrl,
-        mockEsParams,
+        esParamsWithHl,
         mockQueryText,
         {},
         'es'
