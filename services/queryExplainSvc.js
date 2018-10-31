@@ -213,7 +213,7 @@ angular.module('o19s.splainer-search')
           // vector sum all the components
           var rVal = vectorSvc.create();
           angular.forEach(this.influencers(), function(infl) {
-            rVal = vectorSvc.add(rVal, infl.vectorize());
+            rVal = vectorSvc.sumOf(rVal, infl.vectorize());
           });
           return rVal;
         };

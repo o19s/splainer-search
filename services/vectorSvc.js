@@ -28,6 +28,16 @@ angular.module('o19s.splainer-search')
           return undefined;
         };
 
+        this.add = function(key, value) {
+          if (this.vecObj.hasOwnProperty(key)) {
+            this.vecObj[key] += value;
+          }
+          else {
+            this.vecObj[key] = value;
+          }
+          setDirty();
+        };
+
         this.toStr = function() {
           // memoize the toStr conversion
           if (asStr === '') {
@@ -60,6 +70,18 @@ angular.module('o19s.splainer-search')
         });
         return rVal;
       };
+
+      this.sumOf = function(lhs, rhs) {
+        var rVal = this.create();
+        angular.forEach(lhs.vecObj, function(value, key) {
+          rVal.add(key, value);
+        });
+        angular.forEach(rhs.vecObj, function(value, key) {
+          rVal.add(key, value);
+        });
+        return rVal;
+      };
+
 
       this.scale = function(lhs, scalar) {
         var rVal = this.create();
