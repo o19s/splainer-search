@@ -203,41 +203,41 @@
 
       activeQueries.count++;
       return transport.query(url, queryDslWithPagerArgs, headers)
-      .then(function success(httpConfig) {
-        var data = httpConfig.data;
-        activeQueries.count--;
-        self.numFound = data.hits.total;
+        .then(function success(httpConfig) {
+          var data = httpConfig.data;
+          activeQueries.count--;
+          self.numFound = data.hits.total;
 
-        var parseDoc = function(doc, groupedBy, group) {
-          var explDict  = getExplData(doc);
-          var hlDict    = getHlData(doc);
+          var parseDoc = function(doc, groupedBy, group) {
+            var explDict  = getExplData(doc);
+            var hlDict    = getHlData(doc);
 
-          var options = {
-            groupedBy:          groupedBy,
-            group:              group,
-            fieldList:          self.fieldList,
-            url:                self.url,
-            explDict:           explDict,
-            hlDict:             hlDict,
-            version:            self.majorVersion(),
+            var options = {
+              groupedBy:          groupedBy,
+              group:              group,
+              fieldList:          self.fieldList,
+              url:                self.url,
+              explDict:           explDict,
+              hlDict:             hlDict,
+              version:            self.majorVersion(),
+            };
+
+            return new EsDocFactory(doc, options);
           };
 
-          return new EsDocFactory(doc, options);
-        };
+          angular.forEach(data.hits.hits, function(hit) {
+            var doc = parseDoc(hit);
+            self.docs.push(doc);
+          });
 
-        angular.forEach(data.hits.hits, function(hit) {
-          var doc = parseDoc(hit);
-          self.docs.push(doc);
+          if ( angular.isDefined(data._shards) && data._shards.failed > 0 ) {
+            return $q.reject(formatError(httpConfig));
+          }
+        }, function error(msg) {
+          activeQueries.count--;
+          self.inError = true;
+          return $q.reject(formatError(msg));
         });
-
-        if ( angular.isDefined(data._shards) && data._shards.failed > 0 ) {
-          return $q.reject(formatError(httpConfig));
-        }
-      }, function error(msg) {
-        activeQueries.count--;
-        self.inError = true;
-        return $q.reject(formatError(msg));
-      });
     } // end of search()
 
     function explainOther (otherQuery) {

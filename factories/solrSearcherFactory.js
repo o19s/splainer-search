@@ -6,20 +6,22 @@
   angular.module('o19s.splainer-search')
     .factory('SolrSearcherFactory', [
       '$http',
+      '$q',
       'SolrDocFactory',
       'SearcherFactory',
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
-      '$q',
+      'transportSvc',
       SolrSearcherFactory
     ]);
 
   function SolrSearcherFactory(
-    $http,
+    $http, $q,
     SolrDocFactory, SearcherFactory,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc, $q
+    solrSearcherPreprocessorSvc,
+    transportSvc
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -106,10 +108,11 @@
     function search () {
       /*jslint validthis:true*/
       var self      = this;
-      var url       = self.callUrl + '&json.wrf=JSON_CALLBACK';
+      var url       = self.callUrl;
       self.inError  = false;
 
       var thisSearcher  = self;
+      var transport     = transportSvc.getTransport({ apiMethod: 'get' });
 
       var getExplData = function(solrResp) {
         if (solrResp.hasOwnProperty('debug')) {
@@ -139,7 +142,8 @@
 
       activeQueries.count++;
       return $q(function(resolve, reject) {
-          $http.jsonp(url).then(function success(resp) {
+        url = 'https://osc-cors-anywhere.herokuapp.com/' + url;
+        transport.query(url).then(function success(resp) {
           var solrResp = resp.data;
           activeQueries.count--;
 
@@ -201,8 +205,7 @@
           reject(msg);
         });
       });
-
-    }
+    } // end of search()
 
     function explainOther (otherQuery, fieldSpec) {
       /*jslint validthis:true*/

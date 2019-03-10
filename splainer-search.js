@@ -2633,41 +2633,41 @@ angular.module('o19s.splainer-search')
 
       activeQueries.count++;
       return transport.query(url, queryDslWithPagerArgs, headers)
-      .then(function success(httpConfig) {
-        var data = httpConfig.data;
-        activeQueries.count--;
-        self.numFound = data.hits.total;
+        .then(function success(httpConfig) {
+          var data = httpConfig.data;
+          activeQueries.count--;
+          self.numFound = data.hits.total;
 
-        var parseDoc = function(doc, groupedBy, group) {
-          var explDict  = getExplData(doc);
-          var hlDict    = getHlData(doc);
+          var parseDoc = function(doc, groupedBy, group) {
+            var explDict  = getExplData(doc);
+            var hlDict    = getHlData(doc);
 
-          var options = {
-            groupedBy:          groupedBy,
-            group:              group,
-            fieldList:          self.fieldList,
-            url:                self.url,
-            explDict:           explDict,
-            hlDict:             hlDict,
-            version:            self.majorVersion(),
+            var options = {
+              groupedBy:          groupedBy,
+              group:              group,
+              fieldList:          self.fieldList,
+              url:                self.url,
+              explDict:           explDict,
+              hlDict:             hlDict,
+              version:            self.majorVersion(),
+            };
+
+            return new EsDocFactory(doc, options);
           };
 
-          return new EsDocFactory(doc, options);
-        };
+          angular.forEach(data.hits.hits, function(hit) {
+            var doc = parseDoc(hit);
+            self.docs.push(doc);
+          });
 
-        angular.forEach(data.hits.hits, function(hit) {
-          var doc = parseDoc(hit);
-          self.docs.push(doc);
+          if ( angular.isDefined(data._shards) && data._shards.failed > 0 ) {
+            return $q.reject(formatError(httpConfig));
+          }
+        }, function error(msg) {
+          activeQueries.count--;
+          self.inError = true;
+          return $q.reject(formatError(msg));
         });
-
-        if ( angular.isDefined(data._shards) && data._shards.failed > 0 ) {
-          return $q.reject(formatError(httpConfig));
-        }
-      }, function error(msg) {
-        activeQueries.count--;
-        self.inError = true;
-        return $q.reject(formatError(msg));
-      });
     } // end of search()
 
     function explainOther (otherQuery) {
@@ -2788,7 +2788,7 @@ angular.module('o19s.splainer-search')
     Transport.prototype.query = query;
 
     function query(url, payload, headers) {
-      var requestConfig = {headers: headers};
+      var requestConfig = { headers: headers };
       return $http.get(url, requestConfig);
     }
 
@@ -3238,20 +3238,22 @@ angular.module('o19s.splainer-search')
   angular.module('o19s.splainer-search')
     .factory('SolrSearcherFactory', [
       '$http',
+      '$q',
       'SolrDocFactory',
       'SearcherFactory',
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
-      '$q',
+      'transportSvc',
       SolrSearcherFactory
     ]);
 
   function SolrSearcherFactory(
-    $http,
+    $http, $q,
     SolrDocFactory, SearcherFactory,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc, $q
+    solrSearcherPreprocessorSvc,
+    transportSvc
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -3338,10 +3340,11 @@ angular.module('o19s.splainer-search')
     function search () {
       /*jslint validthis:true*/
       var self      = this;
-      var url       = self.callUrl + '&json.wrf=JSON_CALLBACK';
+      var url       = self.callUrl;
       self.inError  = false;
 
       var thisSearcher  = self;
+      var transport     = transportSvc.getTransport({ apiMethod: 'get' });
 
       var getExplData = function(solrResp) {
         if (solrResp.hasOwnProperty('debug')) {
@@ -3371,7 +3374,8 @@ angular.module('o19s.splainer-search')
 
       activeQueries.count++;
       return $q(function(resolve, reject) {
-          $http.jsonp(url).then(function success(resp) {
+        url = 'https://osc-cors-anywhere.herokuapp.com/' + url;
+        transport.query(url).then(function success(resp) {
           var solrResp = resp.data;
           activeQueries.count--;
 
@@ -3433,8 +3437,7 @@ angular.module('o19s.splainer-search')
           reject(msg);
         });
       });
-
-    }
+    } // end of search()
 
     function explainOther (otherQuery, fieldSpec) {
       /*jslint validthis:true*/

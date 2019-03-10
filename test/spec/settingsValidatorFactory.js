@@ -99,7 +99,9 @@ describe('Factory: Settings Validator', function () {
             q: ['*:*'],
           };
 
-          $httpBackend.expectJSONP(urlContainsParams(settings.searchUrl, expectedParams))
+          var expectedUrl = 'https://osc-cors-anywhere.herokuapp.com/' + settings.searchUrl;
+
+          $httpBackend.expectGET(urlContainsParams(expectedUrl, expectedParams))
             .respond(200, fullResponse);
 
           var called = 0;
@@ -127,8 +129,11 @@ describe('Factory: Settings Validator', function () {
         };
 
         var funkyResponse = angular.copy(fullResponse);
-        funkyResponse.response.docs = funkyDocs
-        $httpBackend.expectJSONP(urlContainsParams(settings.searchUrl, expectedParams))
+        funkyResponse.response.docs = funkyDocs;
+
+        var expectedUrl = 'https://osc-cors-anywhere.herokuapp.com/' + settings.searchUrl;
+
+        $httpBackend.expectGET(urlContainsParams(expectedUrl, expectedParams))
           .respond(200, funkyResponse);
 
         var called = 0;
@@ -156,7 +161,9 @@ describe('Factory: Settings Validator', function () {
           q: ['*:*'],
         };
 
-        $httpBackend.expectJSONP(urlContainsParams(settings.searchUrl, expectedParams))
+        var expectedUrl = 'https://osc-cors-anywhere.herokuapp.com/' + settings.searchUrl;
+
+        $httpBackend.expectGET(urlContainsParams(expectedUrl, expectedParams))
           .respond(200, fullResponse);
 
         var called = 0;
@@ -175,7 +182,9 @@ describe('Factory: Settings Validator', function () {
           q: ['*:*'],
         };
 
-        $httpBackend.expectJSONP(urlContainsParams(settings.searchUrl, expectedParams))
+        var expectedUrl = 'https://osc-cors-anywhere.herokuapp.com/' + settings.searchUrl;
+
+        $httpBackend.expectGET(urlContainsParams(expectedUrl, expectedParams))
           .respond(200, fullResponse);
 
         var called = 0;

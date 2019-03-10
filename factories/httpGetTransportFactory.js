@@ -21,7 +21,7 @@
     Transport.prototype.query = query;
 
     function query(url, payload, headers) {
-      var requestConfig = {headers: headers};
+      var requestConfig = { headers: headers };
       return $http.get(url, requestConfig);
     }
 
