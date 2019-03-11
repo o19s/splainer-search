@@ -142,7 +142,7 @@
 
       activeQueries.count++;
       return $q(function(resolve, reject) {
-        url = 'https://osc-cors-anywhere.herokuapp.com/' + url;
+        url = 'https://cors-anywhere.quepid.com/' + url;
         transport.query(url).then(function success(resp) {
           var solrResp = resp.data;
           activeQueries.count--;

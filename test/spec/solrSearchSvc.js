@@ -11,7 +11,7 @@ describe('Service: searchSvc: Solr', function () {
   var activeQueries;
   var $httpBackend = null;
   var fieldSpecSvc = null;
-  var expectedSolrUrl = 'https://osc-cors-anywhere.herokuapp.com/http://example.com:1234/solr/select';
+  var expectedSolrUrl = 'https://cors-anywhere.quepid.com/http://example.com:1234/solr/select';
   var mockSolrUrl = 'http://example.com:1234/solr/select';
   var mockSolrParams = {
     q: ['#$query##'],

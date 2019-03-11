@@ -99,7 +99,7 @@ describe('Factory: Settings Validator', function () {
             q: ['*:*'],
           };
 
-          var expectedUrl = 'https://osc-cors-anywhere.herokuapp.com/' + settings.searchUrl;
+          var expectedUrl = 'https://cors-anywhere.quepid.com/' + settings.searchUrl;
 
           $httpBackend.expectGET(urlContainsParams(expectedUrl, expectedParams))
             .respond(200, fullResponse);
@@ -131,7 +131,7 @@ describe('Factory: Settings Validator', function () {
         var funkyResponse = angular.copy(fullResponse);
         funkyResponse.response.docs = funkyDocs;
 
-        var expectedUrl = 'https://osc-cors-anywhere.herokuapp.com/' + settings.searchUrl;
+        var expectedUrl = 'https://cors-anywhere.quepid.com/' + settings.searchUrl;
 
         $httpBackend.expectGET(urlContainsParams(expectedUrl, expectedParams))
           .respond(200, funkyResponse);
@@ -161,7 +161,7 @@ describe('Factory: Settings Validator', function () {
           q: ['*:*'],
         };
 
-        var expectedUrl = 'https://osc-cors-anywhere.herokuapp.com/' + settings.searchUrl;
+        var expectedUrl = 'https://cors-anywhere.quepid.com/' + settings.searchUrl;
 
         $httpBackend.expectGET(urlContainsParams(expectedUrl, expectedParams))
           .respond(200, fullResponse);
@@ -182,7 +182,7 @@ describe('Factory: Settings Validator', function () {
           q: ['*:*'],
         };
 
-        var expectedUrl = 'https://osc-cors-anywhere.herokuapp.com/' + settings.searchUrl;
+        var expectedUrl = 'https://cors-anywhere.quepid.com/' + settings.searchUrl;
 
         $httpBackend.expectGET(urlContainsParams(expectedUrl, expectedParams))
           .respond(200, fullResponse);

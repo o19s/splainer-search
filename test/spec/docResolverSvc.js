@@ -20,7 +20,7 @@ describe('Service: docResolverSvc', function () {
   }));
 
   describe('Solr', function() {
-    var expectedSolrUrl = 'https://osc-cors-anywhere.herokuapp.com/http://example.com:1234/collection1/select';
+    var expectedSolrUrl = 'https://cors-anywhere.quepid.com/http://example.com:1234/collection1/select';
     var mockSolrUrl = 'http://example.com:1234/collection1/select';
 
     var mockTry = {
