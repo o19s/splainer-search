@@ -3398,7 +3398,10 @@ angular.module('o19s.splainer-search')
 
       activeQueries.count++;
       return $q(function(resolve, reject) {
-        url = 'https://cors-anywhere.quepid.com/' + url;
+        if ( !self.config.skipCorsProxy ) {
+          url = 'https://cors-anywhere.quepid.com/' + url;
+        }
+
         transport.query(url).then(function success(resp) {
           var solrResp = resp.data;
           activeQueries.count--;

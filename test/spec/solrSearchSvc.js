@@ -563,6 +563,31 @@ describe('Service: searchSvc: Solr', function () {
       expect(called).toBe(1);
     });
 
+    it('skips the CORS proxy if skipCorsProxy is set to true', function() {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText,
+        { skipCorsProxy: true }
+      );
+
+      var expectedSearchParams = angular.copy(expectedParams);
+      expectedSearchParams.rows = ['10'];
+
+      var newExpectedSolrUrl = 'http://example.com:1234/solr/select';
+      $httpBackend.expectGET(urlContainsParams(newExpectedSolrUrl, expectedSearchParams))
+        .respond(200, mockResults);
+
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toBe(1);
+    });
+
     it('makes querydocs with tokensUrl', function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
