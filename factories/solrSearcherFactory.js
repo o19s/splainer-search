@@ -7,6 +7,7 @@
     .factory('SolrSearcherFactory', [
       '$http',
       '$q',
+      '$log',
       'SolrDocFactory',
       'SearcherFactory',
       'activeQueries',
@@ -17,7 +18,7 @@
     ]);
 
   function SolrSearcherFactory(
-    $http, $q,
+    $http, $q, $log,
     SolrDocFactory, SearcherFactory,
     activeQueries, defaultSolrConfig,
     solrSearcherPreprocessorSvc,
@@ -203,6 +204,9 @@
           thisSearcher.inError = true;
           msg.searchError = 'Error with Solr query or server. Contact Solr directly to inspect the error';
           reject(msg);
+        }).catch(function(response) {
+          $log.debug('Failed to run search');
+          return response;
         });
       });
     } // end of search()
@@ -256,6 +260,9 @@
               self.numFound        = otherSearcher.numFound;
               self.docs            = otherSearcher.docs;
             });
+        }).catch(function(response) {
+          $log.debug('Failed to run explainOther');
+          return response;
         });
     }
 

@@ -7,6 +7,7 @@
     .factory('EsSearcherFactory', [
       '$http',
       '$q',
+      '$log',
       'EsDocFactory',
       'activeQueries',
       'esSearcherPreprocessorSvc',
@@ -17,7 +18,7 @@
     ]);
 
   function EsSearcherFactory(
-    $http, $q,
+    $http, $q, $log,
     EsDocFactory,
     activeQueries,
     esSearcherPreprocessorSvc, esUrlSvc,
@@ -237,6 +238,10 @@
           activeQueries.count--;
           self.inError = true;
           return $q.reject(formatError(msg));
+        })
+        .catch(function(response) {
+          $log.debug('Failed to execute search');
+          return $q.reject(response);
         });
     } // end of search()
 
@@ -287,6 +292,9 @@
             });
 
           return defer.promise;
+        }).catch(function(response) {
+          $log.debug('Failed to run explainOther');
+          return response;
         });
     } // end of explainOther()
 
@@ -313,6 +321,9 @@
           };
 
           return new EsDocFactory(doc, options);
+        }).catch(function(response) {
+          $log.debug('Failed to run explain');
+          return response;
         });
     } // end of explain()
 

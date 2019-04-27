@@ -2104,11 +2104,12 @@ angular.module('o19s.splainer-search')
       '$http',
       '$q',
       '$timeout',
+      '$log',
       BulkTransportFactory
     ]);
 
 
-  function BulkTransportFactory(TransportFactory, $http, $q, $timeout) {
+  function BulkTransportFactory(TransportFactory, $http, $q, $timeout, $log) {
     var Transport = function(options) {
       TransportFactory.call(this, options);
       this.batchSender = null;
@@ -2200,7 +2201,11 @@ angular.module('o19s.splainer-search')
           // Implementation of Elasticsearch's _msearch ("Multi Search") API
           var payload = buildMultiSearch();
           pendingHttp = $http.post(url, payload, requestConfig);
-          pendingHttp.then(multiSearchSuccess, multiSearchFailed);
+          pendingHttp.then(multiSearchSuccess, multiSearchFailed)
+            .catch(function(response) {
+              $log.debug('Failed to do multi search');
+              return response;
+            });
         }
       }
 
@@ -2437,6 +2442,7 @@ angular.module('o19s.splainer-search')
     .factory('EsSearcherFactory', [
       '$http',
       '$q',
+      '$log',
       'EsDocFactory',
       'activeQueries',
       'esSearcherPreprocessorSvc',
@@ -2447,7 +2453,7 @@ angular.module('o19s.splainer-search')
     ]);
 
   function EsSearcherFactory(
-    $http, $q,
+    $http, $q, $log,
     EsDocFactory,
     activeQueries,
     esSearcherPreprocessorSvc, esUrlSvc,
@@ -2667,6 +2673,10 @@ angular.module('o19s.splainer-search')
           activeQueries.count--;
           self.inError = true;
           return $q.reject(formatError(msg));
+        })
+        .catch(function(response) {
+          $log.debug('Failed to execute search');
+          return $q.reject(response);
         });
     } // end of search()
 
@@ -2717,6 +2727,9 @@ angular.module('o19s.splainer-search')
             });
 
           return defer.promise;
+        }).catch(function(response) {
+          $log.debug('Failed to run explainOther');
+          return response;
         });
     } // end of explainOther()
 
@@ -2743,6 +2756,9 @@ angular.module('o19s.splainer-search')
           };
 
           return new EsDocFactory(doc, options);
+        }).catch(function(response) {
+          $log.debug('Failed to run explain');
+          return response;
         });
     } // end of explain()
 
@@ -2835,13 +2851,14 @@ angular.module('o19s.splainer-search')
   angular.module('o19s.splainer-search')
     .factory('ResolverFactory', [
       '$q',
+      '$log',
       'searchSvc',
       'solrUrlSvc',
       'normalDocsSvc',
       ResolverFactory
     ]);
 
-  function ResolverFactory($q, searchSvc, solrUrlSvc, normalDocsSvc) {
+  function ResolverFactory($q, $log, searchSvc, solrUrlSvc, normalDocsSvc) {
     var Resolver = function(ids, settings, chunkSize) {
       var self        = this;
 
@@ -2907,31 +2924,34 @@ angular.module('o19s.splainer-search')
       function fetchDocs () {
         if ( self.chunkSize === undefined ) {
           return self.searcher.search()
-          .then(function() {
-            var newDocs = self.searcher.docs;
-            self.docs.length = 0;
-            var idsToDocs = {};
-            angular.forEach(newDocs, function(doc) {
-              var normalDoc = normalDocsSvc.createNormalDoc(self.fieldSpec, doc);
-              idsToDocs[normalDoc.id] = normalDoc;
-            });
+            .then(function() {
+              var newDocs = self.searcher.docs;
+              self.docs.length = 0;
+              var idsToDocs = {};
+              angular.forEach(newDocs, function(doc) {
+                var normalDoc = normalDocsSvc.createNormalDoc(self.fieldSpec, doc);
+                idsToDocs[normalDoc.id] = normalDoc;
+              });
 
-            // Push either the doc from solr or a missing doc stub
-            angular.forEach(ids, function(docId) {
-              if (idsToDocs.hasOwnProperty(docId)) {
-                self.docs.push(idsToDocs[docId]);
-              } else {
-                var placeholderTitle = 'Missing Doc: ' + docId;
-                var placeholderDoc = normalDocsSvc.createPlaceholderDoc(
-                  docId,
-                  placeholderTitle
-                );
-                self.docs.push(placeholderDoc);
-              }
-            });
+              // Push either the doc from solr or a missing doc stub
+              angular.forEach(ids, function(docId) {
+                if (idsToDocs.hasOwnProperty(docId)) {
+                  self.docs.push(idsToDocs[docId]);
+                } else {
+                  var placeholderTitle = 'Missing Doc: ' + docId;
+                  var placeholderDoc = normalDocsSvc.createPlaceholderDoc(
+                    docId,
+                    placeholderTitle
+                  );
+                  self.docs.push(placeholderDoc);
+                }
+              });
 
-            return self.docs;
-          });
+              return self.docs;
+            }).catch(function(response) {
+              $log.debug('Failed to fetch docs');
+              return response;
+            });
         } else {
           var sliceIds = function(ids, chunkSize) {
             if (chunkSize > 0) {
@@ -2953,10 +2973,13 @@ angular.module('o19s.splainer-search')
           });
 
           $q.all(promises)
-          .then(function(docsChunk) {
-            self.docs = self.docs.concat.apply(self.docs, docsChunk);
-            deferred.resolve();
-          });
+            .then(function(docsChunk) {
+              self.docs = self.docs.concat.apply(self.docs, docsChunk);
+              deferred.resolve();
+            }).catch(function(response) {
+              $log.debug('Failed to fetch docs');
+              return response;
+            });
 
           return deferred.promise;
         }
@@ -3239,6 +3262,7 @@ angular.module('o19s.splainer-search')
     .factory('SolrSearcherFactory', [
       '$http',
       '$q',
+      '$log',
       'SolrDocFactory',
       'SearcherFactory',
       'activeQueries',
@@ -3249,7 +3273,7 @@ angular.module('o19s.splainer-search')
     ]);
 
   function SolrSearcherFactory(
-    $http, $q,
+    $http, $q, $log,
     SolrDocFactory, SearcherFactory,
     activeQueries, defaultSolrConfig,
     solrSearcherPreprocessorSvc,
@@ -3435,6 +3459,9 @@ angular.module('o19s.splainer-search')
           thisSearcher.inError = true;
           msg.searchError = 'Error with Solr query or server. Contact Solr directly to inspect the error';
           reject(msg);
+        }).catch(function(response) {
+          $log.debug('Failed to run search');
+          return response;
         });
       });
     } // end of search()
@@ -3488,6 +3515,9 @@ angular.module('o19s.splainer-search')
               self.numFound        = otherSearcher.numFound;
               self.docs            = otherSearcher.docs;
             });
+        }).catch(function(response) {
+          $log.debug('Failed to run explainOther');
+          return response;
         });
     }
 

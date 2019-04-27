@@ -6,13 +6,14 @@
   angular.module('o19s.splainer-search')
     .factory('ResolverFactory', [
       '$q',
+      '$log',
       'searchSvc',
       'solrUrlSvc',
       'normalDocsSvc',
       ResolverFactory
     ]);
 
-  function ResolverFactory($q, searchSvc, solrUrlSvc, normalDocsSvc) {
+  function ResolverFactory($q, $log, searchSvc, solrUrlSvc, normalDocsSvc) {
     var Resolver = function(ids, settings, chunkSize) {
       var self        = this;
 
@@ -78,31 +79,34 @@
       function fetchDocs () {
         if ( self.chunkSize === undefined ) {
           return self.searcher.search()
-          .then(function() {
-            var newDocs = self.searcher.docs;
-            self.docs.length = 0;
-            var idsToDocs = {};
-            angular.forEach(newDocs, function(doc) {
-              var normalDoc = normalDocsSvc.createNormalDoc(self.fieldSpec, doc);
-              idsToDocs[normalDoc.id] = normalDoc;
-            });
+            .then(function() {
+              var newDocs = self.searcher.docs;
+              self.docs.length = 0;
+              var idsToDocs = {};
+              angular.forEach(newDocs, function(doc) {
+                var normalDoc = normalDocsSvc.createNormalDoc(self.fieldSpec, doc);
+                idsToDocs[normalDoc.id] = normalDoc;
+              });
 
-            // Push either the doc from solr or a missing doc stub
-            angular.forEach(ids, function(docId) {
-              if (idsToDocs.hasOwnProperty(docId)) {
-                self.docs.push(idsToDocs[docId]);
-              } else {
-                var placeholderTitle = 'Missing Doc: ' + docId;
-                var placeholderDoc = normalDocsSvc.createPlaceholderDoc(
-                  docId,
-                  placeholderTitle
-                );
-                self.docs.push(placeholderDoc);
-              }
-            });
+              // Push either the doc from solr or a missing doc stub
+              angular.forEach(ids, function(docId) {
+                if (idsToDocs.hasOwnProperty(docId)) {
+                  self.docs.push(idsToDocs[docId]);
+                } else {
+                  var placeholderTitle = 'Missing Doc: ' + docId;
+                  var placeholderDoc = normalDocsSvc.createPlaceholderDoc(
+                    docId,
+                    placeholderTitle
+                  );
+                  self.docs.push(placeholderDoc);
+                }
+              });
 
-            return self.docs;
-          });
+              return self.docs;
+            }).catch(function(response) {
+              $log.debug('Failed to fetch docs');
+              return response;
+            });
         } else {
           var sliceIds = function(ids, chunkSize) {
             if (chunkSize > 0) {
@@ -124,10 +128,13 @@
           });
 
           $q.all(promises)
-          .then(function(docsChunk) {
-            self.docs = self.docs.concat.apply(self.docs, docsChunk);
-            deferred.resolve();
-          });
+            .then(function(docsChunk) {
+              self.docs = self.docs.concat.apply(self.docs, docsChunk);
+              deferred.resolve();
+            }).catch(function(response) {
+              $log.debug('Failed to fetch docs');
+              return response;
+            });
 
           return deferred.promise;
         }

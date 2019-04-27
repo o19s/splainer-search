@@ -9,11 +9,12 @@
       '$http',
       '$q',
       '$timeout',
+      '$log',
       BulkTransportFactory
     ]);
 
 
-  function BulkTransportFactory(TransportFactory, $http, $q, $timeout) {
+  function BulkTransportFactory(TransportFactory, $http, $q, $timeout, $log) {
     var Transport = function(options) {
       TransportFactory.call(this, options);
       this.batchSender = null;
@@ -105,7 +106,11 @@
           // Implementation of Elasticsearch's _msearch ("Multi Search") API
           var payload = buildMultiSearch();
           pendingHttp = $http.post(url, payload, requestConfig);
-          pendingHttp.then(multiSearchSuccess, multiSearchFailed);
+          pendingHttp.then(multiSearchSuccess, multiSearchFailed)
+            .catch(function(response) {
+              $log.debug('Failed to do multi search');
+              return response;
+            });
         }
       }
 
