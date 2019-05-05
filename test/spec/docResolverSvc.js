@@ -20,7 +20,6 @@ describe('Service: docResolverSvc', function () {
   }));
 
   describe('Solr', function() {
-    var expectedSolrUrl = 'https://cors-anywhere.quepid.com/http://example.com:1234/collection1/select';
     var mockSolrUrl = 'http://example.com:1234/collection1/select';
 
     var mockTry = {
@@ -130,7 +129,7 @@ describe('Service: docResolverSvc', function () {
       var expectedUrlParams = {
         q:[encodeURIComponent('id:(doc1 OR doc2)')]
       };
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
         .respond(200, mockSolrResp);
 
       resolver.fetchDocs()
@@ -154,9 +153,8 @@ describe('Service: docResolverSvc', function () {
         q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3)')]
       };
 
-      $httpBackend.expectGET(
-        urlContainsParams(expectedSolrUrl, expectedUrlParams)
-       ).respond(200, mockSolrRespMissingDoc2);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
+        .respond(200, mockSolrRespMissingDoc2);
 
       resolver.fetchDocs()
         .then(function() {
@@ -195,7 +193,7 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParams = {
           q:[encodeURIComponent('id:(http\\://doc1 OR http\\://doc2)')]
         };
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParams))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
                     .respond(200, mockSolrEscResp);
         resolver.fetchDocs();
         $httpBackend.flush();
@@ -248,7 +246,7 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParams = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4 OR doc5 OR doc6 OR doc7 OR doc8 OR doc9 OR doc10 OR doc11 OR doc12 OR doc13 OR doc14 OR doc15 OR doc16 OR doc17 OR doc18 OR doc19 OR doc20)')]
         };
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParams))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
                     .respond(200, mockSolrBigResp);
         resolver.fetchDocs();
         $httpBackend.flush();
@@ -259,7 +257,7 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParams = {
           rows: [encodeURIComponent('' + lotsOfDocs.length)],
         };
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParams))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
                     .respond(200, mockSolrBigResp);
         resolver.fetchDocs();
         $httpBackend.flush();
@@ -270,7 +268,7 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParams = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4 OR doc5 OR doc6 OR doc7 OR doc8 OR doc9 OR doc10 OR doc11 OR doc12 OR doc13 OR doc14 OR doc15 OR doc16 OR doc17 OR doc18 OR doc19 OR doc20)')]
         };
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParams))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
                     .respond(200, mockSolrBigResp);
         resolver.fetchDocs()
         .then(function onDocsResolved() {
@@ -284,7 +282,7 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParams = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4 OR doc5 OR doc6 OR doc7 OR doc8 OR doc9 OR doc10 OR doc11 OR doc12 OR doc13 OR doc14 OR doc15 OR doc16 OR doc17 OR doc18 OR doc19 OR doc20)')]
         };
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParams))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
                     .respond(200, mockSolrBigResp);
         resolver.fetchDocs()
         .then(function onDocsResolved() {
@@ -369,13 +367,13 @@ describe('Service: docResolverSvc', function () {
           q:[encodeURIComponent('id:(doc4)')]
         };
 
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParamsChunk1))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
                     .respond(200, mockChunk1_4);
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParamsChunk2))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk2))
                     .respond(200, mockChunk2_4);
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParamsChunk3))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk3))
                     .respond(200, mockChunk3_4);
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParamsChunk4))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk4))
                     .respond(200, mockChunk4_4);
         var called = 0;
 
@@ -399,9 +397,9 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParamsChunk2 = {
           q:[encodeURIComponent('id:(doc3 OR doc4)')]
         };
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParamsChunk1))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
                     .respond(200, mockChunk1_2);
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParamsChunk2))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk2))
                     .respond(200, mockChunk2_2);
         var called = 0;
         resolver.fetchDocs()
@@ -420,7 +418,7 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParamsChunk1 = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4)')]
         };
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParamsChunk1))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
                     .respond(200, mockChunk1_1);
         var called = 0;
         resolver.fetchDocs()
@@ -439,7 +437,7 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParamsChunk1 = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4)')]
         };
-        $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedUrlParamsChunk1))
+        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
                     .respond(200, mockChunk1_1);
         var called = 0;
         resolver.fetchDocs()

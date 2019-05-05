@@ -11,7 +11,6 @@ describe('Service: searchSvc: Solr', function () {
   var activeQueries;
   var $httpBackend = null;
   var fieldSpecSvc = null;
-  var expectedSolrUrl = 'https://cors-anywhere.quepid.com/http://example.com:1234/solr/select';
   var mockSolrUrl = 'http://example.com:1234/solr/select';
   var mockSolrParams = {
     q: ['#$query##'],
@@ -47,7 +46,7 @@ describe('Service: searchSvc: Solr', function () {
   it('access solr with mock solr params', function() {
     var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
-    $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                             .respond(200, mockResults);
     searcher.search();
     $httpBackend.flush();
@@ -58,7 +57,7 @@ describe('Service: searchSvc: Solr', function () {
     expect(searchSvc.activeQueries()).toEqual(0);
     var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
-    $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                             .respond(200, mockResults);
     searcher.search();
     expect(searchSvc.activeQueries()).toEqual(1);
@@ -142,7 +141,7 @@ describe('Service: searchSvc: Solr', function () {
       var copiedResp = angular.copy(fullSolrResp);
       copiedResp.highlighting = highlighting;
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedHlParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedHlParams))
                               .respond(200, copiedResp);
       var called = 0;
       searcher.search().then(function() {
@@ -158,7 +157,7 @@ describe('Service: searchSvc: Solr', function () {
       createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
       copiedResp.highlighting = highlighting;
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
       var called = 0;
       searcher.search().then(function() {
@@ -185,7 +184,7 @@ describe('Service: searchSvc: Solr', function () {
       createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
       copiedResp.highlighting = highlighting;
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
       var called = 0;
       searcher.search().then(function() {
@@ -210,7 +209,7 @@ describe('Service: searchSvc: Solr', function () {
     it('gets null if no highlights', function() {
       createSearcherHlOn();
       var copiedResp = angular.copy(fullSolrResp);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
       var called = 0;
       searcher.search().then(function() {
@@ -235,7 +234,7 @@ describe('Service: searchSvc: Solr', function () {
     it('doesnt request hls if hls off', function() {
       createSearcherHlOff();
       var copiedResp = angular.copy(fullSolrResp);
-      $httpBackend.expectGET(urlMissingParams(expectedSolrUrl, expectedHlParams))
+      $httpBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedHlParams))
                               .respond(200, copiedResp);
       var called = 0;
       searcher.search().then(function() {
@@ -372,7 +371,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('populates explain()', function() {
       createSearcherWithDebug();
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedDebugParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, fullSolrResp);
       searcher.search().then(function() {
         var solrDocs = searcher.docs;
@@ -385,7 +384,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('populates others explained', function() {
       createSearcherWithDebug();
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedDebugParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, fullSolrResp);
       var called = 0;
       searcher.search().then(function() {
@@ -406,7 +405,7 @@ describe('Service: searchSvc: Solr', function () {
       createSearcherWithDebug();
       var copiedResp = angular.copy(fullSolrResp);
       delete copiedResp.debug;
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
       searcher.search().then(function() {
         var solrDocs = searcher.docs;
@@ -422,7 +421,7 @@ describe('Service: searchSvc: Solr', function () {
       createSearcherDebugOff();
       var copiedResp = angular.copy(fullSolrResp);
       delete copiedResp.debug;
-      $httpBackend.expectGET(urlMissingParams(expectedSolrUrl, expectedDebugParams))
+      $httpBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, copiedResp);
       searcher.search().then(function() {
         var solrDocs = searcher.docs;
@@ -454,7 +453,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('works with an alternate id field', function() {
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResultsAltId);
       searcher.search().then(function() {
         var numDocs = searcher.numFound;
@@ -471,7 +470,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('creates docs that can construct tokens URL', function() {
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResultsAltId);
       searcher.search().then(function() {
         var numDocs = searcher.numFound;
@@ -497,8 +496,8 @@ describe('Service: searchSvc: Solr', function () {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:altId');
       var searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParamsWithMm, mockQueryText);
-      $httpBackend.expectGET(
-        urlContainsParams(expectedSolrUrl, expectedParamsMm)
+      $httpBackend.expectJSONP(
+        urlContainsParams(mockSolrUrl, expectedParamsMm)
       ).respond(200, mockResultsAltId);
 
       searcher.search();
@@ -527,7 +526,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedSearchParams = angular.copy(expectedParams);
       expectedSearchParams.rows = ['10'];
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedSearchParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedSearchParams))
         .respond(200, mockResults);
 
       var called = 0;
@@ -551,32 +550,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedSearchParams = angular.copy(expectedParams);
       expectedSearchParams.rows = ['30'];
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedSearchParams))
-        .respond(200, mockResults);
-
-      var called = 0;
-      searcher.search().then(function() {
-        called++;
-      });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      expect(called).toBe(1);
-    });
-
-    it('skips the CORS proxy if skipCorsProxy is set to true', function() {
-      var searcher = searchSvc.createSearcher(
-        mockFieldSpec.fieldList(),
-        mockSolrUrl,
-        mockSolrParams,
-        mockQueryText,
-        { skipCorsProxy: true }
-      );
-
-      var expectedSearchParams = angular.copy(expectedParams);
-      expectedSearchParams.rows = ['10'];
-
-      var newExpectedSolrUrl = 'http://example.com:1234/solr/select';
-      $httpBackend.expectGET(urlContainsParams(newExpectedSolrUrl, expectedSearchParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedSearchParams))
         .respond(200, mockResults);
 
       var called = 0;
@@ -596,8 +570,8 @@ describe('Service: searchSvc: Solr', function () {
         mockQueryText
       );
 
-      $httpBackend.expectGET(
-        urlContainsParams(expectedSolrUrl, expectedParams)
+      $httpBackend.expectJSONP(
+        urlContainsParams(mockSolrUrl, expectedParams)
        ).respond(200, mockResults);
 
       searcher.search().then(function() {
@@ -616,7 +590,7 @@ describe('Service: searchSvc: Solr', function () {
     it('escapes ids passed into url', function() {
       var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
       searcher.search().then(function() {
         var solrDocs = searcher.docs;
@@ -640,8 +614,8 @@ describe('Service: searchSvc: Solr', function () {
         mockQueryText
       );
 
-      $httpBackend.expectGET(
-        urlContainsParams(expectedSolrUrl, expectedParams)
+      $httpBackend.expectJSONP(
+        urlContainsParams(mockSolrUrl, expectedParams)
       ).respond(200, mockResults);
 
       searcher.search().then(function() {
@@ -680,7 +654,7 @@ describe('Service: searchSvc: Solr', function () {
         mockUncleanSolrParams,
         mockQueryText
       );
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
@@ -699,7 +673,7 @@ describe('Service: searchSvc: Solr', function () {
         mockQueryText,
         { sanitize: false }
       );
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, mockUncleanSolrParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, mockUncleanSolrParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
@@ -711,7 +685,7 @@ describe('Service: searchSvc: Solr', function () {
       var searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   {'q': ['*:*']}, mockQueryText);
       var testSolrParams = {'fl': ['*']};
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, testSolrParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, testSolrParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
@@ -732,7 +706,7 @@ describe('Service: searchSvc: Solr', function () {
         queryWithSpecialChars
       );
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, thisExpectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, thisExpectedParams))
         .respond(200, mockResults);
 
       searcher.search();
@@ -954,7 +928,7 @@ describe('Service: searchSvc: Solr', function () {
 
 
     it('parses an simple grouped response', function() {
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, simpleGroupedSolrResponse);
       var called = 0;
       var q = searcher.search().then(function () {
@@ -967,7 +941,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('parses a grouped response', function() {
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, groupedSolrResp);
       var called = 0;
       searcher.search()
@@ -1022,7 +996,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
@@ -1039,7 +1013,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
@@ -1056,7 +1030,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
@@ -1073,7 +1047,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
@@ -1090,7 +1064,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
@@ -1107,7 +1081,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
@@ -1124,7 +1098,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
       searcher.search();
       $httpBackend.flush();
@@ -1153,7 +1127,7 @@ describe('Service: searchSvc: Solr', function () {
         mockQueryText
       );
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockResults);
 
       searcher.search();
@@ -1190,7 +1164,7 @@ describe('Service: searchSvc: Solr', function () {
         mockQueryText
       );
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockResults);
 
       searcher.search();
@@ -1231,7 +1205,7 @@ describe('Service: searchSvc: Solr', function () {
         mockQueryText
       );
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockResults);
 
       searcher.search();
@@ -1251,7 +1225,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('adds searchError text', function() {
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(-1);
       var errorCnt = 0;
       searcher.search().then(function() {
@@ -1304,7 +1278,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('pages on page', function() {
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, fullSolrResp);
       searcher.search();
       $httpBackend.flush();
@@ -1314,7 +1288,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedPageParams = angular.copy(expectedParams);
       expectedPageParams.rows = ['10'];
       expectedPageParams.start = ['10'];
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedPageParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
                               .respond(200, fullSolrResp);
       nextSearcher.search();
       $httpBackend.flush();
@@ -1323,7 +1297,7 @@ describe('Service: searchSvc: Solr', function () {
       nextSearcher = nextSearcher.pager();
       expectedPageParams.rows = ['10'];
       expectedPageParams.start =['20'];
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedPageParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
                               .respond(200, fullSolrResp);
       nextSearcher.search();
       $httpBackend.flush();
@@ -1348,7 +1322,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedPageParams = angular.copy(expectedParams);
       expectedPageParams.rows = ['30'];
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedPageParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
         .respond(200, solrRespCustRows);
 
       searcher.search();
@@ -1360,7 +1334,7 @@ describe('Service: searchSvc: Solr', function () {
       expectedPageParams.rows = ['30'];
       expectedPageParams.start = ['30'];
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedPageParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
         .respond(200, solrRespCustRows);
 
       nextSearcher.search();
@@ -1371,7 +1345,7 @@ describe('Service: searchSvc: Solr', function () {
       expectedPageParams.rows = ['30'];
       expectedPageParams.start =['60'];
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedPageParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
         .respond(200, solrRespCustRows);
 
       nextSearcher.search();
@@ -1383,7 +1357,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('highlights new page', function() {
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                   .respond(200, fullSolrResp);
       searcher.search();
       $httpBackend.flush();
@@ -1400,7 +1374,7 @@ describe('Service: searchSvc: Solr', function () {
         post: [searchSvc.HIGHLIGHTING_POST],
       };
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedPageParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
                               .respond(200, fullSolrResp);
       nextSearcher.search();
 
@@ -1495,9 +1469,9 @@ describe('Service: searchSvc: Solr', function () {
         explainOther: ['title:doc1']
       };
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedExplOtherParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
         .respond(200, mockSolrExplOtherResp);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockSolrResp);
 
       searcher.explainOther('title:doc1', mockFieldSpec);
@@ -1527,9 +1501,9 @@ describe('Service: searchSvc: Solr', function () {
         explainOther: ['title:doc1']
       };
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedExplOtherParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
         .respond(200, mockSolrExplOtherResp);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockSolrResp);
 
       searcher.explainOther('title:doc1', mockFieldSpec);
@@ -1548,9 +1522,9 @@ describe('Service: searchSvc: Solr', function () {
         ''
       );
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl))
         .respond(200, mockSolrExplOtherResp);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl))
         .respond(200, mockSolrResp);
 
       searcher.explainOther('', mockFieldSpec);
@@ -1581,9 +1555,9 @@ describe('Service: searchSvc: Solr', function () {
         explainOther: ['title:doc1']
       };
 
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedExplOtherParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
         .respond(200, mockSolrExplOtherResp);
-      $httpBackend.expectGET(urlContainsParams(expectedSolrUrl, expectedParams))
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockSolrResp);
 
       searcher.explainOther('title:doc1', mockFieldSpec);

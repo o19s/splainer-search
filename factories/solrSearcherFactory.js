@@ -7,22 +7,21 @@
     .factory('SolrSearcherFactory', [
       '$http',
       '$q',
+      '$sce',
       '$log',
       'SolrDocFactory',
       'SearcherFactory',
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
-      'transportSvc',
       SolrSearcherFactory
     ]);
 
   function SolrSearcherFactory(
-    $http, $q, $log,
+    $http, $q, $sce, $log,
     SolrDocFactory, SearcherFactory,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc,
-    transportSvc
+    solrSearcherPreprocessorSvc
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -112,8 +111,7 @@
       var url       = self.callUrl;
       self.inError  = false;
 
-      var thisSearcher  = self;
-      var transport     = transportSvc.getTransport({ apiMethod: 'get' });
+      var thisSearcher = self;
 
       var getExplData = function(solrResp) {
         if (solrResp.hasOwnProperty('debug')) {
@@ -143,74 +141,73 @@
 
       activeQueries.count++;
       return $q(function(resolve, reject) {
-        if ( !self.config.skipCorsProxy ) {
-          url = 'https://cors-anywhere.quepid.com/' + url;
-        }
+        var trustedUrl = $sce.trustAsResourceUrl(url);
 
-        transport.query(url).then(function success(resp) {
-          var solrResp = resp.data;
-          activeQueries.count--;
+        $http.jsonp(trustedUrl, { jsonpCallbackParam: 'json.wrf' })
+          .then(function success(resp) {
+            var solrResp = resp.data;
+            activeQueries.count--;
 
-          var explDict  = getExplData(solrResp);
-          var hlDict    = getHlData(solrResp);
-          thisSearcher.othersExplained = getOthersExplained(solrResp);
+            var explDict  = getExplData(solrResp);
+            var hlDict    = getHlData(solrResp);
+            thisSearcher.othersExplained = getOthersExplained(solrResp);
 
-          var parseSolrDoc = function(solrDoc, groupedBy, group) {
-            var options = {
-              groupedBy:          groupedBy,
-              group:              group,
-              fieldList:          self.fieldList,
-              url:                self.url,
-              explDict:           explDict,
-              hlDict:             hlDict,
-              highlightingPre:    self.HIGHLIGHTING_PRE,
-              highlightingPost:   self.HIGHLIGHTING_POST,
+            var parseSolrDoc = function(solrDoc, groupedBy, group) {
+              var options = {
+                groupedBy:          groupedBy,
+                group:              group,
+                fieldList:          self.fieldList,
+                url:                self.url,
+                explDict:           explDict,
+                hlDict:             hlDict,
+                highlightingPre:    self.HIGHLIGHTING_PRE,
+                highlightingPost:   self.HIGHLIGHTING_POST,
+              };
+
+              return new SolrDocFactory(solrDoc, options);
             };
 
-            return new SolrDocFactory(solrDoc, options);
-          };
+            if (solrResp.hasOwnProperty('response')) {
+              angular.forEach(solrResp.response.docs, function(solrDoc) {
+                var doc = parseSolrDoc(solrDoc);
+                thisSearcher.numFound = solrResp.response.numFound;
+                thisSearcher.docs.push(doc);
+              });
+            } else if (solrResp.hasOwnProperty('grouped')) {
+              angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
 
-          if (solrResp.hasOwnProperty('response')) {
-            angular.forEach(solrResp.response.docs, function(solrDoc) {
-              var doc = parseSolrDoc(solrDoc);
-              thisSearcher.numFound = solrResp.response.numFound;
-              thisSearcher.docs.push(doc);
-            });
-          } else if (solrResp.hasOwnProperty('grouped')) {
-            angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
+                thisSearcher.numFound = groupedBy.matches;
+                // add docs for a top level group
+                //console.log(groupedBy.doclist.docs);
+                if (groupedBy.hasOwnProperty('doclist')) {
+                  angular.forEach(groupedBy.doclist.docs, function (solrDoc) {
+                    var doc = parseSolrDoc(solrDoc, groupedByName, solrDoc[groupedByName]);
+                    thisSearcher.docs.push(doc);
+                    thisSearcher.addDocToGroup(groupedByName, solrDoc[groupedByName], doc);
+                  });
+                }
 
-              thisSearcher.numFound = groupedBy.matches;
-              // add docs for a top level group
-              //console.log(groupedBy.doclist.docs);
-              if (groupedBy.hasOwnProperty('doclist')) {
-                angular.forEach(groupedBy.doclist.docs, function (solrDoc) {
-                  var doc = parseSolrDoc(solrDoc, groupedByName, solrDoc[groupedByName]);
-                  thisSearcher.docs.push(doc);
-                  thisSearcher.addDocToGroup(groupedByName, solrDoc[groupedByName], doc);
-                });
-              }
-
-              // add docs for Field Collapsing results
-              angular.forEach(groupedBy.groups, function(groupResp) {
-                var groupValue = groupResp.groupValue;
-                angular.forEach(groupResp.doclist.docs, function(solrDoc) {
-                  var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
-                  thisSearcher.docs.push(doc);
-                  thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
+                // add docs for Field Collapsing results
+                angular.forEach(groupedBy.groups, function(groupResp) {
+                  var groupValue = groupResp.groupValue;
+                  angular.forEach(groupResp.doclist.docs, function(solrDoc) {
+                    var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
+                    thisSearcher.docs.push(doc);
+                    thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
+                  });
                 });
               });
-            });
-          }
-          resolve();
-        }, function error(msg) {
-          activeQueries.count--;
-          thisSearcher.inError = true;
-          msg.searchError = 'Error with Solr query or server. Contact Solr directly to inspect the error';
-          reject(msg);
-        }).catch(function(response) {
-          $log.debug('Failed to run search');
-          return response;
-        });
+            }
+            resolve();
+          }, function error(msg) {
+            activeQueries.count--;
+            thisSearcher.inError = true;
+            msg.searchError = 'Error with Solr query or server. Contact Solr directly to inspect the error';
+            reject(msg);
+          }).catch(function(response) {
+            $log.debug('Failed to run search');
+            return response;
+          });
       });
     } // end of search()
 
