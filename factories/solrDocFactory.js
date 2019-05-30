@@ -104,13 +104,32 @@
       var self        = this;
       var fieldValue  = self.snippet(docId, fieldName);
 
-      if (fieldValue) {
+      if (fieldValue && fieldValue instanceof Array) {
+        if ( fieldValue.length === 0 ) {
+          return null;
+        }
+
+        var escapedValues = [];
+
+        angular.forEach(fieldValue, function(value) {
+          var esc       = escapeHtml(value);
+          var preRegex  = new RegExp(self.options().highlightingPre, 'g');
+          var hlPre     = esc.replace(preRegex, preText);
+          var postRegex = new RegExp(self.options().highlightingPost, 'g');
+          var hlPost    = hlPre.replace(postRegex, postText);
+
+          escapedValues.push(hlPost);
+        });
+
+        return escapedValues;
+      } else if (fieldValue) {
         var esc       = escapeHtml(fieldValue);
         var preRegex  = new RegExp(self.options().highlightingPre, 'g');
         var hlPre     = esc.replace(preRegex, preText);
         var postRegex = new RegExp(self.options().highlightingPost, 'g');
+        var hlPost    = hlPre.replace(postRegex, postText);
 
-        return hlPre.replace(postRegex, postText);
+        return hlPost;
       } else {
         return null;
       }

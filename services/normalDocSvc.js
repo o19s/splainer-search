@@ -159,7 +159,7 @@ angular.module('o19s.splainer-search')
         doc.subSnippets = function(hlPre, hlPost) {
           if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
             angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
-              if ( typeof subFieldValue === 'object' ) {
+              if ( typeof subFieldValue === 'object' && !(subFieldValue instanceof Array)) {
                 lastSubSnips[subFieldName] = subFieldValue;
               } else {
                 var snip = aDoc.highlight(
@@ -169,7 +169,7 @@ angular.module('o19s.splainer-search')
                   hlPost
                 );
 
-                if (snip === null) {
+                if ( null === snip || undefined === snip || '' === snip ) {
                   snip = escapeHtml(subFieldValue.slice(0, 200));
                 }
 

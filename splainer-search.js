@@ -945,7 +945,7 @@ angular.module('o19s.splainer-search')
         doc.subSnippets = function(hlPre, hlPost) {
           if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
             angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
-              if ( typeof subFieldValue === 'object' ) {
+              if ( typeof subFieldValue === 'object' && !(subFieldValue instanceof Array)) {
                 lastSubSnips[subFieldName] = subFieldValue;
               } else {
                 var snip = aDoc.highlight(
@@ -955,7 +955,7 @@ angular.module('o19s.splainer-search')
                   hlPost
                 );
 
-                if (snip === null) {
+                if ( null === snip || undefined === snip || '' === snip ) {
                   snip = escapeHtml(subFieldValue.slice(0, 200));
                 }
 
@@ -3237,13 +3237,32 @@ angular.module('o19s.splainer-search')
       var self        = this;
       var fieldValue  = self.snippet(docId, fieldName);
 
-      if (fieldValue) {
+      if (fieldValue && fieldValue instanceof Array) {
+        if ( fieldValue.length === 0 ) {
+          return null;
+        }
+
+        var escapedValues = [];
+
+        angular.forEach(fieldValue, function(value) {
+          var esc       = escapeHtml(value);
+          var preRegex  = new RegExp(self.options().highlightingPre, 'g');
+          var hlPre     = esc.replace(preRegex, preText);
+          var postRegex = new RegExp(self.options().highlightingPost, 'g');
+          var hlPost    = hlPre.replace(postRegex, postText);
+
+          escapedValues.push(hlPost);
+        });
+
+        return escapedValues;
+      } else if (fieldValue) {
         var esc       = escapeHtml(fieldValue);
         var preRegex  = new RegExp(self.options().highlightingPre, 'g');
         var hlPre     = esc.replace(preRegex, preText);
         var postRegex = new RegExp(self.options().highlightingPost, 'g');
+        var hlPost    = hlPre.replace(postRegex, postText);
 
-        return hlPre.replace(postRegex, postText);
+        return hlPost;
       } else {
         return null;
       }
