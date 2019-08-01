@@ -4,7 +4,7 @@ Splainer Search is an Angular Solr and Elasticsearch Search library focussed on 
 
 [![Build Status](https://travis-ci.org/o19s/splainer-search.svg?branch=master)](https://travis-ci.org/o19s/splainer-search)
 
-Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsearch communicates clearly with simple HTTP and JSON. All fields are explained and highligted. A friendly interface is provided to specify the arguments in terms of a Javascript object. See below for basic examples.
+Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsearch communicates clearly with simple HTTP and JSON. All fields are explained and highlighted. A friendly interface is provided to specify the arguments in terms of a Javascript object. See below for basic examples.
 
 ## Basic usage
 
@@ -37,7 +37,7 @@ searcher.search()
 });
 ```
 
-### ElasticSearch
+### Elasticsearch
 
 Splainer-search also supports ES, using the same API, and passing the query DSL in the same way ES expects it:
 
@@ -57,7 +57,7 @@ var searcher = searchSvc.createSearcher(
 
 ## Paging
 
-Paging is done by asking the original searcher for another searcher. This searcher is already setup to get the next page for the current search results. Tell that searcher to search() just like you did above.
+Paging is done by asking the original searcher for another searcher. This searcher is already setup to get the next page for the current search results. Tell that searcher to `search()` just like you did above.
 
 ```js
 var results = [];
@@ -119,7 +119,7 @@ explainSearcher.explainOther('id:63148', fieldSpec);
 
 The `explainOther()` function returns the same promise as the `search()` function so you can you retrieve the results in the same way.
 
-### ElasticSearch
+### Elasticsearch
 
 In ES, the `explainOther()` function behaves the same way, except that it does not need a `fieldSpec` param to be passed in.
 
