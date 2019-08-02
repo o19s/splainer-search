@@ -347,7 +347,7 @@ angular.module('o19s.splainer-search')
 
       /**
        *
-       * Parses an ES URL of the form [http|https]://[username@password:][host][:port]/[collectionName]/_search
+       * Parses an ES URL of the form [http|https]://[username:password@][host][:port]/[collectionName]/_search
        * Splits up the different parts of the URL.
        *
        */
@@ -1087,13 +1087,13 @@ angular.module('o19s.splainer-search')
       }
       return this.next;
     };
-    
+
     // Run the underlying task
     this.apply = function() {
       taskFn.promise = this; // somebody then(...) me!
       taskFn.apply(taskThis, taskArgs);
     };
-    
+
     // We're done, the next thing can run
     this.completer = function() {
       this.completed = true;
@@ -1107,7 +1107,7 @@ angular.module('o19s.splainer-search')
 
   Promise.create = function(func) {
     if (func.hasOwnProperty('promise')) {
-      // I already have a stub promise waiting for 
+      // I already have a stub promise waiting for
       // somebody to call then on
       return func.promise;
     } else {
