@@ -79,6 +79,8 @@ module.exports = function(grunt) {
 		// Default task(s).
 		grunt.registerTask('default', ['jshint', 'karma:unit', 'concat:dist']);
 
+		grunt.registerTask('build', ['concat:dist']);
+
 	}
 	init({});		//initialize here for defaults (init may be called again later within a task)
 

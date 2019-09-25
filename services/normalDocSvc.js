@@ -127,7 +127,7 @@ angular.module('o19s.splainer-search')
       // A document within a query
       var NormalDoc = function(fieldSpec, doc) {
         this.doc = doc;
-        assignFields(this, this.doc.source(), fieldSpec);
+        assignFields(this, this.doc.origin(), fieldSpec);
         var hasThumb = false;
         if (this.hasOwnProperty('thumb')) {
           hasThumb = true;
@@ -240,8 +240,8 @@ angular.module('o19s.splainer-search')
       var getDocExplain = function(doc, nDoc) {
         var explJson = doc.explain(nDoc.id);
         if (explJson === null) {
-          if (doc.source().hasOwnProperty('id')) {
-            return doc.explain(doc.source().id);
+          if (doc.origin().hasOwnProperty('id')) {
+            return doc.explain(doc.origin().id);
           }
         }
         return explJson;
