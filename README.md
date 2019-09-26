@@ -262,6 +262,8 @@ npm install
 npm test
 ```
 
+To do a release, use `np` via `npm install np` and then run it.
+
 
 ## Thanks to...
 
