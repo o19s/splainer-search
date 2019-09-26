@@ -1,8 +1,10 @@
+[![Build Status](https://travis-ci.org/o19s/splainer-search.svg?branch=master)](https://travis-ci.org/o19s/splainer-search)
+[![npm version](https://badge.fury.io/js/splainer-search.svg)](https://badge.fury.io/js/splainer-search)
+
 # AngularJS Search Service
 
 Splainer Search is an Angular Solr and Elasticsearch Search library focussed on relevance diagnostics. It's used in relevancy tuning tools [Quepid](http://quepid.com) and [Splainer](http://splainer.io). Its available for anyone to use (see [license](LICENSE.txt)).
 
-[![Build Status](https://travis-ci.org/o19s/splainer-search.svg?branch=master)](https://travis-ci.org/o19s/splainer-search)
 
 Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsearch communicates clearly with simple HTTP and JSON. All fields are explained and highlighted. A friendly interface is provided to specify the arguments in terms of a Javascript object. See below for basic examples.
 
@@ -237,6 +239,29 @@ searcher.search();
 And splainer-search will take care of using the correct name in the parameters.
 
 **NB:** The default behavior will be that of 5.x, so if you are on that version you do not need to do anything, whereas if you are on a previous version number you should provide the version number.
+
+
+## Development Notes
+
+Splainer-search is written using AngularJS project. It requires npm and grunt
+
+Be sure you've installed npm and grunt on your machine.
+
+* On a Mac [follow these instructions](http://thechangelog.com/install-node-js-with-homebrew-on-os-x/)
+* On Ubuntu [follow these instructions](https://rtcamp.com/tutorials/nodejs/node-js-npm-install-ubuntu/)
+* Use npm to install Grunt globally on your system (may require sudo)
+
+```
+npm install -g grunt-cli
+```
+
+To run the tests:
+
+```
+npm install
+npm test
+```
+
 
 ## Thanks to...
 
