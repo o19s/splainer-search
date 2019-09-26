@@ -1,6 +1,6 @@
 {
   "name": "splainer-search",
-  "version": "2.4.2",
+  "version": "2.4.4",
   "main": "splainer-search.js",
   "authors": [
     "Doug Turnbull <dturnbull@opensourceconnections.com>",
@@ -8,6 +8,9 @@
   ],
   "description": "Angular JS Solr and Elasticsearch Diagnostic Search Services",
   "homepage": "https://github.com/o19s/splainer-search",
+  "bugs": {
+        "url": "https://github.com/o19s/splainer-search/issues"
+  },
   "keywords": [
     "splainer-search",
     "search",
@@ -71,5 +74,8 @@
   "resolutions": {
     "angular": "~1.4.0"
   },
-  "repository": ""
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:o19s/splainer-search.git"
+  }
 }
