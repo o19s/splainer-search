@@ -36,7 +36,7 @@
     Doc.prototype._url       = _url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
-    Doc.prototype.source     = source;
+    Doc.prototype.origin     = origin;
     Doc.prototype.highlight  = highlight;
 
     function _url () {
@@ -68,7 +68,7 @@
       return null;
     }
 
-    function source () {
+    function origin () {
       /*jslint validthis:true*/
       var self = this;
 

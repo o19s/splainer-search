@@ -913,7 +913,7 @@ angular.module('o19s.splainer-search')
       // A document within a query
       var NormalDoc = function(fieldSpec, doc) {
         this.doc = doc;
-        assignFields(this, this.doc.source(), fieldSpec);
+        assignFields(this, this.doc.origin(), fieldSpec);
         var hasThumb = false;
         if (this.hasOwnProperty('thumb')) {
           hasThumb = true;
@@ -1026,8 +1026,8 @@ angular.module('o19s.splainer-search')
       var getDocExplain = function(doc, nDoc) {
         var explJson = doc.explain(nDoc.id);
         if (explJson === null) {
-          if (doc.source().hasOwnProperty('id')) {
-            return doc.explain(doc.source().id);
+          if (doc.origin().hasOwnProperty('id')) {
+            return doc.explain(doc.origin().id);
           }
         }
         return explJson;
@@ -2376,7 +2376,7 @@ angular.module('o19s.splainer-search')
     Doc.prototype._url       = _url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
-    Doc.prototype.source     = source;
+    Doc.prototype.origin     = origin;
     Doc.prototype.highlight  = highlight;
 
     function _url () {
@@ -2408,7 +2408,7 @@ angular.module('o19s.splainer-search')
       return null;
     }
 
-    function source () {
+    function origin () {
       /*jslint validthis:true*/
       var self = this;
 
@@ -3177,7 +3177,7 @@ angular.module('o19s.splainer-search')
     Doc.prototype._url       = _url;
     Doc.prototype.explain    = explain;
     Doc.prototype.snippet    = snippet;
-    Doc.prototype.source     = source;
+    Doc.prototype.origin     = origin;
     Doc.prototype.highlight  = highlight;
 
     var entityMap = {
@@ -3248,7 +3248,7 @@ angular.module('o19s.splainer-search')
       return null;
     }
 
-    function source () {
+    function origin () {
       /*jslint validthis:true*/
       var self = this;
       return angular.copy(self.doc);

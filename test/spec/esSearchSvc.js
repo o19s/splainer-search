@@ -186,8 +186,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
         searcher.search()
         .then(function() {
           var docs = searcher.docs;
-          expect(docs[0].source().doc).toBe(undefined);
-          expect(docs[0].source().fields).toBe(undefined);
+          expect(docs[0].origin().doc).toBe(undefined);
+          expect(docs[0].origin().fields).toBe(undefined);
           called++;
         });
         $httpBackend.flush();
@@ -386,8 +386,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
         searcher.search()
         .then(function() {
           var docs = searcher.docs;
-          expect(docs[0].source().doc).toBe(undefined);
-          expect(docs[0].source().fields).toBe(undefined);
+          expect(docs[0].origin().doc).toBe(undefined);
+          expect(docs[0].origin().fields).toBe(undefined);
           called++;
         });
         $httpBackend.flush();
@@ -571,7 +571,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       searcher.search()
       .then(function() {
         var docs = searcher.docs;
-        expect(docs[0].source()._explanation).toBe(undefined);
+        expect(docs[0].origin()._explanation).toBe(undefined);
         called++;
       });
       $httpBackend.flush();
@@ -859,7 +859,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       var called = 0;
       searcher.search().then(function() {
         var docs = searcher.docs;
-        expect(docs[0].source().highlight).toBe(undefined);
+        expect(docs[0].origin().highlight).toBe(undefined);
         called++;
       });
       $httpBackend.flush();

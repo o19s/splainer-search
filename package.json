@@ -45,8 +45,8 @@
   },
   "devDependencies": {
     "angular-mocks": "~1.7.7",
-    "bower": "~1.3.8",
-    "express": "~3.4.4",
+    "bower": "~1.8.8",
+    "express": "~3.11.0",
     "grunt": "~0.4.1",
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-jshint": "~0.7.0",
@@ -61,7 +61,9 @@
     "phantomjs": "^2.1.7"
   },
   "scripts": {
-    "test": "grunt karma:unit"
+    "test": "grunt karma:unit",
+    "build": "grunt",
+    "build:dev": "grunt build"
   },
   "engines": {
     "node": ">=8.1.0"
