@@ -952,11 +952,11 @@ describe('Service: searchSvc: Solr', function () {
         var gpd = searcher.grouped;
         expect(gpd.text[0].value).toEqual('would');
         expect(gpd.text[0].docs.length).toEqual(3);
-        expect(gpd.text[0].docs[0].source().id).toEqual('l_11730');
+        expect(gpd.text[0].docs[0].origin().id).toEqual('l_11730');
         expect(gpd.text[0].docs[0].group()).toEqual('would');
-        expect(gpd.text[0].docs[1].source().id).toEqual('l_22002');
+        expect(gpd.text[0].docs[1].origin().id).toEqual('l_22002');
         expect(gpd.text[0].docs[1].group()).toEqual('would');
-        expect(gpd.text[0].docs[2].source().id).toEqual('l_3845');
+        expect(gpd.text[0].docs[2].origin().id).toEqual('l_3845');
         expect(gpd.text[0].docs[2].group()).toEqual('would');
         angular.forEach(gpd.text[0].docs, function(doc) {
           expect(doc.group()).toEqual('would');
@@ -965,9 +965,9 @@ describe('Service: searchSvc: Solr', function () {
 
         expect(gpd.text[1].value).toEqual('within');
         expect(gpd.text[1].docs.length).toEqual(3);
-        expect(gpd.text[1].docs[0].source().id).toEqual('l_5780');
-        expect(gpd.text[1].docs[1].source().id).toEqual('l_16271');
-        expect(gpd.text[1].docs[2].source().id).toEqual('l_20837');
+        expect(gpd.text[1].docs[0].origin().id).toEqual('l_5780');
+        expect(gpd.text[1].docs[1].origin().id).toEqual('l_16271');
+        expect(gpd.text[1].docs[2].origin().id).toEqual('l_20837');
         angular.forEach(gpd.text[1].docs, function(doc) {
           expect(doc.group()).toEqual('within');
           expect(doc.groupedBy()).toEqual('text');

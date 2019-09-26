@@ -61,7 +61,9 @@
     "phantomjs": "^2.1.7"
   },
   "scripts": {
-    "test": "grunt karma:unit"
+    "test": "grunt karma:unit",
+    "build": "grunt",
+    "build:dev": "grunt build"
   },
   "engines": {
     "node": ">=8.1.0"
