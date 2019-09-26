@@ -238,6 +238,21 @@ And splainer-search will take care of using the correct name in the parameters.
 
 **NB:** The default behavior will be that of 5.x, so if you are on that version you do not need to do anything, whereas if you are on a previous version number you should provide the version number.
 
+
+## Development Notes
+
+This library is built using npm and grunt.
+
+```
+npm install
+npm test
+```
+
+To package it up for release you need to:
+
+1. TBD
+
+
 ## Thanks to...
 
 Development for this library is done primarily by [OpenSource Connections](http://opensourceconnections.com) for search relevance tools [Splainer](http://splainer.io) and [Quepid](http://quepid.com)
