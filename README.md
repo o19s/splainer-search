@@ -241,16 +241,24 @@ And splainer-search will take care of using the correct name in the parameters.
 
 ## Development Notes
 
-This library is built using npm and grunt.
+Splainer-search is written using AngularJS project. It requires npm and grunt
+
+Be sure you've installed npm and grunt on your machine.
+
+* On a Mac [follow these instructions](http://thechangelog.com/install-node-js-with-homebrew-on-os-x/)
+* On Ubuntu [follow these instructions](https://rtcamp.com/tutorials/nodejs/node-js-npm-install-ubuntu/)
+* Use npm to install Grunt globally on your system (may require sudo)
+
+```
+npm install -g grunt-cli
+```
+
+To run the tests:
 
 ```
 npm install
 npm test
 ```
-
-To package it up for release you need to:
-
-1. TBD
 
 
 ## Thanks to...
