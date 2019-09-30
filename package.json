@@ -28,7 +28,6 @@
     "coverage",
     "factories",
     "pages",
-    "provisioning",
     "services",
     "values",
     "app.js",
@@ -38,8 +37,7 @@
     "karma.conf.js",
     "karma.debug.conf.js",
     "module.js",
-    "server.js",
-    "Vagrantfile"
+    "server.js"
   ],
   "dependencies": {
     "angular": "~1.7.7",

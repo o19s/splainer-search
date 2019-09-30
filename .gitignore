@@ -22,7 +22,3 @@ coverage
 
 #vim
 *.swp
-
-# Vagrant
-.vagrant
-provisioning/playbook.retry
