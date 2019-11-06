@@ -98,6 +98,38 @@ describe('Service: searchSvc: ElasticSearch', function() {
     }
   };
 
+  var mockES7Results = {
+    hits: {
+      "total" : {
+            "value": 2,
+            "relation": "eq"
+        },
+      'max_score': 1.0,
+      hits: [
+        {
+          '_index': 'statedecoded',
+          '_type':  'law',
+          '_id':    'l_1',
+          '_score': 5.0,
+          '_source': {
+            'field':  ['1--field value'],
+            'field1': ['1--field1 value']
+          },
+        },
+        {
+          '_index': 'statedecoded',
+          '_type':  'law',
+          '_id':    'l_1',
+          '_score': 3.0,
+          '_source': {
+            'field':  ['2--field value'],
+            'field1': ['2--field1 value']
+          }
+        }
+      ]
+    }
+  };
+
   describe('basic search', function () {
     describe('pre version 5', function() {
       beforeEach(inject(function () {
@@ -1336,5 +1368,47 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.flush();
     });
 
+  });
+  describe('version 7', function() {
+    beforeEach(inject(function () {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        { },
+        'es'
+      );
+    }));
+
+    it('returns docs (they should look just like ES docs)', function() {
+      $httpBackend.expectPOST(mockEsUrl).
+      respond(200, mockES7Results);
+
+      var called = 0;
+
+      searcher.search()
+      .then(function() {
+        var docs = searcher.docs;
+        console.log("a");
+        expect(docs.length === 2);
+console.log("b");
+console.log(searcher.numFound);
+        expect(searcher.numFound).toEqual(2);
+        //expect(searcher.hits).toEqual(mockES7Results.hits.total.value);
+
+        //var firstHit  = mockES7Results.hits.hits[0];
+        //var secondHit = mockES7Results.hits.hits[1];
+        //expect(docs[0].field).toEqual(firstHit._source.field[0]);
+        //expect(docs[0].field1).toEqual(firstHit._source.field1[0]);
+        //expect(docs[1].field).toEqual(secondHit._source.field[0]);
+        //expect(docs[1].field1).toEqual(secondHit._source.field1[0]);
+        called++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+    });
   });
 });

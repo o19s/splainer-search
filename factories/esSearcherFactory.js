@@ -207,7 +207,13 @@
         .then(function success(httpConfig) {
           var data = httpConfig.data;
           activeQueries.count--;
-          self.numFound = data.hits.total;
+          if (data.hits.hasOwnProperty('total') && data.hits.total.hasOwnProperty('value')) {
+            self.numFound = data.hits.total.value;
+          }
+          else {
+            self.numFound = data.hits.total;
+          }
+
 
           var parseDoc = function(doc, groupedBy, group) {
             var explDict  = getExplData(doc);
