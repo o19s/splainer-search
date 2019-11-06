@@ -1001,7 +1001,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       );
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
         var esQuery = angular.fromJson(data);
-        console.log(esQuery.query.term.text);
+        //console.log(esQuery.query.term.text);
         return (esQuery.query.term.text === 'purina \"\"');
       }).
       respond(200, mockES4Results);
