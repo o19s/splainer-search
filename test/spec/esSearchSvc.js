@@ -98,6 +98,38 @@ describe('Service: searchSvc: ElasticSearch', function() {
     }
   };
 
+  var mockES7Results = {
+    hits: {
+      "total" : {
+            "value": 2,
+            "relation": "eq"
+        },
+      'max_score': 1.0,
+      hits: [
+        {
+          '_index': 'statedecoded',
+          '_type':  'law',
+          '_id':    'l_1',
+          '_score': 5.0,
+          '_source': {
+            'field':  ['1--field value'],
+            'field1': ['1--field1 value']
+          },
+        },
+        {
+          '_index': 'statedecoded',
+          '_type':  'law',
+          '_id':    'l_1',
+          '_score': 3.0,
+          '_source': {
+            'field':  ['2--field value'],
+            'field1': ['2--field1 value']
+          }
+        }
+      ]
+    }
+  };
+
   describe('basic search', function () {
     describe('pre version 5', function() {
       beforeEach(inject(function () {
@@ -969,7 +1001,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       );
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
         var esQuery = angular.fromJson(data);
-        console.log(esQuery.query.term.text);
+        //console.log(esQuery.query.term.text);
         return (esQuery.query.term.text === 'purina \"\"');
       }).
       respond(200, mockES4Results);
@@ -1336,5 +1368,37 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.flush();
     });
 
+  });
+  describe('version 7', function() {
+    beforeEach(inject(function () {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        { },
+        'es'
+      );
+    }));
+
+    it('returns docs, and maps the hits.total.value to the numFound', function() {
+      $httpBackend.expectPOST(mockEsUrl).
+      respond(200, mockES7Results);
+
+      var called = 0;
+
+      searcher.search()
+      .then(function() {
+        var docs = searcher.docs;
+        expect(docs.length === 2);
+
+        expect(searcher.numFound).toEqual(2);
+        called++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+    });
   });
 });
