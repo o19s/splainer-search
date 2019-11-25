@@ -1,6 +1,6 @@
 {
   "name": "splainer-search",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "main": "splainer-search.js",
   "authors": [
     "Doug Turnbull <dturnbull@opensourceconnections.com>",
@@ -42,7 +42,7 @@
   "dependencies": {
     "angular": "~1.7.7",
     "jasmine-core": "^3.1.0",
-    "np": "^5.1.0",
+    "np": "^5.1.3",
     "npm": "^6.11.3",
     "urijs": "~1.16.1"
   },

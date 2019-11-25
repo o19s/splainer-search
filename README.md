@@ -262,7 +262,7 @@ npm install
 npm test
 ```
 
-To do a release, use `np` via `npm install np` and then run it.
+To do a release, do `npm login` followed by `npm publish`.
 
 
 ## Thanks to...
