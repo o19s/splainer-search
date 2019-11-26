@@ -243,9 +243,7 @@ And splainer-search will take care of using the correct name in the parameters.
 
 ## Development Notes
 
-Splainer-search is written using AngularJS project. It requires npm and grunt
-
-Be sure you've installed npm and grunt on your machine.
+Splainer-search is written using AngularJS project. It requires `npm` and `grunt`:
 
 * On a Mac [follow these instructions](http://thechangelog.com/install-node-js-with-homebrew-on-os-x/)
 * On Ubuntu [follow these instructions](https://rtcamp.com/tutorials/nodejs/node-js-npm-install-ubuntu/)
@@ -262,7 +260,13 @@ npm install
 npm test
 ```
 
-To do a release, do `npm login` followed by `npm publish`.
+We use NP to publish splainer-search to npmjs.org:
+
+```
+npm install --global np
+np
+```
+
 
 
 ## Thanks to...
