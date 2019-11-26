@@ -260,7 +260,7 @@ npm install
 npm test
 ```
 
-We use NP to publish splainer-search to nodejs.org:
+We use NP to publish splainer-search to npmjs.org:
 
 ```
 npm install --global np
