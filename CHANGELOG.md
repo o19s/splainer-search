@@ -1,7 +1,9 @@
 Version numbers correspond to `package.json` version
 
-# 2.5.1
-_There was a hiatus up through 2.5.0 in maintaining this file._
+# 2.5.3 ????
+
+# 2.5.2
+_There was a hiatus up through 2.5.2 in maintaining this file._
 - Remove Vagrant support from project.
 - Support how ES 7 reports total docs found compared to how ES 6 and prior did.
 
