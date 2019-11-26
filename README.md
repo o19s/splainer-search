@@ -260,6 +260,12 @@ npm install
 npm test
 ```
 
+We need to build a `splainer-search.js` file as part of the build.
+
+```
+npm run-script build
+```
+
 We use NP to publish splainer-search to npmjs.org:
 
 ```
