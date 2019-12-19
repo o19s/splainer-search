@@ -40,12 +40,23 @@ angular.module('o19s.splainer-search')
           args['hl.simple.post']  = [searcher.HIGHLIGHTING_POST];
         }
 
+        if ( !args.rows ) {
+          args.rows = [config.numberOfRows];
+        }
+
         if (config.escapeQuery) {
           queryText = solrUrlSvc.escapeUserQuery(queryText);
         }
 
-        if ( !args.rows ) {
-          args.rows = [config.numberOfRows];
+        if (config.apiMethod === 'json') {
+          // We have a couple of options here:
+          //  - Do a POST with JSON body that is not jsonp;
+          //  - Do a GET with JSON body - not sure if it will work with jsonp;
+          //  - Do a GET with json request parameter in the query string;
+          //
+          // For simplicity sake, we are going with the latter.
+          args.json = queryText;
+          queryText = null;
         }
 
         var baseUrl = solrUrlSvc.buildUrl(url, args);
