@@ -118,18 +118,10 @@
       }
 
       if (apiMethod === 'get' ) {
-        var fieldList = self.fieldList.join(',');
-
-        if ( 5 <= self.majorVersion() ) {
-          /*jshint camelcase: false */
-          esUrlSvc.setParams(uri, {
-            _source:       fieldList,
-          });
-        } else {
-          esUrlSvc.setParams(uri, {
-            _source: fieldList,
-          });
-        }
+        /*jshint camelcase: false */
+        esUrlSvc.setParams(uri, {
+          _source:       self.fieldList.join(','),
+        });
       }
 
       var url       = esUrlSvc.buildUrl(uri);
