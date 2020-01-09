@@ -2769,12 +2769,7 @@ angular.module('o19s.splainer-search')
 
       return $http.post(url, { query: self.queryDsl.query }, {headers: headers})
         .then(function(response) {
-          var explDict  = {
-            match:        response.data.matched,
-            explanation:  response.data.explanation,
-            description:  response.data.explanation.description,
-            value:        response.data.explanation.value,
-          };
+          var explDict  = response.data.explanation || null;
 
           var options = {
             fieldList: self.fieldList,
