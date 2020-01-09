@@ -1,6 +1,7 @@
 Version numbers correspond to `package.json` version
 
 # 2.5.3 ????
+- Explain Other on ES 6 and 7 Broken.
 
 # 2.5.2
 _There was a hiatus up through 2.5.2 in maintaining this file._
