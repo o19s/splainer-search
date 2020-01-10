@@ -118,7 +118,7 @@
       }
 
       if (apiMethod === 'get' ) {
-        var fieldList = self.fieldList.join(',');
+        var fieldList = (self.fieldList === '*') ? '*' : self.fieldList.join(',');
 
         if ( 5 <= self.majorVersion() ) {
           /*jshint camelcase: false */
@@ -312,12 +312,7 @@
 
       return $http.post(url, { query: self.queryDsl.query }, {headers: headers})
         .then(function(response) {
-          var explDict  = {
-            match:        response.data.matched,
-            explanation:  response.data.explanation,
-            description:  response.data.explanation.description,
-            value:        response.data.explanation.value,
-          };
+          var explDict  = response.data.explanation || null;
 
           var options = {
             fieldList: self.fieldList,
