@@ -1,7 +1,11 @@
 Version numbers correspond to `package.json` version
-# 2.5.5 ??
+# 2.5.6 ???
+
+# 2.5.5
+- This time with the `splainer-search.js` file!
 
 # 2.5.4
+- DO NOT USE THIS VERSION, we missed the compiled file from the package ;-)
 - Remove compiled `splainer-search.js` from github
 
 # 2.5.3
