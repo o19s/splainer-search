@@ -1,3 +1,5 @@
+# complied package shouldnt be checked in
+splainer-search.js
 # generic (system) files/extensions we don't want
 *.seed
 *.log
