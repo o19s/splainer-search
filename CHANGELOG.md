@@ -1,6 +1,6 @@
 Version numbers correspond to `package.json` version
 
-# 2.5.3 ????
+# 2.5.3
 - Explain Other on ES 6 and 7 Broken.
 - Fix for wildcard fieldspec in ES, allow * as a fieldspec
 
