@@ -118,7 +118,7 @@
       }
 
       if (apiMethod === 'get' ) {
-        var fieldList = self.fieldList.join(',');
+        var fieldList = (self.fieldList === '*') ? '*' : self.fieldList.join(',');
 
         if ( 5 <= self.majorVersion() ) {
           /*jshint camelcase: false */
