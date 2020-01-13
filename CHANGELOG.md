@@ -1,5 +1,7 @@
 Version numbers correspond to `package.json` version
-# 2.5.6 ???
+# 2.5.7 ???
+
+# 2.5.6
 - Support extracting media fields that have fieldspec media:
 
 # 2.5.5
