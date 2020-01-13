@@ -15,6 +15,13 @@ angular.module('o19s.splainer-search')
           fieldName = fieldName + ':$' + fieldName;
           fieldSpec.functions.push(fieldName);
         }
+        if (fieldType === 'media') {
+            if (!fieldSpec.hasOwnProperty('embeds')) {
+              fieldSpec.embeds = [];
+            }
+
+            fieldSpec.embeds.push(fieldName);
+        }
         if (fieldType === 'sub') {
           if (!fieldSpec.hasOwnProperty('subs')) {
             fieldSpec.subs = [];
@@ -98,6 +105,9 @@ angular.module('o19s.splainer-search')
           if (this.hasOwnProperty('thumb')) {
             innerBody(this.thumb);
           }
+          angular.forEach(this.embeds, function(embed) {
+            innerBody(embed);
+          });
           angular.forEach(this.subs, function(sub) {
             innerBody(sub);
           });
