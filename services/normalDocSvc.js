@@ -73,6 +73,12 @@ angular.module('o19s.splainer-search')
         return funcFieldQuery.split(':')[0];
       };
 
+      var assignEmbeds = function(normalDoc, doc, fieldSpec) {
+        angular.forEach(fieldSpec.embeds, function (embedField) {
+            normalDoc.embeds[embedField] = doc[embedField];
+        });
+      };
+
       var assignSubs = function(normalDoc, doc, fieldSpec) {
         var parseValue = function(value) {
           if ( typeof value === 'object' ) {
@@ -120,6 +126,8 @@ angular.module('o19s.splainer-search')
         assignSingleField(normalDoc, doc, fieldSpec.id, 'id');
         assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
         assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
+        normalDoc.embeds = {};
+        assignEmbeds(normalDoc, doc, fieldSpec);
         normalDoc.subs = {};
         assignSubs(normalDoc, doc, fieldSpec);
       };
