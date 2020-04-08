@@ -8,6 +8,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
   var searcher;
   var searchSvc;
+  var esUrlSvc;
   var $httpBackend;
   var fieldSpecSvc  = null;
   var mockEsUrl     = 'http://localhost:9200/statedecoded/_search';
@@ -34,9 +35,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
     $httpBackend = $injector.get('$httpBackend');
   }));
 
-  beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_) {
+  beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_, _esUrlSvc_) {
     searchSvc     = _searchSvc_;
     fieldSpecSvc  = _fieldSpecSvc_;
+    esUrlSvc = _esUrlSvc_;
     mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1');
   }));
 
@@ -304,7 +306,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
           'es'
         );
 
-        $httpBackend.expectPOST(authEsUrl, undefined, function(headers) {
+        // The headers need to be removed from the URL, which we accomplish
+        // using the esUrlSvc.
+        var targetUrl = esUrlSvc.buildUrl(esUrlSvc.parseUrl(authEsUrl))
+        $httpBackend.expectPOST(targetUrl, undefined, function(headers) {
           return headers['Authorization'] == 'Basic ' + btoa('username:password');
         }).
         respond(200, mockES4Results);
@@ -504,7 +509,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
           'es'
         );
 
-        $httpBackend.expectPOST(authEsUrl, undefined, function(headers) {
+        // The headers need to be removed from the URL, which we accomplish
+        // using the esUrlSvc.
+        var targetUrl = esUrlSvc.buildUrl(esUrlSvc.parseUrl(authEsUrl))
+        $httpBackend.expectPOST(targetUrl, undefined, function(headers) {
           return headers['Authorization'] == 'Basic ' + btoa('username:password');
         }).
         respond(200, mockES5Results);
