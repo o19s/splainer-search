@@ -1,5 +1,7 @@
 Version numbers correspond to `package.json` version
-# 2.5.7 ???
+
+# 2.5.7
+- Allow http://username:password@example.com:9200/ in URL to work by converting to Authorization header for Elasticsearch.   Thanks @CGamesPlay for fix.
 
 # 2.5.6
 - Support extracting media fields that have fieldspec media:
