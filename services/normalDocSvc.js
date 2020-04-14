@@ -36,7 +36,15 @@ angular.module('o19s.splainer-search')
       // returns: obj['a']['b'] => c
       //
       var multiIndex = function(obj, keys) {
-        return keys.length ? multiIndex(obj[keys[0]], keys.slice(1)) : obj;
+        if (keys.length === 0) {
+          return obj;
+        } else if (Array.isArray(obj)) {
+          return obj.map(function(child) {
+            return multiIndex(child, keys);
+          });
+        } else {
+          return multiIndex(obj[keys[0]], keys.slice(1));
+        }
       };
 
       //
@@ -105,6 +113,7 @@ angular.module('o19s.splainer-search')
                 var value = pathIndex(doc, subFieldName);
                 normalDoc.subs[subFieldName] = parseValue(value);
               } catch (e) {
+                console.error(e);
                 normalDoc.subs[subFieldName] = '';
               }
             } else if ( doc.hasOwnProperty(subFieldName) ) {
@@ -167,7 +176,7 @@ angular.module('o19s.splainer-search')
         doc.subSnippets = function(hlPre, hlPost) {
           if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
             angular.forEach(doc.subs, function(subFieldValue, subFieldName) {
-              if ( typeof subFieldValue === 'object' && !(subFieldValue instanceof Array)) {
+              if ( typeof subFieldValue === 'object' ) {
                 lastSubSnips[subFieldName] = subFieldValue;
               } else {
                 var snip = aDoc.highlight(
