@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version
 
+# 2.5.8
+- Fix rendering logic to handle Arrays and JSON objects so you don't get `"[object Object]"` in the UI. Another great fix by @CgamesPlay!
+
 # 2.5.7
 - Allow http://username:password@example.com:9200/ in URL to work by converting to Authorization header for Elasticsearch.   Thanks @CGamesPlay for fix.
 

@@ -241,6 +241,20 @@ And splainer-search will take care of using the correct name in the parameters.
 **NB:** The default behavior will be that of 5.x, so if you are on that version you do not need to do anything, whereas if you are on a previous version number you should provide the version number.
 
 
+## Highlighting of results
+
+If the individual search result field is a string then it is automatically highlighted.  
+
+However, if the selected value is an array or a JSON object, it doesn't coerce it to a string (and as a result doesn't highlight it, either).
+
+Secondly, if any component in the selected path results in array, the rest of the path is spread over the array value. To explain:
+
+```
+Data: { "variants": [ { "name": "red" }, { "name": "blue" } ] }
+Path (or _field name_): "variants.name"
+Result: [ "red", "blue" ]
+```
+
 ## Development Notes
 
 Splainer-search is written using AngularJS project. It requires `npm` and `grunt`:
