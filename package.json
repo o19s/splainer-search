@@ -70,9 +70,6 @@
   "engines": {
     "node": ">=8.1.0"
   },
-  "resolutions": {
-    "angular": "~1.4.0"
-  },
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/o19s/splainer-search.git"
