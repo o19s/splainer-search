@@ -3,6 +3,8 @@
 // Generated on 2014-07-17 using
 // generator-karma 0.8.3
 
+process.env.CHROME_BIN = require('puppeteer').executablePath();
+
 module.exports = function(config) {
   'use strict';
 
@@ -44,15 +46,21 @@ module.exports = function(config) {
     // - PhantomJS
     // - IE (only Windows)
     browsers: [
-      'PhantomJS'
+      'ChromeHeadlessNoSandbox'
     ],
+
+    customLaunchers: {
+      ChromeHeadlessNoSandbox: {
+        base: 'ChromeHeadless',
+        flags: ['--no-sandbox', '--headless']
+      }
+    },
 
     // Which plugins to enable
     plugins: [
-      'karma-coverage',
-      'karma-phantomjs-launcher',
       'karma-chrome-launcher',
-      'karma-jasmine'
+      'karma-jasmine',
+      'karma-coverage'
     ],
 
     preprocessors: {
