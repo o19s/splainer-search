@@ -30,49 +30,39 @@
     "pages",
     "services",
     "values",
-    "app.js",
     "Gruntfile.js",
     "index.js",
     "index.html",
     "karma.conf.js",
     "karma.debug.conf.js",
-    "module.js",
-    "server.js"
+    "module.js"
   ],
   "dependencies": {
-    "angular": "~1.7.7",
-    "npm": "^6.11.3",
+    "angular": "^1.7.9",
     "urijs": "~1.16.1"
   },
   "devDependencies": {
-    "angular-mocks": "~1.7.7",
-    "bower": "~1.8.8",
-    "express": "~3.11.0",
+    "angular-mocks": "^1.7.9",
     "grunt": "~0.4.1",
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-jshint": "~0.7.0",
     "grunt-contrib-uglify": "~0.2.5",
     "grunt-karma": "^0.12.0",
     "jasmine": "^2.8.0",
-    "jasmine-core": "^3.1.0",
+    "jasmine-core": "^3.5.0",
     "karma": "^1.7.0",
     "karma-chrome-launcher": "^2.2.0",
     "karma-coverage": "^1.1.1",
-    "karma-jasmine": "^1.1.0",
-    "karma-phantomjs-launcher": "^1.0.4",
-    "phantomjs": "^2.1.7"
+    "karma-jasmine": "^3.1.1",
+    "puppeteer": "^3.0.0"
   },
   "scripts": {
     "test": "grunt karma:unit",
     "build": "grunt",
-    "build:dev": "grunt build",
-    "start": "node server.js"
+    "build:dev": "grunt build"
   },
   "engines": {
     "node": ">=8.1.0"
-  },
-  "resolutions": {
-    "angular": "~1.4.0"
   },
   "repository": {
     "type": "git",
