@@ -39,8 +39,6 @@
   ],
   "dependencies": {
     "angular": "~1.7.7",
-    "npm": "^6.11.3",
-    "puppeteer": "^3.0.0",
     "urijs": "~1.16.1"
   },
   "devDependencies": {
@@ -57,7 +55,8 @@
     "karma": "^1.7.0",
     "karma-chrome-launcher": "^2.2.0",
     "karma-coverage": "^1.1.1",
-    "karma-jasmine": "^1.1.0"
+    "karma-jasmine": "^1.1.0",
+    "puppeteer": "^3.0.0"
   },
   "scripts": {
     "test": "grunt karma:unit",
