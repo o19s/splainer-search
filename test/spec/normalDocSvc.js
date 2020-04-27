@@ -418,7 +418,7 @@ describe('Service: normalDocsSvc', function () {
 
       solrDoc['nesting'] =  { "genres": [ { "name": "Action", "id": 1 },{ "name": "Comedy", "id": 2 }] };
 
-      var fieldSpec = {id: 'id', title: 'title_field', subs: ['genres.name','nesting.genres.name']};
+      var fieldSpec = {id: 'id', title: 'title_field', subs: ['nesting.genres.name']};
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
 
       expect(normalDoc.subs["nesting.genres.name"]).toEqual(['Action', 'Comedy']);
@@ -432,10 +432,7 @@ describe('Service: normalDocsSvc', function () {
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
       expect(normalDoc.subs["actor.name"]).toEqual('Harrison Ford');
 
-
     });
-
-
 
   });
 

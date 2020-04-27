@@ -48,8 +48,8 @@ angular.module('o19s.splainer-search')
       };
 
       //
-      // Takes a dot notation and returns the value of the object by
-      // traversing the key map.
+      // Takes a key that has a dot in it, and tests if the name of the property includes
+      // the dot, or if this is dot notation for traversing a nested object or array of objects.
       //
       // @param obj,  Object, the object we want to fetch value from.
       // @param keys, String, the dot notation of the keys.
@@ -60,7 +60,12 @@ angular.module('o19s.splainer-search')
       // returns: obj['a']['b'] => c
       //
       var pathIndex = function(obj, keys) {
-        return multiIndex(obj, keys.split('.'));
+        if (obj.hasOwnProperty(keys)){
+          return obj[keys];
+        }
+        else {
+          return multiIndex(obj, keys.split('.'));
+        }
       };
 
       var assignSingleField = function(normalDoc, doc, field, toProperty) {
