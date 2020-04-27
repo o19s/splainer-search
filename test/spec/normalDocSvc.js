@@ -424,6 +424,17 @@ describe('Service: normalDocsSvc', function () {
       expect(normalDoc.subs["nesting.genres.name"]).toEqual(['Action', 'Comedy']);
     });
 
+    it('captures sub values when the field name has a dot in it, and it isnt using dot notation', function() {
+
+      solrDoc['actor.name'] = "Harrison Ford";
+
+      var fieldSpec = {id: 'id', title: 'title_field', subs: ['actor.name']};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.subs["actor.name"]).toEqual('Harrison Ford');
+
+
+    });
+
 
 
   });
