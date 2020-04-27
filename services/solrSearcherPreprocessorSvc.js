@@ -35,6 +35,7 @@ angular.module('o19s.splainer-search')
 
         if (config.highlight) {
           args.hl                 = ['true'];
+          args['hl.method']       = ['unified'];  // work around issues parsing dates and numbers
           args['hl.fl']           = args.fl;
           args['hl.simple.pre']   = [searcher.HIGHLIGHTING_PRE];
           args['hl.simple.post']  = [searcher.HIGHLIGHTING_POST];
