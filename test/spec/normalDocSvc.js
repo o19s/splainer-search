@@ -373,7 +373,57 @@ describe('Service: normalDocsSvc', function () {
 
   });
 
-  describe('placeholder docs test', function() {
+  describe('returns values based on dot notation', function() {
+    var solrDoc = null;
+    var availableHighlight = null;
+    beforeEach(function() {
+      availableHighlight = 'something';
+      solrDoc = {'id': '1234',
+                 'title_field': 'a title',
+                 'director': { "credit_id": "52fe44fac3a36847f80b56e7", "name": "Robert Clouse" },
+                 origin: function() {
+                   return this;
+                 },
+                 url: function() {
+                   return '';
+                  },
+                 explain: function() {return mockExplain;},
+                 highlight: function(ign, ign2, pre, post) {return pre + availableHighlight + post;}
+                  };
+    });
+
+    it('captures sub values with dot notation', function() {
+      var fieldSpec = {id: 'id', title: 'title_field', subs: ['director.name']};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.subs["director.name"]).toEqual('Robert Clouse');
+
+      fieldSpec = {id: 'id', title: 'title_field', subs: ['director.credit_id']};
+      normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.subs["director.credit_id"]).toEqual('52fe44fac3a36847f80b56e7');
+      expect(normalDoc.subs["director.name"]).toBe(undefined);
+
+    });
+
+    it('captures sub values with dot notation in an array', function() {
+
+      solrDoc['genres'] =  [{ "name": "Action", "id": 1 },{ "name": "Comedy", "id": 2 }]
+
+      var fieldSpec = {id: 'id', title: 'title_field', subs: ['genres.name']};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+
+      expect(normalDoc.subs["genres.name"]).toEqual(['Action', 'Comedy']);
+    });
+
+    it('captures sub values with dot notation in both an array and a dictionary', function() {
+
+      solrDoc['nesting'] =  { "genres": [ { "name": "Action", "id": 1 },{ "name": "Comedy", "id": 2 }] };
+
+      var fieldSpec = {id: 'id', title: 'title_field', subs: ['genres.name','nesting.genres.name']};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+
+      expect(normalDoc.subs["nesting.genres.name"]).toEqual(['Action', 'Comedy']);
+    });
+
 
 
   });
