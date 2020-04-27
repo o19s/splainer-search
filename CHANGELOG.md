@@ -1,6 +1,10 @@
 Version numbers correspond to `package.json` version
 
-# 2.5.8 (16/04/2020)
+# 2.5.9 (???)
+- Highlighting on dates and integers in Solr causes an error.  Work around is to append `hl.method=unified` to calls to Solr.  https://github.com/o19s/splainer-search/pull/84
+- a common pattern in Solr schemas is to normalize fields with dots: `foo.bar`, however if you have a array or dictionary of JSON, we want to navigate that.  Now we check if the key exists with a dot in it, if not, we use that as a selector to pluck out the data in the nested JSON that we need.  https://github.com/o19s/splainer-search/pull/83
+
+# 2.5.8 (14/16/2020)
 - Fix rendering logic to handle Arrays and JSON objects so you don't get `"[object Object]"` in the UI. Another great fix by @CgamesPlay!
 - Migrate to Puppeteer for browser testing.  No more PhantomJS.   Lots of other dependencies cleaned up, and some legacy files from when this was a full blown app instead of a library removed.  `package-lock.json` dropped from 9663 lines to 4788 lines.
 
