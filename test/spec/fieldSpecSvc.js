@@ -194,4 +194,23 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldList).toContain('catch_line');
   });
 
+  it('allows periods in a field name', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id, foo.bar');
+    var fieldList = fieldSpec.fieldList();
+    expect(fieldSpec.id).toEqual('foo_id');
+    expect(fieldList).toContain('foo.bar');
+  });
+
+  it('respects escaping periods by wrapping in quotes', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id, "foo.bar"');
+    var fieldList = fieldSpec.fieldList();
+    expect(fieldSpec.id).toEqual('foo_id');
+    expect(fieldList).toContain('"foo.bar"');
+
+    fieldSpec = fieldSpecSvc.createFieldSpec("id:foo_id, 'foo.bar'");
+    fieldList = fieldSpec.fieldList();
+    expect(fieldSpec.id).toEqual('foo_id');
+    expect(fieldList).toContain("'foo.bar'");
+  });
+
 });
