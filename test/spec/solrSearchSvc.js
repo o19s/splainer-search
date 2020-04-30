@@ -102,8 +102,9 @@ describe('Service: searchSvc: Solr', function () {
 
     var createSearcherHlOn = function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
+      console.log("\n\n\nHEre is higlihgt" + fieldSpec.highlightFieldList());
       searcher = searchSvc.createSearcher(fieldSpec.fieldList(), fieldSpec.highlightFieldList(), mockSolrUrl,
-                                                  mockSolrParams, mockQueryText);
+                                                  mockSolrParams, mockQueryText, {}, 'solr');
     };
 
     var createSearcherHlOff = function() {
@@ -112,7 +113,7 @@ describe('Service: searchSvc: Solr', function () {
       noHlConfig.highlight = false;
       searcher = searchSvc.createSearcher(fieldSpec.fieldList(), fieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText,
-                                                  noHlConfig);
+                                                  noHlConfig, 'solr');
     };
 
     var expectedHlParams = null;
@@ -133,7 +134,7 @@ describe('Service: searchSvc: Solr', function () {
       expectedHlParams = {'hl': ['true'],
                           'hl.simple.pre': [searchSvc.HIGHLIGHTING_PRE],
                           'hl.simple.post': [searchSvc.HIGHLIGHTING_POST],
-                          'hl.fl': ['path content']};
+                          'hl.fl': ['content']};
     });
 
     it('asks for highlights', function() {

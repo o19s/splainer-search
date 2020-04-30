@@ -79,8 +79,8 @@ angular.module('o19s.splainer-search')
         }
 
         if ( !queryDsl.hasOwnProperty('highlight') ) {
-          queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl[self.fieldsParamNames[0]]);
-          //queryDsl.highlight = prepareHighlighting(searcher.args, searcher.highlightFieldList;
+          //queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl[self.fieldsParamNames[0]]);
+          queryDsl.highlight = prepareHighlighting(searcher.args, searcher.highlightFieldList);
           console.log("Here is our highlights::");
           console.log(queryDsl.highlight);
         }

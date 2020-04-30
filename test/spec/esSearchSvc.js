@@ -634,7 +634,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
       mockEsUrl     = 'http://localhost:9200/tmdb/_search';
 
       searcher = searchSvc.createSearcher(
-        mockFieldSpec,
+        mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -709,7 +710,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
       mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title');
 
       searcher = searchSvc.createSearcher(
-        mockFieldSpec,
+        mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -767,7 +769,6 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery           = angular.fromJson(data);
         var expectedHighlight = {
           fields: {
-            _id:    { },
             title:  { },
           }
         };
@@ -786,7 +787,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
       mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title section tags');
 
       searcher = searchSvc.createSearcher(
-        mockFieldSpec,
+        mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -798,7 +800,6 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery           = angular.fromJson(data);
         var expectedHighlight = {
           fields: {
-            _id:      { },
             title:    { },
             section:  { },
             tags:     { },
@@ -957,7 +958,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       };
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList,
-
+        mockFieldSpec.highlightFieldList,
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -1083,7 +1084,6 @@ describe('Service: searchSvc: ElasticSearch', function() {
       searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
         mockFieldSpec.highlightFieldList(),
-        mockFieldSpec,
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -1140,7 +1140,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
     it('accounts for custom rows count', function() {
       searcher = searchSvc.createSearcher(
-        mockFieldSpec,
+        mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockEsUrl,
         mockEsParams,
         mockQueryText,
