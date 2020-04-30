@@ -27,8 +27,11 @@ angular.module('o19s.splainer-search')
       };
 
       this.createSearcherFromSettings = function(settings, queryText, searchEngine) {
+        console.log("\n\n\nI WAS CALLED, AND NOT SURE I AM USED");
+        var fieldSpec = settings.createFieldSpec();
         return this.createSearcher(
-          settings.createFieldSpec().fieldList(),
+          fieldSpec.fieldList(),
+          fieldSpec.highlightFieldList(),
           settings.url,
           settings.selectedTry.args,
           queryText,

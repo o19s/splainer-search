@@ -304,3 +304,4 @@ Primary author is [Doug Turnbull](http://softwaredoug.com)
 Todos: Test with "score"
 Todos: Check line 120 of esSearcherFactory for ES 5 support, I think we've lost/droppped that backwards compatiblity. Maybe just itme to ditch pre ES5?
 Todos: check if ./pages folder needed.
+Todos: see if method createSearcherFromSettings on searchSvc.js is actually used!
