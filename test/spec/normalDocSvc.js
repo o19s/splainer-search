@@ -122,7 +122,7 @@ describe('Service: normalDocsSvc', function () {
       expect(snips.another_field).toEqual('<b>' + availableHighlight + '</b>');
     });
 
-    it('uses highlights for sub fileds', function() {
+    it('uses highlights for sub fields', function() {
       availableHighlight = 'something';
       var fieldSpec = {id: 'custom_id_field', title: 'title_field', subs: ['another_field']};
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -369,6 +369,23 @@ describe('Service: normalDocsSvc', function () {
 
       expect(normalDoc.subSnippets('<b>', '</b>').sub1).toEqual('<b>sub1_hl</b>');
       expect(normalDoc.subSnippets('<b>', '</b>').sub2).toEqual('sub2_val');
+    });
+
+    it('captures sub values w/ highlight with multivalued field', function() {
+      solrDoc['overview'] = ["overview in multivalued field","blah"]
+
+      var fieldSpec = {id: 'custom_id_field', title: 'title_field', subs: '*'};
+      availableHighlights.sub1 = 'sub1_hl';
+      availableHighlights.overview = 'overview in multivalued field';
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(Object.keys(normalDoc.subs).length).toEqual(4);
+      expect(normalDoc.subs.sub1).toEqual('sub1_val');
+      expect(normalDoc.subs.sub2).toEqual('sub2_val');
+      expect(normalDoc.subs.fn).toEqual('2');
+
+      expect(normalDoc.subSnippets('<b>', '</b>').sub1).toEqual('<b>sub1_hl</b>');
+      expect(normalDoc.subSnippets('<b>', '</b>').sub2).toEqual('sub2_val');
+      expect(normalDoc.subSnippets('<b>', '</b>').overview).toEqual('overview in multivalued field');
     });
 
   });

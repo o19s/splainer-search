@@ -305,3 +305,58 @@ Todos: Test with "score"
 Todos: Check line 120 of esSearcherFactory for ES 5 support, I think we've lost/droppped that backwards compatiblity. Maybe just itme to ditch pre ES5?
 Todos: check if ./pages folder needed.
 Todos: see if method createSearcherFromSettings on searchSvc.js is actually used!
+
+
+
+## ARGH.  What to do???
+
+I am stuck at the intersection of highlighting and not, and almost thinking there isn't a good "rules engine" approach.
+
+Sample Solr Doc
+
+```
+{
+  "id": "doc1",
+  "title": "star wars rocks",
+  "overview": ["in a galaxy a long way away"],
+  "actors": ["Harrison Ford", "John Ford", "Carrie Fisher"],
+  "foo.bar": "hi there, mr. fubar",
+  "actor": {
+    "first_name": "Bob",
+    "last_name": "Hope"
+  },
+  "genres":[
+    {
+      "id": 1,
+      "name": "action"
+    },
+    {
+      "id": 2,
+      "name": "comedy"
+    }
+  ]
+}
+```
+
+So, here is `fl=id,title,overview&q=galaxy`
+  => fl = overview    -> in a galaxy a long way away
+  => hl = overview    -> in a <em>galaxy</em> a long way away
+
+  So, here is `fl=id,title,overview,f:myfunc&q=galaxy`
+    => fl = overview    -> in a galaxy a long way away
+            f:myfunc    -> value of myfunc
+    => hl = overview    -> in a <em>galaxy</em> a long way away
+
+So, here is `fl=id,title,overview,foo.bar&q=galaxy OR fubar`
+  => fl = overview,foo.bar
+  => hl = overview    -> in a <em>galaxy</em> a long way away
+          foo.bar     -> hi there, mr. <em>fubar</em>
+
+So, here is `fl=id,title,actor.name&q=bob`
+  => fl = actor.name  -> Bob
+  => hl = actor.name  -> <em>Bob</em>
+
+So, here is `fl=id,title,actor.name, genre.name&q=bob  OR comedy`
+  => fl = actor.name  -> Bob, genre.name  -> Action,Comedy
+  => hl = actor.name  -> <em>Bob</em>
+          genre.name  -> <em>Comedy</em>    <-- Is this waht we want???
