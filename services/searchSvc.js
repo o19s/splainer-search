@@ -39,13 +39,14 @@ angular.module('o19s.splainer-search')
         );
       };
 
-      this.createSearcher = function (fieldList, url, args, queryText, config, searchEngine) {
+      this.createSearcher = function (fieldList, highlightFieldList, url, args, queryText, config, searchEngine) {
         if ( searchEngine === undefined ) {
           searchEngine = 'solr';
         }
 
         var options = {
           fieldList:      fieldList,
+          highlightFieldList: highlightFieldList,
           url:            url,
           args:           args,
           queryText:      queryText,
@@ -61,6 +62,7 @@ angular.module('o19s.splainer-search')
 
           searcher = new SolrSearcherFactory(options);
         } else if ( searchEngine === 'es') {
+          console.log("Calling ESSearcherFactory");
           searcher = new EsSearcherFactory(options);
         }
 

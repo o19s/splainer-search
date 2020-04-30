@@ -117,6 +117,7 @@ describe('Service: fieldSpecSvc', function () {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id, atitlefield, *');
     expect(fieldSpec.subs).toEqual('*');
     expect(fieldSpec.fieldList()).toEqual('*');
+    expect(fieldSpec.highlightFieldList()).toEqual('*');
   });
 
   it('correctly transforms *', function() {
@@ -133,6 +134,7 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.id).toEqual('id');
     expect(fieldSpec.title).toEqual('id');
     expect(fieldSpec.fieldList()).toEqual('*');
+    expect(fieldSpec.highlightFieldList()).toEqual('*');
   });
 
   it('correctly transforms empty', function() {
@@ -141,6 +143,7 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.id).toEqual('id');
     expect(fieldSpec.title).toEqual('id');
     expect(fieldSpec.fieldList()).toEqual('*');
+    expect(fieldSpec.highlightFieldList()).toEqual('*');
   });
 
   it('preserves certain computed fields', function() {
@@ -177,9 +180,14 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.title).toEqual('catch_line');
 
     var fieldList = fieldSpec.fieldList();
+    var highlightFieldList = fieldSpec.highlightFieldList();
     expect(fieldList).toContain('someFunctionQuery:$someFunctionQuery');
     expect(fieldList).toContain('text');
     expect(fieldList).toContain('catch_line');
+    expect(highlightFieldList).not.toContain('someFunctionQuery:$someFunctionQuery');
+    expect(highlightFieldList).toContain('text');
+    expect(highlightFieldList).toContain('catch_line');
+
 
     fieldSpec = fieldList = undefined;
     fieldSpec = fieldSpecSvc.createFieldSpec('catch_line,text,f:someFunctionQuery');
@@ -197,20 +205,10 @@ describe('Service: fieldSpecSvc', function () {
   it('allows periods in a field name', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id, foo.bar');
     var fieldList = fieldSpec.fieldList();
+    var highlightFieldList = fieldSpec.highlightFieldList();
     expect(fieldSpec.id).toEqual('foo_id');
     expect(fieldList).toContain('foo.bar');
-  });
-
-  it('respects escaping periods by wrapping in quotes', function() {
-    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id, "foo.bar"');
-    var fieldList = fieldSpec.fieldList();
-    expect(fieldSpec.id).toEqual('foo_id');
-    expect(fieldList).toContain('"foo.bar"');
-
-    fieldSpec = fieldSpecSvc.createFieldSpec("id:foo_id, 'foo.bar'");
-    fieldList = fieldSpec.fieldList();
-    expect(fieldSpec.id).toEqual('foo_id');
-    expect(fieldList).toContain("'foo.bar'");
+    expect(highlightFieldList).toContain('foo.bar');
   });
 
 });

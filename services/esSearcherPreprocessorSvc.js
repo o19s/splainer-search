@@ -29,6 +29,9 @@ angular.module('o19s.splainer-search')
       };
 
       var prepareHighlighting = function (args, fields) {
+        console.log("prepareHighlighting");
+        console.log(args);
+        console.log(fields);
         if ( angular.isDefined(fields) && fields !== null ) {
           if ( fields.hasOwnProperty('fields') ) {
             fields = fields.fields;
@@ -77,6 +80,9 @@ angular.module('o19s.splainer-search')
 
         if ( !queryDsl.hasOwnProperty('highlight') ) {
           queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl[self.fieldsParamNames[0]]);
+          //queryDsl.highlight = prepareHighlighting(searcher.args, searcher.highlightFieldList;
+          console.log("Here is our highlights::");
+          console.log(queryDsl.highlight);
         }
 
         searcher.queryDsl   = queryDsl;

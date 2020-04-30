@@ -69,6 +69,7 @@
 
       self.searcher = searchSvc.createSearcher(
         self.fieldSpec.fieldList(),
+        self.fieldSpec.highlightFieldList(),
         self.settings.searchUrl,
         self.args,
         self.queryText,

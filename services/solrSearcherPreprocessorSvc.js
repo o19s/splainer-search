@@ -20,6 +20,7 @@ angular.module('o19s.splainer-search')
       // the full URL we'll use to call Solr
       var buildCallUrl = function(searcher) {
         var fieldList = searcher.fieldList;
+        var highlightFieldList = searcher.highlightFieldList;
         var url       = searcher.url;
         var config    = searcher.config;
         var args      = withoutUnsupported(searcher.args, config.sanitize);
@@ -36,7 +37,8 @@ angular.module('o19s.splainer-search')
         if (config.highlight) {
           args.hl                 = ['true'];
           args['hl.method']       = ['unified'];  // work around issues parsing dates and numbers
-          args['hl.fl']           = args.fl;
+          console.log("We should be only including actual fields for highlihgting, not functions:" + args.highlightFieldList);
+          args['hl.fl']           = args.highlightFieldList;
           args['hl.simple.pre']   = [searcher.HIGHLIGHTING_PRE];
           args['hl.simple.post']  = [searcher.HIGHLIGHTING_POST];
         }

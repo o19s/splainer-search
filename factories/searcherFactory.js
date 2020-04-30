@@ -11,6 +11,7 @@
       var self                = this;
 
       self.fieldList          = options.fieldList;
+      self.highlightFieldList = options.highlightFieldList;
       self.url                = options.url;
       self.args               = options.args;
       self.queryText          = options.queryText;

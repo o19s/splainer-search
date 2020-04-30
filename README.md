@@ -12,12 +12,13 @@ Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsea
 
 ### Solr
 
-Splainer-search will perform the specified search against Solr attempting to highlight and extract explain info.
+Splainer-search will perform the specified search against Solr attempting to highlight the title and body fields and extract explain info.
 
 ```js
 // searcher that searches id, title, body, author
 var searcher = searchSvc.createSearcher(
   ['id', 'title', 'body', 'author'],
+  ['title', 'body'],
   'http://localhost:8983/solr/select',
   {
     'q': ['*:*'],
@@ -46,6 +47,7 @@ Splainer-search also supports ES, using the same API, and passing the query DSL 
 ```js
 var searcher = searchSvc.createSearcher(
   ['id:_id', 'title', 'body', 'author'],
+  ['title', 'body'],
   'http://localhost:9200/books/_search',
   {
     'query': {
@@ -98,13 +100,14 @@ So assuming you already have something like this:
 ```js
 var options = {
   fields:       ['id', 'title', 'price'],
+  highlightFields: ['title'],
   url:          'http://localhost:8983/solr/select',
   args:         { 'q': ['#$query##'] },
   query:        'tacos',
   config:       {},
   searchEngine: 'solr'
 };
-var searcher = searchSvc.createSearcher(options.fields, options.url, options.args, options.query, options.config, options.searchEngine);
+var searcher = searchSvc.createSearcher(options.fields, options.highlightFields, options.url, options.args, options.query, options.config, options.searchEngine);
 
 searcher.search();
 ```
@@ -113,7 +116,7 @@ You would want to create a new searcher with the same options/context, and use t
 
 ```js
 var fieldSpec       = fieldSpecSvc.createFieldSpec(options.fields);
-var explainSearcher = searchSvc.createSearcher(options.fields, options.url, options.args, options.query, options.config, options.searchEngine); # same options as above
+var explainSearcher = searchSvc.createSearcher(options.fields, options.highlightFields, options.url, options.args, options.query, options.config, options.searchEngine); # same options as above
 
  # assuming that we know "El Bomba" has id 63148
 explainSearcher.explainOther('id:63148', fieldSpec);
@@ -128,6 +131,7 @@ In ES, the `explainOther()` function behaves the same way, except that it does n
 ```js
 var options = {
   fields:       ['id', 'title', 'price'],
+  highlightFields: ['title'],
   url:          'http://localhost:9200/tacos/_search',
   args:         {
     'query': {
@@ -140,11 +144,11 @@ var options = {
   config:       {},
   searchEngine: 'es'
 };
-var searcher = searchSvc.createSearcher(options.fields, options.url, options.args, options.query, options.config, options.searchEngine);
+var searcher = searchSvc.createSearcher(options.fields, options.highlightFields, options.url, options.args, options.query, options.config, options.searchEngine);
 
 searcher.search();
 
-var explainSearcher = searchSvc.createSearcher(options.fields, options.url, options.args, options.query, options.config, options.searchEngine); # same options as above
+var explainSearcher = searchSvc.createSearcher(options.fields, options.highlightFields, options.url, options.args, options.query, options.config, options.searchEngine); # same options as above
 
  # assuming that we know "El Bomba" has id 63148
 explainSearcher.explainOther('id:63148');
@@ -163,6 +167,7 @@ var userFieldSpec = "id:uuid, title, body, authors"
 var fs = fieldSpecSvc.createFieldSpec(userFieldSpec)
 var searcher = searchSvc.createSearcher(
   fs.fieldList(),
+  fs.highlightFieldList(),
   'http://localhost:8983/solr/select',
   {
     'q': ['*:*'],
@@ -219,6 +224,7 @@ To do so you only need to specify the version number in the `config` param when 
 ```js
 var options = {
   fields:       ['id', 'title', 'price'],
+  highlightFields: ['title'],
   url:          'http://localhost:9200/tacos/_search',
   args:         {
     'query': {
@@ -231,7 +237,7 @@ var options = {
   config:       { version: 5.1 },
   searchEngine: 'es'
 };
-var searcher = searchSvc.createSearcher(options.fields, options.url, options.args, options.query, options.config, options.searchEngine);
+var searcher = searchSvc.createSearcher(options.fields, options.highlightFields, options.url, options.args, options.query, options.config, options.searchEngine);
 
 searcher.search();
 ```
@@ -294,3 +300,7 @@ np
 Development for this library is done primarily by [OpenSource Connections](http://opensourceconnections.com) for search relevance tools [Splainer](http://splainer.io) and [Quepid](http://quepid.com)
 
 Primary author is [Doug Turnbull](http://softwaredoug.com)
+
+Todos: Test with "score"
+Todos: Check line 120 of esSearcherFactory for ES 5 support, I think we've lost/droppped that backwards compatiblity. Maybe just itme to ditch pre ES5?
+Todos: check if ./pages folder needed.

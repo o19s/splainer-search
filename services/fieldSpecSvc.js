@@ -97,6 +97,17 @@ angular.module('o19s.splainer-search')
           return rVal;
         };
 
+        this.highlightFieldList = function() {
+          if (this.hasOwnProperty('subs') && this.subs === '*') {
+            return '*';
+          }
+          var rVal = [];
+          this.forEachHighlightableField(function(fieldName) {
+            rVal.push(fieldName);
+          });
+          return rVal;
+        };
+
         // Execute innerBody for each (non id) field
         this.forEachField = function(innerBody) {
           if (this.hasOwnProperty('title')) {
@@ -115,7 +126,30 @@ angular.module('o19s.splainer-search')
             innerBody(func);
           });
         };
+
+        // Execute innerBody for each (non id) field
+        this.forEachHighlightableField = function(innerBody) {
+          console.log("hi");
+          console.log(this);
+          if (this.hasOwnProperty('title')) {
+            innerBody(this.title);
+          }
+          if (this.hasOwnProperty('thumb')) {
+            //innerBody(this.thumb);
+          }
+          angular.forEach(this.embeds, function(embed) {
+            //innerBody(embed);
+          });
+          angular.forEach(this.subs, function(sub) {
+            innerBody(sub);
+          });
+          angular.forEach(this.functions, function(func) {
+            //innerBody(func);
+          });
+        };
+
       };
+
 
       var transformFieldSpec = function(fieldSpecStr) {
         var defFieldSpec = 'id:id title:id *';

@@ -40,6 +40,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     fieldSpecSvc  = _fieldSpecSvc_;
     esUrlSvc = _esUrlSvc_;
     mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1');
+    console.log("Here is highlihgt fields" + mockFieldSpec.highlightFieldList());
   }));
 
   var mockES4Results = {
@@ -137,6 +138,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       beforeEach(inject(function () {
         searcher = searchSvc.createSearcher(
           mockFieldSpec.fieldList,
+          mockFieldSpec.highlightFieldList,
           mockEsUrl,
           mockEsParams,
           mockQueryText,
@@ -160,6 +162,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       it('passes the rows param and sets it to what is passed in the config', function() {
         searcher = searchSvc.createSearcher(
           mockFieldSpec.fieldList,
+          mockFieldSpec.highlightFieldList,
           mockEsUrl,
           mockEsParams,
           mockQueryText,
@@ -299,6 +302,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var authEsUrl = 'http://username:password@localhost:9200/statedecoded/_search';
         searcher = searchSvc.createSearcher(
           mockFieldSpec.fieldList,
+          mockFieldSpec.highlightFieldList,
           authEsUrl,
           mockEsParams,
           mockQueryText,
@@ -337,6 +341,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       beforeEach(inject(function () {
         searcher = searchSvc.createSearcher(
           mockFieldSpec.fieldList,
+          mockFieldSpec.highlightFieldList,
           mockEsUrl,
           mockEsParams,
           mockQueryText,
@@ -360,6 +365,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       it('passes the rows param and sets it to what is passed in the config', function() {
         searcher = searchSvc.createSearcher(
           mockFieldSpec.fieldList,
+          mockFieldSpec.highlightFieldList,
           mockEsUrl,
           mockEsParams,
           mockQueryText,
@@ -502,6 +508,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var authEsUrl = 'http://username:password@localhost:9200/statedecoded/_search';
         searcher = searchSvc.createSearcher(
           mockFieldSpec.fieldList,
+          mockFieldSpec.highlightFieldList,
           authEsUrl,
           mockEsParams,
           mockQueryText,
@@ -544,6 +551,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     beforeEach(inject(function () {
       searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList,
+        mockFieldSpec.highlightFieldList,
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -818,7 +826,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
       esParamsWithHl.highlight = expectedHighlight;
 
       searcher = searchSvc.createSearcher(
-        mockFieldSpec,
+        mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockEsUrl,
         esParamsWithHl,
         mockQueryText,
@@ -920,6 +929,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       };
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList,
+        mockFieldSpec.highlightFieldList,
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -947,6 +957,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       };
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList,
+
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -974,6 +985,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       };
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList,
+        mockFieldSpec.highlightFieldList,
         mockEsUrl,
         mockEsParams,
         null,
@@ -1001,6 +1013,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       };
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList,
+        mockFieldSpec.highlightFieldList,
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -1068,6 +1081,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
       mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title');
 
       searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockFieldSpec,
         mockEsUrl,
         mockEsParams,
@@ -1161,6 +1176,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     beforeEach(inject(function () {
       searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList,
+        mockFieldSpec.highlightFieldList,
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -1213,6 +1229,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     beforeEach(inject(function () {
       searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -1349,6 +1366,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     beforeEach(inject(function () {
       searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList().join(','),
+        mockFieldSpec.highlightFieldList().join(','),
         mockEsUrl,
         mockEsParams,
         mockQueryText,
@@ -1381,6 +1399,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     beforeEach(inject(function () {
       searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList,
+        mockFieldSpec.highlightFieldList,
         mockEsUrl,
         mockEsParams,
         mockQueryText,

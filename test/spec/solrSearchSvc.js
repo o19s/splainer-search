@@ -44,7 +44,7 @@ describe('Service: searchSvc: Solr', function () {
   }));
 
   it('access solr with mock solr params', function() {
-    var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+    var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockFieldSpec.highlightFieldList(), mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
     $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                             .respond(200, mockResults);
@@ -55,7 +55,7 @@ describe('Service: searchSvc: Solr', function () {
 
   it('tracks active queries', function() {
     expect(searchSvc.activeQueries()).toEqual(0);
-    var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+    var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockFieldSpec.highlightFieldList(), mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
     $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                             .respond(200, mockResults);
@@ -102,7 +102,7 @@ describe('Service: searchSvc: Solr', function () {
 
     var createSearcherHlOn = function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), fieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     };
 
@@ -110,7 +110,7 @@ describe('Service: searchSvc: Solr', function () {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
       var noHlConfig = searchSvc.configFromDefault();
       noHlConfig.highlight = false;
-      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), fieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText,
                                                   noHlConfig);
     };
@@ -356,7 +356,7 @@ describe('Service: searchSvc: Solr', function () {
 
     var createSearcherWithDebug = function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), fieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     };
 
@@ -364,7 +364,7 @@ describe('Service: searchSvc: Solr', function () {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
       var noHlConfig = searchSvc.configFromDefault();
       noHlConfig.debug = false;
-      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(),fieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText,
                                                   noHlConfig);
     };
@@ -448,7 +448,7 @@ describe('Service: searchSvc: Solr', function () {
     var searcher = null;
     beforeEach(function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:altId');
-      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), fieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     });
 
@@ -494,7 +494,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedParamsMm = angular.copy(expectedParams);
       mockSolrParamsWithMm.mm = ['100%25'];
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:altId');
-      var searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(fieldSpec.fieldList(), fieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParamsWithMm, mockQueryText);
       $httpBackend.expectJSONP(
         urlContainsParams(mockSolrUrl, expectedParamsMm)
@@ -518,6 +518,7 @@ describe('Service: searchSvc: Solr', function () {
     it('passes the rows param and sets it to 10 by default', function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText
@@ -541,6 +542,7 @@ describe('Service: searchSvc: Solr', function () {
     it('passes the rows param and sets it to what is passed in the config', function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText,
@@ -565,6 +567,7 @@ describe('Service: searchSvc: Solr', function () {
     it('makes querydocs with tokensUrl', function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText
@@ -588,7 +591,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('escapes ids passed into url', function() {
-      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockFieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
@@ -609,6 +612,7 @@ describe('Service: searchSvc: Solr', function () {
       var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
       var searcher = searchSvc.createSearcher(
         fieldSpecWithScore.fieldList(),
+        fieldSpecWithScore.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText
@@ -636,7 +640,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('linkurl has wt=xml', function() {
       var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
-      var searcher = searchSvc.createSearcher(fieldSpecWithScore.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(fieldSpecWithScore.fieldList(), fieldSpecWithScore.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
       expect(searcher.linkUrl.indexOf('wt=xml')).not.toBe(-1);
     });
@@ -650,6 +654,7 @@ describe('Service: searchSvc: Solr', function () {
       mockUncleanSolrParams.debug = ['true'];
       var searcher = searchSvc.createSearcher(
         fieldSpecWithScore.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockUncleanSolrParams,
         mockQueryText
@@ -668,6 +673,7 @@ describe('Service: searchSvc: Solr', function () {
       mockUncleanSolrParams.rows = ['20'];
       var searcher = searchSvc.createSearcher(
         fieldSpecWithScore.fieldList(),
+        fieldSpecWithScore.highlightFieldList(),
         mockSolrUrl,
         mockUncleanSolrParams,
         mockQueryText,
@@ -682,8 +688,13 @@ describe('Service: searchSvc: Solr', function () {
 
     it('searches with fl == *', function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('*');
-      var searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
-                                                  {'q': ['*:*']}, mockQueryText);
+      var searcher = searchSvc.createSearcher(
+        fieldSpec.fieldList(),
+        fieldSpec.highlightFieldList(),
+        mockSolrUrl,
+        {'q': ['*:*']},
+        mockQueryText
+      );
       var testSolrParams = {'fl': ['*']};
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, testSolrParams))
                               .respond(200, mockResults);
@@ -701,6 +712,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         queryWithSpecialChars
@@ -922,7 +934,7 @@ describe('Service: searchSvc: Solr', function () {
 
     beforeEach(function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id catch_line');
-      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), fieldSpec.highlightFieldList(), mockSolrUrl,
                                               mockSolrParams, mockQueryText);
     });
 
@@ -994,7 +1006,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedParams = angular.copy(mockSolrParams);
       expectedParams.q[0] = encodeURIComponent(mockQueryText);
 
-      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockFieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
@@ -1011,7 +1023,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedParams = angular.copy(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco';
 
-      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockFieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
@@ -1028,7 +1040,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedParams = angular.copy(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing ""';
 
-      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockFieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
@@ -1045,7 +1057,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedParams = angular.copy(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing someDefault';
 
-      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockFieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
@@ -1062,7 +1074,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedParams = angular.copy(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing someDefault otherDefaults taco';
 
-      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockFieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
@@ -1079,7 +1091,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedParams = angular.copy(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing someDefault otherDefaults "" taco';
 
-      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockFieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
@@ -1096,7 +1108,7 @@ describe('Service: searchSvc: Solr', function () {
       var expectedParams = angular.copy(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing nacho';
 
-      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockSolrUrl,
+      var searcher = searchSvc.createSearcher(mockFieldSpec.fieldList(), mockFieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
@@ -1122,6 +1134,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText
@@ -1159,6 +1172,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText
@@ -1200,6 +1214,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText
@@ -1220,7 +1235,7 @@ describe('Service: searchSvc: Solr', function () {
 
     beforeEach(function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), fieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     });
 
@@ -1273,7 +1288,7 @@ describe('Service: searchSvc: Solr', function () {
 
     beforeEach(function() {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
+      searcher = searchSvc.createSearcher(fieldSpec.fieldList(), fieldSpec.highlightFieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     });
 
@@ -1313,6 +1328,7 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText,
@@ -1456,6 +1472,7 @@ describe('Service: searchSvc: Solr', function () {
     it('passes two solr queries one explains the other', function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText
@@ -1485,6 +1502,7 @@ describe('Service: searchSvc: Solr', function () {
     it('highlights explain other', function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText
@@ -1517,6 +1535,7 @@ describe('Service: searchSvc: Solr', function () {
     it('does not throw an error if both queries are empty', function () {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         ''
@@ -1537,6 +1556,7 @@ describe('Service: searchSvc: Solr', function () {
     it('paginates for explain other seraches', function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec.fieldList(),
+        mockFieldSpec.highlightFieldList(),
         mockSolrUrl,
         mockSolrParams,
         mockQueryText

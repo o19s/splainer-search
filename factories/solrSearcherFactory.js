@@ -89,6 +89,7 @@
 
       var options = {
         fieldList:          self.fieldList,
+        highlightFieldList: self.highlightFieldList,
         url:                self.url,
         args:               nextArgs,
         queryText:          self.queryText,
@@ -157,6 +158,7 @@
                 groupedBy:          groupedBy,
                 group:              group,
                 fieldList:          self.fieldList,
+                highlightFieldList: self.highlightFieldList,
                 url:                self.url,
                 explDict:           explDict,
                 hlDict:             hlDict,
@@ -242,6 +244,7 @@
 
           var otherSearcherOptions = {
             fieldList:          self.fieldList,
+            highlightFieldList: self.highlightFieldList,
             url:                self.url,
             args:               solrParams,
             queryText:          otherQuery,

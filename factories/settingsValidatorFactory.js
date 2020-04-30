@@ -19,6 +19,7 @@
 
       self.searcher = null;
       self.fields   = [];
+      self.highlightFields = [];
       self.idFields = [];
 
       self.setupSearcher  = setupSearcher;
@@ -29,6 +30,7 @@
       function setupSearcher () {
         var args    = { };
         var fields  = '*';
+        var highlightFields = '';
 
         if ( self.searchEngine === 'solr' ) {
           args = { q: ['*:*'] };
@@ -38,6 +40,7 @@
 
         self.searcher = searchSvc.createSearcher(
           fields,
+          highlightFields,
           self.searchUrl,
           args,
           '',
