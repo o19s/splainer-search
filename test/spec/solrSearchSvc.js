@@ -703,7 +703,10 @@ describe('Service: searchSvc: Solr', function () {
         mockFieldSpec.fieldList(),
         mockSolrUrl,
         mockSolrParams,
-        queryWithSpecialChars
+        queryWithSpecialChars,
+        {
+          escapeQuery: true,
+        }
       );
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, thisExpectedParams))
@@ -1275,6 +1278,22 @@ describe('Service: searchSvc: Solr', function () {
       fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
       searcher = searchSvc.createSearcher(fieldSpec.fieldList(), mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
+    });
+
+    it("does not escapes the query if escapeQuery is false", function () {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec.fieldList(),
+        mockSolrUrl,
+        mockSolrParams,
+        mockQueryText,
+        {
+          escapeQuery: false,
+        }
+      );
+
+      // get page 2
+      var nextSearcher = searcher.pager();
+      expect(nextSearcher.config.escapeQuery).toBeFalse();
     });
 
     it('pages on page', function() {
