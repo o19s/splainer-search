@@ -86,6 +86,7 @@
       nextArgs.start      = ['' + start];
       var pageConfig      = defaultSolrConfig;
       pageConfig.sanitize = false;
+      pageConfig.escapeQuery = self.config.escapeQuery;
 
       var options = {
         fieldList:          self.fieldList,
