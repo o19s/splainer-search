@@ -213,4 +213,11 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldList).toContain("'foo.bar'");
   });
 
+  it('removes functions from highlight fields', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id, function:$someFunction, foo.bar');
+    var fieldList = fieldSpec.fieldList(true); // Passing true specifies we only want highlight fields
+    expect(fieldSpec.id).toEqual('foo_id');
+    expect(fieldList).toContain('foo.bar');
+    expect(fieldList).not.toContain('someFunction:$someFunction');
+  });
 });

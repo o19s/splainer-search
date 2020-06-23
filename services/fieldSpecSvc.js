@@ -86,19 +86,19 @@ angular.module('o19s.splainer-search')
           this.title = this.id;
         }
 
-        this.fieldList = function() {
+        this.fieldList = function(highlightOnly) {
           if (this.hasOwnProperty('subs') && this.subs === '*') {
             return '*';
           }
           var rVal = [this.id];
           this.forEachField(function(fieldName) {
             rVal.push(fieldName);
-          });
+          }, highlightOnly);
           return rVal;
         };
 
         // Execute innerBody for each (non id) field
-        this.forEachField = function(innerBody) {
+        this.forEachField = function(innerBody, highlightOnly) {
           if (this.hasOwnProperty('title')) {
             innerBody(this.title);
           }
@@ -111,9 +111,12 @@ angular.module('o19s.splainer-search')
           angular.forEach(this.subs, function(sub) {
             innerBody(sub);
           });
-          angular.forEach(this.functions, function(func) {
-            innerBody(func);
-          });
+
+          if (!highlightOnly) {
+            angular.forEach(this.functions, function(func) {
+              innerBody(func);
+            });
+          }
         };
       };
 
