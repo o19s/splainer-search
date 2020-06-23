@@ -32,7 +32,7 @@ angular.module('o19s.splainer-search')
         }
 
         var options = {
-          fieldList:      typeof(fieldSpec.fieldList) === 'function' ? fieldSpec.fieldList() : (fieldSpec.fieldList || []), // Yuck!
+          fieldList:      fieldSpec.fieldList(),
           url:            url,
           args:           args,
           queryText:      queryText,

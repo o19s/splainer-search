@@ -68,7 +68,7 @@
       };
 
       self.searcher = searchSvc.createSearcher(
-        self.fieldSpec.fieldList(),
+        self.fieldSpec,
         self.settings.searchUrl,
         self.args,
         self.queryText,
