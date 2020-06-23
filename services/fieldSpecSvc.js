@@ -119,10 +119,11 @@ angular.module('o19s.splainer-search')
 
       var transformFieldSpec = function(fieldSpecStr) {
         var defFieldSpec = 'id:id title:id *';
-        var fieldSpecs = fieldSpecStr.split(/[\s,]+/);
-        if (fieldSpecStr.trim().length === 0) {
+        if (fieldSpecStr == null || fieldSpecStr.trim().length === 0) {
           return defFieldSpec;
         }
+
+        var fieldSpecs = fieldSpecStr.split(/[\s,]+/);
         if (fieldSpecs[0] === '*') {
           return defFieldSpec;
         }

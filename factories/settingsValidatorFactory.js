@@ -5,11 +5,12 @@
 (function() {
   angular.module('o19s.splainer-search')
     .factory('SettingsValidatorFactory', [
+      'fieldSpecSvc',
       'searchSvc',
       SettingsValidatorFactory
     ]);
 
-  function SettingsValidatorFactory(searchSvc) {
+  function SettingsValidatorFactory(fieldSpecSvc, searchSvc) {
     var Validator = function(settings) {
       var self  = this;
 
@@ -37,7 +38,7 @@
         }
 
         self.searcher = searchSvc.createSearcher(
-          fields,
+          fieldSpecSvc.createFieldSpec(fields),
           self.searchUrl,
           args,
           '',
