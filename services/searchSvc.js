@@ -33,7 +33,7 @@ angular.module('o19s.splainer-search')
 
         var options = {
           fieldList:      fieldSpec.fieldList(),
-          hlFieldList:    fieldSpec.fieldList(true),
+          hlFieldList:    fieldSpec.highlightFieldList(),
           url:            url,
           args:           args,
           queryText:      queryText,

@@ -101,7 +101,7 @@ describe('Service: searchSvc: Solr', function () {
     var searcher = null;
 
     var createSearcherHlOn = function() {
-      var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
+      var fieldSpec = fieldSpecSvc.createFieldSpec('id:hl:path hl:content');
       searcher = searchSvc.createSearcher(fieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     };
