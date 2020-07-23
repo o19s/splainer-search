@@ -113,10 +113,12 @@ angular.module('o19s.splainer-search')
           angular.forEach(this.embeds, function(embed) {
             innerBody(embed);
           });
+          angular.forEach(this.highlights, function(hl) {
+            innerBody(hl);
+          });
           angular.forEach(this.subs, function(sub) {
             innerBody(sub);
           });
-
           angular.forEach(this.functions, function(func) {
             innerBody(func);
           });
