@@ -19,6 +19,7 @@
   ) {
 
     var Searcher = function(options) {
+      console.log("\n\n\n\nHi there!\n\n\n\n")
       console.log(options);
       SearcherFactory.call(this, options, null);
       console.log(Window.CustomSearchEngines);
