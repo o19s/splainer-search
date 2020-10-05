@@ -134,8 +134,7 @@ angular.module('o19s.splainer-search')
             }
           });
           angular.forEach(fieldSpec.highlights, function(hlField) {
-            // These are ignored to prevent duplicates appearing in the subs
-            if (!['id', 'thumb', 'title'].includes(hlField)) {
+            if (fieldSpec.title != hlField) {
               normalDoc.subs[hlField] = parseValue(doc[hlField]);
             }
           });
@@ -184,10 +183,10 @@ angular.module('o19s.splainer-search')
         var lastSubSnips = {};
         var lastHlPre = null;
         var lastHlPost = null;
+
         doc.subSnippets = function(hlPre, hlPost) {
           if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
             var displayFields = angular.copy(doc.subs);
-            displayFields['title'] = doc.title;
 
             angular.forEach(displayFields, function(subFieldValue, subFieldName) {
               if ( typeof subFieldValue === 'object' && !(subFieldValue instanceof Array) ) {
@@ -204,16 +203,7 @@ angular.module('o19s.splainer-search')
                   snip = escapeHtml(subFieldValue.slice(0, 200));
                 }
 
-                // TODO: Not sure how I feel about these title hacks being around.  I think Doug's comment on the PR
-                // is right but I'm also thinking about supporting multiple decorators in the future.
-                //
-                // The highlighting logic and snippet management can be refactored if we introduce templates
-                // We can also just make it so titles aren't highlighting which will remove the hacky changes here
-                if (subFieldName == 'title') {
-                  doc.title = Array.isArray(snip) ? snip[0] : snip;
-                } else {
-                  lastSubSnips[subFieldName] = snip;
-                }
+                lastSubSnips[subFieldName] = snip;
               }
             });
           }
