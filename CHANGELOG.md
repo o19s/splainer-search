@@ -1,6 +1,6 @@
 Version numbers correspond to `package.json` version
 
-# 2.6.1 (10/05/2020)
+# 2.6.2 (10/05/2020)
 - Lots of work on breaking out highlighting into a better structure, after fighting with little fixes for a while.
 
 # 2.5.9 (04/27/2020)

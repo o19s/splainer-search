@@ -284,7 +284,7 @@ We use NP to publish splainer-search to npmjs.org:
 
 ```
 npm install --global np
-np
+np --no-2fa
 ```
 
 
