@@ -145,6 +145,7 @@ angular.module('o19s.splainer-search')
         assignSingleField(normalDoc, doc, fieldSpec.id, 'id');
         assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
         assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
+        normalDoc.titleField = fieldSpec.title;
         normalDoc.embeds = {};
         assignEmbeds(normalDoc, doc, fieldSpec);
         normalDoc.subs = {};
@@ -176,6 +177,21 @@ angular.module('o19s.splainer-search')
 
       };
 
+      var getHighlightSnippet = function(aDoc, docId, subFieldName, subFieldValue, hlPre, hlPost) {
+        var snip = aDoc.highlight(
+          docId,
+          subFieldName,
+          hlPre,
+          hlPost
+        );
+
+        if ( null === snip || undefined === snip || '' === snip ) {
+          snip = escapeHtml(subFieldValue.slice(0, 200));
+        }
+
+        return snip;
+      };
+
       // layer on highlighting features
       var snippitable = function(doc) {
         var aDoc = doc.doc;
@@ -183,6 +199,10 @@ angular.module('o19s.splainer-search')
         var lastSubSnips = {};
         var lastHlPre = null;
         var lastHlPost = null;
+
+        doc.getHighlightedTitle = function(hlPre, hlPost) {
+          return getHighlightSnippet(aDoc, doc.id, doc.titleField, doc.title, hlPre, hlPost);
+        };
 
         doc.subSnippets = function(hlPre, hlPost) {
           if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
@@ -192,16 +212,7 @@ angular.module('o19s.splainer-search')
               if ( typeof subFieldValue === 'object' && !(subFieldValue instanceof Array) ) {
                 lastSubSnips[subFieldName] = subFieldValue;
               } else {
-                var snip = aDoc.highlight(
-                  doc.id,
-                  subFieldName,
-                  hlPre,
-                  hlPost
-                );
-
-                if ( null === snip || undefined === snip || '' === snip ) {
-                  snip = escapeHtml(subFieldValue.slice(0, 200));
-                }
+                var snip = getHighlightSnippet(aDoc, doc.id, subFieldName, subFieldValue, hlPre, hlPost);
 
                 lastSubSnips[subFieldName] = snip;
               }
