@@ -287,6 +287,7 @@ npm install --global np
 np --no-2fa
 ```
 
+Don't forget to create a release on Github as well!
 
 
 ## Thanks to...
