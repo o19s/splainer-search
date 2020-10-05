@@ -26,13 +26,14 @@ angular.module('o19s.splainer-search')
         return angular.copy(defaultSolrConfig);
       };
 
-      this.createSearcher = function (fieldList, url, args, queryText, config, searchEngine) {
+      this.createSearcher = function (fieldSpec, url, args, queryText, config, searchEngine) {
         if ( searchEngine === undefined ) {
           searchEngine = 'solr';
         }
 
         var options = {
-          fieldList:      fieldList,
+          fieldList:      fieldSpec.fieldList(),
+          hlFieldList:    fieldSpec.highlightFieldList(),
           url:            url,
           args:           args,
           queryText:      queryText,

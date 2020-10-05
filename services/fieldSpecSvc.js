@@ -4,7 +4,7 @@ angular.module('o19s.splainer-search')
   .service('fieldSpecSvc', [
     function fieldSpecSvc() {
       var addFieldOfType = function(fieldSpec, fieldType, fieldName) {
-        if (fieldType === 'function') {
+        if (['f', 'func', 'function'].includes(fieldType)) {
           if (!fieldSpec.hasOwnProperty('functions')) {
             fieldSpec.functions = [];
           }
@@ -14,6 +14,12 @@ angular.module('o19s.splainer-search')
           }
           fieldName = fieldName + ':$' + fieldName;
           fieldSpec.functions.push(fieldName);
+        }
+        if (['highlight', 'hl'].includes(fieldType)) {
+          if (!fieldSpec.hasOwnProperty('highlights')) {
+            fieldSpec.highlights = [];
+          }
+          fieldSpec.highlights.push(fieldName);
         }
         if (fieldType === 'media') {
             if (!fieldSpec.hasOwnProperty('embeds')) {
@@ -39,35 +45,30 @@ angular.module('o19s.splainer-search')
         fieldSpec.fields.push(fieldName);
       };
 
-      var normalizeFieldTypeAliases = function(fieldType) {
-        if (fieldType === 'func' || fieldType === 'f') {
-          return 'function';
-        }
-        return fieldType;
-      };
-
       // Populate field spec from a field spec string
       var populateFieldSpec = function(fieldSpec, fieldSpecStr) {
         var fieldSpecs = fieldSpecStr.split('+').join(' ').split(/[\s,]+/);
         angular.forEach(fieldSpecs, function(aField) {
-          var typeAndField = aField.split(':');
-          var fieldType = null;
+          var specElements = aField.split(':');
+          var fieldTypes = null;
           var fieldName = null;
-          if (typeAndField.length === 2) {
-            fieldType = normalizeFieldTypeAliases(typeAndField[0]);
-            fieldName = typeAndField[1];
-          }
-          else if (typeAndField.length === 1) {
-            fieldName = typeAndField[0];
+          if (specElements.length === 1) {
+            fieldName = specElements[0];
             if (fieldSpec.hasOwnProperty('title')) {
-              fieldType = 'sub';
+              fieldTypes = ['sub'];
             }
             else {
-              fieldType = 'title';
+              fieldTypes = ['title'];
             }
+          } else if (specElements.length > 1) {
+            fieldName = specElements.pop();
+            fieldTypes = specElements;
           }
-          if (fieldType && fieldName) {
-            addFieldOfType(fieldSpec, fieldType, fieldName);
+
+          if (fieldTypes && fieldName) {
+            angular.forEach(fieldTypes, function(fieldType) {
+              addFieldOfType(fieldSpec, fieldType, fieldName);
+            });
           }
         });
       };
@@ -97,6 +98,10 @@ angular.module('o19s.splainer-search')
           return rVal;
         };
 
+        this.highlightFieldList = function() {
+          return this.highlights;
+        };
+
         // Execute innerBody for each (non id) field
         this.forEachField = function(innerBody) {
           if (this.hasOwnProperty('title')) {
@@ -107,6 +112,9 @@ angular.module('o19s.splainer-search')
           }
           angular.forEach(this.embeds, function(embed) {
             innerBody(embed);
+          });
+          angular.forEach(this.highlights, function(hl) {
+            innerBody(hl);
           });
           angular.forEach(this.subs, function(sub) {
             innerBody(sub);
@@ -119,10 +127,11 @@ angular.module('o19s.splainer-search')
 
       var transformFieldSpec = function(fieldSpecStr) {
         var defFieldSpec = 'id:id title:id *';
-        var fieldSpecs = fieldSpecStr.split(/[\s,]+/);
-        if (fieldSpecStr.trim().length === 0) {
+        if (fieldSpecStr === null || fieldSpecStr.trim().length === 0) {
           return defFieldSpec;
         }
+
+        var fieldSpecs = fieldSpecStr.split(/[\s,]+/);
         if (fieldSpecs[0] === '*') {
           return defFieldSpec;
         }

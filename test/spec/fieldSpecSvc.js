@@ -213,4 +213,11 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldList).toContain("'foo.bar'");
   });
 
+  it('hl switch is working', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id, nohighlight, title:hl:titleCombo highlight:regular foo.bar');
+    var hlFieldList = fieldSpec.highlightFieldList();
+    expect(hlFieldList).toContain('regular');
+    expect(hlFieldList).toContain('titleCombo');
+    expect(hlFieldList).not.toContain('nohighlight');
+  });
 });
