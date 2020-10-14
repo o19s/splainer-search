@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version
 
+# 2.6.2 (10/05/2020)
+- Lots of work on breaking out highlighting into a better structure, after fighting with little fixes for a while.
+
 # 2.5.9 (04/27/2020)
 - Highlighting on dates and integers in Solr causes an error.  Work around is to append `hl.method=unified` to calls to Solr.  https://github.com/o19s/splainer-search/pull/84
 - a common pattern in Solr schemas is to normalize fields with dots: `foo.bar`, however if you have a array or dictionary of JSON, we want to navigate that.  Now we check if the key exists with a dot in it, if not, we use that as a selector to pluck out the data in the nested JSON that we need.  https://github.com/o19s/splainer-search/pull/83
