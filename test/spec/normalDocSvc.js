@@ -333,6 +333,16 @@ describe('Service: normalDocsSvc', function () {
                  } };
     });
 
+    it('works with an empty title', function() {
+      solrDoc['actor.name'] = 'Harrison Ford';
+
+      var fieldSpec = {id: 'custom_id_field', title: null, subs: ['actor.name']};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+
+      expect(normalDoc.getHighlightedTitle('', '')).toEqual(null);
+    });
+
+
     it('captures sub values no highlights', function() {
       var fieldSpec = {id: 'custom_id_field', title: 'title_field', subs: '*'};
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);

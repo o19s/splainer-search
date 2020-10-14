@@ -95,10 +95,6 @@ angular.module('o19s.splainer-search')
       var assignSubs = function(normalDoc, doc, fieldSpec) {
         var parseValue = function(value) {
           if ( typeof value === 'object' ) {
-            try {
-              return JSON.stringify(value, null, 2);
-            } catch (error) {}
-
             return value;
           } else {
             return '' + value;
