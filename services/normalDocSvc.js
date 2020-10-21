@@ -201,7 +201,7 @@ angular.module('o19s.splainer-search')
         var lastHlPost = null;
 
         doc.getHighlightedTitle = function(hlPre, hlPost) {
-          return getHighlightSnippet(aDoc, doc.id, doc.titleField, doc.title, hlPre, hlPost);
+          return doc.title ? getHighlightSnippet(aDoc, doc.id, doc.titleField, doc.title, hlPre, hlPost) : null;
         };
 
         doc.subSnippets = function(hlPre, hlPost) {
