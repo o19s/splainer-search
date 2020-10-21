@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version
 
+# 2.6.3 (10/21/2020)
+- Fixed issue with documents having no title causing splainer to blow up.
+
 # 2.6.2 (10/05/2020)
 - Lots of work on breaking out highlighting into a better structure, after fighting with little fixes for a while.
 
