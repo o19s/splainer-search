@@ -134,7 +134,7 @@ angular.module('o19s.splainer-search')
             }
           });
           angular.forEach(fieldSpec.highlights, function(hlField) {
-            if (fieldSpec.title != hlField) {
+            if (fieldSpec.title !== hlField) {
               normalDoc.subs[hlField] = parseValue(doc[hlField]);
             }
           });
