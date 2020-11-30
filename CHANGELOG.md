@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version
 
+# 2.6.4 (11/30/2020)
+- Allow override of defType for explainOther in solr searcher
+
 # 2.6.3 (10/21/2020)
 - Fixed issue with documents having no title causing splainer to blow up.
 
