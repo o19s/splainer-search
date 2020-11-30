@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version
 
+# 2.6.3 (10/20/2020)
+- Bugfix: fixes no title fieldSpec error
+
 # 2.6.2 (10/05/2020)
 - Lots of work on breaking out highlighting into a better structure, after fighting with little fixes for a while.
 

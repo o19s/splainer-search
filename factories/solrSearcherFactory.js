@@ -214,7 +214,7 @@
       });
     } // end of search()
 
-    function explainOther (otherQuery, fieldSpec) {
+    function explainOther (otherQuery, fieldSpec, defType) {
       /*jslint validthis:true*/
       var self = this;
 
@@ -256,6 +256,10 @@
             HIGHLIGHTING_PRE:   self.HIGHLIGHTING_PRE,
             HIGHLIGHTING_POST:  self.HIGHLIGHTING_POST,
           };
+
+          if (defType) {
+            args['defType'] = defType;
+          }
 
           var otherSearcher = new Searcher(otherSearcherOptions);
 
