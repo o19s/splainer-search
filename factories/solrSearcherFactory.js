@@ -222,8 +222,7 @@
       self.args.explainOther = [otherQuery];
       solrSearcherPreprocessorSvc.prepare(self);
 
-      // TODO: revisit why we perform the first search, doesn't seem to have
-      // any use!
+      // First query carries out the explainOther
       return self.search()
         .then(function() {
           var start = 0;
@@ -263,6 +262,7 @@
 
           var otherSearcher = new Searcher(otherSearcherOptions);
 
+          // Second query fetches metadata for the explained documents
           return otherSearcher.search()
             .then(function() {
               self.numFound        = otherSearcher.numFound;
