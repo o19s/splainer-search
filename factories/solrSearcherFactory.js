@@ -243,6 +243,10 @@
             q:      [otherQuery]
           };
 
+          if (defType) {
+            solrParams['defType'] = defType;
+          }
+
           var otherSearcherOptions = {
             fieldList:          self.fieldList,
             hlFieldList:        self.hlFieldList,
@@ -256,10 +260,6 @@
             HIGHLIGHTING_PRE:   self.HIGHLIGHTING_PRE,
             HIGHLIGHTING_POST:  self.HIGHLIGHTING_POST,
           };
-
-          if (defType) {
-            args['defType'] = defType;
-          }
 
           var otherSearcher = new Searcher(otherSearcherOptions);
 
