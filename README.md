@@ -280,7 +280,9 @@ We need to build a `splainer-search.js` file as part of the build.
 npm run-script build
 ```
 
-We use NP to publish splainer-search to npmjs.org:
+We use NP to publish splainer-search to npmjs.org.  You need to update the
+`CHANGELOG.md` with your new version, but you don't need to touch `package.json`,
+the `np` script bumps that file!
 
 ```
 npm install --global np
