@@ -243,7 +243,7 @@
           };
 
           if (defType) {
-            solrParams['defType'] = defType;
+            solrParams.defType = defType;
           }
 
           var otherSearcherOptions = {

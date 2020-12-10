@@ -1277,11 +1277,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
     it('makes one search request and one explain request per resulting doc', function () {
       var fieldList = mockFieldSpec.fieldList().join(',');
       var url       = mockEsUrl;
-      url += '?_source=' + fieldList;
-      url += '&q=' + otherQuery;
-      url += '&from=0&size=10';
 
-      $httpBackend.expectGET(url).respond(200, expectedResponse);
+      $httpBackend.expectPOST(url).respond(200, expectedResponse);
 
       angular.forEach(expectedDocs, function(doc) {
         var explainUrl = "http://localhost:9200/statedecoded/law/";
@@ -1298,11 +1295,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
     it('sets the array of docs', function () {
       var fieldList = mockFieldSpec.fieldList().join(',');
       var url       = mockEsUrl;
-      url += '?_source=' + fieldList;
-      url += '&q=' + otherQuery;
-      url += '&from=0&size=10';
 
-      $httpBackend.expectGET(url).respond(200, expectedResponse);
+      $httpBackend.expectPOST(url).respond(200, expectedResponse);
 
       angular.forEach(expectedDocs, function(doc) {
         var explainUrl = "http://localhost:9200/statedecoded/law/";
@@ -1323,11 +1317,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
     it('paginates for explain other searches', function () {
       var fieldList = mockFieldSpec.fieldList().join(',');
       var url       = mockEsUrl;
-      url += '?_source=' + fieldList;
-      url += '&q=' + otherQuery;
-      url += '&from=10&size=10';
 
-      $httpBackend.expectGET(url).respond(200, expectedResponse);
+      $httpBackend.expectPOST(url).respond(200, expectedResponse);
 
       angular.forEach(expectedDocs, function(doc) {
         var explainUrl = "http://localhost:9200/statedecoded/law/";
