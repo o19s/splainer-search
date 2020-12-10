@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version
 
+# 2.6.6 (12/09/2020)
+- Allow full query override for ES explain other
+
 # 2.6.4 (11/30/2020)
 - Allow override of defType for explainOther in solr searcher
 
