@@ -42,7 +42,7 @@ angular.module('o19s.splainer-search')
           args['hl.simple.pre']   = [searcher.HIGHLIGHTING_PRE];
           args['hl.simple.post']  = [searcher.HIGHLIGHTING_POST];
         } else {
-          args.hl = false;
+          args.hl = ['false'];
         }
 
         if (config.escapeQuery) {
