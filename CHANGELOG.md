@@ -1,6 +1,6 @@
 Version numbers correspond to `package.json` version
 
-# 2.6.7 (12/16/2020)
+# 2.6.7-2.6.8 (12/16/2020)
 - Solr - Disable highlight unless enabled in the fieldSpec
 
 # 2.6.6 (12/09/2020)
