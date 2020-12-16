@@ -1,6 +1,6 @@
 {
   "name": "splainer-search",
-  "version": "2.6.6",
+  "version": "2.6.7",
   "main": "splainer-search.js",
   "authors": [
     "Doug Turnbull <dturnbull@opensourceconnections.com>",
