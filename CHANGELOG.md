@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version
 
+# 2.6.7 (12/16/2020)
+- Solr - Disable highlight unless enabled in the fieldSpec
+
 # 2.6.6 (12/09/2020)
 - Allow full query override for ES explain other
 
