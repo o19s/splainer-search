@@ -20,7 +20,7 @@ angular.module('o19s.splainer-search')
       // the full URL we'll use to call Solr
       var buildCallUrl = function(searcher) {
         var fieldList    = searcher.fieldList;
-        var hlFieldList  = searcher.hlFieldList;
+        var hlFieldList  = searcher.hlFieldList || [];
         var url          = searcher.url;
         var config       = searcher.config;
         var args         = withoutUnsupported(searcher.args, config.sanitize);
@@ -34,13 +34,15 @@ angular.module('o19s.splainer-search')
           args['debug.explain.structured'] = ['true'];
         }
 
-        if (config.highlight) {
+        if (config.highlight && hlFieldList.length > 0) {
           args.hl                 = ['true'];
           args['hl.method']       = ['unified'];  // work around issues parsing dates and numbers
-          args['hl.fl']           = hlFieldList ? [hlFieldList.join(' ')] : [];
+          args['hl.fl']           = hlFieldList.join(' ');
 
           args['hl.simple.pre']   = [searcher.HIGHLIGHTING_PRE];
           args['hl.simple.post']  = [searcher.HIGHLIGHTING_POST];
+        } else {
+          args.hl = false;
         }
 
         if (config.escapeQuery) {

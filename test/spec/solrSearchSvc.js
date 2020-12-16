@@ -38,7 +38,7 @@ describe('Service: searchSvc: Solr', function () {
     searchSvc     = _searchSvc_;
     fieldSpecSvc  = _fieldSpecSvc_;
     activeQueries = _activeQueries_;
-    mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1');
+    mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1 hl:field2');
 
     activeQueries.count = 0;
   }));
@@ -1275,7 +1275,7 @@ describe('Service: searchSvc: Solr', function () {
     var searcher = null;
 
     beforeEach(function() {
-      fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
+      fieldSpec = fieldSpecSvc.createFieldSpec('id:path hl:content');
       searcher = searchSvc.createSearcher(fieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
     });
