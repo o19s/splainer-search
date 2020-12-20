@@ -28,7 +28,8 @@ module.exports = function(config) {
       'factories/**/*.js',
       'values/**/*.js',
       'test/mock/**/*.js',
-      'test/spec/**/*.js'
+      //'test/spec/**/*.js'
+      'test/spec/opensearchSearchSvc.js'
     ],
 
     // list of files / patterns to exclude

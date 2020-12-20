@@ -6,11 +6,13 @@ angular.module('o19s.splainer-search')
   .service('searchSvc', [
     'SolrSearcherFactory',
     'EsSearcherFactory',
+    'OsSearcherFactory',
     'activeQueries',
     'defaultSolrConfig',
     function searchSvc(
       SolrSearcherFactory,
       EsSearcherFactory,
+      OsSearcherFactory,
       activeQueries,
       defaultSolrConfig
     ) {
@@ -50,6 +52,10 @@ angular.module('o19s.splainer-search')
           searcher = new SolrSearcherFactory(options);
         } else if ( searchEngine === 'es') {
           searcher = new EsSearcherFactory(options);
+        } else if ( searchEngine === 'opensearch') {
+          console.log("I AM HERE");
+          console.log(options);
+          searcher = new OsSearcherFactory(options);
         }
 
         return searcher;
