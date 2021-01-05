@@ -38,7 +38,7 @@
 
 
     //Searcher.prototype.addDocToGroup    = addDocToGroup;
-    //Searcher.prototype.pager            = pager;
+    Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
     //Searcher.prototype.explainOther     = explainOther;
     //Searcher.prototype.explain          = explain;
@@ -73,9 +73,13 @@
     // page, call pager on that searcher ad infinidum
     function pager () {
       /*jslint validthis:true*/
+      console.log("PAGER A")
+
       var self      = this;
+      console.log("What is url?" + self.url)
       var pagerArgs = { from: 0, size: self.config.numberOfRows };
       var nextArgs  = angular.copy(self.args);
+      console.log(nextArgs)
 
       if (nextArgs.hasOwnProperty('pager') && nextArgs.pager !== undefined) {
         pagerArgs = nextArgs.pager;
@@ -103,6 +107,8 @@
         url:        self.url,
       };
 
+
+      console.log("\nPAGER HERE")
       var nextSearcher = new Searcher(options);
 
       return nextSearcher;
@@ -143,7 +149,7 @@
       console.log(url)
       var transport = transportSvc.getTransport({apiMethod: apiMethod});
       console.log("got transport")
-
+      console.log("Query DSL is " + self.queryDsl)
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);
       if (self.pagerArgs) {
         queryDslWithPagerArgs.from = self.pagerArgs.from;

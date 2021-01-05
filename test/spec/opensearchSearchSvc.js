@@ -1,7 +1,7 @@
 'use strict';
 
 /*global describe,beforeEach,inject,it,expect*/
-describe('Service: searchSvc: ElasticSearch', function() {
+describe('Service: searchSvc: OpenSearch', function() {
 
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
@@ -84,6 +84,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
   	},
   	"_embedded": {
   		"item": [{
+          "id": "https://www.hudexchange.info/programs/multifamily-housing/financial-management-toolkit/9-basics-of-cost-allocation/9d-the-radar-test/",
   				"title": "MFHP Financial Mgmt. Toolkit - Cost Allocation Basics: The RADAR Test - HUD …",
   				"description": "The RADAR Test A simple aid in determining what is eligible for reimbursement and why it is eligible, as well as how to document compliance with financial...",
   				"_links": {
@@ -94,6 +95,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
   				}
   			},
   			{
+          "id": "https://www.hudexchange.info/news/the-origin-year-expenditure-test-webinar/",
   				"title": "Reminder: Register Today: CDBG Origin Year Expenditure Test Webinar – July …",
   				"description": "Training Objectives This webinar covers: An overview of the CDBG Origin Year Expenditure Test for administrative and planning costs How to check administrative...",
   				"_links": {
@@ -1128,17 +1130,21 @@ describe('Service: searchSvc: ElasticSearch', function() {
       took:       88,
       timed_out:  false
     };
+    var fullResponse2 = angular.copy(mockOsResults)
+    fullResponse2.opensearch.totalResults = "30"
+    console.log("HERE IS FULL RESPOSNE")
+    console.log(fullResponse2)
 
     beforeEach(inject(function () {
-      mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title');
+      mockFieldSpec = fieldSpecSvc.createFieldSpec('id:id title');
 
       searcher = searchSvc.createSearcher(
         mockFieldSpec,
-        mockEsUrl,
-        mockEsParams,
+        mockOsUrl,
+        mockOsParams,
         mockQueryText,
         {},
-        'es'
+        'opensearch'
       );
     }));
 
@@ -1152,7 +1158,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     };
 
     it('pages on page', function() {
-      $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
+      $httpBackend.expectGET(mockOsUrl).respond(200, fullResponse2);
 
       searcher.search();
       $httpBackend.flush();
@@ -1164,7 +1170,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         from: 10
       };
 
-      $httpBackend.expectPOST(mockEsUrl, pagerValidator(expectedPageParams))
+      $httpBackend.expectGET(mockOsUrl, pagerValidator(expectedPageParams))
         .respond(200, fullResponse);
 
       nextSearcher.search();
@@ -1177,7 +1183,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         from: 20
       };
 
-      $httpBackend.expectPOST(mockEsUrl, pagerValidator(expectedPageParams))
+      $httpBackend.expectGET(mockOsUrl, pagerValidator(expectedPageParams))
         .respond(200, fullResponse);
 
       nextSearcher.search();
@@ -1191,14 +1197,14 @@ describe('Service: searchSvc: ElasticSearch', function() {
     it('accounts for custom rows count', function() {
       searcher = searchSvc.createSearcher(
         mockFieldSpec,
-        mockEsUrl,
-        mockEsParams,
+        mockOsUrl,
+        mockOsParams,
         mockQueryText,
         { numberOfRows: 20 },
-        'es'
+        'opensearch'
       );
 
-      $httpBackend.expectPOST(mockEsUrl).respond(200, fullResponse);
+      $httpBackend.expectGET(mockOsUrl).respond(200, fullResponse2);
 
       searcher.search();
       $httpBackend.flush();
@@ -1210,7 +1216,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         from: 20
       };
 
-      $httpBackend.expectPOST(mockEsUrl, pagerValidator(expectedPageParams))
+      $httpBackend.expectGET(mockOsUrl, pagerValidator(expectedPageParams))
         .respond(200, fullResponse);
 
       nextSearcher.search();
@@ -1222,217 +1228,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
   });
 
-  describe('failures', function () {
-    beforeEach(inject(function () {
-      searcher = searchSvc.createSearcher(
-        mockFieldSpec,
-        mockEsUrl,
-        mockEsParams,
-        mockQueryText,
-        {},
-        'es'
-      );
-    }));
 
-    it('reports failures', function() {
-      var failureResponse = {
-        _shards: {
-          total:      2,
-          successful: 1,
-          failed:     1,
-          failures: [
-            {
-              index:  'statedecoded',
-              shard:  1,
-              status: 400,
-              reason: "ElasticsearchIllegalArgumentException[field [cast] isn't a leaf field]"
-            }
-          ]
-        },
-        hits: {
-          total: 2,
-          'max_score': 1.0,
-          hits: []
-        }
-      };
-      $httpBackend.expectPOST(mockEsUrl).
-      respond(200, failureResponse);
 
-      var errorCalled = 0;
-
-      searcher.search()
-      .then(function success() {
-        errorCalled--;
-      }, function failure(msg) {
-        expect(msg.searchError).toContain("ElasticsearchIllegalArgumentException[field [cast] isn't a leaf field]");
-        errorCalled++;
-      });
-
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      expect(errorCalled).toEqual(1);
-    });
-  });
-
-  describe('explain other', function() {
-    beforeEach(inject(function () {
-      searcher = searchSvc.createSearcher(
-        mockFieldSpec,
-        mockEsUrl,
-        mockEsParams,
-        mockQueryText,
-        { version: '2.0' },
-        'es'
-      );
-    }));
-
-    var basicExplain1 = {
-      value: 1.5,
-      description: 'weight(text:law in 1234)',
-    };
-    var basicExplain2 = {
-      value: 0.5,
-      description: 'weight(text:order in 1234)',
-    };
-
-    var sumExplain = {
-      matched:      true,
-      explanation:  {
-        value:        1.5,
-        description:  'weight(_all:law in 1234)',
-        details:      [basicExplain1, basicExplain2]
-      }
-    };
-
-    var otherQuery = 'message:foo';
-
-    var expectedDocs = [
-      {
-        '_index': 'statedecoded',
-        '_type':  'law',
-        '_id':    'l_1',
-        '_score': 5.0,
-        'fields': {
-          'field':  ['1--field value'],
-          'field1': ['1--field1 value']
-        },
-      },
-      {
-        '_index': 'statedecoded',
-        '_type':  'law',
-        '_id':    'l_1',
-        '_score': 3.0,
-        'fields': {
-          'field':  ['2--field value'],
-          'field1': ['2--field1 value']
-        }
-      }
-    ];
-
-    var expectedResponse = {
-      hits: {
-        total: 2,
-        'max_score': 1.0,
-        hits: expectedDocs
-      }
-    };
-
-    var expectedExplainResponse = sumExplain;
-
-    it('makes one search request and one explain request per resulting doc', function () {
-      var fieldList = mockFieldSpec.fieldList().join(',');
-      var url       = mockEsUrl;
-
-      $httpBackend.expectPOST(url).respond(200, expectedResponse);
-
-      angular.forEach(expectedDocs, function(doc) {
-        var explainUrl = "http://localhost:9200/statedecoded/law/";
-        explainUrl += doc._id + '/_explain';
-        $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
-      });
-
-      searcher.explainOther(otherQuery, mockFieldSpec);
-
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-    });
-
-    it('sets the array of docs', function () {
-      var fieldList = mockFieldSpec.fieldList().join(',');
-      var url       = mockEsUrl;
-
-      $httpBackend.expectPOST(url).respond(200, expectedResponse);
-
-      angular.forEach(expectedDocs, function(doc) {
-        var explainUrl = "http://localhost:9200/statedecoded/law/";
-        explainUrl += doc._id + '/_explain';
-        $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
-      });
-
-      searcher.explainOther(otherQuery, mockFieldSpec)
-        .then(function() {
-          expect(searcher.numFound).toBe(2);
-          expect(searcher.docs.length).toBe(2);
-        });
-
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-    });
-
-    it('paginates for explain other searches', function () {
-      var fieldList = mockFieldSpec.fieldList().join(',');
-      var url       = mockEsUrl;
-
-      $httpBackend.expectPOST(url).respond(200, expectedResponse);
-
-      angular.forEach(expectedDocs, function(doc) {
-        var explainUrl = "http://localhost:9200/statedecoded/law/";
-        explainUrl += doc._id + '/_explain';
-        $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
-      });
-
-      searcher.numFound = 100;
-      searcher = searcher.pager();
-
-      searcher.explainOther(otherQuery, mockFieldSpec);
-
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-    });
-  });
-
-  describe('version', function() {
-    beforeEach(inject(function () {
-      searcher = searchSvc.createSearcher(
-        mockFieldSpec,
-        mockEsUrl,
-        mockEsParams,
-        mockQueryText,
-        {},
-        'es'
-      );
-    }));
-
-    it('defaults to version 5.0 and uses the "_source" params', function() {
-      expect(searcher.config.version).toEqual('5.0');
-
-      var expectedParams = {
-        _source:       mockFieldSpec.fieldList()
-      };
-
-      $httpBackend.when('POST', mockEsUrl,
-        function(postData) {
-          var jsonData = JSON.parse(postData);
-          expect(jsonData._source).toEqual(expectedParams._source);
-          return true;
-        }
-      ).respond(200, mockES4Results);
-
-      searcher.search();
-      $httpBackend.flush();
-    });
-
-  });
   describe('version OS', function() {
     beforeEach(inject(function () {
       searcher = searchSvc.createSearcher(
