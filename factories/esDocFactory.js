@@ -33,11 +33,12 @@
     Doc.prototype = Object.create(DocFactory.prototype);
     Doc.prototype.constructor = Doc; // Reset the constructor
 
-    Doc.prototype._url       = _url;
-    Doc.prototype.explain    = explain;
-    Doc.prototype.snippet    = snippet;
-    Doc.prototype.origin     = origin;
-    Doc.prototype.highlight  = highlight;
+    Doc.prototype._url           = _url;
+    Doc.prototype.fieldsProperty = fieldsProperty;
+    Doc.prototype.explain        = explain;
+    Doc.prototype.snippet        = snippet;
+    Doc.prototype.origin         = origin;
+    Doc.prototype.highlight      = highlight;
 
     function _url () {
       /*jslint validthis:true*/
@@ -47,6 +48,12 @@
 
       var uri = esUrlSvc.parseUrl(esurl);
       return esUrlSvc.buildDocUrl(uri, doc);
+    }
+
+    function fieldsProperty() {
+      /*jslint validthis:true*/
+      var self = this;
+      return Object.assign({}, self['_source'], self['fields']);
     }
 
     function explain () {
