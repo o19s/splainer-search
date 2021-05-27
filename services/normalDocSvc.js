@@ -105,7 +105,7 @@ angular.module('o19s.splainer-search')
           angular.forEach(doc, function(value, fieldName) {
             if (typeof(value) !== 'function') {
               if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
-                  fieldName !== fieldSpec.thumb) {
+                  fieldName !== fieldSpec.thumb && fieldName !== fieldSpec.image) {
                 normalDoc.subs[fieldName] = parseValue(value);
               }
             }
@@ -145,6 +145,7 @@ angular.module('o19s.splainer-search')
         assignSingleField(normalDoc, doc, fieldSpec.id, 'id');
         assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
         assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
+        assignSingleField(normalDoc, doc, fieldSpec.image, 'image');
         normalDoc.titleField = fieldSpec.title;
         normalDoc.embeds = {};
         assignEmbeds(normalDoc, doc, fieldSpec);
@@ -160,6 +161,10 @@ angular.module('o19s.splainer-search')
         if (this.hasOwnProperty('thumb')) {
           hasThumb = true;
         }
+        var hasImage = false;
+        if (this.hasOwnProperty('image')) {
+          hasImage = true;
+        }
         this.subsList = [];
         var thisNormalDoc = this;
         angular.forEach(this.subs, function(subValue, subField) {
@@ -169,6 +174,10 @@ angular.module('o19s.splainer-search')
 
         this.hasThumb = function() {
           return hasThumb;
+        };
+
+        this.hasImage = function() {
+          return hasImage;
         };
 
         this._url = function() {

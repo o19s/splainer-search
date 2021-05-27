@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version
 
+# 2.6.10 (2021-05-27)
+- Introduce image:image_url field type (similar to thumb:image_url), but larger.
+
 # 2.6.7-2.6.9 (12/16/2020)
 - Solr - Disable highlight unless enabled in the fieldSpec
 

@@ -110,6 +110,9 @@ angular.module('o19s.splainer-search')
           if (this.hasOwnProperty('thumb')) {
             innerBody(this.thumb);
           }
+          if (this.hasOwnProperty('image')) {
+            innerBody(this.image);
+          }
           angular.forEach(this.embeds, function(embed) {
             innerBody(embed);
           });

@@ -54,6 +54,15 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.subs).toContain('subfield2');
   });
 
+  it('extracts a image property', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 id:foo_id image:foo_img');
+    expect(fieldSpec.id).toEqual('foo_id');
+    expect(fieldSpec.image).toEqual('foo_img');
+    expect(fieldSpec.title).toEqual('atitlefield');
+    expect(fieldSpec.subs).toContain('subfield1');
+    expect(fieldSpec.subs).toContain('subfield2');
+  });
+
   it('extracts media fields', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 id:foo_id media:media1 media:media2');
     expect(fieldSpec.id).toEqual('foo_id');
@@ -65,13 +74,14 @@ describe('Service: fieldSpecSvc', function () {
   });
 
   it('gets plain field list', function() {
-    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 id:foo_id thumb:foo_img media:media1');
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 id:foo_id image:imagefield thumb:foo_img media:media1');
     expect(fieldSpec.fields).toContain('foo_id');
     expect(fieldSpec.fields).toContain('atitlefield');
     expect(fieldSpec.fields).toContain('subfield1');
     expect(fieldSpec.fields).toContain('subfield2');
     expect(fieldSpec.fields).toContain('foo_img');
     expect(fieldSpec.fields).toContain('media1');
+    expect(fieldSpec.fields).toContain('imagefield');    
   });
 
   it('fields has id when no id specified', function() {
