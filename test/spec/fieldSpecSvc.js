@@ -73,6 +73,15 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.subs).toContain('subfield2');
   });
 
+  it('extracts translations fields', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 translate:subfield2 id:foo_id');
+    expect(fieldSpec.id).toEqual('foo_id');
+    expect(fieldSpec.title).toEqual('atitlefield');
+    expect(fieldSpec.subs).toContain('subfield1');
+    expect(fieldSpec.translations).toContain('subfield2');
+  });
+
+
   it('gets plain field list', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 id:foo_id image:imagefield thumb:foo_img media:media1');
     expect(fieldSpec.fields).toContain('foo_id');
@@ -81,7 +90,7 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.fields).toContain('subfield2');
     expect(fieldSpec.fields).toContain('foo_img');
     expect(fieldSpec.fields).toContain('media1');
-    expect(fieldSpec.fields).toContain('imagefield');    
+    expect(fieldSpec.fields).toContain('imagefield');
   });
 
   it('fields has id when no id specified', function() {

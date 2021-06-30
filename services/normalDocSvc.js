@@ -92,6 +92,12 @@ angular.module('o19s.splainer-search')
         });
       };
 
+      var assignTranslations = function(normalDoc, doc, fieldSpec) {
+        angular.forEach(fieldSpec.translations, function (translationField) {
+            normalDoc.translations[translationField] = doc[translationField];
+        });
+      };
+
       var assignSubs = function(normalDoc, doc, fieldSpec) {
         var parseValue = function(value) {
           if ( typeof value === 'object' ) {
@@ -149,6 +155,8 @@ angular.module('o19s.splainer-search')
         normalDoc.titleField = fieldSpec.title;
         normalDoc.embeds = {};
         assignEmbeds(normalDoc, doc, fieldSpec);
+        normalDoc.translations = {};
+        assignTranslations(normalDoc, doc, fieldSpec);
         normalDoc.subs = {};
         assignSubs(normalDoc, doc, fieldSpec);
       };
