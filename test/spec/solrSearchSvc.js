@@ -401,6 +401,26 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
+    it('populates query parsing dictionary', function() {
+      createSearcherWithDebug();
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+                              .respond(200, fullSolrResp);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var queryParsingDict = searcher.queryParsingDict;
+        expect(Object.keys(queryParsingDict).length).toBe(5);
+        expect(queryParsingDict['rawquerystring']).toEqual('*:*');
+        expect(queryParsingDict['querystring']).toEqual('*:*');
+        expect(queryParsingDict['parsedquery']).toEqual('MatchAllDocsQuery(*:*)');
+        expect(queryParsingDict['parsedquery_toString']).toEqual('*:*');
+        expect(queryParsingDict['QParser']).toEqual('LuceneQParser');
+      });
+      $httpBackend.flush();
+      expect(called).toBe(1);
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
     it('returns null on no explain', function() {
       createSearcherWithDebug();
       var copiedResp = angular.copy(fullSolrResp);

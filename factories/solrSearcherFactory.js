@@ -134,6 +134,32 @@
         }
       };
 
+      var getQueryParsingData = function(solrResp) {
+        if (solrResp.hasOwnProperty('debug')) {
+          var keysToIgnore = ['track', 'timing', 'explain', 'explainOther'];
+          var dbg = solrResp.debug;
+          //console.log("hello there");
+          //console.log(Object.keys(dbg));
+          var keys = Object.keys(dbg);
+          angular.forEach(keysToIgnore, function(keyToIgnore) {
+            //console.log("Here is keyToIgnore:" + keyToIgnore);
+            if (dbg.hasOwnProperty(keyToIgnore)) {
+              keys.splice(keys.indexOf(keyToIgnore), 1)
+            }
+            //console.log("keys:" + keys);
+          });
+
+          var queryParsingData = {};
+          angular.forEach(keys, function(key) {
+            //console.log("Here is key:" + key);
+            queryParsingData[key] = dbg[key];
+          });
+
+          //console.log("Here is the array to return");
+          return queryParsingData;
+        }
+      }
+
       var getHlData = function(solrResp) {
         if (solrResp.hasOwnProperty('highlighting')) {
           return solrResp.highlighting;
@@ -153,6 +179,7 @@
             var explDict  = getExplData(solrResp);
             var hlDict    = getHlData(solrResp);
             thisSearcher.othersExplained = getOthersExplained(solrResp);
+            thisSearcher.queryParsingDict = getQueryParsingData(solrResp);
 
             var parseSolrDoc = function(solrDoc, groupedBy, group) {
               var options = {
