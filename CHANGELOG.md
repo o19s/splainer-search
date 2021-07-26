@@ -1,8 +1,12 @@
 Version numbers correspond to `package.json` version
 
+# 2.7.0 (???)
+- Introduce to `searchFactory` the property `parsedQueryDetails` that stores details about the query
+  being processed by the search engine.  Works with Solr and Elasticsearch.
+
 # 2.6.11 (2021-06-30)
 - Introduce translate:content field type (similar to thumb:image_url), that lets you tag which fields
-  you want to translate.  We need to move this formatting logic over to Quepid instead of splainer-search ;-). 
+  you want to translate.  We need to move this formatting logic over to Quepid instead of splainer-search ;-).
 
 # 2.6.10 (2021-05-27)
 - Introduce image:image_url field type (similar to thumb:image_url), but larger.
