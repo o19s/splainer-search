@@ -255,6 +255,23 @@ Path (or _field name_): "variants.name"
 Result: [ "red", "blue" ]
 ```
 
+## Understanding query input parsing
+
+Frequently we want to understand what the search engine is doing to the raw query input.  
+Consult the `searcher.parsedQueryDetails` property to get a search engine specific JSON data structure.
+
+### Solr
+
+For Solr we filter through all the keys in the `debug` section of the output, filtering out the
+keys `var keysToIgnore = ['track', 'timing', 'explain', 'explainOther'];`.  Everything else is
+added to the `searcher.parsedQueryDetails` property.
+
+### Elasticsearch
+
+In ES we default `profile=true` property, and nest everything under the `profile` key in the
+response is to the `searcher.parsedQueryDetails` property.
+
+
 ## Development Notes
 
 Splainer-search is written using AngularJS project. It requires `npm` and `grunt`:
