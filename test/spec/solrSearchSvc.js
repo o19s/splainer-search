@@ -408,13 +408,13 @@ describe('Service: searchSvc: Solr', function () {
       var called = 0;
       searcher.search().then(function() {
         called++;
-        var queryParsingDict = searcher.queryParsingDict;
-        expect(Object.keys(queryParsingDict).length).toBe(5);
-        expect(queryParsingDict['rawquerystring']).toEqual('*:*');
-        expect(queryParsingDict['querystring']).toEqual('*:*');
-        expect(queryParsingDict['parsedquery']).toEqual('MatchAllDocsQuery(*:*)');
-        expect(queryParsingDict['parsedquery_toString']).toEqual('*:*');
-        expect(queryParsingDict['QParser']).toEqual('LuceneQParser');
+        var parsedQueryDetails = searcher.parsedQueryDetails;
+        expect(Object.keys(parsedQueryDetails).length).toBe(5);
+        expect(parsedQueryDetails['rawquerystring']).toEqual('*:*');
+        expect(parsedQueryDetails['querystring']).toEqual('*:*');
+        expect(parsedQueryDetails['parsedquery']).toEqual('MatchAllDocsQuery(*:*)');
+        expect(parsedQueryDetails['parsedquery_toString']).toEqual('*:*');
+        expect(parsedQueryDetails['QParser']).toEqual('LuceneQParser');
       });
       $httpBackend.flush();
       expect(called).toBe(1);
