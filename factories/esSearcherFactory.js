@@ -160,6 +160,15 @@
         }
       };
 
+      var getQueryParsingData = function(data) {
+        if (data.hasOwnProperty('profile')) {
+          return data.profile;
+        }
+        else {
+          return {};
+        }
+      };
+
       var formatError = function(msg) {
           var errorMsg = '';
           if (msg) {
@@ -213,6 +222,7 @@
           else {
             self.numFound = data.hits.total;
           }
+          self.parsedQueryDetails = getQueryParsingData(data);
 
           var parseDoc = function(doc, groupedBy, group) {
             var explDict  = getExplData(doc);
