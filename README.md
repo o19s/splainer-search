@@ -271,6 +271,16 @@ added to the `searcher.parsedQueryDetails` property.
 In ES we default `profile=true` property, and nest everything under the `profile` key in the
 response is to the `searcher.parsedQueryDetails` property.
 
+## Querqy Rules Library Support
+
+[Querqy](https://querqy.org/) is a query rewriting library. It helps you to tune your search results for specific search terms.  Understanding what Querqy is doing to your queries is critical to achieving great search results.
+
+### Solr
+
+The `searcher.parsedQueryDetails` property surfaces all the debugging information about what rewriting Querqy is doing to the input query. Assuming you are also requesting the details on what rules are being matched via the `querqy.infoLogging=on` query parameter, then
+you will also see that information in the `searcher.parsedQueryDetails` structure.
+
+
 
 ## Development Notes
 

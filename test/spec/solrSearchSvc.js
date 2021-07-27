@@ -369,6 +369,16 @@ describe('Service: searchSvc: Solr', function () {
                                                   noHlConfig);
     };
 
+    var mockQuerqyInfolog = {
+      'common_rules': [
+        {
+          'APPLIED_RULES': [
+            "92e016b6-c2ad-4672-bb93-73791d94d6ca"
+          ]
+        }
+      ]
+    };
+
     it('populates explain()', function() {
       createSearcherWithDebug();
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
@@ -401,7 +411,7 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
-    it('populates query parsing dictionary', function() {
+    it('populates parsed query details', function() {
       createSearcherWithDebug();
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, fullSolrResp);
@@ -415,6 +425,27 @@ describe('Service: searchSvc: Solr', function () {
         expect(parsedQueryDetails['parsedquery']).toEqual('MatchAllDocsQuery(*:*)');
         expect(parsedQueryDetails['parsedquery_toString']).toEqual('*:*');
         expect(parsedQueryDetails['QParser']).toEqual('LuceneQParser');
+      });
+      $httpBackend.flush();
+      expect(called).toBe(1);
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('identifies querqy.infoLogging presence and adds to parsedQueryDetails', function() {
+      createSearcherWithDebug();
+
+      var mockSolrResultsWithQuerqyInfolog = angular.copy(fullSolrResp);
+      mockSolrResultsWithQuerqyInfolog['querqy.infoLog']= mockQuerqyInfolog;
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+                              .respond(200, mockSolrResultsWithQuerqyInfolog);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var parsedQueryDetails = searcher.parsedQueryDetails;
+        expect(Object.keys(parsedQueryDetails).length).toBe(6);
+        expect(parsedQueryDetails['rawquerystring']).toEqual('*:*');
+        expect(parsedQueryDetails['querqy.infoLog']).toEqual(mockQuerqyInfolog);
       });
       $httpBackend.flush();
       expect(called).toBe(1);
