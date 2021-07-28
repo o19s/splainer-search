@@ -73,6 +73,7 @@ angular.module('o19s.splainer-search')
 
         var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
         queryDsl.explain    = true;
+        queryDsl.profile    = true;
 
         if ( angular.isDefined(searcher.fieldList) && searcher.fieldList !== null ) {
           angular.forEach(self.fieldsParamNames, function(name) {

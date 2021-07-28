@@ -620,6 +620,88 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
   });
 
+  describe('parsedQueryDetails info', function() {
+    beforeEach(inject(function () {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es'
+      );
+    }));
+
+    var basicExplain1 = {
+      match: true,
+      value: 1.5,
+      description: 'weight(text:law in 1234)',
+      details: []
+    };
+    var basicExplain2 = {
+      match: true,
+      value: 0.5,
+      description: 'weight(text:order in 1234)',
+      details: []
+    };
+
+    var sumExplain = {
+      match: true,
+      value: 1.0,
+      description: 'sum of',
+      details: [basicExplain1, basicExplain2]
+    };
+
+    var mockProfile = {
+      "shards": [
+        {
+          "id": "[2aE02wS1R8q_QFnYu6vDVQ][my-index-000001][0]",
+          "searches": [
+            {
+              "query": [
+                {
+                  "type": "BooleanQuery",
+                  "description": "message:get message:search",
+                  "time_in_nanos" : 11972972
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    it('asks for profile', function() {
+      $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
+        var esQuery = angular.fromJson(data);
+        return (esQuery.hasOwnProperty('profile') && esQuery.profile === true);
+      }).
+      respond(200, mockES4Results);
+      searcher.search();
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('it populates profile', function() {
+      var mockES7ResultsWithProfile = angular.copy(mockES7Results);
+      mockES7ResultsWithProfile.profile= mockProfile;
+      var called = 0;
+      $httpBackend.expectPOST(mockEsUrl).
+        respond(200, mockES7ResultsWithProfile);
+      searcher.search()
+      .then(function() {
+        var profile = searcher.parsedQueryDetails;
+        expect(profile).toEqual(mockProfile);
+        called++;
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+
+    });
+
+  });
+
   describe('url', function() {
     beforeEach(inject(function () {
       mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title');

@@ -255,6 +255,33 @@ Path (or _field name_): "variants.name"
 Result: [ "red", "blue" ]
 ```
 
+## Understanding query input parsing
+
+Frequently we want to understand what the search engine is doing to the raw query input.  
+Consult the `searcher.parsedQueryDetails` property to get a search engine specific JSON data structure.
+
+### Solr
+
+For Solr we filter through all the keys in the `debug` section of the output, filtering out the
+keys `var keysToIgnore = ['track', 'timing', 'explain', 'explainOther'];`.  Everything else is
+added to the `searcher.parsedQueryDetails` property.
+
+### Elasticsearch
+
+In ES we default `profile=true` property, and nest everything under the `profile` key in the
+response is to the `searcher.parsedQueryDetails` property.
+
+## Querqy Rules Library Support
+
+[Querqy](https://querqy.org/) is a query rewriting library. It helps you to tune your search results for specific search terms.  Understanding what Querqy is doing to your queries is critical to achieving great search results.
+
+### Solr
+
+The `searcher.parsedQueryDetails` property surfaces all the debugging information about what rewriting Querqy is doing to the input query. Assuming you are also requesting the details on what rules are being matched via the `querqy.infoLogging=on` query parameter, then
+you will also see that information in the `searcher.parsedQueryDetails` structure.
+
+
+
 ## Development Notes
 
 Splainer-search is written using AngularJS project. It requires `npm` and `grunt`:

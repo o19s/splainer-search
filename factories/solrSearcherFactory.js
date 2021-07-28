@@ -35,6 +35,8 @@
     Searcher.prototype.search           = search;
     Searcher.prototype.explainOther     = explainOther;
 
+    Searcher.prototype.querqyInfoLog    = querqyInfoLog;
+
     function addDocToGroup (groupedBy, group, solrDoc) {
       /*jslint validthis:true*/
       var self = this;
@@ -134,6 +136,29 @@
         }
       };
 
+      var getQueryParsingData = function(solrResp) {
+        var queryParsingData = {};
+        if (solrResp.hasOwnProperty('debug')) {
+          var keysToIgnore = ['track', 'timing', 'explain', 'explainOther'];
+          var dbg = solrResp.debug;
+          var keys = Object.keys(dbg);
+          angular.forEach(keysToIgnore, function(keyToIgnore) {
+            if (dbg.hasOwnProperty(keyToIgnore)) {
+              keys.splice(keys.indexOf(keyToIgnore), 1);
+            }
+          });
+
+          angular.forEach(keys, function(key) {
+            queryParsingData[key] = dbg[key];
+          });
+        }
+
+        if (solrResp.hasOwnProperty('querqy.infoLog')) {
+          queryParsingData['querqy.infoLog'] = solrResp['querqy.infoLog'];
+        }
+        return queryParsingData;
+      };
+
       var getHlData = function(solrResp) {
         if (solrResp.hasOwnProperty('highlighting')) {
           return solrResp.highlighting;
@@ -153,6 +178,7 @@
             var explDict  = getExplData(solrResp);
             var hlDict    = getHlData(solrResp);
             thisSearcher.othersExplained = getOthersExplained(solrResp);
+            thisSearcher.parsedQueryDetails = getQueryParsingData(solrResp);
 
             var parseSolrDoc = function(solrDoc, groupedBy, group) {
               var options = {
@@ -272,6 +298,9 @@
           $log.debug('Failed to run explainOther');
           return response;
         });
+    }
+
+    function querqyInfoLog (solrResp) {
     }
 
     // Return factory object

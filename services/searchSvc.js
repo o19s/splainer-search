@@ -1,7 +1,7 @@
 'use strict';
 
-// Executes a solr search and returns
-// a set of solr documents
+// Executes a generic search and returns
+// a set of generic documents
 angular.module('o19s.splainer-search')
   .service('searchSvc', [
     'SolrSearcherFactory',
