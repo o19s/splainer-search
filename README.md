@@ -308,7 +308,7 @@ npm run-script build
 ```
 
 We use NP to publish splainer-search to npmjs.org.  You need to update the
-`CHANGELOG.md` with your new version, but you don't need to touch `package.json`,
+`CHANGELOG.md` with your new version and the date, but you don't need to touch `package.json`,
 the `np` script bumps that file!
 
 ```

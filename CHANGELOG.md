@@ -1,6 +1,6 @@
 Version numbers correspond to `package.json` version
 
-# 2.7.0 (???)
+# 2.7.0 (2021-07-28)
 - Introduce to `searchFactory` the property `parsedQueryDetails` that stores details about the query
   being processed by the search engine.  Works with Solr and Elasticsearch.
 - Using Querqy with Solr?   We now return the `querqy.infoLog` details in the `parsedQueryDetails` property.
