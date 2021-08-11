@@ -117,7 +117,9 @@
         apiMethod = 'bulk';
       }
 
-      if (apiMethod === 'get' ) {
+      // Using templates assumes that the _source field is defined
+      // in the template, not passed in
+      if (apiMethod === 'get' && !esUrlSvc.isTemplateCall(uri)) {
         var fieldList = (self.fieldList === '*') ? '*' : self.fieldList.join(',');
 
         if ( 5 <= self.majorVersion() ) {
@@ -139,6 +141,13 @@
       if (self.pagerArgs) {
         queryDslWithPagerArgs.from = self.pagerArgs.from;
         queryDslWithPagerArgs.size = self.pagerArgs.size;
+      }
+
+      if (esUrlSvc.isTemplateCall(uri)) {
+        console.log("DUDE:");
+        console.log(queryDslWithPagerArgs);
+        delete queryDslWithPagerArgs._source;
+        delete queryDslWithPagerArgs.highlight;
       }
 
       self.inError  = false;

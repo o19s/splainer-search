@@ -32,6 +32,13 @@ describe('Service: esUrlSvc', function () {
       expect(uri.protocol).toBe('https');
       expect(uri.host).toBe('es.quepid.com');
       expect(uri.pathname).toBe('/tmdb/_search');
+
+      url = 'https://es.quepid.com/tmdb/_search/template';
+      uri = esUrlSvc.parseUrl(url);
+
+      expect(uri.protocol).toBe('https');
+      expect(uri.host).toBe('es.quepid.com');
+      expect(uri.pathname).toBe('/tmdb/_search/template');
     });
 
     it('adds http if the protocol is missing', function() {
@@ -75,6 +82,21 @@ describe('Service: esUrlSvc', function () {
       uri = esUrlSvc.parseUrl(url);
       expect(esUrlSvc.isBulkCall(uri)).toBe(true);
     });
+
+    it('understands when template endpoint used', function() {
+      var url = 'http://es.quepid.com/tmdb/_search';
+      var uri = esUrlSvc.parseUrl(url);
+      expect(esUrlSvc.isTemplateCall(uri)).toBe(false);
+
+      url = 'http://es.quepid.com/tmdb/_search/template';
+      uri = esUrlSvc.parseUrl(url);
+      expect(esUrlSvc.isTemplateCall(uri)).toBe(true);
+
+      url = 'http://es.quepid.com/tmdb/_search/template/';
+      uri = esUrlSvc.parseUrl(url);
+      expect(esUrlSvc.isTemplateCall(uri)).toBe(true);
+    });
+
   });
 
   describe('build doc URL', function() {

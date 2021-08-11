@@ -1482,4 +1482,49 @@ describe('Service: searchSvc: ElasticSearch', function() {
       expect(called).toEqual(1);
     });
   });
+  describe('templated search', function() {
+    beforeEach(inject(function () {
+
+      var mockEsParams  = {
+        id: 'tmdb-title-search-template',
+        params: {
+          search_query: 'star',
+          from: 0,
+          size: 2
+        }
+      };
+
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl + '/template',
+        mockEsParams,
+        mockQueryText,
+        { },
+        'es'
+      );
+    }));
+
+    it('returns docs, and removes  _source and highlight query params', function() {
+      $httpBackend.expectPOST(mockEsUrl + '/template', function verifyParamsStripped(data) {
+        var esQuery = angular.fromJson(data);
+        return ((esQuery.id === 'tmdb-title-search-template') && (angular.isDefined(esQuery.highlight) == false) && (angular.isDefined(esQuery._source) == false) );
+      }).
+      respond(200, mockES7Results);
+
+      var called = 0;
+
+      searcher.search()
+      .then(function() {
+        var docs = searcher.docs;
+        expect(docs.length === 2);
+
+        expect(searcher.numFound).toEqual(2);
+        called++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+    });
+  });
 });
