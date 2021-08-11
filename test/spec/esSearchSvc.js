@@ -1488,9 +1488,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       var mockEsParams  = {
         id: 'tmdb-title-search-template',
         params: {
-          search_query: 'star',
-          from: 0,
-          size: 2
+          search_query: 'star'
         }
       };
 
@@ -1507,7 +1505,15 @@ describe('Service: searchSvc: ElasticSearch', function() {
     it('returns docs, and removes  _source and highlight query params', function() {
       $httpBackend.expectPOST(mockEsUrl + '/template', function verifyParamsStripped(data) {
         var esQuery = angular.fromJson(data);
-        return ((esQuery.id === 'tmdb-title-search-template') && (angular.isDefined(esQuery.highlight) == false) && (angular.isDefined(esQuery._source) == false) );
+        return (
+          (esQuery.id === 'tmdb-title-search-template') &&
+          (angular.isDefined(esQuery.highlight) == false) &&
+          (angular.isDefined(esQuery._source) == false) &&
+          (angular.isDefined(esQuery.from) == false) &&
+          (angular.isDefined(esQuery.size) == false) &&
+          (esQuery.params.from === 0) &&
+          (esQuery.params.size === 10)
+        );
       }).
       respond(200, mockES7Results);
 

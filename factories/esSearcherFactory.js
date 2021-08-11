@@ -40,6 +40,7 @@
     Searcher.prototype.explainOther     = explainOther;
     Searcher.prototype.explain          = explain;
     Searcher.prototype.majorVersion     = majorVersion;
+    Searcher.prototype.isTemplateCall   = isTemplateCall;
 
 
     function addDocToGroup (groupedBy, group, solrDoc) {
@@ -139,8 +140,14 @@
 
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);
       if (self.pagerArgs) {
-        queryDslWithPagerArgs.from = self.pagerArgs.from;
-        queryDslWithPagerArgs.size = self.pagerArgs.size;
+        if (esUrlSvc.isTemplateCall(uri)) {
+          queryDslWithPagerArgs.params.from = self.pagerArgs.from;
+          queryDslWithPagerArgs.params.size = self.pagerArgs.size;
+        }
+        else {
+          queryDslWithPagerArgs.from = self.pagerArgs.from;
+          queryDslWithPagerArgs.size = self.pagerArgs.size;
+        }
       }
 
       if (esUrlSvc.isTemplateCall(uri)) {
@@ -358,6 +365,12 @@
       } else {
         return null;
       }
+    }
+
+    function isTemplateCall() {
+      var self = this;
+
+      return esUrlSvc.isTemplateCall(esUrlSvc.parseUrl(self.url));
     }
 
     // Return factory object
