@@ -40,6 +40,7 @@
     Searcher.prototype.explainOther     = explainOther;
     Searcher.prototype.explain          = explain;
     Searcher.prototype.majorVersion     = majorVersion;
+    Searcher.prototype.isTemplateCall   = isTemplateCall;
 
 
     function addDocToGroup (groupedBy, group, solrDoc) {
@@ -117,7 +118,9 @@
         apiMethod = 'bulk';
       }
 
-      if (apiMethod === 'get' ) {
+      // Using templates assumes that the _source field is defined
+      // in the template, not passed in
+      if (apiMethod === 'get' && !esUrlSvc.isTemplateCall(uri)) {
         var fieldList = (self.fieldList === '*') ? '*' : self.fieldList.join(',');
 
         if ( 5 <= self.majorVersion() ) {
@@ -137,8 +140,21 @@
 
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);
       if (self.pagerArgs) {
-        queryDslWithPagerArgs.from = self.pagerArgs.from;
-        queryDslWithPagerArgs.size = self.pagerArgs.size;
+        if (esUrlSvc.isTemplateCall(uri)) {
+          queryDslWithPagerArgs.params.from = self.pagerArgs.from;
+          queryDslWithPagerArgs.params.size = self.pagerArgs.size;
+        }
+        else {
+          queryDslWithPagerArgs.from = self.pagerArgs.from;
+          queryDslWithPagerArgs.size = self.pagerArgs.size;
+        }
+      }
+
+      if (esUrlSvc.isTemplateCall(uri)) {
+        console.log("DUDE:");
+        console.log(queryDslWithPagerArgs);
+        delete queryDslWithPagerArgs._source;
+        delete queryDslWithPagerArgs.highlight;
       }
 
       self.inError  = false;
@@ -349,6 +365,12 @@
       } else {
         return null;
       }
+    }
+
+    function isTemplateCall() {
+      var self = this;
+
+      return esUrlSvc.isTemplateCall(esUrlSvc.parseUrl(self.url));
     }
 
     // Return factory object

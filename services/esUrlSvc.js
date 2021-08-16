@@ -15,6 +15,7 @@ angular.module('o19s.splainer-search')
       self.setParams        = setParams;
       self.getHeaders       = getHeaders;
       self.isBulkCall       = isBulkCall;
+      self.isTemplateCall   = isTemplateCall;
 
       /**
        *
@@ -155,6 +156,10 @@ angular.module('o19s.splainer-search')
 
       function isBulkCall (uri) {
         return uri.pathname.endsWith('_msearch');
+      }
+      
+      function isTemplateCall (uri) {
+        return uri.pathname.endsWith('_search/template');
       }
     }
   ]);
