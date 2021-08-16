@@ -1,4 +1,7 @@
-Version numbers correspond to `package.json` version
+Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
+
+# 2.8.0 (2021-08-16)
+- Support Elasticsearch templates in querying.   Any URL that ends in `/template` for Elasticsearch will be assumed to be a template query.  Thanks @danielibars for encouragement and testing.  https://github.com/o19s/splainer-search/pull/92 by @epugh.
 
 # 2.7.0 (2021-07-28)
 - Introduce to `searchFactory` the property `parsedQueryDetails` that stores details about the query
