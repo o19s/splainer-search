@@ -1533,4 +1533,90 @@ describe('Service: searchSvc: ElasticSearch', function() {
       expect(called).toEqual(1);
     });
   });
+  describe('scripted fields', function() {
+    var mockScriptedResults = {
+      hits: {
+        "total" : {
+              "value": 2,
+              "relation": "eq"
+          },
+        'max_score': 1.0,
+        hits: [
+          {
+            '_index': 'statedecoded',
+            '_type':  'law',
+            '_id':    'l_1',
+            '_score': 5.0,
+            '_source': {
+              'vote_avg_times_two': [15.399999618530273]
+            },
+          },
+          {
+            '_index': 'statedecoded',
+            '_type':  'law',
+            '_id':    'l_1',
+            '_score': 3.0,
+            '_source': {
+              'vote_avg_times_two':  [10.800000190734863],
+            }
+          }
+        ]
+      }
+    };
+
+    beforeEach(inject(function () {
+      mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title vote_avg_times_two');
+      var mockEsParams  = {
+        query: {
+          match: {
+            title: "#$query##"
+          }
+        },
+        script_fields: {
+          vote_avg_times_two: {
+            script: {
+              lang: "painless",
+              source: "doc['vote_average'].value * 2"
+            }
+          }
+        }
+      };
+
+
+
+
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        { },
+        'es'
+      );
+    }));
+
+    it('returns docs, with the scripted fields as a property on the doc', function() {
+      $httpBackend.expectPOST(mockEsUrl).
+      respond(200, mockScriptedResults);
+
+      var called = 0;
+
+      searcher.search()
+      .then(function() {
+        var docs = searcher.docs;
+        expect(docs.length === 2);
+
+        expect(searcher.numFound).toEqual(2);
+
+        expect(docs[0].vote_avg_times_two).toEqual(15.399999618530273);
+        expect(docs[1].vote_avg_times_two).toEqual(10.800000190734863);
+
+        called++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+    });
+  });
 });
