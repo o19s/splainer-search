@@ -1,5 +1,9 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.9.0 (2021-08-20)
+- Support Elasticsearch scripted fields in querying.  Thanks @dmitrykey for encouragement and testing.  Thanks to @CGamesPlay for the implementation via https://github.com/o19s/splainer-search/pull/90.
+
+
 # 2.8.0 (2021-08-16)
 - Support Elasticsearch templates in querying.   Any URL that ends in `/template` for Elasticsearch will be assumed to be a template query.  Thanks @danielibars for encouragement and testing.  https://github.com/o19s/splainer-search/pull/92 by @epugh.
 
