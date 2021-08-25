@@ -151,8 +151,6 @@
       }
 
       if (esUrlSvc.isTemplateCall(uri)) {
-        console.log("DUDE:");
-        console.log(queryDslWithPagerArgs);
         delete queryDslWithPagerArgs._source;
         delete queryDslWithPagerArgs.highlight;
       }
