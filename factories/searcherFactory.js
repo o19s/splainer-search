@@ -10,6 +10,7 @@
     var Searcher = function(options, preprocessor) {
       var self                = this;
 
+      // Methods that we expect all engines to provide
       self.fieldList          = options.fieldList;
       self.hlFieldList        = options.hlFieldList;
       self.url                = options.url;
@@ -24,7 +25,6 @@
       self.inError            = false;
       self.othersExplained    = {};
       self.parsedQueryDetails = {};
-      self.queryDetails       = {};
 
       self.HIGHLIGHTING_PRE   = options.HIGHLIGHTING_PRE;
       self.HIGHLIGHTING_POST  = options.HIGHLIGHTING_POST;

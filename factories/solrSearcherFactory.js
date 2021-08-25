@@ -34,8 +34,8 @@
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
     Searcher.prototype.explainOther     = explainOther;
+    Searcher.prototype.queryDetails     = {};
 
-    Searcher.prototype.querqyInfoLog    = querqyInfoLog;
 
     function addDocToGroup (groupedBy, group, solrDoc) {
       /*jslint validthis:true*/
@@ -310,9 +310,6 @@
           $log.debug('Failed to run explainOther');
           return response;
         });
-    }
-
-    function querqyInfoLog (solrResp) {
     }
 
     // Return factory object

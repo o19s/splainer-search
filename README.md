@@ -270,7 +270,7 @@ Send `echoParams=all` to Solr to trigger this behavior.
 
 ### Elasticsearch
 
-TBD
+There doesn't appear to be an equivalent feature.
 
 ## Understanding query input parsing
 
