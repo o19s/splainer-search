@@ -1,5 +1,10 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.10.0 (2021-08-25)
+- Return Solr query params in the `responseHeader.params` if they exist as `searcher.parsedQueryDetails`.
+- Ran `npm audit` and upgraded dependencies.
+
+
 # 2.9.0 (2021-08-20)
 - Support Elasticsearch scripted fields in querying.  Thanks @dmitrykey for encouragement and testing.  Thanks to @CGamesPlay for the implementation via https://github.com/o19s/splainer-search/pull/90.
 
