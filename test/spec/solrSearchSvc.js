@@ -452,6 +452,40 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
+    it('populates raw query details', function() {
+      createSearcherWithDebug();
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+                              .respond(200, fullSolrResp);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var queryDetails = searcher.queryDetails;
+        expect(Object.keys(queryDetails).length).toBe(8);
+        expect(queryDetails['df']).toEqual('content');
+        expect(queryDetails['indent']).toEqual(['true','true']);
+      });
+      $httpBackend.flush();
+      expect(called).toBe(1);
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('returns empty hash on no params', function() {
+      createSearcherWithDebug();
+      var copiedResp = angular.copy(fullSolrResp);
+      delete copiedResp.responseHeader;
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+                              .respond(200, copiedResp);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        expect(searcher.queryDetails).toEqual({});
+
+      });
+      $httpBackend.flush();
+      expect(called).toBe(1);
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
     it('returns null on no explain', function() {
       createSearcherWithDebug();
       var copiedResp = angular.copy(fullSolrResp);

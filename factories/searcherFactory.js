@@ -24,6 +24,7 @@
       self.inError            = false;
       self.othersExplained    = {};
       self.parsedQueryDetails = {};
+      self.queryDetails       = {};
 
       self.HIGHLIGHTING_PRE   = options.HIGHLIGHTING_PRE;
       self.HIGHLIGHTING_POST  = options.HIGHLIGHTING_POST;

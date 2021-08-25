@@ -159,6 +159,17 @@
         return queryParsingData;
       };
 
+      var getQueryDetails = function(solrResp) {
+        var queryDetails = {};
+        if (solrResp.hasOwnProperty('responseHeader')) {
+          var responseHeader = solrResp.responseHeader;
+          if (responseHeader.hasOwnProperty('params')) {
+            queryDetails = solrResp.responseHeader.params;
+          }
+        }
+        return queryDetails;
+      };
+
       var getHlData = function(solrResp) {
         if (solrResp.hasOwnProperty('highlighting')) {
           return solrResp.highlighting;
@@ -179,6 +190,7 @@
             var hlDict    = getHlData(solrResp);
             thisSearcher.othersExplained = getOthersExplained(solrResp);
             thisSearcher.parsedQueryDetails = getQueryParsingData(solrResp);
+            thisSearcher.queryDetails = getQueryDetails(solrResp);
 
             var parseSolrDoc = function(solrDoc, groupedBy, group) {
               var options = {
