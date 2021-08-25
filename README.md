@@ -255,6 +255,23 @@ Path (or _field name_): "variants.name"
 Result: [ "red", "blue" ]
 ```
 
+##  Understanding query parameters
+
+Sometimes we want to understand what queries are being sent to the search engine, and it can be a bit opaque if we are going through a  API or if we have
+parameters being appended inside the search engine  (think Paramsets in Solr or
+templates in ES).
+
+Consule the `searcher.parsedQueryDetails` property to get a search engine specific  JSON data structure.
+
+### Solr
+
+For Solr we check if the `responseHeader.params` array exists, and return that.
+Send `echoParams=all` to Solr to trigger this behavior.  
+
+### Elasticsearch
+
+There doesn't appear to be an equivalent feature.
+
 ## Understanding query input parsing
 
 Frequently we want to understand what the search engine is doing to the raw query input.  
