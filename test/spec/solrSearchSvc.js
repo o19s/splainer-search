@@ -362,11 +362,11 @@ describe('Service: searchSvc: Solr', function () {
 
     var createSearcherDebugOff = function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:path content');
-      var noHlConfig = searchSvc.configFromDefault();
-      noHlConfig.debug = false;
+      var noDebugConfig = searchSvc.configFromDefault();
+      noDebugConfig.debug = false;
       searcher = searchSvc.createSearcher(fieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText,
-                                                  noHlConfig);
+                                                  noDebugConfig);
     };
 
     var mockQuerqyInfolog = {
@@ -515,6 +515,24 @@ describe('Service: searchSvc: Solr', function () {
       });
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('handles parsing the debug json when debug is set to null versus empty array', function() {
+      console.log("\n\n\n HERE WE GO \n\n\n")
+      createSearcherWithDebug();
+      var copiedResp = angular.copy(fullSolrResp);
+      copiedResp.debug = null;
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+                              .respond(200, copiedResp);
+      searcher.search().then(function() {
+        var solrDocs = searcher.docs;
+        expect(solrDocs[0].explain('http://larkin.com/index/')).toBe(null);
+        expect(solrDocs[1].explain('http://www.rogahnbins.com/main.html')).toBe(null);
+      });
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+
+      console.log("\n\n\n DONE \n\n\n")
     });
   });
 
