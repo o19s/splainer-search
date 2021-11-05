@@ -518,7 +518,6 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('handles parsing the debug json when debug is set to null versus empty array', function() {
-      console.log("\n\n\n HERE WE GO \n\n\n")
       createSearcherWithDebug();
       var copiedResp = angular.copy(fullSolrResp);
       copiedResp.debug = null;
@@ -531,8 +530,6 @@ describe('Service: searchSvc: Solr', function () {
       });
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
-
-      console.log("\n\n\n DONE \n\n\n")
     });
   });
 
