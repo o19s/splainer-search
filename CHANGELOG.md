@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.11.0 (2021-11-05)
+- Solr typically returns empty arrays in the response when it doesn't have data, however we have seen that people mocking up a Solr response might return a `null` instead of a `{}` array.  Now check that situation as well.
+
 # 2.10.0 (2021-08-25)
 - Return Solr query params in the `responseHeader.params` if they exist as `searcher.parsedQueryDetails`.
 - Ran `npm audit` and upgraded dependencies.

@@ -70,11 +70,11 @@
       var rows      = self.config.numberOfRows;
       var nextArgs  = angular.copy(self.args);
 
-      if (nextArgs.hasOwnProperty('rows')) {
+      if (nextArgs.hasOwnProperty('rows') && nextArgs.rows !== null) {
         rows = parseInt(nextArgs.rows);
       }
 
-      if (nextArgs.hasOwnProperty('start')) {
+      if (nextArgs.hasOwnProperty('start') && nextArgs.start !== null) {
         start = parseInt(nextArgs.start) + rows;
 
         if (start >= self.numFound) {
@@ -118,9 +118,10 @@
       var thisSearcher = self;
 
       var getExplData = function(solrResp) {
-        if (solrResp.hasOwnProperty('debug')) {
+
+        if (solrResp.hasOwnProperty('debug') && solrResp.debug !== null) {
           var dbg = solrResp.debug;
-          if (dbg.hasOwnProperty('explain')) {
+          if (dbg.hasOwnProperty('explain') && dbg.explain !== null) {
             return dbg.explain;
           }
         }
@@ -128,9 +129,9 @@
       };
 
       var getOthersExplained = function(solrResp) {
-        if (solrResp.hasOwnProperty('debug')) {
+        if (solrResp.hasOwnProperty('debug') && solrResp.debug !== null) {
           var dbg = solrResp.debug;
-          if (dbg.hasOwnProperty('explainOther')) {
+          if (dbg.hasOwnProperty('explainOther') && dbg.explainOther !== null) {
             return dbg.explainOther;
           }
         }
@@ -138,7 +139,7 @@
 
       var getQueryParsingData = function(solrResp) {
         var queryParsingData = {};
-        if (solrResp.hasOwnProperty('debug')) {
+        if (solrResp.hasOwnProperty('debug') && solrResp.debug !== null) {
           var keysToIgnore = ['track', 'timing', 'explain', 'explainOther'];
           var dbg = solrResp.debug;
           var keys = Object.keys(dbg);
@@ -153,7 +154,7 @@
           });
         }
 
-        if (solrResp.hasOwnProperty('querqy.infoLog')) {
+        if (solrResp.hasOwnProperty('querqy.infoLog') && solrResp['querqy.infoLog'] !== null) {
           queryParsingData['querqy.infoLog'] = solrResp['querqy.infoLog'];
         }
         return queryParsingData;
@@ -161,9 +162,9 @@
 
       var getQueryDetails = function(solrResp) {
         var queryDetails = {};
-        if (solrResp.hasOwnProperty('responseHeader')) {
+        if (solrResp.hasOwnProperty('responseHeader') && solrResp.responseHeader !== null) {
           var responseHeader = solrResp.responseHeader;
-          if (responseHeader.hasOwnProperty('params')) {
+          if (responseHeader.hasOwnProperty('params') && responseHeader.params !== null) {
             queryDetails = solrResp.responseHeader.params;
           }
         }
@@ -171,7 +172,7 @@
       };
 
       var getHlData = function(solrResp) {
-        if (solrResp.hasOwnProperty('highlighting')) {
+        if (solrResp.hasOwnProperty('highlighting') && solrResp.highlighting !== null) {
           return solrResp.highlighting;
         }
         return {};
@@ -208,19 +209,19 @@
               return new SolrDocFactory(solrDoc, options);
             };
 
-            if (solrResp.hasOwnProperty('response')) {
+            if (solrResp.hasOwnProperty('response') && solrResp.response !== null) {
               angular.forEach(solrResp.response.docs, function(solrDoc) {
                 var doc = parseSolrDoc(solrDoc);
                 thisSearcher.numFound = solrResp.response.numFound;
                 thisSearcher.docs.push(doc);
               });
-            } else if (solrResp.hasOwnProperty('grouped')) {
+            } else if (solrResp.hasOwnProperty('grouped') && solrResp.grouped !== null) {
               angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
 
                 thisSearcher.numFound = groupedBy.matches;
                 // add docs for a top level group
                 //console.log(groupedBy.doclist.docs);
-                if (groupedBy.hasOwnProperty('doclist')) {
+                if (groupedBy.hasOwnProperty('doclist') && groupedBy.doclist !== null) {
                   angular.forEach(groupedBy.doclist.docs, function (solrDoc) {
                     var doc = parseSolrDoc(solrDoc, groupedByName, solrDoc[groupedByName]);
                     thisSearcher.docs.push(doc);
