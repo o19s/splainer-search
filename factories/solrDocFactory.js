@@ -40,33 +40,24 @@
       });
     };
 
-    // a URL to access a the specified docId
-    var buildTokensUrl = function(fieldList, url, idField, docId) {
+    /**
+     *
+     * Builds Solr URL for a single Solr document.
+     */
+    var buildDocUrl = function(fieldList, url, idField, docId) {
       var escId = encodeURIComponent(solrUrlSvc.escapeUserQuery(docId));
 
-      var tokensArgs = {
+      var urlArgs = {
         'indent': ['true'],
-        'wt': ['xml'],
-        //'q': [idField + ':' + escId],
-        'facet': ['true'],
-        'facet.field': [],
-        'facet.mincount': ['1'],
+        'wt': ['json']
       };
-      if (fieldList !== '*') {
-
-        angular.forEach(fieldList, function(fieldName) {
-          if (fieldName !== 'score') {
-            tokensArgs['facet.field'].push(fieldName);
-          }
-        });
-      }
-      return solrUrlSvc.buildUrl(url, tokensArgs) + '&q=' + idField + ':'  + escId;
+      return solrUrlSvc.buildUrl(url, urlArgs) + '&q=' + idField + ':'  + escId;
     };
 
     function _url (idField, docId) {
       /*jslint validthis:true*/
       var self = this;
-      return buildTokensUrl(self.options().fieldList, self.options().url, idField, docId);
+      return buildDocUrl(self.options().fieldList, self.options().url, idField, docId);
     }
 
     function explain (docId) {

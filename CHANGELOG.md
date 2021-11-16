@@ -1,5 +1,9 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.12.0 (???)
+- Links to individual Documents generated for Solr search engines (`doc._url()`) have faceting turned on for ALL of the fields listed.  This may be a feature to help you understand about a single document, however I don't quite have a use case that makes sense.  
+
+
 # 2.11.0 (2021-11-05)
 - Solr typically returns empty arrays in the response when it doesn't have data, however we have seen that people mocking up a Solr response might return a `null` instead of a `{}` array.  Now check that situation as well.
 

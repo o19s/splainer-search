@@ -662,7 +662,7 @@ describe('Service: searchSvc: Solr', function () {
       expect(called).toBe(1);
     });
 
-    it('makes querydocs with tokensUrl', function() {
+    it('makes querydocs with document url with NO facet', function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,
@@ -676,11 +676,15 @@ describe('Service: searchSvc: Solr', function () {
 
       searcher.search().then(function() {
         var solrDocs = searcher.docs;
+
+        // To confirm that we no longer construct a _url with facet parameters.
         var expectedFacetField = {
           'facet.field': ['field1', 'field']
         };
         angular.forEach(solrDocs, function(doc) {
-          expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc._url('id', '12'))).toBeTruthy();
+          expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc._url('id', '12'))).toBeFalsy();
+
+          expect(doc._url('id', '12').indexOf('wt=json')).not.toBe(-1);
         });
       });
       $httpBackend.flush();
@@ -705,36 +709,8 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
-    it('doesnt include score in facetfield', function() {
-      var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
-      var searcher = searchSvc.createSearcher(
-        fieldSpecWithScore,
-        mockSolrUrl,
-        mockSolrParams,
-        mockQueryText
-      );
 
-      $httpBackend.expectJSONP(
-        urlContainsParams(mockSolrUrl, expectedParams)
-      ).respond(200, mockResults);
-
-      searcher.search().then(function() {
-        var solrDocs = searcher.docs;
-        var expectedFacetField = {
-          'facet.field': ['field1', 'field']
-        };
-
-        angular.forEach(solrDocs, function(doc) {
-          expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc._url('id', 'foo'))).toBeTruthy();
-          expect(doc._url('id', 'foo').match(/facet.field=score/)).toBeFalsy();
-        });
-      });
-
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-    });
-
-    it('linkurl has wt=xml', function() {
+    it('linkurl has wt=json', function() {
       var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
       var searcher = searchSvc.createSearcher(fieldSpecWithScore, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
