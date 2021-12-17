@@ -1,7 +1,7 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
-# 2.12.0 (???)
-- Links to individual Documents generated for Solr search engines (`doc._url()`) have faceting turned on for ALL of the fields listed.  This may be a feature to help you understand about a single document, however I don't quite have a use case that makes sense.  
+# 2.12.0 (2021-12-17)
+- Links to individual Documents generated for Solr search engines (`doc._url()`) have faceting turned on for ALL of the fields listed.  This may be a feature to help you understand about a single document, however I don't quite have a use case that makes sense.  @jeffryedvm showed me it taking 30 seconds to query a single Solr doc due to what was blindly being faceted on, and opened https://github.com/o19s/quepid/issues/442.  
 
 
 # 2.11.0 (2021-11-05)
