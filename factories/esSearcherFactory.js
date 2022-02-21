@@ -153,6 +153,8 @@
       if (esUrlSvc.isTemplateCall(uri)) {
         delete queryDslWithPagerArgs._source;
         delete queryDslWithPagerArgs.highlight;
+      } else if (self.config.highlight===false) {
+        delete queryDslWithPagerArgs.highlight;
       }
 
       self.inError  = false;

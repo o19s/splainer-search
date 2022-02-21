@@ -49,12 +49,12 @@
         };
       } else if ( settings.searchEngine === 'es' ) {
         self.args = {
-          'query': {
-            'ids': {
-              'values': ids
-            }
+          query: {
+            terms: {
+              [self.fieldSpec.id]: ids,
+            },
           },
-          size: ids.length
+          size: ids.length,
         };
       }
 
