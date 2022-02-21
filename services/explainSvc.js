@@ -38,14 +38,16 @@ angular.module('o19s.splainer-search')
         }
       };
 
-      var replaceBadJson = function(explJson) {
+      // Use a default json data structure if we have problems with our
+      // explanation json data
+      var replaceBadExplanationJson = function(explJson) {
         var explJsonIfBad = {
           details: [],
           description: 'no explain for doc',
           value: 0.0,
           match: true
         };
-        if (!explJson) {
+        if (!explJson || Object.keys(explJson).length === 0) {
           return explJsonIfBad;
         } else {
           return explJson;
@@ -55,7 +57,7 @@ angular.module('o19s.splainer-search')
       var tieRegex = /max plus ([0-9.]+) times/;
       var prefixRegex = /\:.*?\*(\^.+?)?, product of/;
       var createExplain = function(explJson) {
-        explJson = replaceBadJson(explJson);
+        explJson = replaceBadExplanationJson(explJson);
         var base = new Explain(explJson, createExplain);
         var description = explJson.description;
         var details = [];
