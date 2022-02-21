@@ -1,5 +1,10 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.13.0 (2022-02-21)
+- Support an empty explanation hash in the response from either ES or Solr.   @A2Kashyap proxied a custom API to look like Elasticsearch response to Quepid, and therefore the explain output looked like `"_explanation": {}`, which we hadn't expected.  https://github.com/o19s/quepid/issues/465 by @A2Kashyap is fixed by https://github.com/o19s/splainer-search/pull/102 by @epugh.
+
+- Handle both id field as `_id` (standard) and any alternative ID field in Elasticsearch when comparing Snapshots.  Issue opened by @KennyLindahl at https://github.com/o19s/quepid/issues/466 and fixed by @KennyLindahl via https://github.com/o19s/splainer-search/pull/101!
+
 # 2.12.0 (2021-12-17)
 - Links to individual Documents generated for Solr search engines (`doc._url()`) have faceting turned on for ALL of the fields listed.  This may be a feature to help you understand about a single document, however I don't quite have a use case that makes sense.  @jeffryedvm showed me it taking 30 seconds to query a single Solr doc due to what was blindly being faceted on, and opened https://github.com/o19s/quepid/issues/442.  
 
