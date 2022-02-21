@@ -12,7 +12,7 @@ describe('Service: explainSvc', function () {
   }));
 
   /* global mockExplain */
-  it('parses mockData1', function() {
+  it('parses mockExplain', function() {
     explainSvc.createExplain(mockExplain);
   });
 
@@ -20,7 +20,15 @@ describe('Service: explainSvc', function () {
     var exp = explainSvc.createExplain(null);
     expect(exp.influencers.length).toEqual(0);
     expect(exp.contribution()).toEqual(0);
-    expect(exp.explanation()).toContain('no explain');
+    expect(exp.explanation()).toContain('no explain for doc');
+  });
+
+  it('handles an empty explain hash', function() {
+    var emptyExplain = {};
+    var exp = explainSvc.createExplain(emptyExplain);
+    expect(exp.influencers.length).toEqual(0);
+    expect(exp.contribution()).toEqual(0);
+    expect(exp.explanation()).toContain('no explain for doc');
   });
 
   it('how does it perform', function() {
