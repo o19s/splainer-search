@@ -157,6 +157,9 @@
         if (solrResp.hasOwnProperty('querqy.infoLog') && solrResp['querqy.infoLog'] !== null) {
           queryParsingData['querqy.infoLog'] = solrResp['querqy.infoLog'];
         }
+        if (solrResp.hasOwnProperty('querqy_decorations') && solrResp['querqy_decorations'] !== null) {
+          queryParsingData['querqy_decorations'] = solrResp['querqy_decorations'];
+        }
         return queryParsingData;
       };
 

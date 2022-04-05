@@ -379,6 +379,8 @@ describe('Service: searchSvc: Solr', function () {
       ]
     };
 
+    var mockQuerqyDecorations = ["REDIRECT https://www.example.org/"];
+
     it('populates explain()', function() {
       createSearcherWithDebug();
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
@@ -446,6 +448,27 @@ describe('Service: searchSvc: Solr', function () {
         expect(Object.keys(parsedQueryDetails).length).toBe(6);
         expect(parsedQueryDetails['rawquerystring']).toEqual('*:*');
         expect(parsedQueryDetails['querqy.infoLog']).toEqual(mockQuerqyInfolog);
+      });
+      $httpBackend.flush();
+      expect(called).toBe(1);
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('identifies querqy_decorations presence and adds to parsedQueryDetails', function() {
+      createSearcherWithDebug();
+
+      var mockSolrResultsWithQuerqyDecorations = angular.copy(fullSolrResp);
+      mockSolrResultsWithQuerqyDecorations['querqy_decorations']= mockQuerqyDecorations;
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+                              .respond(200, mockSolrResultsWithQuerqyDecorations);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var parsedQueryDetails = searcher.parsedQueryDetails;
+        expect(Object.keys(parsedQueryDetails).length).toBe(6);
+        expect(parsedQueryDetails['rawquerystring']).toEqual('*:*');
+        expect(parsedQueryDetails['querqy_decorations']).toEqual(mockQuerqyDecorations);
       });
       $httpBackend.flush();
       expect(called).toBe(1);
