@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.15.0 (2022-04-12)
+- You can supply a prefix for a image field type by using JSON: `id, title:tile, {"name": "relative_image_url_s", "type":"image", "prefix": "https://i.imgur.com"}`.   This will open up a lot of new ideas for managing your field specification.
+
 # 2.14.0 (2022-04-05)
 - Using Querqy with Solr?   We now return the `querqy_decorations` details in the `parsedQueryDetails` property.
 
