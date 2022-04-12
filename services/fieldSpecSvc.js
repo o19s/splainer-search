@@ -3,7 +3,7 @@
 angular.module('o19s.splainer-search')
   .service('fieldSpecSvc', [
     function fieldSpecSvc() {
-      var addFieldOfType = function(fieldSpec, fieldType, fieldName) {
+      var addFieldOfType = function(fieldSpec, fieldType, fieldName, fieldOptions) {
         if (['f', 'func', 'function'].includes(fieldType)) {
           if (!fieldSpec.hasOwnProperty('functions')) {
             fieldSpec.functions = [];
@@ -48,57 +48,66 @@ angular.module('o19s.splainer-search')
         }
         else if (!fieldSpec.hasOwnProperty(fieldType)) {
           fieldSpec[fieldType] = fieldName;
+          fieldSpec[fieldType + '_options'] = fieldOptions;
+
         }
         fieldSpec.fields.push(fieldName);
       };
 
       // Populate field spec from a field spec string
       var populateFieldSpec = function(fieldSpec, fieldSpecStr) {
-        //var fieldSpecs = fieldSpecStr.split('+').join(' ').split(/[\s,]+/);
 
         var fieldSpecs = [];
         var fieldSpecStrToConsume = fieldSpecStr.split('+').join(' ');
-        console.log("about to start cycle\n")
         for (let chunkEnd = -1; fieldSpecStrToConsume.length > 0; ){
-          console.log("c:" + fieldSpecStrToConsume)
-          chunkEnd = fieldSpecStrToConsume.search(/[\s,]+/);
-          if (chunkEnd === -1){
-            chunkEnd = fieldSpecStrToConsume.length;
+          if (fieldSpecStrToConsume[0] === '{'){
+            chunkEnd = fieldSpecStrToConsume.indexOf('}') + 1;
+          }
+          else {
+            chunkEnd = fieldSpecStrToConsume.search(/[\s,]+/);
+            if (chunkEnd === -1){
+              chunkEnd = fieldSpecStrToConsume.length;
+            }
           }
           fieldSpecs.push(fieldSpecStrToConsume.substr(0,chunkEnd));
           fieldSpecStrToConsume = fieldSpecStrToConsume.substr(chunkEnd+1, fieldSpecStrToConsume.length);
 
-          console.log("fs:" + fieldSpecs)
         }
 
-        console.log("dude")
-        console.log(fieldSpecs)
-        //console.log(fieldSpecs.constructor.name)
-        console.log("man")
-        console.log(fieldSpecStr.split('+').join(' ').split(/[\s,]+/))
-        //console.log(fieldSpecStr.split('+').join(' ').split(/[\s,]+/).constructor.name)
-
-
         angular.forEach(fieldSpecs, function(aField) {
-          var specElements = aField.split(':');
+
           var fieldTypes = null;
           var fieldName = null;
-          if (specElements.length === 1) {
-            fieldName = specElements[0];
-            if (fieldSpec.hasOwnProperty('title')) {
-              fieldTypes = ['sub'];
+          var fieldOptions = null;
+          if (aField[0] === '{'){
+            var fieldDefinition = JSON.parse(aField);
+
+            fieldName = fieldDefinition.name
+            fieldTypes = [fieldDefinition.type]
+            delete fieldDefinition.name;
+            delete fieldDefinition.type;
+            fieldOptions = fieldDefinition;
+
+          }
+          else {
+            var specElements = aField.split(':');
+            if (specElements.length === 1) {
+              fieldName = specElements[0];
+              if (fieldSpec.hasOwnProperty('title')) {
+                fieldTypes = ['sub'];
+              }
+              else {
+                fieldTypes = ['title'];
+              }
+            } else if (specElements.length > 1) {
+              fieldName = specElements.pop();
+              fieldTypes = specElements;
             }
-            else {
-              fieldTypes = ['title'];
-            }
-          } else if (specElements.length > 1) {
-            fieldName = specElements.pop();
-            fieldTypes = specElements;
           }
 
           if (fieldTypes && fieldName) {
             angular.forEach(fieldTypes, function(fieldType) {
-              addFieldOfType(fieldSpec, fieldType, fieldName);
+              addFieldOfType(fieldSpec, fieldType, fieldName, fieldOptions);
             });
           }
         });
