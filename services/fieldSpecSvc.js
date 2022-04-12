@@ -54,7 +54,31 @@ angular.module('o19s.splainer-search')
 
       // Populate field spec from a field spec string
       var populateFieldSpec = function(fieldSpec, fieldSpecStr) {
-        var fieldSpecs = fieldSpecStr.split('+').join(' ').split(/[\s,]+/);
+        //var fieldSpecs = fieldSpecStr.split('+').join(' ').split(/[\s,]+/);
+
+        var fieldSpecs = [];
+        var fieldSpecStrToConsume = fieldSpecStr.split('+').join(' ');
+        console.log("about to start cycle\n")
+        for (let chunkEnd = -1; fieldSpecStrToConsume.length > 0; ){
+          console.log("c:" + fieldSpecStrToConsume)
+          chunkEnd = fieldSpecStrToConsume.search(/[\s,]+/);
+          if (chunkEnd === -1){
+            chunkEnd = fieldSpecStrToConsume.length;
+          }
+          fieldSpecs.push(fieldSpecStrToConsume.substr(0,chunkEnd));
+          fieldSpecStrToConsume = fieldSpecStrToConsume.substr(chunkEnd+1, fieldSpecStrToConsume.length);
+
+          console.log("fs:" + fieldSpecs)
+        }
+
+        console.log("dude")
+        console.log(fieldSpecs)
+        //console.log(fieldSpecs.constructor.name)
+        console.log("man")
+        console.log(fieldSpecStr.split('+').join(' ').split(/[\s,]+/))
+        //console.log(fieldSpecStr.split('+').join(' ').split(/[\s,]+/).constructor.name)
+
+
         angular.forEach(fieldSpecs, function(aField) {
           var specElements = aField.split(':');
           var fieldTypes = null;
