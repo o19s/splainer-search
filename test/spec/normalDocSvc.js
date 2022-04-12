@@ -446,4 +446,35 @@ describe('Service: normalDocsSvc', function () {
 
   });
 
+  describe('handles additional field spec options in JSON format', function() {
+    var solrDoc = null;
+    var availableHighlight = null;
+    beforeEach(function() {
+      availableHighlight = 'something';
+      solrDoc = {'id': '1234',
+                 'title_field': 'a title',
+                 'relative_image': '/some/image.png',
+                 origin: function() {
+                   return this;
+                 },
+                 url: function() {
+                   return '';
+                  },
+                 explain: function() {return mockExplain;},
+                 highlight: function(ign, ign2, pre, post) {return pre + availableHighlight + post;}
+                  };
+    });
+
+    it('handles passing options for an image', function() {
+      var fieldSpec = {id: 'id', title: 'title_field', subs: ['relative_image'], image: 'relative_image', image_options: {prefix: 'http://example.org/'}};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.subs["relative_image"]).toEqual('/some/image.png');
+      expect(normalDoc.image).toEqual('/some/image.png');
+      expect(normalDoc.hasImage()).toBeTrue();
+      expect(normalDoc.image_options).toEqual({prefix: 'http://example.org/'});
+
+
+    });
+  });
+
 });

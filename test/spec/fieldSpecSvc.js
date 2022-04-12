@@ -232,6 +232,7 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldList).toContain("'foo.bar'");
   });
 
+  // Note, we may eliminate this as wonky and unused.  Eric.
   it('hl switch is working', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id, nohighlight, title:hl:titleCombo highlight:regular foo.bar');
     var hlFieldList = fieldSpec.highlightFieldList();
@@ -239,4 +240,14 @@ describe('Service: fieldSpecSvc', function () {
     expect(hlFieldList).toContain('titleCombo');
     expect(hlFieldList).not.toContain('nohighlight');
   });
+
+  it('handles json definition for images', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield {"name": "image_url", "type":"image", "prefix": "http://example.org/images", "height": 250} subfield2');
+    expect(fieldSpec.id).toEqual('foo_id');
+    expect(fieldSpec.title).toEqual('atitlefield');
+    expect(fieldSpec.image).toContain('image_url');
+    expect(fieldSpec.image_options).toEqual({prefix: "http://example.org/images", height: 250});
+    expect(fieldSpec.subs).toContain('subfield2');
+  });
+
 });
