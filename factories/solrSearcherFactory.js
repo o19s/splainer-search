@@ -5,7 +5,6 @@
 (function() {
   angular.module('o19s.splainer-search')
     .factory('SolrSearcherFactory', [
-      '$http',
       '$q',
       '$sce',
       '$log',
@@ -19,7 +18,7 @@
     ]);
 
   function SolrSearcherFactory(
-    $http, $q, $sce, $log,
+    $q, $sce, $log,
     SolrDocFactory, SearcherFactory, transportSvc,
     activeQueries, defaultSolrConfig,
     solrSearcherPreprocessorSvc
