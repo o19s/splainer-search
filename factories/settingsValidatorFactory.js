@@ -16,6 +16,7 @@
 
       self.searchUrl    = settings.searchUrl;
       self.searchEngine = settings.searchEngine;
+      self.apiMethod    = settings.apiMethod;
       self.version      = settings.version;
 
       self.searcher = null;
@@ -44,6 +45,7 @@
           '',
           {
             version: self.version,
+            apiMethod: self.apiMethod
           },
           self.searchEngine
         );
