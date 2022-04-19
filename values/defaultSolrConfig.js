@@ -7,5 +7,5 @@ angular.module('o19s.splainer-search')
     debug:        true,
     numberOfRows: 10,
     escapeQuery:  true,
-    apiMethod:    'jsonp'
+    apiMethod:    'JSONP'
   });
