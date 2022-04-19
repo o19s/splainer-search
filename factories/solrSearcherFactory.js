@@ -185,10 +185,7 @@
       return $q(function(resolve, reject) {
         var trustedUrl = $sce.trustAsResourceUrl(url);
 
-        console.log("DO WE HAVE options apiMethod?" + self.config.apiMethod);
-        //$http.jsonp(trustedUrl, { jsonpCallbackParam: 'json.wrf' })
         var transport = transportSvc.getTransport({apiMethod: self.config.apiMethod});
-        //console.log("Here is vartransport:" + transport.getClass())
 
         transport.query(trustedUrl, null, null)
           .then(function success(resp) {
