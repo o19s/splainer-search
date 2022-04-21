@@ -5,12 +5,12 @@
 (function() {
   angular.module('o19s.splainer-search')
     .factory('SolrSearcherFactory', [
-      '$http',
       '$q',
       '$sce',
       '$log',
       'SolrDocFactory',
       'SearcherFactory',
+      'transportSvc',
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
@@ -18,8 +18,8 @@
     ]);
 
   function SolrSearcherFactory(
-    $http, $q, $sce, $log,
-    SolrDocFactory, SearcherFactory,
+    $q, $sce, $log,
+    SolrDocFactory, SearcherFactory, transportSvc,
     activeQueries, defaultSolrConfig,
     solrSearcherPreprocessorSvc
   ) {
@@ -185,7 +185,9 @@
       return $q(function(resolve, reject) {
         var trustedUrl = $sce.trustAsResourceUrl(url);
 
-        $http.jsonp(trustedUrl, { jsonpCallbackParam: 'json.wrf' })
+        var transport = transportSvc.getTransport({apiMethod: self.config.apiMethod});
+
+        transport.query(trustedUrl, null, null)
           .then(function success(resp) {
             var solrResp = resp.data;
             activeQueries.count--;

@@ -43,7 +43,7 @@ describe('Service: searchSvc: Solr', function () {
     activeQueries.count = 0;
   }));
 
-  it('access solr with mock solr params', function() {
+  it('access solr with mock solr params using JSONP', function() {
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
     $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
@@ -52,6 +52,20 @@ describe('Service: searchSvc: Solr', function () {
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
   });
+
+  it('access solr with mock solr params using GET', function() {
+    // By default we talk to Solr with JSONP because Solr doesn't support cors.  However, if you
+    // want your Search API to look like Solr to Quepid, well, you don't need clunky JSONP.
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
+                                                mockSolrParams, mockQueryText, { apiMethod: 'get' });
+    $httpBackend.expectGET(urlContainsParams(mockSolrUrl, expectedParams))
+                            .respond(200, mockResults);
+    searcher.search();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+  });
+
+
 
   it('tracks active queries', function() {
     expect(searchSvc.activeQueries()).toEqual(0);
