@@ -4,13 +4,13 @@
 
 (function() {
   angular.module('o19s.splainer-search')
-    .factory('HttpJsonPTransportFactory', [
+    .factory('HttpJsonpTransportFactory', [
       'TransportFactory',
       '$http',
-      HttpJsonPTransportFactory
+      HttpJsonpTransportFactory
     ]);
 
-  function HttpJsonPTransportFactory(TransportFactory, $http) {
+  function HttpJsonpTransportFactory(TransportFactory, $http) {
     var Transport = function(options) {
       TransportFactory.call(this, options);
     };

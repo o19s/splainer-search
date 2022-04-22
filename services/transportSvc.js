@@ -4,12 +4,12 @@ angular.module('o19s.splainer-search')
   .service('transportSvc', [
     'HttpPostTransportFactory',
     'HttpGetTransportFactory',
-    'HttpJsonPTransportFactory',
+    'HttpJsonpTransportFactory',
     'BulkTransportFactory',
     function transportSvc(
       HttpPostTransportFactory,
       HttpGetTransportFactory,
-      HttpJsonPTransportFactory,
+      HttpJsonpTransportFactory,
       BulkTransportFactory
     ) {
       var self = this;
@@ -20,7 +20,7 @@ angular.module('o19s.splainer-search')
       var bulkTransport     = new BulkTransportFactory({});
       var httpPostTransport = new HttpPostTransportFactory({});
       var httpGetTransport  = new HttpGetTransportFactory({});
-      var httpJsonPTransport  = new HttpJsonPTransportFactory({});
+      var httpJsonpTransport  = new HttpJsonpTransportFactory({});
 
       function getTransport(options) {
         var apiMethod = options.apiMethod;
@@ -31,7 +31,7 @@ angular.module('o19s.splainer-search')
         if (apiMethod === 'BULK') {
           return bulkTransport;
         } else if (apiMethod === 'JSONP') {
-          return httpJsonPTransport;
+          return httpJsonpTransport;
         } else if (apiMethod === 'GET') {
           return httpGetTransport;
         } else {
