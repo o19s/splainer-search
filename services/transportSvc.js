@@ -27,6 +27,7 @@ angular.module('o19s.splainer-search')
         if (apiMethod !== undefined) {
           apiMethod = apiMethod.toUpperCase();
         }
+
         if (apiMethod === 'BULK') {
           return bulkTransport;
         } else if (apiMethod === 'JSONP') {
