@@ -70,7 +70,7 @@ angular.module('o19s.splainer-search')
 
         searcher.callUrl = buildCallUrl(searcher);
 
-        searcher.linkUrl = searcher.callUrl.replace('wt=json', 'wt=xml');
+        searcher.linkUrl = searcher.callUrl.replace('wt=xml', 'wt=json');
         searcher.linkUrl = searcher.linkUrl + '&indent=true&echoParams=all';
       }
     }
