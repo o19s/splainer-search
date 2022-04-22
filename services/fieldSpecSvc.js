@@ -82,8 +82,8 @@ angular.module('o19s.splainer-search')
           if (aField[0] === '{'){
             var fieldDefinition = JSON.parse(aField);
 
-            fieldName = fieldDefinition.name
-            fieldTypes = [fieldDefinition.type]
+            fieldName = fieldDefinition.name;
+            fieldTypes = [fieldDefinition.type];
             delete fieldDefinition.name;
             delete fieldDefinition.type;
             fieldOptions = fieldDefinition;

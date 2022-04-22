@@ -22,7 +22,7 @@
 
     function query(url, payload, headers) {
       // you don't get header or payload support with jsonp, it's akin to GET requests that way.
-      return $http.jsonp(url, { jsonpCallbackParam: 'json.wrf' })
+      return $http.jsonp(url, { jsonpCallbackParam: 'json.wrf' });
     }
 
     return Transport;
