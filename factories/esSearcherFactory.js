@@ -115,12 +115,12 @@
       var apiMethod = self.config.apiMethod;
 
       if ( esUrlSvc.isBulkCall(uri) ) {
-        apiMethod = 'bulk';
+        apiMethod = 'BULK';
       }
 
       // Using templates assumes that the _source field is defined
       // in the template, not passed in
-      if (apiMethod === 'get' && !esUrlSvc.isTemplateCall(uri)) {
+      if (apiMethod === 'GET' && !esUrlSvc.isTemplateCall(uri)) {
         var fieldList = (self.fieldList === '*') ? '*' : self.fieldList.join(',');
 
         if ( 5 <= self.majorVersion() ) {
