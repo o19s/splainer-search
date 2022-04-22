@@ -317,6 +317,7 @@ To run the tests:
 npm install
 npm test
 ```
+Tip: add an `f` in front of any `describe` or `it` in your unit tests to run just that unit test.
 
 We need to build a `splainer-search.js` file as part of the build.
 
