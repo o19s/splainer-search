@@ -23,7 +23,10 @@ angular.module('o19s.splainer-search')
       var httpJsonPTransport  = new HttpJsonPTransportFactory({});
 
       function getTransport(options) {
-        var apiMethod = options.apiMethod.toUpperCase();
+        var apiMethod = options.apiMethod;
+        if (apiMethod !== undefined) {
+          apiMethod = apiMethod.toUpperCase();
+        }
         if (apiMethod === 'BULK') {
           return bulkTransport;
         } else if (apiMethod === 'JSONP') {

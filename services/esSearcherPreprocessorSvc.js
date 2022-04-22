@@ -111,9 +111,9 @@ angular.module('o19s.splainer-search')
           searcher.config = angular.merge({}, defaultESConfig, searcher.config);
         }
 
-        if ( searcher.config.apiMethod === 'post') {
+        if ( searcher.config.apiMethod === 'POST') {
           preparePostRequest(searcher);
-        } else if ( searcher.config.apiMethod === 'get') {
+        } else if ( searcher.config.apiMethod === 'GET') {
           prepareGetRequest(searcher);
         }
       }

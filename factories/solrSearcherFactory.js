@@ -185,7 +185,12 @@
       return $q(function(resolve, reject) {
         var trustedUrl = $sce.trustAsResourceUrl(url);
 
-        var transport = transportSvc.getTransport({apiMethod: self.config.apiMethod});
+        var apiMethod = defaultSolrConfig.apiMethod; // Solr defaults to JSONP
+        if (self.config && self.config.apiMethod) {
+          apiMethod = self.config.apiMethod;
+        }
+
+        var transport = transportSvc.getTransport({apiMethod: apiMethod});
 
         transport.query(trustedUrl, null, null)
           .then(function success(resp) {
