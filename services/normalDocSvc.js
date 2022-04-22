@@ -152,9 +152,11 @@ angular.module('o19s.splainer-search')
         assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
         assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
         assignSingleField(normalDoc, doc, fieldSpec.image, 'image');
+        /* jshint -W106 */
         if (fieldSpec.image_options) {
             normalDoc.image_options = fieldSpec.image_options;
         }
+        /* jshint +W106 */
         normalDoc.titleField = fieldSpec.title;
         normalDoc.embeds = {};
         assignEmbeds(normalDoc, doc, fieldSpec);
