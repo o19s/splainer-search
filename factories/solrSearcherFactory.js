@@ -157,9 +157,12 @@
         if (solrResp.hasOwnProperty('querqy.infoLog') && solrResp['querqy.infoLog'] !== null) {
           queryParsingData['querqy.infoLog'] = solrResp['querqy.infoLog'];
         }
+        // Ignores jshint dot notation because it is a valid property name
+        /* jshint -W069*/
         if (solrResp.hasOwnProperty('querqy_decorations') && solrResp['querqy_decorations'] !== null) {
           queryParsingData['querqy_decorations'] = solrResp['querqy_decorations'];
         }
+        /* jsHint -W069 */
         return queryParsingData;
       };
 

@@ -4,13 +4,13 @@
 
 (function() {
   angular.module('o19s.splainer-search')
-    .factory('HttpJsonPTransportFactory', [
+    .factory('HttpJsonpTransportFactory', [
       'TransportFactory',
       '$http',
-      HttpJsonPTransportFactory
+      HttpJsonpTransportFactory
     ]);
 
-  function HttpJsonPTransportFactory(TransportFactory, $http) {
+  function HttpJsonpTransportFactory(TransportFactory, $http) {
     var Transport = function(options) {
       TransportFactory.call(this, options);
     };
@@ -20,9 +20,9 @@
 
     Transport.prototype.query = query;
 
-    function query(url, payload, headers) {
+    function query(url) {
       // you don't get header or payload support with jsonp, it's akin to GET requests that way.
-      return $http.jsonp(url, { jsonpCallbackParam: 'json.wrf' })
+      return $http.jsonp(url, { jsonpCallbackParam: 'json.wrf' });
     }
 
     return Transport;

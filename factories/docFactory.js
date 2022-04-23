@@ -23,8 +23,6 @@
     Doc.prototype.fieldsProperty = fieldsProperty;
 
     function groupedBy() {
-      /*jslint validthis:true*/
-      var self = this;
       if (this.opts.groupedBy === undefined) {
         return null;
       } else {
@@ -33,14 +31,10 @@
     }
 
     function options() {
-      /*jslint validthis:true*/
-      var self = this;
       return this.opts;
     }
 
     function group() {
-      /*jslint validthis:true*/
-      var self = this;
       if (this.opts.group === undefined) {
         return null;
       } else {
@@ -49,8 +43,6 @@
     }
 
     function version() {
-      /*jslint validthis:true*/
-      var self = this;
       if (this.opts.version === undefined) {
         return null;
       } else {
