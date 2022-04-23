@@ -53,7 +53,10 @@
     function fieldsProperty() {
       /*jslint validthis:true*/
       var self = this;
+      // Ignores jshint dot notation because it is a valid property name
+      /*jslint -W069*/
       return Object.assign({}, self['_source'], self['fields']);
+      /*jslint +W069*/
     }
 
     function explain () {

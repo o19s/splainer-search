@@ -20,7 +20,7 @@
 
     Transport.prototype.query = query;
 
-    function query(url, payload, headers) {
+    function query(url) {
       // you don't get header or payload support with jsonp, it's akin to GET requests that way.
       return $http.jsonp(url, { jsonpCallbackParam: 'json.wrf' });
     }
