@@ -1,5 +1,10 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+
+# 2.17.0 (2022-04-23)
+- Links to view Solr document should return JSON formatted docs instead of XML.   _Ok boomer?_   https://github.com/o19s/splainer-search/pull/107 by @begomeister.
+- Javascript linting!   https://github.com/o19s/splainer-search/pull/108 by @begomeister.
+
 # 2.16.0 (2022-04-21)
 - Introduce the ability to specify GET instead of the default JSONP method for talking to Solr.   Refactored to use the TransportFactory, similar to how we talk to Elasticsearch.   Baby step towards supporting Solr V2 API with POSTs.   https://github.com/o19s/splainer-search/pull/105 by @epugh.
 
