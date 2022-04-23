@@ -750,8 +750,20 @@ describe('Service: searchSvc: Solr', function () {
     it('linkurl has wt=json', function() {
       var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
       var searcher = searchSvc.createSearcher(fieldSpecWithScore, mockSolrUrl,
-                                                  mockSolrParams, mockQueryText);
-      expect(searcher.linkUrl.indexOf('wt=xml')).not.toBe(-1);
+                                                  mockSolrParams, mockQueryText);    
+      expect(searcher.linkUrl.indexOf('wt=json')).not.toBe(-1);
+    });
+
+    it('linkurl has wt=json even when specified as wt=xml', function() {
+      var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
+      var mockSolrParams = {
+        q: ['#$query##'],
+        fq: ['field:value', 'field1:value', 'field2:#$query##'],
+        wt: 'xml'
+      };
+      var searcher = searchSvc.createSearcher(fieldSpecWithScore, mockSolrUrl,
+                                                  mockSolrParams, mockQueryText);                                                
+      expect(searcher.linkUrl.indexOf('wt=json')).not.toBe(-1);
     });
 
     it('sanitizes solr arguments', function() {
