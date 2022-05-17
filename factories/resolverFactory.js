@@ -104,7 +104,7 @@
 
               return self.docs;
             }).catch(function(response) {
-              $log.debug('Failed to fetch docs');
+              $log.debug('Failed to fetch docs from engine.  Loc A.');
               return response;
             });
         } else {
@@ -130,9 +130,12 @@
           $q.all(promises)
             .then(function(docsChunk) {
               self.docs = self.docs.concat.apply(self.docs, docsChunk);
+              if (self.docs[0].status !== undefined){
+                var msg = 'Looking up documents returned a status of ' + self.docs[0].status + ' from search engine';
+              }
               deferred.resolve();
             }).catch(function(response) {
-              $log.debug('Failed to fetch docs');
+              $log.debug('Failed to fetch docs from engine.  Loc B.');
               return response;
             });
 
