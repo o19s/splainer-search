@@ -286,7 +286,7 @@
         args:       self.args,
         queryText:  otherQuery,
         config:     {
-          apiMethod:    'post',
+          apiMethod:    'POST',
           numberOfRows: self.config.numberOfRows,
           version:      self.config.version,
         },
