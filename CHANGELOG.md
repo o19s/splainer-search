@@ -1,5 +1,7 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.18.0 (2022-08-11)
+-  "Show Only Rated" feature in Quepid busted for ES. Highlighting on _id after a terms match in ES causes a index out of bounds exception. Also, the API method in explainOther needed to have the right case, might make a constants file at some point. https://github.com/o19s/splainer-search/pull/109 by @worleydl.
 
 # 2.17.0 (2022-04-23)
 - Links to view Solr document should return JSON formatted docs instead of XML.   _Ok boomer?_   https://github.com/o19s/splainer-search/pull/107 by @begomeister.
