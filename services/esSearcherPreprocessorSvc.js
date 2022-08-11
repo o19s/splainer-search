@@ -43,6 +43,13 @@ angular.module('o19s.splainer-search')
             var hl = { fields: {} };
 
             angular.forEach(fields, function(fieldName) {
+              /*
+               * ES doesn't like highlighting on _id if the query has been filtered on _id using a terms query.
+               */
+              if (fieldName === '_id') {
+                return;
+              }
+
               hl.fields[fieldName] = { };
             });
 

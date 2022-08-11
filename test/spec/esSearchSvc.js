@@ -841,7 +841,6 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery           = angular.fromJson(data);
         var expectedHighlight = {
           fields: {
-            _id:    { },
             title:  { },
           }
         };
@@ -872,7 +871,6 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery           = angular.fromJson(data);
         var expectedHighlight = {
           fields: {
-            _id:      { },
             title:    { },
             section:  { },
             tags:     { },
