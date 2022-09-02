@@ -38,18 +38,17 @@
     "module.js"
   ],
   "dependencies": {
-    "angular": "^1.7.9",
+    "angular": "1.8.3",
     "urijs": "^1.19.7"
   },
   "devDependencies": {
-    "angular-mocks": "^1.8.2",
+    "angular-mocks": "1.8.3",
     "grunt": "^1.4.1",
-    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-concat": "2.1.0",
     "grunt-contrib-jshint": "^3.0.0",
     "grunt-contrib-uglify": "^5.0.1",
     "grunt-karma": "^4.0.2",
     "jasmine": "^3.7.1",
-    "jasmine-core": "^3.7.1",
     "karma": "^6.3.2",
     "karma-chrome-launcher": "^3.1.0",
     "karma-coverage": "^2.0.3",
@@ -62,7 +61,7 @@
     "build:dev": "grunt build"
   },
   "engines": {
-    "node": ">=8.1.0"
+    "node": ">=14"
   },
   "repository": {
     "type": "git",
