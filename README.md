@@ -334,7 +334,7 @@ npm install --global np
 np --no-2fa
 ```
 
-Don't forget to create a release on Github as well!
+This will also pop open a browser window on GitHub to create a new release for the project.
 
 
 ## Thanks to...
