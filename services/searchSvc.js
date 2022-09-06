@@ -50,6 +50,8 @@ angular.module('o19s.splainer-search')
           searcher = new SolrSearcherFactory(options);
         } else if ( searchEngine === 'es') {
           searcher = new EsSearcherFactory(options);
+        } else if ( searchEngine === 'os') {
+          searcher = new EsSearcherFactory(options);
         }
 
         return searcher;
