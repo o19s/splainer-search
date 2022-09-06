@@ -34,7 +34,7 @@
 
         if ( self.searchEngine === 'solr' ) {
           args = { q: ['*:*'] };
-        } else if ( self.searchEngine === 'es' ) {
+        } else if ( self.searchEngine === 'es' || self.searchEngine === 'os') {
           fields = null;
         }
 
@@ -54,7 +54,7 @@
       function sourceDoc(doc) {
         if ( self.searchEngine === 'solr' ) {
           return doc.doc;
-        } else if (self.searchEngine === 'es') {
+        } else if (self.searchEngine === 'es' || self.searchEngine === 'os') {
           return doc.doc._source;
         }
       }
@@ -92,7 +92,7 @@
             }));
           });
           self.idFields = candidateIds;
-          if (self.searchEngine === 'es') {
+          if (self.searchEngine === 'es' || self.searchEngine === 'os') {
             self.fields.unshift('_id');
             self.idFields.unshift('_id');
           }
