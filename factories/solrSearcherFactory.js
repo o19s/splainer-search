@@ -137,6 +137,61 @@
         }
       };
 
+      // Return information about how long a query took to run.
+      // each event has nested tree like {name: 'blah', duration:43, events:[{name: 'foo', duration:20},{name: 'bar', duration:23}]
+      var getTimingDetails = function(solrResp) {
+        var queryTimingData = {};
+        if (solrResp.hasOwnProperty('debug') && solrResp.debug !== null) {
+          if (solrResp.debug.hasOwnProperty('timing') && solrResp.debug.timing !== null) {
+            var timing = solrResp.debug.timing;
+            queryTimingData = {
+              name: 'timing',
+              duration:timing.time,
+              events:[]
+            };
+            if (timing.hasOwnProperty('prepare') && timing.prepare !== null) {
+              let keys = Object.keys(timing.prepare);
+              if (timing.prepare.hasOwnProperty('time')) {
+                keys.splice('time', 1);
+              }
+              angular.forEach(keys, function(key) {
+                var event = {
+                  name: 'prepare_' + key,
+                  duration: timing.prepare[key].time
+                };
+                queryTimingData.events.push(event);
+              });
+            }
+
+            if (timing.hasOwnProperty('process') && timing.process !== null) {
+              let keys = Object.keys(timing.process);
+              if (timing.process.hasOwnProperty('time')) {
+                keys.splice('time', 1);
+              }
+              angular.forEach(keys, function(key) {
+                var event = {
+                  name: 'process_' + key,
+                  duration: timing.process[key].time
+                };
+                queryTimingData.events.push(event);
+              });
+            }
+          }
+        }
+        return queryTimingData;
+      };
+
+      var getQueryDetails = function(solrResp) {
+        var queryDetails = {};
+        if (solrResp.hasOwnProperty('responseHeader') && solrResp.responseHeader !== null) {
+          var responseHeader = solrResp.responseHeader;
+          if (responseHeader.hasOwnProperty('params') && responseHeader.params !== null) {
+            queryDetails = solrResp.responseHeader.params;
+          }
+        }
+        return queryDetails;
+      };
+
       var getQueryParsingData = function(solrResp) {
         var queryParsingData = {};
         if (solrResp.hasOwnProperty('debug') && solrResp.debug !== null) {
@@ -164,17 +219,6 @@
         }
         /* jsHint -W069 */
         return queryParsingData;
-      };
-
-      var getQueryDetails = function(solrResp) {
-        var queryDetails = {};
-        if (solrResp.hasOwnProperty('responseHeader') && solrResp.responseHeader !== null) {
-          var responseHeader = solrResp.responseHeader;
-          if (responseHeader.hasOwnProperty('params') && responseHeader.params !== null) {
-            queryDetails = solrResp.responseHeader.params;
-          }
-        }
-        return queryDetails;
       };
 
       var getHlData = function(solrResp) {
@@ -205,6 +249,7 @@
             thisSearcher.othersExplained = getOthersExplained(solrResp);
             thisSearcher.parsedQueryDetails = getQueryParsingData(solrResp);
             thisSearcher.queryDetails = getQueryDetails(solrResp);
+            thisSearcher.timingDetails = getTimingDetails(solrResp);
 
             var parseSolrDoc = function(solrDoc, groupedBy, group) {
               var options = {
