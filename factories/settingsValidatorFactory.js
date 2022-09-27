@@ -18,6 +18,7 @@
       self.searchEngine = settings.searchEngine;
       self.apiMethod    = settings.apiMethod;
       self.version      = settings.version;
+      self.apiKey       = settings.apiKey;
 
       self.searcher = null;
       self.fields   = [];
@@ -47,7 +48,8 @@
             version: self.version,
             apiMethod: self.apiMethod
           },
-          self.searchEngine
+          self.searchEngine,
+          self.apiKey
         );
       }
 
@@ -55,6 +57,8 @@
         if ( self.searchEngine === 'solr' ) {
           return doc.doc;
         } else if (self.searchEngine === 'es') {
+          return doc.doc._source;
+        } else if (self.searchEngine === 'ec') {
           return doc.doc._source;
         }
       }
