@@ -1,5 +1,14 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.19.0 (2022-09-06)
+-  Extract query performance timing data from Solr queries.  We already had access to the information, it just wasn't passed through the splainer-search layer.  https://github.com/o19s/splainer-search/pull/110 by @epugh.
+
+- Dependencies clean up.   We were on very old testing infrastructure, and it was time to update.  https://github.com/o19s/splainer-search/pull/111 by @epugh with input from @david-fisher.
+
+- Enable CI testing on CircleCI.  We used to use TravisCI, and then we used nothing!  https://github.com/o19s/splainer-search/pull/113 by @epugh.
+
+- OpenSearch support!  https://github.com/o19s/splainer-search/pull/114 by @mkr.
+
 # 2.18.0 (2022-08-11)
 -  "Show Only Rated" feature in Quepid busted for ES. Highlighting on _id after a terms match in ES causes a index out of bounds exception. Also, the API method in explainOther needed to have the right case, might make a constants file at some point. https://github.com/o19s/splainer-search/pull/109 by @worleydl.
 

@@ -47,7 +47,7 @@
           rows: [ids.length],
           q: ['#$query##']
         };
-      } else if ( settings.searchEngine === 'es' ) {
+      } else if ( settings.searchEngine === 'es' ||  settings.searchEngine === 'os') {
         self.args = {
           query: {
             terms: {

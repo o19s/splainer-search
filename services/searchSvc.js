@@ -57,6 +57,8 @@ angular.module('o19s.splainer-search')
           searcher = new EsSearcherFactory(options);
         } else if (searchEngine === 'ec') {
           searcher = new EsCloudSearcherFactory(options);
+        } else if ( searchEngine === 'os') {
+          searcher = new EsSearcherFactory(options);
         }
 
         return searcher;

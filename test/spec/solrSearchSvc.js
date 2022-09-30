@@ -313,11 +313,11 @@ describe('Service: searchSvc: Solr', function () {
           },
           'QParser':'LuceneQParser',
           'timing':{
-            'time':1.0,
+            'time':11.0,
             'prepare':{
               'time':1.0,
               'query':{
-                'time':0.0
+                'time':1.0
               },
               'facet':{
                 'time':0.0
@@ -336,9 +336,9 @@ describe('Service: searchSvc: Solr', function () {
               }
             },
             'process':{
-              'time':0.0,
+              'time':6.0,
               'query':{
-                'time':0.0
+                'time':3.0
               },
               'facet':{
                 'time':0.0
@@ -500,6 +500,24 @@ describe('Service: searchSvc: Solr', function () {
         expect(Object.keys(queryDetails).length).toBe(8);
         expect(queryDetails['df']).toEqual('content');
         expect(queryDetails['indent']).toEqual(['true','true']);
+      });
+      $httpBackend.flush();
+      expect(called).toBe(1);
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('populates query timing details', function() {
+      createSearcherWithDebug();
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+                              .respond(200, fullSolrResp);
+      var called = 0;
+      searcher.search().then(function() {
+        called++;
+        var timingDetails = searcher.timingDetails;
+
+        expect(Object.keys(timingDetails.events).length).toBe(12);
+        expect(timingDetails.events[6].name).toEqual('process_query');
+        expect(timingDetails.events[6].duration).toEqual(3);
       });
       $httpBackend.flush();
       expect(called).toBe(1);
@@ -750,7 +768,7 @@ describe('Service: searchSvc: Solr', function () {
     it('linkurl has wt=json', function() {
       var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
       var searcher = searchSvc.createSearcher(fieldSpecWithScore, mockSolrUrl,
-                                                  mockSolrParams, mockQueryText);    
+                                                  mockSolrParams, mockQueryText);
       expect(searcher.linkUrl.indexOf('wt=json')).not.toBe(-1);
     });
 
@@ -762,7 +780,7 @@ describe('Service: searchSvc: Solr', function () {
         wt: 'xml'
       };
       var searcher = searchSvc.createSearcher(fieldSpecWithScore, mockSolrUrl,
-                                                  mockSolrParams, mockQueryText);                                                
+                                                  mockSolrParams, mockQueryText);
       expect(searcher.linkUrl.indexOf('wt=json')).not.toBe(-1);
     });
 
