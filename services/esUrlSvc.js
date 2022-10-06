@@ -142,10 +142,14 @@ angular.module('o19s.splainer-search')
         uri.params = params;
       }
 
-      function getHeaders (uri) {
+      function getHeaders (uri, customHeaders) {
         var headers = {};
+        customHeaders = customHeaders || '';
 
-        if ( angular.isDefined(uri.username) && uri.username !== '' &&
+        if (customHeaders.length > 0) {
+          // TODO: Validate before saving? Or throw exception when this is called
+          headers = JSON.parse(customHeaders);
+        } else if ( angular.isDefined(uri.username) && uri.username !== '' &&
           angular.isDefined(uri.password) && uri.password !== '') {
           var authorization = 'Basic ' + btoa(uri.username + ':' + uri.password);
           headers = { 'Authorization': authorization };
@@ -157,7 +161,7 @@ angular.module('o19s.splainer-search')
       function isBulkCall (uri) {
         return uri.pathname.endsWith('_msearch');
       }
-      
+
       function isTemplateCall (uri) {
         return uri.pathname.endsWith('_search/template');
       }

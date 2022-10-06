@@ -8,13 +8,11 @@ angular.module('o19s.splainer-search')
   .service('searchSvc', [
     'SolrSearcherFactory',
     'EsSearcherFactory',
-    'EsCloudSearcherFactory',
     'activeQueries',
     'defaultSolrConfig',
     function searchSvc(
       SolrSearcherFactory,
       EsSearcherFactory,
-      EsCloudSearcherFactory,
       activeQueries,
       defaultSolrConfig
     ) {
@@ -30,7 +28,7 @@ angular.module('o19s.splainer-search')
         return angular.copy(defaultSolrConfig);
       };
 
-      this.createSearcher = function (fieldSpec, url, args, queryText, config, searchEngine, apiKey) {
+      this.createSearcher = function (fieldSpec, url, args, queryText, config, searchEngine) {
         if ( searchEngine === undefined ) {
           searchEngine = 'solr';
         }
@@ -40,7 +38,6 @@ angular.module('o19s.splainer-search')
           hlFieldList:    fieldSpec.highlightFieldList(),
           url:            url,
           args:           args,
-          apiKey:         apiKey,
           queryText:      queryText,
           config:         config,
           type:           searchEngine
@@ -55,8 +52,6 @@ angular.module('o19s.splainer-search')
           searcher = new SolrSearcherFactory(options);
         } else if ( searchEngine === 'es') {
           searcher = new EsSearcherFactory(options);
-        } else if (searchEngine === 'ec') {
-          searcher = new EsCloudSearcherFactory(options);
         } else if ( searchEngine === 'os') {
           searcher = new EsSearcherFactory(options);
         }

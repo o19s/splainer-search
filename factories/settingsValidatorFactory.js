@@ -14,11 +14,11 @@
     var Validator = function(settings) {
       var self  = this;
 
-      self.searchUrl    = settings.searchUrl;
-      self.searchEngine = settings.searchEngine;
-      self.apiMethod    = settings.apiMethod;
-      self.version      = settings.version;
-      self.apiKey       = settings.apiKey;
+      self.searchUrl      = settings.searchUrl;
+      self.searchEngine   = settings.searchEngine;
+      self.apiMethod      = settings.apiMethod;
+      self.version        = settings.version;
+      self.customHeaders  = settings.customHeaders;
 
       self.searcher = null;
       self.fields   = [];
@@ -46,10 +46,10 @@
           '',
           {
             version: self.version,
-            apiMethod: self.apiMethod
+            apiMethod: self.apiMethod,
+            customHeaders: self.customHeaders
           },
-          self.searchEngine,
-          self.apiKey
+          self.searchEngine
         );
       }
 
@@ -57,8 +57,6 @@
         if ( self.searchEngine === 'solr' ) {
           return doc.doc;
         } else if (self.searchEngine === 'es' || self.searchEngine === 'os') {
-          return doc.doc._source;
-        } else if (self.searchEngine === 'ec') {
           return doc.doc._source;
         }
       }
