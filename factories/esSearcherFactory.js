@@ -287,6 +287,7 @@
         queryText:  otherQuery,
         config:     {
           apiMethod:    'POST',
+          customHeaders: self.config.customHeaders,
           numberOfRows: self.config.numberOfRows,
           version:      self.config.version,
         },
