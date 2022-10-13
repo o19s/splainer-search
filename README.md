@@ -332,14 +332,14 @@ We use NP to publish splainer-search to npmjs.org.
 `CHANGELOG.md` with your new version and the date, but you don't need to touch `package.json`,
 the `np` script bumps that file!   Check that file in.
 
-1. Now install the 'np' script if you don't have it, and run it to create the release:
+2. Now install the 'np' script if you don't have it, and run it to create the release:
 
 ```
 npm install --global np
 np --no-2fa
 ```
 
-1. This will also pop open a browser window on GitHub to create a new release for the project.
+3. This will also pop open a browser window on GitHub to create a new release for the project.
 Use the "Generate Release Notes" button on Github to make the template, and then paste in the contents of `CHANGELOG.md` into the _Whats Changed_ section.
 
 
