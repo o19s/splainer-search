@@ -1,5 +1,10 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.20.0 (2022-10-13)
+- We now support API keys!  Search engine deploys (like Elastic Cloud) are increasingly locked down, with an API Key being the most common way to access them.  Splainer-search now supports custom headers, which supports the api key usecase, and lays ground work for other use cases.   A huge round of thanks goes to @aditya-kanekar who created the first implmentation via https://github.com/o19s/splainer-search/pull/116, and then @worleydl for making it more generic.   This improvement will be surfaced into [Splainer](http://splainer.io) and [Quepid](http://quepid.com) asap.
+
+- Splainer-search is ASL2.0 licensed, but there was a mismatch in package.json that said MIT.  Fixed this, and eliminated a old javascript `promise.js` implementation that isn't used in the library.  https://github.com/o19s/splainer-search/pull/115 by @epugh.
+
 # 2.19.0 (2022-09-06)
 -  Extract query performance timing data from Solr queries.  We already had access to the information, it just wasn't passed through the splainer-search layer.  https://github.com/o19s/splainer-search/pull/110 by @epugh.
 
