@@ -225,7 +225,7 @@
       // Eg. with params:     /_search?size=5&from=5
       //esUrlSvc.setParams(uri, self.pagerArgs);
 
-      var headers = esUrlSvc.getHeaders(uri);
+      var headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);
 
       activeQueries.count++;
       return transport.query(url, queryDslWithPagerArgs, headers)
@@ -287,6 +287,7 @@
         queryText:  otherQuery,
         config:     {
           apiMethod:    'POST',
+          customHeaders: self.config.customHeaders,
           numberOfRows: self.config.numberOfRows,
           version:      self.config.version,
         },
@@ -334,7 +335,7 @@
       var self    = this;
       var uri     = esUrlSvc.parseUrl(self.url);
       var url     = esUrlSvc.buildExplainUrl(uri, doc);
-      var headers = esUrlSvc.getHeaders(uri);
+      var headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);
 
       return $http.post(url, { query: self.queryDsl.query }, {headers: headers})
         .then(function(response) {

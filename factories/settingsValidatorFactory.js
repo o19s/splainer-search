@@ -14,10 +14,11 @@
     var Validator = function(settings) {
       var self  = this;
 
-      self.searchUrl    = settings.searchUrl;
-      self.searchEngine = settings.searchEngine;
-      self.apiMethod    = settings.apiMethod;
-      self.version      = settings.version;
+      self.searchUrl      = settings.searchUrl;
+      self.searchEngine   = settings.searchEngine;
+      self.apiMethod      = settings.apiMethod;
+      self.version        = settings.version;
+      self.customHeaders  = settings.customHeaders;
 
       self.searcher = null;
       self.fields   = [];
@@ -45,7 +46,8 @@
           '',
           {
             version: self.version,
-            apiMethod: self.apiMethod
+            apiMethod: self.apiMethod,
+            customHeaders: self.customHeaders
           },
           self.searchEngine
         );

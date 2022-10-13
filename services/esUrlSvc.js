@@ -63,13 +63,18 @@ angular.module('o19s.splainer-search')
        * for an ES document.
        *
        */
-      function buildDocUrl (uri, doc) {
+      function buildDocUrl (uri, doc, addExplain) {
         var index = doc._index;
         var type  = doc._type;
         var id    = doc._id;
 
         var url = self.buildBaseUrl(uri);
-        url = url + '/' + index + '/' + type + '/' + id;
+
+        if (type) {
+          url = url + '/' + index + '/' + type + '/' + id + (addExplain ? '/_explain' : '');
+        } else {
+          url = url + '/' + index + '/' + (addExplain ? '_explain/' : '') + id;
+        }
 
         return url;
       }
@@ -80,13 +85,12 @@ angular.module('o19s.splainer-search')
        * Builds ES URL of the form [protocol]://[host][:port]/[index]/[type]/[id]/_explain
        * for an ES document.
        *
+       * For newer versions of ES the format has changed as doc types are deprecated:
+       * [protocol]://[host][:port]/[index]/_explain/[id]
+       *
        */
       function buildExplainUrl (uri, doc) {
-        var docUrl = self.buildDocUrl(uri, doc);
-
-        var url = docUrl + '/_explain';
-
-        return url;
+        return buildDocUrl(uri, doc, true);
       }
 
       /**
@@ -142,10 +146,14 @@ angular.module('o19s.splainer-search')
         uri.params = params;
       }
 
-      function getHeaders (uri) {
+      function getHeaders (uri, customHeaders) {
         var headers = {};
+        customHeaders = customHeaders || '';
 
-        if ( angular.isDefined(uri.username) && uri.username !== '' &&
+        if (customHeaders.length > 0) {
+          // TODO: Validate before saving? Or throw exception when this is called
+          headers = JSON.parse(customHeaders);
+        } else if ( angular.isDefined(uri.username) && uri.username !== '' &&
           angular.isDefined(uri.password) && uri.password !== '') {
           var authorization = 'Basic ' + btoa(uri.username + ':' + uri.password);
           headers = { 'Authorization': authorization };
@@ -157,7 +165,7 @@ angular.module('o19s.splainer-search')
       function isBulkCall (uri) {
         return uri.pathname.endsWith('_msearch');
       }
-      
+
       function isTemplateCall (uri) {
         return uri.pathname.endsWith('_search/template');
       }
