@@ -85,7 +85,7 @@ angular.module('o19s.splainer-search')
        * Builds ES URL of the form [protocol]://[host][:port]/[index]/[type]/[id]/_explain
        * for an ES document.
        *
-       * For newer versions of ES the format is as doc types are deprecated:
+       * For newer versions of ES the format has changed as doc types are deprecated:
        * [protocol]://[host][:port]/[index]/_explain/[id]
        *
        */

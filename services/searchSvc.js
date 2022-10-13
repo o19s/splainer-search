@@ -1,7 +1,5 @@
 'use strict';
 
-// const { option } = require('grunt');
-
 // Executes a generic search and returns
 // a set of generic documents
 angular.module('o19s.splainer-search')
