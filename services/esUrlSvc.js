@@ -73,7 +73,7 @@ angular.module('o19s.splainer-search')
         if (type) {
           url = url + '/' + index + '/' + type + '/' + id + (addExplain ? '/_explain' : '');
         } else {
-          url = url + '/' + index + '/' + (addExplain ? '_explain/' : '') + id;
+          url = url + '/' + index + '/' + (addExplain ? '_explain' : '_doc') + '/' + id;
         }
 
         return url;
