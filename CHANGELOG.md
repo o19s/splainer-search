@@ -1,7 +1,9 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
-# 2.20.2 (2023-04-27)
+# 2.20.2 (2023-04-28)
 - Urls that link to a individual document in OpenSearch and ES7+ have changed to have a `_doc` element in the path.  https://github.com/o19s/splainer-search/pull/117 by @mkr fixes https://github.com/o19s/quepid/issues/701.
+
+- `npm outdated` highlights nothings.  All dependencies (barring this is Angular 1 ;-) ) are up to date.  https://github.com/o19s/splainer-search/pull/118 by @epugh.
 
 # 2.20.0 (2022-10-13)
 - We now support API keys!  Search engine deploys (like Elastic Cloud) are increasingly locked down, with an API Key being the most common way to access them.  Splainer-search now supports custom headers, which supports the api key usecase, and lays ground work for other use cases.   A huge round of thanks goes to @aditya-kanekar who created the first implmentation via https://github.com/o19s/splainer-search/pull/116, and then @worleydl for making it more generic.   This improvement will be surfaced into [Splainer](http://splainer.io) and [Quepid](http://quepid.com) asap.
