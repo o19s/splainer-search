@@ -6,7 +6,7 @@
     "Doug Turnbull <dturnbull@opensourceconnections.com>",
     "Youssef Chaker <ychaker@opensourceconnections.com>"
   ],
-  "description": "Angular JS Solr and Elasticsearch Diagnostic Search Services",
+  "description": "Angular JS Solr and Elasticsearch and OpenSearch Diagnostic Search Services",
   "homepage": "https://github.com/o19s/splainer-search",
   "bugs": {
     "url": "https://github.com/o19s/splainer-search/issues"
