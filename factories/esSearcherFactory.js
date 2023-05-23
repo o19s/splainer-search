@@ -122,17 +122,9 @@
       // in the template, not passed in
       if (apiMethod === 'GET' && !esUrlSvc.isTemplateCall(uri)) {
         var fieldList = (self.fieldList === '*') ? '*' : self.fieldList.join(',');
-
-        if ( 5 <= self.majorVersion() ) {
-          /*jshint camelcase: false */
-          esUrlSvc.setParams(uri, {
-            _source:       fieldList,
-          });
-        } else {
-          esUrlSvc.setParams(uri, {
-            _source: fieldList,
-          });
-        }
+        esUrlSvc.setParams(uri, {
+          _source:       fieldList,
+        });
       }
 
       var url       = esUrlSvc.buildUrl(uri);
@@ -354,6 +346,7 @@
         });
     } // end of explain()
 
+    // Let us track a version if need to make decisions if one version is different than another.
     function majorVersion() {
       var self = this;
 
@@ -366,7 +359,7 @@
       } else {
         return null;
       }
-    }
+    } // end of majorVersion()
 
     function isTemplateCall() {
       var self = this;
