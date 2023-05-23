@@ -114,10 +114,21 @@ describe('Service: esUrlSvc', function () {
     });
 
     it('builds a proper doc URL from the doc info', function() {
-      console.log("about to buildDocUrl from test")
       var docUrl = esUrlSvc.buildDocUrl(uri, doc);
 
       expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_doc/1');
+    });
+
+    it('escapes the # character if it exists in the _id field', function(){
+      var doc2 = {
+        _index: 'tmdb',
+        _type:  'movies',
+        _id:    'X#123#BOB'
+      };
+
+      var docUrl = esUrlSvc.buildDocUrl(uri, doc2);
+
+      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_doc/X%23123%23BOB');
     });
   });
 

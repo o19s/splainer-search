@@ -90,7 +90,7 @@ angular.module('o19s.splainer-search')
           url = url + "_doc";
         }
 
-        url = url + '/' + id;
+        url = url + '/' + id.replace(/#/g, "%23");
         return url;
       }
 
