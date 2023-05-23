@@ -84,13 +84,13 @@ angular.module('o19s.splainer-search')
         }
 
         if (addExplain){
-          url = url + "_explain";
+          url = url + '_explain';
         }
         else {
-          url = url + "_doc";
+          url = url + '_doc';
         }
 
-        url = url + '/' + id.replace(/#/g, "%23");
+        url = url + '/' + id.replace(/#/g, '%23');
         return url;
       }
 
