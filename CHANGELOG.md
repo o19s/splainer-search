@@ -3,6 +3,10 @@ Version numbers correspond to `package.json` version.  Follows the _major.minor.
 # 2.21.0 (2023-05-23)
 - Urls to documents that have a document id with a `#` character embedded don't pass the id into OpenSearch and Elasticsearch.  We now escape that character to fool the browser ;-).  https://github.com/o19s/splainer-search/pull/120 by @epugh fixes https://github.com/o19s/splainer-search/issues/119.
 
+- We also fixed a bug in how the urls for Elasticsearch 7+ and OpenSearch are formatted with the `/_doc/[id]` and `/_explain/[id]` pattern.   Splainer-search now only properly works with those search engines and above.  https://github.com/o19s/splainer-search/pull/120 by @epugh.
+
+
+
 # 2.20.2 (2023-04-28)
 - Urls that link to a individual document in OpenSearch and ES7+ have changed to have a `_doc` element in the path.  https://github.com/o19s/splainer-search/pull/117 by @mkr fixes https://github.com/o19s/quepid/issues/701.
 
