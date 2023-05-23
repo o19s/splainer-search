@@ -3,10 +3,10 @@
 
 # AngularJS Search Service
 
-Splainer Search is an Angular Solr and Elasticsearch Search library focussed on relevance diagnostics. It's used in the relevancy tuning tools [Quepid](http://quepid.com) and [Splainer](http://splainer.io). Its available for anyone to use (see [license](LICENSE.txt)).
+Splainer Search is an Angular Solr and OpenSearch and Elasticsearch Search library focussed on relevance diagnostics. It's used in the relevancy tuning tools [Quepid](http://quepid.com) and [Splainer](http://splainer.io). Its available for anyone to use (see [license](LICENSE.txt)).
 
 
-Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsearch communicates clearly with simple HTTP and JSON. All fields are explained and highlighted if requested. A friendly interface is provided to specify the arguments in terms of a Javascript object. See below for basic examples.
+Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsearch and OpenSearch communicate with simple HTTP and JSON via CORS. All fields are explained and highlighted if requested. A friendly interface is provided to specify the arguments in terms of a Javascript object. See below for basic examples.
 
 ## Basic usage
 
@@ -39,9 +39,11 @@ searcher.search()
 });
 ```
 
-### Elasticsearch
+### Elasticsearch and OpenSearch
 
-Splainer-search also supports ES, using the same API, and passing the query DSL in the same way ES expects it:
+__Note: For now, we have a set of `es*.js` files that support both search engines__
+
+Splainer-search supports these search engines, using the same API, and passing the query DSL in the same way ES expects it:
 
 ```js
 var searcher = searchSvc.createSearcher(
