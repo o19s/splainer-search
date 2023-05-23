@@ -768,7 +768,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       searcher.search().then(function() {
         called++;
         var docs = searcher.docs;
-        var expectedUrl = 'http://localhost:9200/tmdb/movie/AU8pXbemwjf9yCj9Xh4e';
+        var expectedUrl = 'http://localhost:9200/tmdb/movie/_doc/AU8pXbemwjf9yCj9Xh4e';
         expect(docs[0]._url()).toEqual(expectedUrl);
       });
 
@@ -1362,7 +1362,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       angular.forEach(expectedDocs, function(doc) {
         var explainUrl = "http://localhost:9200/statedecoded/law/";
-        explainUrl += doc._id + '/_explain';
+        explainUrl += '_explain/' + doc._id;
         $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
       });
 
@@ -1380,7 +1380,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       angular.forEach(expectedDocs, function(doc) {
         var explainUrl = "http://localhost:9200/statedecoded/law/";
-        explainUrl += doc._id + '/_explain';
+        explainUrl += '_explain/' + doc._id;
         $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
       });
 
@@ -1402,7 +1402,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       angular.forEach(expectedDocs, function(doc) {
         var explainUrl = "http://localhost:9200/statedecoded/law/";
-        explainUrl += doc._id + '/_explain';
+        explainUrl += '_explain/' + doc._id;
         $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
       });
 

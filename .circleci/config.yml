@@ -7,7 +7,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: cimg/node:18.16.0-browsers
+    - image: cimg/node:20.2.0-browsers
 
 jobs:
   test-build:
@@ -15,10 +15,11 @@ jobs:
     steps:
       - checkout
 
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            - v1-dependencies-
+      # Seem to be getting issues with Chrome
+      #- restore_cache:
+      #    keys:
+      #      - v1-dependencies-{{ checksum "package.json" }}
+      #      - v1-dependencies-
 
       - run: npm install
       - run:
