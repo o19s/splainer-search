@@ -114,9 +114,10 @@ describe('Service: esUrlSvc', function () {
     });
 
     it('builds a proper doc URL from the doc info', function() {
+      console.log("about to buildDocUrl from test")
       var docUrl = esUrlSvc.buildDocUrl(uri, doc);
 
-      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/1');
+      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_doc/1');
     });
   });
 
@@ -137,7 +138,7 @@ describe('Service: esUrlSvc', function () {
     it('builds a proper doc explain URL from the doc info', function() {
       var docUrl = esUrlSvc.buildExplainUrl(uri, doc);
 
-      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/1/_explain');
+      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_explain/1');
     });
   });
 

@@ -3,6 +3,14 @@
 /*global URI*/
 angular.module('o19s.splainer-search')
   .service('esUrlSvc', [
+
+    /**
+     *
+     * This service is compatible with Elasticsearch versions 7+ and OpenSearch.
+     *
+     */
+
+
     function esUrlSvc() {
 
       var self      = this;
@@ -59,7 +67,7 @@ angular.module('o19s.splainer-search')
 
       /**
        *
-       * Builds ES URL of the form [protocol]://[host][:port]/[index]/[type]/[id]
+       * Builds ES URL of the form [protocol]://[host][:port]/[index]/[type]/[_explain|_doc]/[id]
        * for an ES document.
        *
        */
@@ -70,23 +78,27 @@ angular.module('o19s.splainer-search')
 
         var url = self.buildBaseUrl(uri);
 
+        url = url + '/' + index + '/';
         if (type) {
-          url = url + '/' + index + '/' + type + '/' + id + (addExplain ? '/_explain' : '');
-        } else {
-          url = url + '/' + index + '/' + (addExplain ? '_explain' : '_doc') + '/' + id;
+          url = url + type + '/';
         }
 
+        if (addExplain){
+          url = url + "_explain";
+        }
+        else {
+          url = url + "_doc";
+        }
+
+        url = url + '/' + id;
         return url;
       }
 
 
       /**
        *
-       * Builds ES URL of the form [protocol]://[host][:port]/[index]/[type]/[id]/_explain
+       * Builds ES URL of the form [protocol]://[host][:port]/[index]/[type]/_explain/[id]
        * for an ES document.
-       *
-       * For newer versions of ES the format has changed as doc types are deprecated:
-       * [protocol]://[host][:port]/[index]/_explain/[id]
        *
        */
       function buildExplainUrl (uri, doc) {
