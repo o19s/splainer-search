@@ -134,7 +134,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
   describe('basic search', function () {
 
-    describe('version 5+', function() {
+    describe('version 7+', function() {
       beforeEach(inject(function () {
         searcher = searchSvc.createSearcher(
           mockFieldSpec,
