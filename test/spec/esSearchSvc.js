@@ -1284,6 +1284,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
   describe('templated search', function() {
     beforeEach(inject(function () {
 
+      // the 'id' tells us that we have a templated search.
       var mockEsParams  = {
         id: 'tmdb-title-search-template',
         params: {
@@ -1293,7 +1294,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       searcher = searchSvc.createSearcher(
         mockFieldSpec,
-        mockEsUrl + '/template',
+        mockEsUrl,
         mockEsParams,
         mockQueryText,
         { },

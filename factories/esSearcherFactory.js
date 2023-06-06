@@ -118,21 +118,27 @@
         apiMethod = 'BULK';
       }
 
+      var templateCall = isTemplateCall(self.args);
+
+      if (templateCall){
+        uri.pathname = uri.pathname + "/template";
+      }
+
       // Using templates assumes that the _source field is defined
       // in the template, not passed in
-      if (apiMethod === 'GET' && !esUrlSvc.isTemplateCall(uri)) {
+
+      if (apiMethod === 'GET' && !templateCall) {
         var fieldList = (self.fieldList === '*') ? '*' : self.fieldList.join(',');
         esUrlSvc.setParams(uri, {
           _source:       fieldList,
         });
       }
-
       var url       = esUrlSvc.buildUrl(uri);
       var transport = transportSvc.getTransport({apiMethod: apiMethod});
 
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);
       if (self.pagerArgs) {
-        if (esUrlSvc.isTemplateCall(uri)) {
+        if (templateCall) {
           queryDslWithPagerArgs.params.from = self.pagerArgs.from;
           queryDslWithPagerArgs.params.size = self.pagerArgs.size;
         }
@@ -142,7 +148,7 @@
         }
       }
 
-      if (esUrlSvc.isTemplateCall(uri)) {
+      if (templateCall) {
         delete queryDslWithPagerArgs._source;
         delete queryDslWithPagerArgs.highlight;
       } else if (self.config.highlight===false) {
@@ -361,10 +367,15 @@
       }
     } // end of majorVersion()
 
-    function isTemplateCall() {
+    // in the args is an id parameter like "id: 'tmdb-title-search-template'" that specifies a template
+    function isTemplateCall(args) {
       var self = this;
-
-      return esUrlSvc.isTemplateCall(esUrlSvc.parseUrl(self.url));
+      if (args && args.id) {
+        return true;
+      }
+      else {
+        return false;
+      }
     }
 
     // Return factory object
