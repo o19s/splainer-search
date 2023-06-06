@@ -91,6 +91,10 @@ angular.module('o19s.splainer-search')
         }
 
         url = url + '/' + id.replace(/#/g, '%23');
+
+        if (!addExplain){
+          url = url + '?pretty=true';
+        }
         return url;
       }
 
@@ -178,9 +182,9 @@ angular.module('o19s.splainer-search')
         return uri.pathname.endsWith('_msearch');
       }
 
-      // in the args is an id parameter like "id: 'tmdb-title-search-template'" that specifies a template      
+      // in the args is an id parameter like "id: 'tmdb-title-search-template'" that specifies a template
       // This let's us understand when to add a /template
-      function isTemplateCall (args) {      
+      function isTemplateCall (args) {
         if (args && args.id) {
           return true;
         }
