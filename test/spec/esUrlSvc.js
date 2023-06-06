@@ -84,17 +84,25 @@ describe('Service: esUrlSvc', function () {
     });
 
     it('understands when template endpoint used', function() {
-      var url = 'http://es.quepid.com/tmdb/_search';
-      var uri = esUrlSvc.parseUrl(url);
-      expect(esUrlSvc.isTemplateCall(uri)).toBe(false);
+      // the 'id' tells us that we have a templated search.
+      var templateEsParams  = {
+        id: 'tmdb-title-search-template',
+        params: {
+          search_query: 'star'
+        }
+      };
+      
+      var mockEsParams  = {
+        query: {
+          match: {
+            title: "#$query##"
+          }
+        }
+      };
 
-      url = 'http://es.quepid.com/tmdb/_search/template';
-      uri = esUrlSvc.parseUrl(url);
-      expect(esUrlSvc.isTemplateCall(uri)).toBe(true);
+      expect(esUrlSvc.isTemplateCall(templateEsParams)).toBe(true);
+      expect(esUrlSvc.isTemplateCall(mockEsParams)).toBe(false);
 
-      url = 'http://es.quepid.com/tmdb/_search/template/';
-      uri = esUrlSvc.parseUrl(url);
-      expect(esUrlSvc.isTemplateCall(uri)).toBe(true);
     });
 
   });

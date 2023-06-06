@@ -367,14 +367,9 @@
       }
     } // end of majorVersion()
 
-    // in the args is an id parameter like "id: 'tmdb-title-search-template'" that specifies a template
+    // Templatized queries require us to add a /template to the url.
     function isTemplateCall(args) {
-      if (args && args.id) {
-        return true;
-      }
-      else {
-        return false;
-      }
+      return esUrlSvc.isTemplateCall(args);     
     }
 
     // Return factory object
