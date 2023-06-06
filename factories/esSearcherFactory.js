@@ -121,7 +121,7 @@
       var templateCall = isTemplateCall(self.args);
 
       if (templateCall){
-        uri.pathname = uri.pathname + "/template";
+        uri.pathname = uri.pathname + '/template';
       }
 
       // Using templates assumes that the _source field is defined
@@ -369,7 +369,6 @@
 
     // in the args is an id parameter like "id: 'tmdb-title-search-template'" that specifies a template
     function isTemplateCall(args) {
-      var self = this;
       if (args && args.id) {
         return true;
       }
