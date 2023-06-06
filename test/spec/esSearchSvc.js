@@ -133,207 +133,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
   };
 
   describe('basic search', function () {
-    describe('pre version 5', function() {
-      beforeEach(inject(function () {
-        searcher = searchSvc.createSearcher(
-          mockFieldSpec,
-          mockEsUrl,
-          mockEsParams,
-          mockQueryText,
-          { version: '2.0' },
-          'es'
-        );
-      }));
 
-      it('passes the rows param and sets it to 10 by default', function() {
-        var expectedParams = {
-          size: 10
-        };
-
-        $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
-          .respond(200, mockES4Results);
-
-        searcher.search();
-        $httpBackend.flush();
-      });
-
-      it('passes the rows param and sets it to what is passed in the config', function() {
-        searcher = searchSvc.createSearcher(
-          mockFieldSpec,
-          mockEsUrl,
-          mockEsParams,
-          mockQueryText,
-          { version: '2.0', numberOfRows: 20 },
-          'es'
-        );
-
-        var expectedParams = {
-          size: 20
-        };
-
-        $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
-          .respond(200, mockES4Results);
-
-        searcher.search();
-        $httpBackend.flush();
-      });
-
-      it('accesses es with mock es params', function () {
-        $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-          var esQuery = angular.fromJson(data);
-          return (esQuery.query.term.text === mockQueryText);
-        }).
-        respond(200, mockES4Results);
-        searcher.search();
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
-      });
-
-      it('returns docs (they should look just like ES docs)', function() {
-        $httpBackend.expectPOST(mockEsUrl).
-        respond(200, mockES4Results);
-
-        var called = 0;
-
-        searcher.search()
-        .then(function() {
-          var docs = searcher.docs;
-          expect(docs.length === 2);
-          expect(docs[0].field).toEqual(mockES4Results.hits.hits[0]._source.field[0]);
-          expect(docs[0].field1).toEqual(mockES4Results.hits.hits[0]._source.field1[0]);
-          expect(docs[1].field).toEqual(mockES4Results.hits.hits[1]._source.field[0]);
-          expect(docs[1].field1).toEqual(mockES4Results.hits.hits[1]._source.field1[0]);
-          called++;
-        });
-
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
-        expect(called).toEqual(1);
-      });
-
-      it('source has no "doc" or "field" property', function() {
-        $httpBackend.expectPOST(mockEsUrl).
-        respond(200, mockES4Results);
-
-        var called = 0;
-
-        searcher.search()
-        .then(function() {
-          var docs = searcher.docs;
-          expect(docs[0].origin().doc).toBe(undefined);
-          expect(docs[0].origin().fields).toBe(undefined);
-          called++;
-        });
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
-        expect(called).toEqual(1);
-      });
-
-      it('reports pretty printed errors for ES errors but HTTP success', function() {
-        var errorMsg = {hits: [], _shards: {failed: 1, failures: [{foo: 'your query just plain stunk'}]}};
-        $httpBackend.expectPOST(mockEsUrl).
-        respond(200, errorMsg);
-
-        var errorCalled = 0;
-
-        searcher.search()
-        .then(function success() {
-          errorCalled--;
-        }, function failure(msg) {
-          expect(msg.searchError.indexOf('HTTP')).toBe(-1);
-          expect(msg.searchError.indexOf('200')).toBe(-1);
-          expect(msg.searchError.indexOf('foo')).toBeGreaterThan(-1);
-          expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
-          errorCalled++;
-        });
-
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
-        expect(errorCalled).toEqual(1);
-      });
-
-      it('reports pretty printed errors for HTTP errors', function() {
-        var errorMsg = {'someMsg': 'your query just plain stunk'};
-        $httpBackend.expectPOST(mockEsUrl).
-        respond(400, {error: errorMsg});
-
-        var errorCalled = 0;
-
-        searcher.search()
-        .then(function success() {
-          errorCalled--;
-        }, function failure(msg) {
-          expect(msg.searchError.indexOf('HTTP')).toBeGreaterThan(-1);
-          expect(msg.searchError.indexOf('400')).toBeGreaterThan(-1);
-          expect(msg.searchError.indexOf('someMsg')).toBeGreaterThan(-1);
-          expect(msg.searchError.indexOf('your query just plain stunk')).toBeGreaterThan(-1);
-          errorCalled++;
-        });
-
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
-        expect(errorCalled).toEqual(1);
-      });
-
-      it('network or CORS error', function() {
-        $httpBackend.expectPOST(mockEsUrl)
-          .respond(-1);
-
-        var errorCalled = 0;
-
-        searcher.search()
-        .then(function success() {
-          errorCalled--;
-        }, function failure(msg) {
-          expect(msg.searchError.indexOf('Network Error')).toBeGreaterThan(-1);
-          expect(msg.searchError.indexOf('CORS')).toBeGreaterThan(-1);
-          errorCalled++;
-        });
-
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
-        expect(errorCalled).toEqual(1);
-      });
-
-      it('sets the proper headers for auth', function() {
-        var authEsUrl = 'http://username:password@localhost:9200/statedecoded/_search';
-        searcher = searchSvc.createSearcher(
-          mockFieldSpec,
-          authEsUrl,
-          mockEsParams,
-          mockQueryText,
-          { version: '2.0' },
-          'es'
-        );
-
-        // The headers need to be removed from the URL, which we accomplish
-        // using the esUrlSvc.
-        var targetUrl = esUrlSvc.buildUrl(esUrlSvc.parseUrl(authEsUrl))
-        $httpBackend.expectPOST(targetUrl, undefined, function(headers) {
-          return headers['Authorization'] == 'Basic ' + btoa('username:password');
-        }).
-        respond(200, mockES4Results);
-
-        var called = 0;
-
-        searcher.search()
-        .then(function() {
-          var docs = searcher.docs;
-          expect(docs.length === 2);
-          expect(docs[0].field).toEqual(mockES4Results.hits.hits[0]._source.field[0]);
-          expect(docs[0].field1).toEqual(mockES4Results.hits.hits[0]._source.field1[0]);
-          expect(docs[1].field).toEqual(mockES4Results.hits.hits[1]._source.field[0]);
-          expect(docs[1].field1).toEqual(mockES4Results.hits.hits[1]._source.field1[0]);
-          called++;
-        });
-
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
-        expect(called).toEqual(1);
-      });
-    });
-
-    describe('version 5+', function() {
+    describe('version 7+', function() {
       beforeEach(inject(function () {
         searcher = searchSvc.createSearcher(
           mockFieldSpec,
@@ -768,7 +569,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       searcher.search().then(function() {
         called++;
         var docs = searcher.docs;
-        var expectedUrl = 'http://localhost:9200/tmdb/movie/_doc/AU8pXbemwjf9yCj9Xh4e';
+        var expectedUrl = 'http://localhost:9200/tmdb/movie/_doc/AU8pXbemwjf9yCj9Xh4e?pretty=true';
         expect(docs[0]._url()).toEqual(expectedUrl);
       });
 
@@ -1483,6 +1284,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
   describe('templated search', function() {
     beforeEach(inject(function () {
 
+      // the 'id' tells us that we have a templated search.
       var mockEsParams  = {
         id: 'tmdb-title-search-template',
         params: {
@@ -1492,7 +1294,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       searcher = searchSvc.createSearcher(
         mockFieldSpec,
-        mockEsUrl + '/template',
+        mockEsUrl,
         mockEsParams,
         mockQueryText,
         { },

@@ -84,17 +84,25 @@ describe('Service: esUrlSvc', function () {
     });
 
     it('understands when template endpoint used', function() {
-      var url = 'http://es.quepid.com/tmdb/_search';
-      var uri = esUrlSvc.parseUrl(url);
-      expect(esUrlSvc.isTemplateCall(uri)).toBe(false);
+      // the 'id' tells us that we have a templated search.
+      var templateEsParams  = {
+        id: 'tmdb-title-search-template',
+        params: {
+          search_query: 'star'
+        }
+      };
+      
+      var mockEsParams  = {
+        query: {
+          match: {
+            title: "#$query##"
+          }
+        }
+      };
 
-      url = 'http://es.quepid.com/tmdb/_search/template';
-      uri = esUrlSvc.parseUrl(url);
-      expect(esUrlSvc.isTemplateCall(uri)).toBe(true);
+      expect(esUrlSvc.isTemplateCall(templateEsParams)).toBe(true);
+      expect(esUrlSvc.isTemplateCall(mockEsParams)).toBe(false);
 
-      url = 'http://es.quepid.com/tmdb/_search/template/';
-      uri = esUrlSvc.parseUrl(url);
-      expect(esUrlSvc.isTemplateCall(uri)).toBe(true);
     });
 
   });
@@ -116,7 +124,7 @@ describe('Service: esUrlSvc', function () {
     it('builds a proper doc URL from the doc info', function() {
       var docUrl = esUrlSvc.buildDocUrl(uri, doc);
 
-      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_doc/1');
+      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_doc/1?pretty=true');
     });
 
     it('escapes the # character if it exists in the _id field', function(){
@@ -128,7 +136,7 @@ describe('Service: esUrlSvc', function () {
 
       var docUrl = esUrlSvc.buildDocUrl(uri, doc2);
 
-      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_doc/X%23123%23BOB');
+      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_doc/X%23123%23BOB?pretty=true');
     });
   });
 
