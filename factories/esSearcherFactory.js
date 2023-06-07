@@ -381,7 +381,7 @@
 
       var apiMethod = self.config.apiMethod;
 
-      //var templateCall = isTemplateCall(self.args);
+      var templateCall = isTemplateCall(self.args);
 
       //if (templateCall){
       //  uri.pathname = uri.pathname + '/template';
