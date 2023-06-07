@@ -374,6 +374,7 @@
     }
 
     // Templatized queries require us to add a /template to the url.
+    // Lots of refactoring between this method and the search() method!
     function renderTemplate() {
       /*jslint validthis:true*/
       var self      = this;
