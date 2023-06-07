@@ -1,5 +1,9 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.22.0 (2023-06-06)
+- Template calls to OS and ES previously required you to add a "/template" to the url in tools like Quepid.
+However, by looking for an `id:` parameter in the query, we can identify when a template has been provide, and only then add the /template.  This will make the experience in Quepid smoother, and fix some issues where non template calls are sent and fail due to the OS/ES url having a trailing /template!  https://github.com/o19s/splainer-search/pull/122 by @epugh fixes https://github.com/o19s/quepid/issues/747.
+
 # 2.21.0 (2023-05-23)
 - Urls to documents that have a document id with a `#` character embedded don't pass the id into OpenSearch and Elasticsearch.  We now escape that character to fool the browser ;-).  https://github.com/o19s/splainer-search/pull/120 by @epugh fixes https://github.com/o19s/splainer-search/issues/119.
 
