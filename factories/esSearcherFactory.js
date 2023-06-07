@@ -41,6 +41,7 @@
     Searcher.prototype.explain          = explain;
     Searcher.prototype.majorVersion     = majorVersion;
     Searcher.prototype.isTemplateCall   = isTemplateCall;
+    Searcher.prototype.renderTemplate   = renderTemplate;
 
 
     function addDocToGroup (groupedBy, group, solrDoc) {
@@ -368,8 +369,114 @@
     } // end of majorVersion()
 
     // Templatized queries require us to add a /template to the url.
+    // I feel like this args parameter should be replaced wiht self.args.
     function isTemplateCall(args) {
-      return esUrlSvc.isTemplateCall(args);     
+      return esUrlSvc.isTemplateCall(args);
+    }
+
+    // Templatized queries require us to add a /template to the url.
+    // Lots of refactoring between this method and the search() method!
+    function renderTemplate() {
+      /*jslint validthis:true*/
+      var self      = this;
+      var uri       = esUrlSvc.parseUrl(self.url);
+
+      var apiMethod = self.config.apiMethod;
+
+      var templateCall = isTemplateCall(self.args);
+
+      //if (templateCall){
+      //  uri.pathname = uri.pathname + '/template';
+      //}
+
+      // Using templates assumes that the _source field is defined
+      // in the template, not passed in
+
+      //if (apiMethod === 'GET' && !templateCall) {
+      //  var fieldList = (self.fieldList === '*') ? '*' : self.fieldList.join(',');
+      //  esUrlSvc.setParams(uri, {
+      //    _source:       fieldList,
+      //  });
+      //}
+      var url       = esUrlSvc.buildRenderTemplateUrl(uri);
+      var transport = transportSvc.getTransport({apiMethod: apiMethod});
+
+      var queryDslWithPagerArgs = angular.copy(self.queryDsl);
+      if (self.pagerArgs) {
+        if (templateCall) {
+          queryDslWithPagerArgs.params.from = self.pagerArgs.from;
+          queryDslWithPagerArgs.params.size = self.pagerArgs.size;
+        }
+        else {
+          queryDslWithPagerArgs.from = self.pagerArgs.from;
+          queryDslWithPagerArgs.size = self.pagerArgs.size;
+        }
+      }
+
+      if (templateCall) {
+        delete queryDslWithPagerArgs._source;
+        delete queryDslWithPagerArgs.highlight;
+      } else if (self.config.highlight===false) {
+        delete queryDslWithPagerArgs.highlight;
+      }
+
+      self.inError  = false;
+
+      var formatError = function(msg) {
+          var errorMsg = '';
+          if (msg) {
+            if (msg.status >= 400) {
+              errorMsg = 'HTTP Error: ' + msg.status + ' ' + msg.statusText;
+            }
+            if (msg.status > 0) {
+              if (msg.hasOwnProperty('data') && msg.data) {
+
+                if (msg.data.hasOwnProperty('error')) {
+                  errorMsg += '\n' + JSON.stringify(msg.data.error, null, 2);
+                }
+                if (msg.data.hasOwnProperty('_shards')) {
+                  angular.forEach(msg.data._shards.failures, function(failure) {
+                    errorMsg += '\n' + JSON.stringify(failure, null, 2);
+                  });
+                }
+
+              }
+            }
+            else if (msg.status === -1 || msg.status === 0) {
+              errorMsg +=  'Network Error! (host not found)\n';
+              errorMsg += '\n';
+              errorMsg +=  'or CORS needs to be configured for your Elasticsearch\n';
+              errorMsg +=  '\n';
+              errorMsg +=  'Enable CORS in elasticsearch.yml:\n';
+              errorMsg += '\n';
+              errorMsg += 'http.cors.allow-origin: "/https?:\\\\/\\\\/(.*?\\\\.)?(quepid\\\\.com|splainer\\\\.io)/"\n';
+              errorMsg += 'http.cors.enabled: true\n';
+            }
+            msg.searchError = errorMsg;
+          }
+          return msg;
+      };
+
+      var headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);
+
+      activeQueries.count++;
+      return transport.query(url, queryDslWithPagerArgs, headers)
+        .then(function success(httpConfig) {
+          var data = httpConfig.data;
+          activeQueries.count--;
+
+          self.renderedTemplateJson = data;
+
+        }, function error(msg) {
+          activeQueries.count--;
+          self.inError = true;
+          return $q.reject(formatError(msg));
+        })
+        .catch(function(response) {
+          $log.debug('Failed to render template');
+          return $q.reject(response);
+        });
+
     }
 
     // Return factory object

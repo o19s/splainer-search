@@ -91,7 +91,7 @@ describe('Service: esUrlSvc', function () {
           search_query: 'star'
         }
       };
-      
+
       var mockEsParams  = {
         query: {
           match: {
@@ -106,6 +106,35 @@ describe('Service: esUrlSvc', function () {
     });
 
   });
+
+  describe('build template render URL', function() {
+    var url = 'http://localhost:9200/tmdb/_search';
+
+
+    var uri = null;
+    beforeEach( function () {
+      uri = esUrlSvc.parseUrl(url);
+    });
+
+    it('builds a proper doc URL from the full search url', function() {
+      var renderTemplateUrl = esUrlSvc.buildRenderTemplateUrl(uri);
+
+      expect(renderTemplateUrl).toBe('http://localhost:9200/_render/template');
+    });
+
+    it('escapes the # character if it exists in the _id field', function(){
+      var doc2 = {
+        _index: 'tmdb',
+        _type:  'movies',
+        _id:    'X#123#BOB'
+      };
+
+      var docUrl = esUrlSvc.buildDocUrl(uri, doc2);
+
+      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_doc/X%23123%23BOB?pretty=true');
+    });
+  });
+
 
   describe('build doc URL', function() {
     var url = 'http://localhost:9200/tmdb/_search';

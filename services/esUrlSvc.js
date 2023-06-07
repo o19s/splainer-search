@@ -20,6 +20,7 @@ angular.module('o19s.splainer-search')
       self.buildExplainUrl  = buildExplainUrl;
       self.buildUrl         = buildUrl;
       self.buildBaseUrl     = buildBaseUrl;
+      self.buildRenderTemplateUrl = buildRenderTemplateUrl;
       self.setParams        = setParams;
       self.getHeaders       = getHeaders;
       self.isBulkCall       = isBulkCall;
@@ -108,6 +109,22 @@ angular.module('o19s.splainer-search')
       function buildExplainUrl (uri, doc) {
         return buildDocUrl(uri, doc, true);
       }
+
+      /**
+       *
+       * Builds ES URL of the form [protocol]://[host][:port]/_render/template
+       * for seeing a rendered template.
+       *
+       */
+      function buildRenderTemplateUrl (uri) {
+
+        var url = self.buildBaseUrl(uri);
+
+        url = url + '/_render/template';
+
+        return url;
+      }
+
 
       /**
        *
