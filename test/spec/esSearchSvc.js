@@ -1362,4 +1362,68 @@ describe('Service: searchSvc: ElasticSearch', function() {
       expect(called).toEqual(1);
     });
   });
+
+  describe('rendering templates', function() {
+    var mockTemplateResults = {
+      "template_output" : {
+        "query" : {
+          "match" : {
+            "title" : "star"
+          }
+        },
+        "from" : "0",
+        "size" : "1",
+        "_source" : [
+          "id",
+          "title",
+          "poster_path"
+        ]
+      }
+    };
+
+
+
+    beforeEach(inject(function () {
+
+      mockFieldSpec = fieldSpecSvc.createFieldSpec('id:_id title vote_avg_times_two');
+      var mockTemplateQueryParams  = {
+        id: "tmdb-title-search-template",
+        params: {
+          search_query: "star",
+          from: 0,
+          size: 2
+        }
+      };
+
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockTemplateQueryParams,
+        mockQueryText,
+        { },
+        'es'
+      );
+    }));
+
+    it('returns the rendered template showing the underlying query to be issued', function() {
+      $httpBackend.expectPOST('http://localhost:9200/_render/template').
+      respond(200, mockTemplateResults);
+
+      var called = 0;
+
+      searcher.renderTemplate()
+      .then(function() {
+        var renderedTemplateJson = searcher.renderedTemplateJson;
+        expect(renderedTemplateJson.template_output.query.match.title).toEqual("star");
+        expect(renderedTemplateJson).toEqual(mockTemplateResults);
+
+
+        called++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+    });
+  });
 });

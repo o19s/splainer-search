@@ -111,6 +111,22 @@ angular.module('o19s.splainer-search')
 
       /**
        *
+       * Builds ES URL of the form [protocol]://[host][:port]/_render/template
+       * for seeing a rendered template.
+       *
+       */
+      function buildRenderTemplateUrl (uri, args) {
+
+        var url = self.buildBaseUrl(uri);
+
+        url = url + '/_render/template';
+
+        return url;
+      }
+
+
+      /**
+       *
        * Builds ES URL for a search query.
        * Adds any query params if present: /_search?from=10&size=10
        */
