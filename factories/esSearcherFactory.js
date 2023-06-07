@@ -369,6 +369,7 @@
     } // end of majorVersion()
 
     // Templatized queries require us to add a /template to the url.
+    // I feel like this args parameter should be replaced wiht self.args.
     function isTemplateCall(args) {
       return esUrlSvc.isTemplateCall(args);
     }
