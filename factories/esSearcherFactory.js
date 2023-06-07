@@ -377,8 +377,8 @@
     function renderTemplate() {
       /*jslint validthis:true*/
       var self      = this;
-      //var uri       = esUrlSvc.parseUrl(self.url);
-      var uri       = esUrlSvc.parseUrl("http://localhost:9200/_render/template");
+      var uri       = esUrlSvc.parseUrl(self.url);
+
       var apiMethod = self.config.apiMethod;
 
       var templateCall = isTemplateCall(self.args);
@@ -397,7 +397,7 @@
       //    _source:       fieldList,
       //  });
       //}
-      var url       = esUrlSvc.buildUrl(uri);
+      var url       = esUrlSvc.buildRenderTemplateUrl(uri);
       var transport = transportSvc.getTransport({apiMethod: apiMethod});
 
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);

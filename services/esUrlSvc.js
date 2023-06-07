@@ -20,6 +20,7 @@ angular.module('o19s.splainer-search')
       self.buildExplainUrl  = buildExplainUrl;
       self.buildUrl         = buildUrl;
       self.buildBaseUrl     = buildBaseUrl;
+      self.buildRenderTemplateUrl = buildRenderTemplateUrl;
       self.setParams        = setParams;
       self.getHeaders       = getHeaders;
       self.isBulkCall       = isBulkCall;
@@ -115,7 +116,7 @@ angular.module('o19s.splainer-search')
        * for seeing a rendered template.
        *
        */
-      function buildRenderTemplateUrl (uri, args) {
+      function buildRenderTemplateUrl (uri) {
 
         var url = self.buildBaseUrl(uri);
 
