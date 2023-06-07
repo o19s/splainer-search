@@ -42,63 +42,6 @@ describe('Service: searchSvc: ElasticSearch', function() {
     mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1');
   }));
 
-  var mockES4Results = {
-    hits: {
-      total: 2,
-      'max_score': 1.0,
-      hits: [
-        {
-          '_index': 'statedecoded',
-          '_type':  'law',
-          '_id':    'l_1',
-          '_score': 5.0,
-          '_source': {
-            'field':  ['1--field value'],
-            'field1': ['1--field1 value']
-          },
-        },
-        {
-          '_index': 'statedecoded',
-          '_type':  'law',
-          '_id':    'l_1',
-          '_score': 3.0,
-          '_source': {
-            'field':  ['2--field value'],
-            'field1': ['2--field1 value']
-          }
-        }
-      ]
-    }
-  };
-
-  var mockES5Results = {
-    hits: {
-      total: 2,
-      'max_score': 1.0,
-      hits: [
-        {
-          '_index': 'statedecoded',
-          '_type':  'law',
-          '_id':    'l_1',
-          '_score': 5.0,
-          '_source': {
-            'field':  ['1--field value'],
-            'field1': ['1--field1 value']
-          },
-        },
-        {
-          '_index': 'statedecoded',
-          '_type':  'law',
-          '_id':    'l_1',
-          '_score': 3.0,
-          '_source': {
-            'field':  ['2--field value'],
-            'field1': ['2--field1 value']
-          }
-        }
-      ]
-    }
-  };
 
   var mockES7Results = {
     hits: {
@@ -152,7 +95,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         };
 
         $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
-          .respond(200, mockES5Results);
+          .respond(200, mockES7Results);
 
         searcher.search();
         $httpBackend.flush();
@@ -173,7 +116,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         };
 
         $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
-          .respond(200, mockES5Results);
+          .respond(200, mockES7Results);
 
         searcher.search();
         $httpBackend.flush();
@@ -184,7 +127,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           var esQuery = angular.fromJson(data);
           return (esQuery.query.term.text === mockQueryText);
         }).
-        respond(200, mockES5Results);
+        respond(200, mockES7Results);
         searcher.search();
         $httpBackend.flush();
         $httpBackend.verifyNoOutstandingExpectation();
@@ -192,7 +135,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       it('returns docs (they should look just like ES docs)', function() {
         $httpBackend.expectPOST(mockEsUrl).
-        respond(200, mockES5Results);
+        respond(200, mockES7Results);
 
         var called = 0;
 
@@ -201,8 +144,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
           var docs = searcher.docs;
           expect(docs.length === 2);
 
-          var firstHit  = mockES5Results.hits.hits[0];
-          var secondHit = mockES5Results.hits.hits[1];
+          var firstHit  = mockES7Results.hits.hits[0];
+          var secondHit = mockES7Results.hits.hits[1];
           expect(docs[0].field).toEqual(firstHit._source.field[0]);
           expect(docs[0].field1).toEqual(firstHit._source.field1[0]);
           expect(docs[1].field).toEqual(secondHit._source.field[0]);
@@ -217,7 +160,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       it('source has no "doc" or "field" property', function() {
         $httpBackend.expectPOST(mockEsUrl).
-        respond(200, mockES5Results);
+        respond(200, mockES7Results);
 
         var called = 0;
 
@@ -316,7 +259,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         $httpBackend.expectPOST(targetUrl, undefined, function(headers) {
           return headers['Authorization'] == 'Basic ' + btoa('username:password');
         }).
-        respond(200, mockES5Results);
+        respond(200, mockES7Results);
 
         var called = 0;
 
@@ -325,8 +268,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
           var docs = searcher.docs;
           expect(docs.length === 2);
 
-          var firstHit  = mockES5Results.hits.hits[0];
-          var secondHit = mockES5Results.hits.hits[1];
+          var firstHit  = mockES7Results.hits.hits[0];
+          var secondHit = mockES7Results.hits.hits[1];
           expect(docs[0].field).toEqual(firstHit._source.field[0]);
           expect(docs[0].field1).toEqual(firstHit._source.field1[0]);
           expect(docs[1].field).toEqual(secondHit._source.field[0]);
@@ -378,18 +321,18 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery = angular.fromJson(data);
         return (esQuery.hasOwnProperty('explain') && esQuery.explain === true);
       }).
-      respond(200, mockES4Results);
+      respond(200, mockES7Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
     it('it populates explain', function() {
-      var mockES4ResultsWithExpl = angular.copy(mockES4Results);
-      mockES4ResultsWithExpl.hits.hits[0]._explanation = sumExplain;
+      var mockES7ResultsWithExpl = angular.copy(mockES7Results);
+      mockES7ResultsWithExpl.hits.hits[0]._explanation = sumExplain;
       var called = 0;
       $httpBackend.expectPOST(mockEsUrl).
-        respond(200, mockES4ResultsWithExpl);
+        respond(200, mockES7ResultsWithExpl);
       searcher.search()
       .then(function() {
         var docs = searcher.docs;
@@ -404,11 +347,11 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
 
     it('source has no _explanation', function() {
-      var mockES4ResultsWithExpl = angular.copy(mockES4Results);
-      mockES4ResultsWithExpl.hits.hits[0]._explanation = sumExplain;
+      var mockES7ResultsWithExpl = angular.copy(mockES7Results);
+      mockES7ResultsWithExpl.hits.hits[0]._explanation = sumExplain;
       var called = 0;
       $httpBackend.expectPOST(mockEsUrl).
-        respond(200, mockES4ResultsWithExpl);
+        respond(200, mockES7ResultsWithExpl);
       searcher.search()
       .then(function() {
         var docs = searcher.docs;
@@ -477,7 +420,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery = angular.fromJson(data);
         return (esQuery.hasOwnProperty('profile') && esQuery.profile === true);
       }).
-      respond(200, mockES4Results);
+      respond(200, mockES7Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -650,7 +593,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           angular.equals( esQuery.highlight, expectedHighlight )
         );
       }).
-      respond(200, mockES4Results);
+      respond(200, mockES7Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -682,7 +625,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           angular.equals( esQuery.highlight, expectedHighlight )
         );
       }).
-      respond(200, mockES4Results);
+      respond(200, mockES7Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -714,7 +657,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           angular.equals( esQuery.highlight, expectedHighlight )
         );
       }).
-      respond(200, mockES4Results);
+      respond(200, mockES7Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -811,7 +754,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery = angular.fromJson(data);
         return (esQuery.query.term.text === mockQueryText);
       }).
-      respond(200, mockES4Results);
+      respond(200, mockES7Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -838,7 +781,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery = angular.fromJson(data);
         return (esQuery.query.term.text === 'taco&burrito taco&burrito purina headphone purina');
       }).
-      respond(200, mockES4Results);
+      respond(200, mockES7Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -865,7 +808,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         var esQuery = angular.fromJson(data);
         return (esQuery.query.term.text === 'lovely bunnies');
       }).
-      respond(200, mockES4Results);
+      respond(200, mockES7Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -893,7 +836,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         //console.log(esQuery.query.term.text);
         return (esQuery.query.term.text === 'purina \"\"');
       }).
-      respond(200, mockES4Results);
+      respond(200, mockES7Results);
       searcher.search();
       $httpBackend.flush();
       $httpBackend.verifyNoOutstandingExpectation();
@@ -1242,7 +1185,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           expect(jsonData._source).toEqual(expectedParams._source);
           return true;
         }
-      ).respond(200, mockES4Results);
+      ).respond(200, mockES7Results);
 
       searcher.search();
       $httpBackend.flush();
