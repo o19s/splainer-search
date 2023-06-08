@@ -186,7 +186,7 @@ describe('Service: esUrlSvc', function () {
     it('builds a proper doc explain URL from the doc info', function() {
       var docUrl = esUrlSvc.buildExplainUrl(uri, doc);
 
-      expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_explain/1');
+      expect(docUrl).toBe('http://localhost:9200/tmdb/_explain/1');
     });
   });
 

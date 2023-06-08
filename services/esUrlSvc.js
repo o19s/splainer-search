@@ -80,7 +80,7 @@ angular.module('o19s.splainer-search')
         var url = self.buildBaseUrl(uri);
 
         url = url + '/' + index + '/';
-        if (type) {
+        if (!addExplain && type) {
           url = url + type + '/';
         }
 
