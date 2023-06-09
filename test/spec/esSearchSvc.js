@@ -1105,7 +1105,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.expectPOST(url).respond(200, expectedResponse);
 
       angular.forEach(expectedDocs, function(doc) {
-        var explainUrl = "http://localhost:9200/statedecoded/law/";
+        var explainUrl = "http://localhost:9200/statedecoded/";
         explainUrl += '_explain/' + doc._id;
         $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
       });
@@ -1123,7 +1123,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.expectPOST(url).respond(200, expectedResponse);
 
       angular.forEach(expectedDocs, function(doc) {
-        var explainUrl = "http://localhost:9200/statedecoded/law/";
+        var explainUrl = "http://localhost:9200/statedecoded/";
         explainUrl += '_explain/' + doc._id;
         $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
       });
@@ -1145,7 +1145,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.expectPOST(url).respond(200, expectedResponse);
 
       angular.forEach(expectedDocs, function(doc) {
-        var explainUrl = "http://localhost:9200/statedecoded/law/";
+        var explainUrl = "http://localhost:9200/statedecoded/";
         explainUrl += '_explain/' + doc._id;
         $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
       });
