@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.22.1 (2023-06-07)
+- Turns out the URL we have been crafting for OS/ES for `_explain` is the very old format! https://github.com/o19s/splainer-search/pull/124 by @epugh fixes this.
+
 # 2.22.0 (2023-06-07)
 - Template calls to OS and ES previously required you to add a "/template" to the url in tools like Quepid.
 However, by looking for an `id:` parameter in the query, we can identify when a template has been provide, and only then add the /template.  This will make the experience in Quepid smoother, and fix some issues where non template calls are sent and fail due to the OS/ES url having a trailing /template!  https://github.com/o19s/splainer-search/pull/122 by @epugh fixes https://github.com/o19s/quepid/issues/747.
