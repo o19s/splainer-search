@@ -253,6 +253,45 @@ describe('Service: explainSvc', function () {
 
   });
 
+  describe('multiplicative boosts in Solr', function() {
+    // Solr explain
+
+    it('deals with multiplicative boosts in Solr', function() {
+      var multiplicativeExpl = {
+          'match': true,
+          'value': 2237.4985427856445,
+          'description': 'weight(FunctionScoreQuery(text_all:rambo, scored by boost(sum(int(vote_count),const(0))))), result of:',
+          'details': [{
+            'match': true,
+            'value': 2237.4985427856445,
+            'description': 'product of:',
+            'details': [{
+              'match': true,
+              'value': 2.6078072,
+              'description': 'product of:',
+              'details':
+              [{
+                'match': true,
+                'value': 858,
+                'description': 'sum(int(vote_count)=858,const(0))',
+              }]
+            }]
+          }]
+        };
+      var multiplicativeExplain = explainSvc.createExplain(multiplicativeExpl);
+      // the minof is ignored, as it has one child we jump straight to the function query
+      var infl = multiplicativeExplain.influencers();
+
+      //
+      expect(infl.length).toEqual(0);
+      expect(multiplicativeExplain.explanation()).toContain('weight');
+      //expect(multiplicativeExplain.explanation()).toContain('sum(int(vote_count)=858,const(0))');
+
+      var matches = multiplicativeExplain.vectorize();
+      expect(Object.keys(matches.vecObj).length).toBe(1); // get down to just the function query
+      expect(Object.keys(matches.vecObj)[0]).toContain('weight'); // get down to just the function query
+    });
+  });
 
 
 });
