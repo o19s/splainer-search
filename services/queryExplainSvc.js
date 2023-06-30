@@ -33,9 +33,9 @@ angular.module('o19s.splainer-search')
         // tf, idf, norms, etc.
         // We break that out separately, not part of the main explain
         // tree, but as a different hiererarchy
-        var weightRegex = /weight\((.*?)\s+in\s+\d+?\)/;
+        var weightRegex = /^weight\((?!FunctionScoreQuery).*/;
         var description = explJson.description;
-
+        
         var match = description.match(weightRegex);
         if (match !== null && match.length > 1) {
           this.realExplanation = match[1];

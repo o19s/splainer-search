@@ -56,6 +56,7 @@ angular.module('o19s.splainer-search')
 
       var tieRegex = /max plus ([0-9.]+) times/;
       var prefixRegex = /\:.*?\*(\^.+?)?, product of/;
+      var weightRegex = /^weight\((?!FunctionScoreQuery).*/;
       var createExplain = function(explJson) {
         explJson = replaceBadExplanationJson(explJson);
         var base = new Explain(explJson, createExplain);
@@ -64,6 +65,7 @@ angular.module('o19s.splainer-search')
         var IGNORED = null;
         var tieMatch = description.match(tieRegex);
         var prefixMatch = description.match(prefixRegex);
+        var weightMatch = description.match(weightRegex);
         if (explJson.hasOwnProperty('details')) {
           details = explJson.details;
         }
@@ -95,9 +97,20 @@ angular.module('o19s.splainer-search')
           MatchAllDocsExplain.prototype = base;
           return new MatchAllDocsExplain(explJson);
         }
-        else if (description.startsWith('weight(')) {
+        else if (weightMatch !== null) {
           WeightExplain.prototype = base;
           return new WeightExplain(explJson);
+        }
+        //Solr behavior for multiplicative boosts changed between versions 4.x and 8.x
+        //this code captures the changed behavior
+        else if (description.startsWith('weight(FunctionScoreQuery(')) {
+          if (details.length === 1) {
+            return meOrOnlyChild(new ProductExplain(explJson));
+          }
+          else { //fall back to default behavior of detecting 'weight' in descriptions
+          WeightExplain.prototype = base;
+          return new WeightExplain(explJson);
+          }
         }
         else if (description.startsWith('FunctionQuery')) {
           FunctionQueryExplain.prototype = base;
