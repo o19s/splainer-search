@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.23.0 (2023-07-05)
+- Solr changed the explanation of the score when using multiplicative boost functions via boost parameter somewhere between Solr 4.6 and Solr 8.11.  https://github.com/o19s/splainer-search/pull/126 by @wrigleyDan fixes https://github.com/o19s/splainer-search/issues/125.
+
 # 2.22.1 (2023-06-07)
 - Turns out the URL we have been crafting for OS/ES for `_explain` is the very old format! https://github.com/o19s/splainer-search/pull/124 by @epugh fixes this.
 
