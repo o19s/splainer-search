@@ -475,6 +475,18 @@ describe('Service: normalDocsSvc', function () {
 
 
     });
+    
+    it('handles passing options for a thumb', function() {
+      var fieldSpec = {id: 'id', title: 'title_field', subs: ['relative_image'], thumb: 'relative_image', thumb_options: {prefix: 'http://example.org/thumbs/'}};
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
+      expect(normalDoc.subs["relative_image"]).toEqual('/some/image.png');
+      expect(normalDoc.thumb).toEqual('/some/image.png');
+      expect(normalDoc.hasImage()).toBeFalse();
+      expect(normalDoc.hasThumb()).toBeTrue();
+      expect(normalDoc.thumb_options).toEqual({prefix: 'http://example.org/thumbs/'});
+
+
+    });    
   });
 
 });
