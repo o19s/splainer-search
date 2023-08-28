@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.24.0 (2023-08-28)
+- Support using a prefix for a image path for thumbnails, the same way we support it for images.  https://github.com/o19s/splainer-search/pull/127 by @epugh fixes https://github.com/o19s/quepid/issues/790 by @OkkeKlein.
+
 # 2.23.0 (2023-07-05)
 - Solr changed the explanation of the score when using multiplicative boost functions via boost parameter somewhere between Solr 4.6 and Solr 8.11.  https://github.com/o19s/splainer-search/pull/126 by @wrigleyDan fixes https://github.com/o19s/splainer-search/issues/125.
 
