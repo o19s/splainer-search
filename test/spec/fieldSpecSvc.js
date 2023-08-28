@@ -249,5 +249,14 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.image_options).toEqual({prefix: "http://example.org/images", height: 250});
     expect(fieldSpec.subs).toContain('subfield2');
   });
+  
+  it('handles json definition for thumb', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield {"name": "image_url", "type":"thumb", "prefix": "http://example.org/thumbs", "height": 250} subfield2');
+    expect(fieldSpec.id).toEqual('foo_id');
+    expect(fieldSpec.title).toEqual('atitlefield');
+    expect(fieldSpec.thumb).toContain('image_url');
+    expect(fieldSpec.thumb_options).toEqual({prefix: "http://example.org/thumbs", height: 250});
+    expect(fieldSpec.subs).toContain('subfield2');
+  });  
 
 });

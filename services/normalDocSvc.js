@@ -156,6 +156,10 @@ angular.module('o19s.splainer-search')
         if (fieldSpec.image_options) {
             normalDoc.image_options = fieldSpec.image_options;
         }
+        /* jshint -W106 */
+        if (fieldSpec.thumb_options) {
+            normalDoc.thumb_options = fieldSpec.thumb_options;
+        }        
         /* jshint +W106 */
         normalDoc.titleField = fieldSpec.title;
         normalDoc.embeds = {};
