@@ -56,6 +56,8 @@
           },
           size: ids.length,
         };
+      } else if ( settings.searchEngine === 'vectara') {
+        // Vectara does not have an endpoint to retrieve per doc metadata directly
       }
 
       self.config = {
