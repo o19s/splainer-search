@@ -19,6 +19,7 @@
       self.apiMethod      = settings.apiMethod;
       self.version        = settings.version;
       self.customHeaders  = settings.customHeaders;
+      self.responseParser = settings.responseParser;
 
       self.searcher = null;
       self.fields   = [];
@@ -33,6 +34,13 @@
         var args    = { };
         var fields  = '*';
 
+        if (self.searchEngine === 'snapshot') {
+          // We need to wrap the rest of the logic with the underlying stuff
+          // we may need to establish that calling the search api must have a sepcific
+          // pattern, a request and response parsers?   instead of just a responseParser
+          self.searchEngine = self.responseParser;
+        }
+        
         if ( self.searchEngine === 'solr' ) {
           args = { q: ['*:*'] };
         } else if ( self.searchEngine === 'es' || self.searchEngine === 'os') {
