@@ -1696,7 +1696,7 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
-    it('paginates for explain other seraches', function() {
+    it('paginates for explain other searches', function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,

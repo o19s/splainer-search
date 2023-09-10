@@ -89,6 +89,7 @@
       var pageConfig      = defaultSolrConfig;
       pageConfig.sanitize = false;
       pageConfig.escapeQuery = self.config.escapeQuery;
+      pageConfig.apiMethod   = self.config.apiMethod;
 
       var options = {
         fieldList:          self.fieldList,
