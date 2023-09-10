@@ -19,7 +19,7 @@
       self.apiMethod      = settings.apiMethod;
       self.version        = settings.version;
       self.customHeaders  = settings.customHeaders;
-      self.responseParser = settings.responseParser;
+      self.responseParser = settings.responseParser; // Not used right now.
 
       self.searcher = null;
       self.fields   = [];
@@ -38,7 +38,10 @@
           // We need to wrap the rest of the logic with the underlying stuff
           // we may need to establish that calling the search api must have a sepcific
           // pattern, a request and response parsers?   instead of just a responseParser
-          self.searchEngine = self.responseParser;
+          // 
+          //self.searchEngine = self.responseParser;
+          // For now, just hard coding Solr, cause that is what the Quepid service uses.
+          self.searchEngine = 'solr';
         }
         
         if ( self.searchEngine === 'solr' ) {
