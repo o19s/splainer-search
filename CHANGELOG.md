@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.25.0 (??)
+- Fixed bug in pagination that didn't respect the `apiMethod` setting for Solr.  If you used GET, splainer-search sent the request as JSONP anyway, causing errors in the Browser.  https://github.com/o19s/splainer-search/pull/130 by @epugh.
+
 # 2.24.0 (2023-08-28)
 - Support using a prefix for a image path for thumbnails, the same way we support it for images.  https://github.com/o19s/splainer-search/pull/127 by @epugh fixes https://github.com/o19s/quepid/issues/790 by @OkkeKlein.
 
