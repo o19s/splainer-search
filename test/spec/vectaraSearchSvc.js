@@ -39,7 +39,8 @@ describe('Service: searchSvc: Vectara', function() {
   var mockVectaraResults = {
     responseSet: [ {
       response: [
-          // ignored and omitted here
+          // ignored and omitted here, the response contains the extracted matches, but in splainer we only evaluate
+          // use the information from the documents array below
       ],
       status: [],
       document: [

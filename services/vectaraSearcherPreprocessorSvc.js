@@ -11,22 +11,12 @@ angular.module('o19s.splainer-search')
             self.prepare  = prepare;
 
             const replaceQuery = function(args, queryText) {
-                // Allows full override of query if a JSON friendly format is sent in
-                if (queryText instanceof Object) {
-                    return queryText;
-                } else {
-                    if (queryText) {
-                        queryText = queryText.replace(/\\/g, '\\\\');
-                        queryText = queryText.replace(/"/g, '\\\"');
-                    }
+                var replaced  = angular.toJson(args, true);
 
-                    var replaced  = angular.toJson(args, true);
+                replaced      = queryTemplateSvc.hydrate(replaced, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
+                replaced      = angular.fromJson(replaced);
 
-                    replaced      = queryTemplateSvc.hydrate(replaced, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
-                    replaced      = angular.fromJson(replaced);
-
-                    return replaced;
-                }
+                return replaced;
             };
 
             var preparePostRequest = function (searcher) {
