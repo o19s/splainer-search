@@ -4,7 +4,7 @@
 # AngularJS Search Service
 
 Splainer Search is an Angular [Solr](https://solr.apache.org/), [OpenSearch](https://opensearch.org/) and [Elasticsearch](https://www.elastic.co/) search library
-focussed on relevance diagnostics  with some experimental support for other search engines, starting with [Vectara](https://www.vectara.com).
+focussed on relevance diagnostics with some experimental support for other search engines, starting with [Vectara](https://www.vectara.com).
 It's used in the relevancy tuning tools [Quepid](http://quepid.com) and [Splainer](http://splainer.io). It is available for anyone to use (see [license](LICENSE.txt)).
 
 
