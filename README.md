@@ -3,10 +3,14 @@
 
 # AngularJS Search Service
 
-Splainer Search is an Angular Solr and OpenSearch and Elasticsearch Search library focussed on relevance diagnostics. It's used in the relevancy tuning tools [Quepid](http://quepid.com) and [Splainer](http://splainer.io). Its available for anyone to use (see [license](LICENSE.txt)).
+Splainer Search is an Angular [Solr](https://solr.apache.org/), [OpenSearch](https://opensearch.org/) and [Elasticsearch](https://www.elastic.co/) search library
+focussed on relevance diagnostics with some experimental support for other search engines, starting with [Vectara](https://www.vectara.com).
+It's used in the relevancy tuning tools [Quepid](http://quepid.com) and [Splainer](http://splainer.io). It is available for anyone to use (see [license](LICENSE.txt)).
 
 
-Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsearch and OpenSearch communicate with simple HTTP and JSON via CORS. All fields are explained and highlighted if requested. A friendly interface is provided to specify the arguments in terms of a Javascript object. See below for basic examples.
+Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsearch, OpenSearch, and Vectara communication
+happens with simple HTTP and JSON via CORS.
+All fields are explained and highlighted if requested. A friendly interface is provided to specify the arguments in terms of a Javascript object. See below for basic examples.
 
 ## Basic usage
 
@@ -58,6 +62,42 @@ var searcher = searchSvc.createSearcher(
   }
 );
 ```
+
+### Vectara
+
+Splainer-search has experimental support for Vectara. You can send queries in the Vectara format but must also pass in
+the authorization headers as custom headers, e.g.
+
+```js
+var searcher = searchSvc.createSearcher(
+  ['id:_id', 'title', 'body', 'author'],
+  'https://api.vectara.io:443/v1/query',
+  {
+    "query": [
+      {
+        "query": "#$query##",
+        "numResults": 10,
+        "corpusKey": [
+          {
+            "customerId": 123456789,
+            "corpusId": 1
+          }
+        ]
+      }
+    ]
+  }, 
+  {
+    'customHeaders': {
+      "customer-id": "123456789",
+      "x-api-key": "api_key"
+    }
+  },
+  'vectara'
+);
+```
+
+Please note that the Vectara integration currently does not support explain or other advanced Splainer-search
+functionality.
 
 ## Paging
 
