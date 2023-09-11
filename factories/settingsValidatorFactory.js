@@ -38,6 +38,8 @@
         } else if ( self.searchEngine === 'es' || self.searchEngine === 'os') {
           fields = null;
         } else if ( self.searchEngine === 'vectara') {
+          
+          // When we have a caseOptions or engineOptions hash available, then this could look like "corpusId: '#$searchOptions['corpusId]##"
           args = { query: [
               {
                 query: '#$query##',
