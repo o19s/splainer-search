@@ -48,6 +48,18 @@
           args = { q: ['*:*'] };
         } else if ( self.searchEngine === 'es' || self.searchEngine === 'os') {
           fields = null;
+        } else if ( self.searchEngine === 'vectara') {
+          
+          // When we have a caseOptions or engineOptions hash available, then this could look like "corpusId: '#$searchOptions['corpusId]##"
+          args = { query: [
+              {
+                query: '#$query##',
+                numResults: 10,
+                corpusKey :[{
+                  corpusId: 1
+                }]
+              }
+            ]};
         }
 
         self.searcher = searchSvc.createSearcher(
@@ -69,6 +81,15 @@
           return doc.doc;
         } else if (self.searchEngine === 'es' || self.searchEngine === 'os') {
           return doc.doc._source;
+        } else if ( self.searchEngine === 'vectara' ) {
+          // Vectara returns doc properties in a metadata array of objects containing 'name' + 'value pairs
+          const fieldsFromDocumentMetadata = doc.doc.metadata.reduce(function(map, obj) {
+            map[obj.name] = obj.value;
+            return map;
+          }, {});
+          return Object.assign({}, {
+            'id': doc.doc.id
+          }, fieldsFromDocumentMetadata);
         }
       }
 

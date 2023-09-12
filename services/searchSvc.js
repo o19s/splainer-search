@@ -6,11 +6,13 @@ angular.module('o19s.splainer-search')
   .service('searchSvc', [
     'SolrSearcherFactory',
     'EsSearcherFactory',
+    'VectaraSearcherFactory',
     'activeQueries',
     'defaultSolrConfig',
     function searchSvc(
       SolrSearcherFactory,
       EsSearcherFactory,
+      VectaraSearcherFactory,
       activeQueries,
       defaultSolrConfig
     ) {
@@ -52,6 +54,8 @@ angular.module('o19s.splainer-search')
           searcher = new EsSearcherFactory(options);
         } else if ( searchEngine === 'os') {
           searcher = new EsSearcherFactory(options);
+        } else if ( searchEngine === 'vectara') {
+          searcher = new VectaraSearcherFactory(options);
         }
 
         return searcher;
