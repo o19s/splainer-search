@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.26.0 (2023-09-22)
+- To support a custom search api, we need to be able to override how the SettingsValidator does a ping by passing in our own arguments.  Not a perfect solution, but enables a MVP _searchapi_ to work in Quepid.  https://github.com/o19s/splainer-search/pull/131 by @epugh.
+
 # 2.25.0 (2023-09-11)
 - Fixed bug in pagination that didn't respect the `apiMethod` setting for Solr.  If you used GET, splainer-search sent the request as JSONP anyway, causing errors in the Browser.  https://github.com/o19s/splainer-search/pull/130 by @epugh.
 
