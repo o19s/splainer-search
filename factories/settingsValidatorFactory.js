@@ -19,6 +19,10 @@
       self.apiMethod      = settings.apiMethod;
       self.version        = settings.version;
       self.customHeaders  = settings.customHeaders;
+      
+      if (settings.args){
+        self.args = settings.args;
+      }
 
       self.searcher = null;
       self.fields   = [];
@@ -32,6 +36,11 @@
       function setupSearcher () {
         var args    = { };
         var fields  = '*';
+        
+        // Did we pass in some args externally that we want to use instead
+        if (self.args) {
+          args = self.args;
+        }
 
         if ( self.searchEngine === 'solr' ) {
           args = { q: ['*:*'] };
