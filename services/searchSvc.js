@@ -7,12 +7,14 @@ angular.module('o19s.splainer-search')
     'SolrSearcherFactory',
     'EsSearcherFactory',
     'VectaraSearcherFactory',
+    'SearchApiSearcherFactory',
     'activeQueries',
     'defaultSolrConfig',
     function searchSvc(
       SolrSearcherFactory,
       EsSearcherFactory,
       VectaraSearcherFactory,
+      SearchApiSearcherFactory,
       activeQueries,
       defaultSolrConfig
     ) {
@@ -29,6 +31,7 @@ angular.module('o19s.splainer-search')
       };
 
       this.createSearcher = function (fieldSpec, url, args, queryText, config, searchEngine) {
+        
         if ( searchEngine === undefined ) {
           searchEngine = 'solr';
         }
@@ -56,8 +59,10 @@ angular.module('o19s.splainer-search')
           searcher = new EsSearcherFactory(options);
         } else if ( searchEngine === 'vectara') {
           searcher = new VectaraSearcherFactory(options);
+        } else if ( searchEngine === 'searchapi') {
+          searcher = new SearchApiSearcherFactory(options);
         }
-
+        
         return searcher;
       };
 

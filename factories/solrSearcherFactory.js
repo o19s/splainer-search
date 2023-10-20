@@ -229,7 +229,7 @@
         return {};
       };
 
-      activeQueries.count++;
+      activeQueries.count++; 
       return $q(function(resolve, reject) {
         var trustedUrl = $sce.trustAsResourceUrl(url);
 
