@@ -5,13 +5,13 @@
 (function() {
   angular.module('o19s.splainer-search')
     .factory('SearchApiSearcherFactory', [
-      '$http',
       '$q',
       '$log',
       'VectaraDocFactory',
       'activeQueries',
       'searchApiSearcherPreprocessorSvc',
       'solrUrlSvc',
+      'esUrlSvc',
       'SearcherFactory',
       'queryTemplateSvc',
       'transportSvc',      
@@ -19,18 +19,19 @@
     ]);
 
   function SearchApiSearcherFactory(
-    $http, $q, $log,
+    $q, 
+    $log,
     VectaraDocFactory,
     activeQueries,
     searchApiSearcherPreprocessorSvc,
     solrUrlSvc,
+    esUrlSvc,
     SearcherFactory,
     queryTemplateSvc,
     transportSvc
   ) {
 
     var Searcher = function(options) {
-      console.log("about to create")
       SearcherFactory.call(this, options, searchApiSearcherPreprocessorSvc);
     };
 
@@ -68,21 +69,31 @@
       console.log(self.config)
       var apiMethod = self.config.apiMethod;
       var url       = self.url;
+      var uri       = esUrlSvc.parseUrl(self.url);
       var transport = transportSvc.getTransport({apiMethod: apiMethod});
 
-      console.log("url" + url);
+      console.log("url2: " + url);
       console.log("apiMethod" + apiMethod);
-      console.log("self.args:" + self.args);
+      console.log("self.args:");
+      console.log( self.args)
       console.log("queryText:" + self.queryText);
       
       // maybe the url and the payload should be managed inside the transport?
-      var baseUrl = solrUrlSvc.buildUrl(url, self.args);
-      baseUrl = queryTemplateSvc.hydrate(baseUrl, self.queryText, {encodeURI: true, defaultKw: '""'});
-      console.log("baseUrl" + baseUrl);
+      // i don't like how it's not more seamless what to do on a GET and a POST
+      //if (apiMethod === 'GET') {     
+      //  esUrlSvc.setParams(uri, self.args);
+      //}
+      // i don't like that we just ignroe the payload on a GET even though it is passed in.
+      var payload = self.queryDsl;
+      //var baseUrl = solrUrlSvc.buildUrl(url, self.args);
+      var url       = esUrlSvc.buildUrl(uri);
+    
+      //baseUrl = queryTemplateSvc.hydrate(baseUrl, self.queryText, {encodeURI: true, defaultKw: '""'});
+      console.log("url" + url);
       self.inError  = false;
 
       activeQueries.count++;
-      return transport.query(baseUrl, null, null)
+      return transport.query(url, payload, null)
         .then(function success(httpConfig) {
           console.log("Hi there")
           var data = httpConfig.data;
