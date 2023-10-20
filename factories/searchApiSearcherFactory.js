@@ -7,7 +7,7 @@
     .factory('SearchApiSearcherFactory', [
       '$q',
       '$log',
-      'VectaraDocFactory',
+      'SearchApiDocFactory',
       'activeQueries',
       'searchApiSearcherPreprocessorSvc',
       'solrUrlSvc',
@@ -21,7 +21,7 @@
   function SearchApiSearcherFactory(
     $q, 
     $log,
-    VectaraDocFactory,
+    SearchApiDocFactory,
     activeQueries,
     searchApiSearcherPreprocessorSvc,
     solrUrlSvc,
@@ -41,6 +41,7 @@
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
+    
 
 
     function addDocToGroup (groupedBy, group, vectaraDoc) {
@@ -96,28 +97,37 @@
       return transport.query(url, payload, null)
         .then(function success(httpConfig) {
           console.log("Hi there")
-          var data = httpConfig.data;
+          const data = httpConfig.data;
           activeQueries.count--;
 
-          const documents = data.responseSet && data.responseSet.length > 0 ? data.responseSet[0].document : [];
+          //const documents = data.responseSet && data.responseSet.length > 0 ? data.responseSet[0].document : [];
 
-          self.numFound = documents.length;
-
-          var parseDoc = function(doc, groupedBy, group) {
-            var options = {
-              groupedBy:          groupedBy,
-              group:              group,
-              fieldList:          self.fieldList,
-              url:                self.url
+          //self.numFound = numberOfResults();
+          if (self.config.numberOfResultsMapper !== undefined) {
+            self.numFound = self.config.numberOfResultsMapper(data);
+          }
+          
+        
+          
+          var parseDoc = function(doc) {
+            var options = {             
+              fieldList:          self.fieldList
             };
-
-            return new VectaraDocFactory(doc, options);
+            console.log("in parseDoc")
+            console.log(doc)
+            return new SearchApiDocFactory(doc, options);
           };
-
-          angular.forEach(documents, function(docFromApi) {
-            const doc = parseDoc(docFromApi);
+          
+          let  mappedDocs = [];
+          if (self.config.docsMapper !== undefined) {
+            mappedDocs = self.config.docsMapper(data);
+          }
+          
+          angular.forEach(mappedDocs, function(mappedDoc) {
+            const doc = parseDoc(mappedDoc);
             self.docs.push(doc);
           });
+                 
 
         }, function error(msg) {
           console.log("Error")
