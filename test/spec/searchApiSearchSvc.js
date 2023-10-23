@@ -111,9 +111,7 @@ describe('Service: searchSvc: SearchApi', function () {
   it('returns docs', function () {
     
     var options = { apiMethod: 'GET' };
-    options.docsMapper = function(data){
-      console.log("data:")
-      console.log(data)
+    options.docsMapper = function(data){    
       let docs = [];
       for (let doc of data) {
         docs.push ({

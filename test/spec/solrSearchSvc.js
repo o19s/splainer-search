@@ -9,6 +9,7 @@ describe('Service: searchSvc: Solr', function () {
   // instantiate service
   var searchSvc;
   var activeQueries;
+  var solrUrlSvc;
   var $httpBackend = null;
   var fieldSpecSvc = null;
   var mockSolrUrl = 'http://example.com:1234/solr/select';
@@ -34,10 +35,11 @@ describe('Service: searchSvc: Solr', function () {
     $httpBackend = $injector.get('$httpBackend');
   }));
 
-  beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_, _activeQueries_) {
+  beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_, _activeQueries_, _solrUrlSvc_) {
     searchSvc     = _searchSvc_;
     fieldSpecSvc  = _fieldSpecSvc_;
     activeQueries = _activeQueries_;
+    solrUrlSvc    = _solrUrlSvc_;
     mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1 hl:field2');
 
     activeQueries.count = 0;
@@ -63,6 +65,26 @@ describe('Service: searchSvc: Solr', function () {
     searcher.search();
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
+  });
+  
+  it('sets the proper headers for auth', function() {
+    var authSolrUrl = 'http://username:password@example.com:1234/solr/select';
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      authSolrUrl,
+      mockSolrParams,
+      mockQueryText,
+      { apiMethod: 'GET' },
+      'solr'
+    );
+
+    // The headers need to be removed from the URL, which we accomplish
+    // using the esUrlSvc.
+     var targetUrl = solrUrlSvc.buildUrl(solrUrlSvc.parseSolrUrl(authSolrUrl))
+     $httpBackend.expectGET(targetUrl, undefined, function(headers) {
+       return headers['Authorization'] == 'Basic ' + btoa('username:password');
+     }).
+     respond(200, mockResults);
   });
 
 

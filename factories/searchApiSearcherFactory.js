@@ -66,6 +66,7 @@
     function search () {
       /*jslint validthis:true*/
       const self= this;
+      console.log("I am in searchApiSearcherFactory.search")
       console.log("self.config");
       console.log(self.config)
       var apiMethod = self.config.apiMethod;
@@ -73,12 +74,6 @@
       var uri       = esUrlSvc.parseUrl(self.url);
       var transport = transportSvc.getTransport({apiMethod: apiMethod});
 
-      console.log("url2: " + url);
-      console.log("apiMethod" + apiMethod);
-      console.log("self.args:");
-      console.log( self.args)
-      console.log("queryText:" + self.queryText);
-      
       // maybe the url and the payload should be managed inside the transport?
       // i don't like how it's not more seamless what to do on a GET and a POST
       //if (apiMethod === 'GET') {     
@@ -103,12 +98,13 @@
           //const documents = data.responseSet && data.responseSet.length > 0 ? data.responseSet[0].document : [];
 
           //self.numFound = numberOfResults();
-          if (self.config.numberOfResultsMapper !== undefined) {
+          if (self.config.numberOfResultsMapper === undefined) {
+            console.warn("No numberOfResultsMapper defined so can't populate the number of results found.");
+          }
+          else {
             self.numFound = self.config.numberOfResultsMapper(data);
           }
-          
-        
-          
+                    
           var parseDoc = function(doc) {
             var options = {             
               fieldList:          self.fieldList
@@ -119,7 +115,10 @@
           };
           
           let  mappedDocs = [];
-          if (self.config.docsMapper !== undefined) {
+          if (self.config.docsMapper === undefined) {
+            console.warn("No docsMapper defined so can't populate individual docs");
+          }
+          else {
             mappedDocs = self.config.docsMapper(data);
           }
           

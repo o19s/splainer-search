@@ -18,7 +18,38 @@ angular.module('o19s.splainer-search')
       };
       
       var prepareGetRequest = function (searcher) {
-        searcher.url = searcher.url + '?query=' + searcher.queryText;
+        console.log("I am in prepareGetRequest")
+        console.log("args is" + searcher.args)
+        console.log(searcher.args)
+        console.log("querytext is " + searcher.queryText)
+        var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
+        console.log("Here is queryDSL")
+        console.log(queryDsl)
+        console.log("Here is tostring version")
+        console.log(queryDsl.toString())
+        
+        console.log(JSON.stringify(queryDsl))
+        var paramsAsStrings = [];
+        
+        if (angular.isObject(queryDsl)){
+          angular.forEach(queryDsl, function(value, key) {
+            console.log("got key " + key + ", with value " + value)
+            paramsAsStrings.push(key + '=' + value);
+          });
+        }
+        else {
+          var queryDSLAsQuerySTring = queryDsl.toString();
+          paramsAsStrings.push(queryDSLAsQuerySTring);
+        }
+        var finalUrl = searcher.url;
+
+        if (finalUrl.substring(finalUrl.length - 1) === '?') {
+          finalUrl += paramsAsStrings.join('&');
+        } else {
+          finalUrl += '?' + paramsAsStrings.join('&');
+        }
+        
+        searcher.url = finalUrl
       };
       
       var preparePostRequest = function (searcher) {
