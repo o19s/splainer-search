@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.27.0 (2023-10-25)
+- In 2.26.0 we required you to specify a "responseParser" for a custom search api that was OS, ES, or Solr.  However, that was VERY limiting, and required you to return your search results from your custom search api in one of those formats.   We now have the concept of _mappers_, which are JavaScript code that converts from the JSON format that your API returns to the native JavaScript objects that splainer-search uses.  In this release we have `numberOfResultsMapper` and `docsMapper` mappers defined, and this will evolve.  https://github.com/o19s/splainer-search/pull/132 by @epugh.
+
 # 2.26.0 (2023-09-22)
 - To support a custom search api, we need to be able to override how the SettingsValidator does a ping by passing in our own arguments.  Not a perfect solution, but enables a MVP _searchapi_ to work in Quepid.  https://github.com/o19s/splainer-search/pull/131 by @epugh.
 
