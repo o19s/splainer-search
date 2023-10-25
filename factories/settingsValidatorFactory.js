@@ -20,6 +20,12 @@
       self.version        = settings.version;
       self.customHeaders  = settings.customHeaders;
       
+      // we shouldn't unpack and set these settings to local variables
+      // because sometimes we don't know what they are all.  For example
+      // for the searchapi we need to pass a bunch of extra settings through
+      // to the searcher
+      self.settings       = settings;
+      
       if (settings.args){
         self.args = settings.args;
       }
@@ -59,17 +65,13 @@
               }
             ]};
         }
-
+        
         self.searcher = searchSvc.createSearcher(
           fieldSpecSvc.createFieldSpec(fields),
           self.searchUrl,
           args,
           '',
-          {
-            version: self.version,
-            apiMethod: self.apiMethod,
-            customHeaders: self.customHeaders
-          },
+          self.settings,
           self.searchEngine
         );
       }
@@ -88,6 +90,12 @@
           return Object.assign({}, {
             'id': doc.doc.id
           }, fieldsFromDocumentMetadata);
+        }
+        else if ( self.searchEngine === 'searchapi' ) {
+          return doc.doc;
+        }
+        else {
+          console.error('Need to determine how to source a doc for this search engine ' + self.searchEngine);
         }
       }
 

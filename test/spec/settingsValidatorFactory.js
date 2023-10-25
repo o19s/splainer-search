@@ -303,4 +303,114 @@ describe('Factory: Settings Validator', function () {
       });
     });
   });
+  
+  describe('SearchApi:', function () {
+    var settings = {
+      searchUrl:    'http://mycompany/api/search',
+      searchEngine: 'searchapi',
+      args: 'query=tesla',
+      apiMethod: 'GET'
+    };
+    settings.docsMapper = function(data){    
+      let docs = [];
+      for (let doc of data) {
+        docs.push ({
+          id: doc.publication_id,
+          publish_date_int: doc.publish_date_int,
+          title: doc.title,
+        })
+      }
+      return docs
+    }
+
+    var fullResponse = [
+        {
+            "publication_id": "12345678",
+            "publish_date_int": "20230601",
+            "score": 0.5590707659721375,
+            "title": "INFOGRAPHIC: Automakers' transition to EVs speeds up"
+        },
+        {
+            "publication_id": "1234567",
+            "publish_date_int": "20230608",
+            "score": 0.5500463247299194,
+            "title": "Tesla - March 2023 (LTM): Peer Snapshot"
+        },
+        {
+            "publication_id": "123456",
+            "publish_date_int": "20230731",
+            "score": 0.5492520928382874,
+            "title": "Tesla"
+        },
+        {
+            "publication_id": "987654",
+            "publish_date_int": "20230906",
+            "score": 0.549148440361023,
+            "title": "Tesla Motor Company - June 2023 (LTM): Peer Snapshot"
+        },
+        {
+            "publication_id": "765432",
+            "publish_date_int": "20221201",
+            "score": 0.5465325117111206,
+            "title": "Tesla Motor Company - September 2022 (LTM): Peer Snapshot"
+        }
+    ];
+
+    beforeEach( function () {
+      validator = new SettingsValidatorFactory(settings);
+    });
+
+    describe('Generates candidate ids', function() {
+
+      it('selects only ids occuring across all docs', function() {
+        $httpBackend.expectGET(settings.searchUrl + '?' + settings.args).respond(200, fullResponse);
+
+          var called = 0;
+          validator.validateUrl()
+          .then(function() {
+            expect(validator.idFields.length).toBe(3);
+            expect(validator.idFields).toContain('id')
+            expect(validator.idFields).toContain('publish_date_int')
+            expect(validator.idFields).toContain('title')
+            called++;
+          });
+
+          $httpBackend.flush();
+          $httpBackend.verifyNoOutstandingExpectation();
+          expect(called).toBe(1);
+      });
+
+    });
+
+    describe('Validate URL:', function () {
+      it('makes a successful call to the SearchApi instance', function () {
+        $httpBackend.expectGET(settings.searchUrl + '?' + settings.args).respond(200, fullResponse);
+
+        var called = 0;
+        validator.validateUrl()
+        .then(function() {
+          called++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toBe(1);
+      });
+
+      it('extracts the list of fields', function () {
+        $httpBackend.expectGET(settings.searchUrl + '?' + settings.args).respond(200, fullResponse);
+
+        var called = 0;
+        validator.validateUrl()
+        .then(function() {
+          called++;
+          expect(validator.fields).toEqual(['id', 'publish_date_int', 'title'])
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toBe(1);
+      });
+    });
+  });  
 });

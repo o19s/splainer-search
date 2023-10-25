@@ -99,6 +99,58 @@ var searcher = searchSvc.createSearcher(
 Please note that the Vectara integration currently does not support explain or other advanced Splainer-search
 functionality.
 
+### Custom Search API
+Splainer-search has experimental support for Custom APIs. You can send in queries as GET or POST and your API must respond with JSON formatted response.
+
+The magic of the Custom Search API is that you provide some *mapping* JavaScript code to convert from the JSON format of your API to the native structures that splainer-search uses.   Imagine your response looks like:
+
+```js
+[
+    {
+        "publication_id": "12345678",
+        "publish_date_int": "20230601",
+        "score": 0.5590707659721375,
+        "title": "INFOGRAPHIC: Automakers' transition to EVs speeds up"
+    },
+    {
+        "publication_id": "1234567",
+        "publish_date_int": "20230608",
+        "score": 0.5500463247299194,
+        "title": "Tesla - March 2023 (LTM): Peer Snapshot"
+    }
+];
+```
+
+Then you would define two custom mappers, where `data` is your JSON:
+
+```js
+var options = { apiMethod: 'GET' };
+options.numberOfResultsMapper = function(data){
+  return data.length;
+}
+options.docsMapper = function(data){    
+  let docs = [];
+  for (let doc of data) {
+    docs.push ({
+      id: doc.publication_id,
+      publish_date_int: doc.publish_date_int,
+      title: doc.title,
+    })
+  }
+  return docs
+}
+```
+
+Pass those options in as your normally would:
+
+```js
+var searcher = searchSvc.createSearcher(
+  ['id:id', 'title', 'publish_data_int'], 'http://mycompany.com/api/search',
+  'query=tesla', options, 'searchapi'
+);
+```
+
+
 ## Paging
 
 Paging is done by asking the original searcher for another searcher. This searcher is already setup to get the next page for the current search results. Tell that searcher to `search()` just like you did above.

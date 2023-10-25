@@ -7,12 +7,14 @@ angular.module('o19s.splainer-search')
     'SolrSearcherFactory',
     'EsSearcherFactory',
     'VectaraSearcherFactory',
+    'SearchApiSearcherFactory',
     'activeQueries',
     'defaultSolrConfig',
     function searchSvc(
       SolrSearcherFactory,
       EsSearcherFactory,
       VectaraSearcherFactory,
+      SearchApiSearcherFactory,
       activeQueries,
       defaultSolrConfig
     ) {
@@ -29,6 +31,7 @@ angular.module('o19s.splainer-search')
       };
 
       this.createSearcher = function (fieldSpec, url, args, queryText, config, searchEngine) {
+        
         if ( searchEngine === undefined ) {
           searchEngine = 'solr';
         }
@@ -42,6 +45,12 @@ angular.module('o19s.splainer-search')
           config:         config,
           type:           searchEngine
         };
+        
+        // if we have options.config.basicAuthCredential, then inject it into the URL
+        // and let that go forward.
+        if (options.config && options.config.basicAuthCredential && options.config.basicAuthCredential.length > 0) {
+          options.url = this.addBasicAuthToUrl(options.url, options.config.basicAuthCredential);
+        }
 
         var searcher;
 
@@ -56,13 +65,20 @@ angular.module('o19s.splainer-search')
           searcher = new EsSearcherFactory(options);
         } else if ( searchEngine === 'vectara') {
           searcher = new VectaraSearcherFactory(options);
+        } else if ( searchEngine === 'searchapi') {
+          searcher = new SearchApiSearcherFactory(options);
         }
-
+        
         return searcher;
       };
 
       this.activeQueries = function() {
         return activeQueries.count;
+      };
+      
+      this.addBasicAuthToUrl = function (url, basicAuthCredential) {
+        var authUrl = url.replace('://', '://' + basicAuthCredential + '@');
+        return authUrl;
       };
     }
   ]);
