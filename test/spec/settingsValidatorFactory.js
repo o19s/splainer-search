@@ -318,8 +318,7 @@ describe('Factory: Settings Validator', function () {
           id: doc.publication_id,
           publish_date_int: doc.publish_date_int,
           title: doc.title,
-        }
-        )
+        })
       }
       return docs
     }
