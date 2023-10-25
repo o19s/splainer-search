@@ -10,10 +10,8 @@
       'SearchApiDocFactory',
       'activeQueries',
       'searchApiSearcherPreprocessorSvc',
-      'solrUrlSvc',
       'esUrlSvc',
       'SearcherFactory',
-      'queryTemplateSvc',
       'transportSvc',      
       SearchApiSearcherFactory
     ]);
@@ -24,10 +22,8 @@
     SearchApiDocFactory,
     activeQueries,
     searchApiSearcherPreprocessorSvc,
-    solrUrlSvc,
     esUrlSvc,
     SearcherFactory,
-    queryTemplateSvc,
     transportSvc
   ) {
 
@@ -44,13 +40,9 @@
     
 
 
-    function addDocToGroup (groupedBy, group, vectaraDoc) {
+    function addDocToGroup (groupedBy, group, searchApiDoc) {
       /*jslint validthis:true*/
-      const self = this;
-
-      console.log("adddocToGroup")
-
-      found.docs.push(vectaraDoc);
+      console.log('addDocToGroup');
     }
 
     // return a new searcher that will give you
@@ -58,7 +50,7 @@
     // page, call pager on that searcher
     function pager (){
       /*jslint validthis:true*/
-      console.log("Pager")
+      console.log('Pager');
     }
 
     // search (execute the query) and produce results
@@ -66,9 +58,6 @@
     function search () {
       /*jslint validthis:true*/
       const self= this;
-      console.log("I am in searchApiSearcherFactory.search")
-      console.log("self.config");
-      console.log(self.config)
       var apiMethod = self.config.apiMethod;
       var url       = self.url;
       var uri       = esUrlSvc.parseUrl(self.url);
@@ -82,16 +71,14 @@
       // i don't like that we just ignroe the payload on a GET even though it is passed in.
       var payload = self.queryDsl;
       //var baseUrl = solrUrlSvc.buildUrl(url, self.args);
-      var url       = esUrlSvc.buildUrl(uri);
+      url       = esUrlSvc.buildUrl(uri);
     
       //baseUrl = queryTemplateSvc.hydrate(baseUrl, self.queryText, {encodeURI: true, defaultKw: '""'});
-      console.log("url" + url);
       self.inError  = false;
 
       activeQueries.count++;
       return transport.query(url, payload, null)
         .then(function success(httpConfig) {
-          console.log("Hi there")
           const data = httpConfig.data;
           activeQueries.count--;
 
@@ -99,7 +86,7 @@
 
           //self.numFound = numberOfResults();
           if (self.config.numberOfResultsMapper === undefined) {
-            console.warn("No numberOfResultsMapper defined so can't populate the number of results found.");
+            console.warn('No numberOfResultsMapper defined so can not populate the number of results found.');
           }
           else {
             self.numFound = self.config.numberOfResultsMapper(data);
@@ -109,14 +96,12 @@
             var options = {             
               fieldList:          self.fieldList
             };
-            console.log("in parseDoc")
-            console.log(doc)
             return new SearchApiDocFactory(doc, options);
           };
           
           let  mappedDocs = [];
           if (self.config.docsMapper === undefined) {
-            console.warn("No docsMapper defined so can't populate individual docs");
+            console.warn('No docsMapper defined so can not populate individual docs.');
           }
           else {
             mappedDocs = self.config.docsMapper(data);
@@ -129,7 +114,7 @@
                  
 
         }, function error(msg) {
-          console.log("Error")
+          console.log('Error');
           activeQueries.count--;
           self.inError = true;
           msg.searchError = 'Error with Search API query or server. Review request manually.';

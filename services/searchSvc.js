@@ -79,6 +79,6 @@ angular.module('o19s.splainer-search')
       this.addBasicAuthToUrl = function (url, basicAuthCredential) {
         var authUrl = url.replace('://', '://' + basicAuthCredential + '@');
         return authUrl;
-      }
+      };
     }
   ]);

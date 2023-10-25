@@ -50,8 +50,6 @@
         }
       });
       delete src.doc;
-      //delete src.metadata;
-      delete src.opts;
       return src;
     }
 
@@ -59,11 +57,6 @@
       /*jslint validthis:true*/
       const self = this;
       return self;
-      // const metadata = self.metadata;
-      // return metadata.reduce(function(map, obj) {
-      //   map[obj.name] = obj.value;
-      //   return map;
-      // }, {});
     }
 
     function explain () {

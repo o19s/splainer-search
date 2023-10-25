@@ -24,7 +24,7 @@
       // because sometimes we don't know what they are all.  For example
       // for the searchapi we need to pass a bunch of extra settings through
       // to the searcher
-      self.settings       = settings
+      self.settings       = settings;
       
       if (settings.args){
         self.args = settings.args;
@@ -65,8 +65,6 @@
               }
             ]};
         }
-        console.log("about to create searcher for " + self.searchEngine)
-        console.log("Args is" + args)
         
         self.searcher = searchSvc.createSearcher(
           fieldSpecSvc.createFieldSpec(fields),
@@ -74,11 +72,6 @@
           args,
           '',
           self.settings,
-          // {
-          //   version: self.version,
-          //   apiMethod: self.apiMethod,
-          //   customHeaders: self.customHeaders
-          // },
           self.searchEngine
         );
       }
@@ -102,7 +95,7 @@
           return doc.doc;
         }
         else {
-          console.error("Need to determine how to source a doc for this search engine " + self.searchEngine);
+          console.error('Need to determine how to source a doc for this search engine ' + self.searchEngine);
         }
       }
 
@@ -125,15 +118,12 @@
         return self.searcher.search()
         .then(function () {
           var candidateIds;
-          console.log("AA")
-          console.log(self.searcher.docs)
+
           // Merge fields from multiple docs because some docs might not return
           // the entire list of fields possible.
           // This is not perfect as the top 10 results might not include
           // a comprehensive list, but it's the best we can do.
           angular.forEach(self.searcher.docs, function(doc) {
-            console.log("looking at doc")
-            console.log(doc)
             var attributes = Object.keys(sourceDoc(doc));
             candidateIds = updateCandidateIds(candidateIds, attributes);
 
