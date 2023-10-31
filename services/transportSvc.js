@@ -6,11 +6,13 @@ angular.module('o19s.splainer-search')
     'HttpGetTransportFactory',
     'HttpJsonpTransportFactory',
     'BulkTransportFactory',
+    'HttpProxyTransportFactory',
     function transportSvc(
       HttpPostTransportFactory,
       HttpGetTransportFactory,
       HttpJsonpTransportFactory,
-      BulkTransportFactory
+      BulkTransportFactory,
+      HttpProxyTransportFactory
     ) {
       var self = this;
 
@@ -27,16 +29,24 @@ angular.module('o19s.splainer-search')
         if (apiMethod !== undefined) {
           apiMethod = apiMethod.toUpperCase();
         }
-
+        let transport = null;
         if (apiMethod === 'BULK') {
-          return bulkTransport;
+          transport = bulkTransport;
         } else if (apiMethod === 'JSONP') {
-          return httpJsonpTransport;
+          transport = httpJsonpTransport;
         } else if (apiMethod === 'GET') {
-          return httpGetTransport;
+          transport = httpGetTransport;
         } else {
-          return httpPostTransport;
+          transport = httpPostTransport;
         }
+      
+        var proxyUrl = options.proxyUrl; 
+        if (proxyUrl !== undefined) {
+          console.log("creating Proxy")
+          transport = new HttpProxyTransportFactory({proxyUrl: proxyUrl, transport: transport});
+          //transport = proxyTransport;
+        }
+        return transport;
       }
     }
   ]);

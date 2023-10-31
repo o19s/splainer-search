@@ -6,11 +6,11 @@
   angular.module('o19s.splainer-search')
     .factory('HttpJsonpTransportFactory', [
       'TransportFactory',
-      '$http',
+      '$http','$sce',
       HttpJsonpTransportFactory
     ]);
 
-  function HttpJsonpTransportFactory(TransportFactory, $http) {
+  function HttpJsonpTransportFactory(TransportFactory, $http, $sce) {
     var Transport = function(options) {
       TransportFactory.call(this, options);
     };
@@ -21,6 +21,8 @@
     Transport.prototype.query = query;
 
     function query(url) {
+      url = $sce.trustAsResourceUrl(url);
+      
       // you don't get header or payload support with jsonp, it's akin to GET requests that way.
       return $http.jsonp(url, { jsonpCallbackParam: 'json.wrf' });
     }

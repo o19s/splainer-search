@@ -6,8 +6,6 @@ describe('Service: transport: es bulk transport', function() {
   beforeEach(module('o19s.splainer-search'));
 
   var $httpBackend;
-  var $q;
-  var $rootScope;
   var $timeout;
   var BulkTransportFactory;
 
@@ -17,8 +15,6 @@ describe('Service: transport: es bulk transport', function() {
 
   beforeEach(inject(function($injector) {
     $httpBackend = $injector.get('$httpBackend');
-    $q = $injector.get('$q');
-    $rootScope = $injector.get('$rootScope');
     $timeout = $injector.get('$timeout');
   }));
 

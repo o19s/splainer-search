@@ -114,6 +114,7 @@
       var self      = this;
       var uri       = esUrlSvc.parseUrl(self.url);
       var apiMethod = self.config.apiMethod;
+      var proxyUrl  = self.config.proxyUrl;
 
       if ( esUrlSvc.isBulkCall(uri) ) {
         apiMethod = 'BULK';
@@ -135,7 +136,7 @@
         });
       }
       var url       = esUrlSvc.buildUrl(uri);
-      var transport = transportSvc.getTransport({apiMethod: apiMethod});
+      var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
 
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);
       if (self.pagerArgs) {
@@ -382,6 +383,7 @@
       var uri       = esUrlSvc.parseUrl(self.url);
 
       var apiMethod = self.config.apiMethod;
+      var proxyUrl  = self.config.proxyUrl;
 
       var templateCall = isTemplateCall(self.args);
 
@@ -399,7 +401,7 @@
       //  });
       //}
       var url       = esUrlSvc.buildRenderTemplateUrl(uri);
-      var transport = transportSvc.getTransport({apiMethod: apiMethod});
+      var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
 
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);
       if (self.pagerArgs) {

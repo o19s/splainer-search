@@ -14,6 +14,7 @@ describe('Factory: Settings Validator', function () {
   }));
 
   describe('Solr:', function () {
+    
     var settings = {
       searchUrl:    'http://solr.splainer-searcher.io/solr/statedecoded/select',
       searchEngine: 'solr'
@@ -190,6 +191,34 @@ describe('Factory: Settings Validator', function () {
         $httpBackend.verifyNoOutstandingExpectation();
         expect(called).toBe(1);
       });
+      
+      it('makes a successful PROXIED call to the Solr instance', function () {
+        var proxyUrl = "http://myserver/proxy?proxy="
+        var settings = {
+          searchUrl:    'http://solr.splainer-searcher.io/solr/statedecoded/select',
+          searchEngine: 'solr',
+          proxyUrl: proxyUrl
+        };
+        validator = new SettingsValidatorFactory(settings);
+        
+        var expectedUrl = proxyUrl 
+          + settings.searchUrl 
+          + '%3F' + 
+          'q=*:*&fl=*&wt=json&debug=true&debug.explain.structured=true&hl=false&rows=10&json.wrf=JSON_CALLBACK';
+        //urlContainsParams fails on parsing out the url because of our proxied format
+        $httpBackend.expectJSONP(expectedUrl)
+          .respond(200, fullResponse);      
+
+        var called = 0;
+        validator.validateUrl()
+        .then(function() {
+          called++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toBe(1);
+      });      
     });
   });
 
