@@ -42,7 +42,6 @@ angular.module('o19s.splainer-search')
       
         var proxyUrl = options.proxyUrl; 
         if (proxyUrl !== undefined) {
-          console.log("creating Proxy")
           transport = new HttpProxyTransportFactory({proxyUrl: proxyUrl, transport: transport});
           //transport = proxyTransport;
         }

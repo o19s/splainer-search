@@ -13,7 +13,6 @@
 
   function HttpProxyTransportFactory(TransportFactory, $http, HttpJsonpTransportFactory) {
     var Transport = function(options) {
-      console.log("HELLLO")
       TransportFactory.call(this, options);
     };
 
@@ -23,17 +22,13 @@
     Transport.prototype.query = query;
 
     function query(url, payload, headers) {
-      console.log("ABOUT TO QUERY")
-      console.log(this.options())
       var transport = this.options().transport;
-      console.log(typeof transport);
       
-      // JSONP doesn't like two ? in the URL.
+      // It doesn't make sense to use JSONP instead of GET with a proxy
       if (transport instanceof HttpJsonpTransportFactory) {
-        console.log("replace")
-        url = url.replace('?','%3F');
+        throw new Error('It does not make sense to proxy a JSONP connection, use GET instead.');
       }
-      var url = this.options().proxyUrl + url;
+      url = this.options().proxyUrl + url;
       return transport.query(url, payload, headers);
     }
 

@@ -1,4 +1,4 @@
-'use strict';
+  'use strict';
 
 /*global describe,beforeEach,inject,it,expect*/
 describe('Factory: Settings Validator', function () {
@@ -192,21 +192,36 @@ describe('Factory: Settings Validator', function () {
         expect(called).toBe(1);
       });
       
+      it('throws an error when you try to PROXY with JSONP to the Solr instance'), function () {
+        var proxyUrl = "http://myserver/proxy?proxy="
+        var settings = {
+          searchUrl:    'http://solr.splainer-searcher.io/solr/statedecoded/select',
+          searchEngine: 'solr',
+          apiMethod: 'GET',
+          proxyUrl: proxyUrl
+        };
+        validator = new SettingsValidatorFactory(settings);
+        
+        expect(validator.validateUrl()).toThrowError('It does not make sense to proxy a JSONP connection, use GET instead.');
+      };
+      
       it('makes a successful PROXIED call to the Solr instance', function () {
         var proxyUrl = "http://myserver/proxy?proxy="
         var settings = {
           searchUrl:    'http://solr.splainer-searcher.io/solr/statedecoded/select',
           searchEngine: 'solr',
+          apiMethod: 'GET',
           proxyUrl: proxyUrl
         };
         validator = new SettingsValidatorFactory(settings);
         
+        
         var expectedUrl = proxyUrl 
           + settings.searchUrl 
-          + '%3F' + 
-          'q=*:*&fl=*&wt=json&debug=true&debug.explain.structured=true&hl=false&rows=10&json.wrf=JSON_CALLBACK';
+          + '?' + 
+          'q=*:*&fl=*&wt=json&debug=true&debug.explain.structured=true&hl=false&rows=10';
         //urlContainsParams fails on parsing out the url because of our proxied format
-        $httpBackend.expectJSONP(expectedUrl)
+        $httpBackend.expectGET(expectedUrl)
           .respond(200, fullResponse);      
 
         var called = 0;
