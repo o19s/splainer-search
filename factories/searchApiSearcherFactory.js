@@ -40,6 +40,7 @@
     
 
 
+    /* jshint unused: false */
     function addDocToGroup (groupedBy, group, searchApiDoc) {
       /*jslint validthis:true*/
       console.log('addDocToGroup');
@@ -59,9 +60,10 @@
       /*jslint validthis:true*/
       const self= this;
       var apiMethod = self.config.apiMethod;
+      var proxyUrl  = self.config.proxyUrl;
       var url       = self.url;
       var uri       = esUrlSvc.parseUrl(self.url);
-      var transport = transportSvc.getTransport({apiMethod: apiMethod});
+      var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
 
       // maybe the url and the payload should be managed inside the transport?
       // i don't like how it's not more seamless what to do on a GET and a POST

@@ -1276,6 +1276,63 @@ describe('Service: searchSvc: ElasticSearch', function() {
       expect(called).toEqual(1);
     });
   });
+  describe('templated and proxied search', function() {
+    beforeEach(inject(function () {
+
+      // the 'id' tells us that we have a templated search.
+      var mockEsParams  = {
+        id: 'tmdb-title-search-template',
+        params: {
+          search_query: 'star'
+        }
+      };
+      
+      var config = {
+        apiMethod: 'POST',
+        proxyUrl: 'http://myserver/api?url='
+      }
+
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        config,
+        'es'
+      );
+    }));
+
+    it('returns docs, and removes  _source and highlight query params', function() {
+      $httpBackend.expectPOST('http://myserver/api?url=' + mockEsUrl + '/template', function verifyParamsStripped(data) {
+        var esQuery = angular.fromJson(data);
+        return (
+          (esQuery.id === 'tmdb-title-search-template') &&
+          (angular.isDefined(esQuery.highlight) == false) &&
+          (angular.isDefined(esQuery._source) == false) &&
+          (angular.isDefined(esQuery.from) == false) &&
+          (angular.isDefined(esQuery.size) == false) &&
+          (esQuery.params.from === 0) &&
+          (esQuery.params.size === 10)
+        );
+      }).
+      respond(200, mockES7Results);
+
+      var called = 0;
+
+      searcher.search()
+      .then(function() {
+        var docs = searcher.docs;
+        expect(docs.length === 2);
+
+        expect(searcher.numFound).toEqual(2);
+        called++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+    });
+  });
   describe('scripted fields', function() {
     var mockScriptedResults = {
       hits: {

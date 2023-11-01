@@ -106,8 +106,9 @@
       /*jslint validthis:true*/
       const self= this;
       var apiMethod = 'POST';
+      var proxyUrl  = self.config.proxyUrl;
       var url       = self.url;
-      var transport = transportSvc.getTransport({apiMethod: apiMethod});
+      var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
 
       var queryDslWithPagerArgs = angular.copy(self.queryDsl);
       if (self.pagerArgs) {
