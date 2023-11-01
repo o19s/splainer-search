@@ -1,6 +1,6 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
-# 2.27.0 (2023-11-01)
+# 2.28.0 (2023-11-01)
 - Introduced a `httpProxyTransportFactory` that wraps the other `transporters` for when you want to send a request via proxy.  It is enabled by passing in your `settings` the value `proxyUrl:'http://myserver/proxy'`.  This works much better than the previous approach of managing the url with a proxy at the Quepid level.
 
 # 2.27.0 (2023-10-25)
