@@ -6,12 +6,11 @@
   angular.module('o19s.splainer-search')
     .factory('HttpProxyTransportFactory', [
       'TransportFactory',
-      '$http',
       'HttpJsonpTransportFactory',
       HttpProxyTransportFactory
     ]);
 
-  function HttpProxyTransportFactory(TransportFactory, $http, HttpJsonpTransportFactory) {
+  function HttpProxyTransportFactory(TransportFactory, HttpJsonpTransportFactory) {
     var Transport = function(options) {
       TransportFactory.call(this, options);
     };

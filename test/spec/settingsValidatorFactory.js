@@ -364,7 +364,7 @@ describe('Factory: Settings Validator', function () {
           title: doc.title,
         })
       }
-      return docs
+      return docs;
     }
 
     var fullResponse = [
@@ -422,9 +422,28 @@ describe('Factory: Settings Validator', function () {
           $httpBackend.flush();
           $httpBackend.verifyNoOutstandingExpectation();
           expect(called).toBe(1);
+          
       });
-
     });
+    
+    describe('Tracks the last response from the search api', function() {
+
+      it('selects only ids occuring across all docs', function() {
+        $httpBackend.expectGET(settings.searchUrl + '?' + settings.args).respond(200, fullResponse);
+
+        var called = 0;
+        validator.validateUrl()
+        .then(function() {
+          called++;
+        });
+
+        $httpBackend.flush();
+        $httpBackend.verifyNoOutstandingExpectation();
+        expect(called).toBe(1);
+        
+        expect(validator.searcher.lastResponse).toEqual(fullResponse);
+      });
+    });    
 
     describe('Validate URL:', function () {
       it('makes a successful call to the SearchApi instance', function () {

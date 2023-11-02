@@ -78,34 +78,16 @@ describe('Service: searchSvc: SearchApi', function () {
       return 99;
     }
     
-    
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
                                                 mockSearchApiParams, mockQueryText, options, 'searchapi');
     
     $httpBackend.expectGET("http://example.com:1234/api/search?query=rambo movie").respond(200, mockSearchApiResults);
 
-    // var called = 0;
-
-    // searcher.search()
-    //     .then(function () {
-    //       console.log("I found " + searcher.numFound);
-    //       expect(searcher.numFound).toEqual(99);
-    //       // var docs = searcher.docs;
-    //       // expect(docs.length === 2);
-
-    //       // expect(docs[0].title).toEqual("Rambo");
-    //       // expect(docs[0].id).toEqual(1);
-    //       // expect(docs[1].title).toEqual("Rambo II");
-    //       // expect(docs[1].id).toEqual(2);
-    //       called++;
-    //     });
-    
     searcher.search();
     
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(searcher.numFound).toEqual(99);
-  //  expect(called).toEqual(1);
   });
   
   it('returns docs', function () {
@@ -142,6 +124,11 @@ describe('Service: searchSvc: SearchApi', function () {
           expect(docs[0].id).toEqual(1);
           expect(docs[1].title).toEqual("Rambo II");
           expect(docs[1].id).toEqual(2);
+          
+          console.log("hi")
+          console.log(docs[1].doc)
+          console.log(JSON.stringify(docs[1].doc,null,2));
+          
           called++;
         });
     

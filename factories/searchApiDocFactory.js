@@ -5,12 +5,11 @@
 (function() {
   angular.module('o19s.splainer-search')
     .factory('SearchApiDocFactory', [
-      'vectaraUrlSvc',
       'DocFactory',
       SearchApiDocFactory
     ]);
 
-  function SearchApiDocFactory(vectaraUrlSvc, DocFactory) {
+  function SearchApiDocFactory(DocFactory) {
     const Doc = function(doc, options) {
       DocFactory.call(this, doc, options);
 
@@ -34,9 +33,9 @@
     Doc.prototype.snippet        = snippet;
     Doc.prototype.highlight      = highlight;
 
-
     function _url () {
-      return 'unavailable';
+      // no _url functionality implemented
+      return null;
     }
 
     function origin () {

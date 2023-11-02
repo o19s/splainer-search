@@ -82,16 +82,23 @@
       return transport.query(url, payload, null)
         .then(function success(httpConfig) {
           const data = httpConfig.data;
+
+          self.lastResponse = data;
+          
           activeQueries.count--;
-
-          //const documents = data.responseSet && data.responseSet.length > 0 ? data.responseSet[0].document : [];
-
-          //self.numFound = numberOfResults();
+          
           if (self.config.numberOfResultsMapper === undefined) {
             console.warn('No numberOfResultsMapper defined so can not populate the number of results found.');
           }
           else {
-            self.numFound = self.config.numberOfResultsMapper(data);
+            try {
+              self.numFound = self.config.numberOfResultsMapper(data);
+            }
+            catch (error) {
+              const errMsg = 'Attemping to run numberOfResultsMapper failed: ' + error;
+              $log.error(errMsg);
+              throw new Error('MapperError: ' + errMsg);
+            }
           }
                     
           var parseDoc = function(doc) {
@@ -106,7 +113,14 @@
             console.warn('No docsMapper defined so can not populate individual docs.');
           }
           else {
-            mappedDocs = self.config.docsMapper(data);
+            try {
+              mappedDocs = self.config.docsMapper(data);
+            }
+            catch (error) {
+              const errMsg = 'Attemping to run docsMapper failed: ' + error;
+              $log.error(errMsg);
+              throw new Error('MapperError: ' + errMsg);
+            }
           }
           
           angular.forEach(mappedDocs, function(mappedDoc) {
@@ -123,7 +137,7 @@
           return $q.reject(msg);
         })
         .catch(function(response) {
-          $log.debug('Failed to execute search');
+          $log.debug('Failed to execute search: ' + response.type + ':' + response.message);
           return $q.reject(response);
         });
     } // end of search()
