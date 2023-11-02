@@ -97,7 +97,7 @@
             catch (error) {
               const errMsg = 'Attemping to run numberOfResultsMapper failed: ' + error;
               $log.error(errMsg);
-              throw new Error("MapperError: " + errMsg);
+              throw new Error('MapperError: ' + errMsg);
             }
           }
                     
@@ -119,7 +119,7 @@
             catch (error) {
               const errMsg = 'Attemping to run docsMapper failed: ' + error;
               $log.error(errMsg);
-              throw new Error("MapperError: " + errMsg);
+              throw new Error('MapperError: ' + errMsg);
             }
           }
           
