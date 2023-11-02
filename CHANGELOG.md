@@ -1,7 +1,10 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.29.0 (2023-11-02)
+- For custom `searchapi` we now track and store the response from the API for callers to look at.  Added new error handling around custom mappers so you can figure which are having issues.  https://github.com/o19s/splainer-search/pull/134 by @epugh.
+
 # 2.28.0 (2023-11-01)
-- Introduced a `httpProxyTransportFactory` that wraps the other `transporters` for when you want to send a request via proxy.  It is enabled by passing in your `settings` the value `proxyUrl:'http://myserver/proxy'`.  This works much better than the previous approach of managing the url with a proxy at the Quepid level.
+- Introduced a `httpProxyTransportFactory` that wraps the other `transporters` for when you want to send a request via proxy.  It is enabled by passing in your `settings` the value `proxyUrl:'http://myserver/proxy'`.  This works much better than the previous approach of managing the url with a proxy at the Quepid level.  https://github.com/o19s/splainer-search/pull/133 by @epugh.
 
 # 2.27.0 (2023-10-25)
 - In 2.26.0 we required you to specify a "responseParser" for a custom search api that was OS, ES, or Solr.  However, that was VERY limiting, and required you to return your search results from your custom search api in one of those formats.   We now have the concept of _mappers_, which are JavaScript code that converts from the JSON format that your API returns to the native JavaScript objects that splainer-search uses.  In this release we have `numberOfResultsMapper` and `docsMapper` mappers defined, and this will evolve.  https://github.com/o19s/splainer-search/pull/132 by @epugh.
