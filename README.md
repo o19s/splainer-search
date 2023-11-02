@@ -441,4 +441,4 @@ Use the "Generate Release Notes" button on Github to make the template, and then
 
 Development for this library is done primarily by [OpenSource Connections](http://opensourceconnections.com) for search relevance tools [Splainer](http://splainer.io) and [Quepid](http://quepid.com)
 
-Primary author is [Doug Turnbull](http://softwaredoug.com)
+Original author is [Doug Turnbull](http://softwaredoug.com)
