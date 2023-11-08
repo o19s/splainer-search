@@ -1,5 +1,11 @@
 'use strict';
 
+// There is some innovative parsing going on here around #$keyword[1]##,
+// however that logic isn't documented in Quepid or Splainer.
+// I think it's a pointer to a the idea that you might want to define "experiments" that
+// take in a query and do innovative things with it, like rework the order of the query terms and see happens
+// that leverages the splainer-search infrastructure.   This though, at least as implmented feels too limited.
+// So you can pluck out keywords..  so what..  I think we need a lot more tooling to make it useful.  - Eric.
 angular.module('o19s.splainer-search')
   .service('queryTemplateSvc', function queryTemplateSvc() {
     var self      = this;
