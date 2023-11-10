@@ -71,6 +71,59 @@ angular.module('o19s.splainer-search')
       });
       return replaced;
     }
+    
+    function hydrateWithQueryOptions(replaced, config){
+      if (config.qOption){
+        console.log(config.qOption)
+        
+        console.log("A")
+        
+        var regex = /#\$(qOption)\['(\w+)'\]##/g;
+        
+        // Array to store the matches
+        var matches = [];
+        
+        // Convert the template object to a string
+        //var templateString = JSON.stringify(template);
+        var templateString = replaced;
+        
+        
+        // Match the placeholders using the regular expression and store the matches
+        var match;
+        while ((match = regex.exec(templateString)) !== null) {
+          console.log("hi")
+          var placeholder = match[0]; // The full matched placeholder, e.g., "#$qOption['customerId']##"
+          var dictionaryKey = match[2]; // The captured dictionary key, e.g., "customerId"
+          matches.push({ placeholder, dictionaryKey });
+        }
+        
+        console.log(matches);
+        
+        angular.forEach(matches, function(match) {
+          // Should be using a global regex, but can't quite figure it out
+          var placeholder = match.placeholder.replace('$', '\$');
+          console.log('placeholder:' + placeholder)
+          console.log(match.dictionaryKey)
+          //var regex = /match.placeholder/g
+          var regex = new RegExp(placeholder, 'g');
+          var dictionaryKey = match.dictionaryKey;
+          var queryOption = config.qOption[dictionaryKey];
+          console.log("regex:" + regex)
+          console.log("before")
+          console.log(replaced)
+          //replaced  = replaced.replace(regex, queryOption);
+          //replaced  = replaced.replace(/#\$qOption\['customerId'\]##/g, '1234');
+          //replaced  = replaced.replace("#$qOption['customerId']##", '1234');
+          replaced  = replaced.replace(match.placeholder, queryOption);
+          console.log("after")
+          console.log(replaced)
+          
+        });
+        
+        
+      }
+      return replaced;
+    }
 
     function hydrate(template, queryText, config) {
       if (!config) {
@@ -79,12 +132,13 @@ angular.module('o19s.splainer-search')
 
       if (queryText === null || angular.isUndefined(queryText)) {
         return template;
-      }
+      }  
 
       var replaced  = template.replace(/#\$query##/g, encode(queryText, config));
       var maxKws = getMaxKws(template, config);
       replaced = hydrateWithKws(replaced, queryText, maxKws, config);
       replaced = hydrateWithKwDefaults(replaced, config);
+      replaced = hydrateWithQueryOptions(replaced, config);
 
       return replaced;
     }

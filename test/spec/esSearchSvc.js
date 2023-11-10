@@ -96,7 +96,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
         $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
           .respond(200, mockES7Results);
-
+        console.log("DOING ES")
         searcher.search();
         $httpBackend.flush();
       });
