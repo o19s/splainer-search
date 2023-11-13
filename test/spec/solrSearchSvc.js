@@ -1188,13 +1188,13 @@ describe('Service: searchSvc: Solr', function () {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
-    it('extra keyword replacements turns to empty quotes', function() {
+    it('extra keyword replacements turns to empty string', function() {
       var mockQueryText = 'burrito taco';
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
       };
       var expectedParams = angular.copy(mockSolrParams);
-      expectedParams.q[0] = 'burrito query taco nothing ""';
+      expectedParams.q[0] = 'burrito query taco nothing ';
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
@@ -1245,7 +1245,7 @@ describe('Service: searchSvc: Solr', function () {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3|someDefault## #$keyword3|otherDefaults## #$keyword3## #$keyword2##'],
       };
       var expectedParams = angular.copy(mockSolrParams);
-      expectedParams.q[0] = 'burrito query taco nothing someDefault otherDefaults "" taco';
+      expectedParams.q[0] = 'burrito query taco nothing someDefault otherDefaults  taco';
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
