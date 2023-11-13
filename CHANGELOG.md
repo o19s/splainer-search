@@ -1,7 +1,7 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
 # 2.30.0 (2023-11-14)
-- Rewriting the query templating, allowing for query options hierarchical object to be passed into query templates as `qOptions`. https://github.com/o19s/splainer-search/pull/135 by @epugh.
+- Rewriting the query templating, allowing for query options hierarchical object to be passed into query templates as `qOptions`. https://github.com/o19s/splainer-search/pull/135 by @epugh and @mkr.
 
 # 2.29.0 (2023-11-02)
 - For custom `searchapi` we now track and store the response from the API for callers to look at.  Added new error handling around custom mappers so you can figure which are having issues.  https://github.com/o19s/splainer-search/pull/134 by @epugh.
