@@ -5,7 +5,6 @@
 (function() {
   angular.module('o19s.splainer-search')
     .factory('VectaraSearcherFactory', [
-      '$http',
       '$q',
       '$log',
       'VectaraDocFactory',
@@ -18,7 +17,7 @@
     ]);
 
   function VectaraSearcherFactory(
-    $http, $q, $log,
+    $q, $log,
     VectaraDocFactory,
     activeQueries,
     vectaraSearcherPreprocessorSvc,

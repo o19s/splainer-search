@@ -54,7 +54,7 @@ angular.module('o19s.splainer-search')
         }
 
         var baseUrl = solrUrlSvc.buildUrl(url, args);
-        baseUrl = queryTemplateSvc.hydrate(baseUrl, queryText, {encodeURI: true, defaultKw: '""'});
+        baseUrl = queryTemplateSvc.hydrate(baseUrl, queryText, {qOption: config.qOption, encodeURI: true, defaultKw: '""'});
 
         return baseUrl;
       };

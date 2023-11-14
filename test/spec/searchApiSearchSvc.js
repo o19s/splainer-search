@@ -123,11 +123,7 @@ describe('Service: searchSvc: SearchApi', function () {
           expect(docs[0].title).toEqual("Rambo");
           expect(docs[0].id).toEqual(1);
           expect(docs[1].title).toEqual("Rambo II");
-          expect(docs[1].id).toEqual(2);
-          
-          console.log("hi")
-          console.log(docs[1].doc)
-          console.log(JSON.stringify(docs[1].doc,null,2));
+          expect(docs[1].id).toEqual(2);                
           
           called++;
         });

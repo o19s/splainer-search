@@ -96,7 +96,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
         $httpBackend.expectPOST(mockEsUrl, rowsValidator(expectedParams))
           .respond(200, mockES7Results);
-
+        console.log("DOING ES")
         searcher.search();
         $httpBackend.flush();
       });
@@ -814,7 +814,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.verifyNoOutstandingExpectation();
     });
 
-    it('empty query turns to quotes', function() {
+    it('empty query placeholder turns to empty string', function() {
       var mockQueryText = 'purina headphone';
       var mockEsParams  = {
         query: {
@@ -834,7 +834,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
         var esQuery = angular.fromJson(data);
         //console.log(esQuery.query.term.text);
-        return (esQuery.query.term.text === 'purina \"\"');
+        return (esQuery.query.term.text === 'purina ');
       }).
       respond(200, mockES7Results);
       searcher.search();
