@@ -25,16 +25,16 @@ angular.module('o19s.splainer-search')
      * property 'c' on obj['a']['b']
      */
     function getDescendantProp(obj, desc) {
-      const arr = desc.split(".").map((s) => s.trim()).filter((s) => s.length > 0);
-      while (arr.length && obj != null) {
+      const arr = desc.split('.').map((s) => s.trim()).filter((s) => s.length > 0);
+      while (arr.length && obj !== null) {
         let key = arr.shift();
         let defaultValue = null;
         // special case: key|default denotes a key with a default value, extract that default value
-        if (key.indexOf("|") !== -1) {
-          [key, defaultValue] = key.split("|");
+        if (key.indexOf('|') !== -1) {
+          [key, defaultValue] = key.split('|');
         } else if (/keyword\d+/g.test(key)) {
           // legacy: support the empty String as a fallback to keywordX placeholders
-          defaultValue = "";
+          defaultValue = '';
         }
         if (Object.keys(obj).indexOf(key) > -1)  {
           obj = obj[key];
@@ -52,18 +52,18 @@ angular.module('o19s.splainer-search')
       let match;
       do {
         match = extractionRegex.exec(s);
-        if (match != null) {
+        if (match !== null) {
           const matchedString = match[0];
           const prop = match[1];
           const replacement = getDescendantProp(parameters, prop);
           // console.log(`Matched ${matchedString}, key ${prop}, replacement: ${replacement}`);
-          if (replacement != null) {
-              replacements.push([matchedString, replacement])
+          if (replacement !== null) {
+              replacements.push([matchedString, replacement]);
           } else {
               console.log(`No replacement found in options for ${matchedString}`);
           }
         }
-      } while (match != null)
+      } while (match !== null);
       return replacements;
     }
 
@@ -83,7 +83,7 @@ angular.module('o19s.splainer-search')
         let replaced = s;
         replacements.forEach((replacement) => {
           replaced = replaced.replaceAll(replacement[0], replacement[1]);
-        })
+        });
         return replaced;
       }
     }
@@ -101,7 +101,7 @@ angular.module('o19s.splainer-search')
         }} else if (isObject(value)) {
           obj[key] = replaceInObjectRecursively(value, parameters);
         } else if (isString(value)) {
-          obj[key] = replaceInString(value, parameters)
+          obj[key] = replaceInString(value, parameters);
         }
       }
       return obj;
