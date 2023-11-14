@@ -85,6 +85,48 @@ describe('Service: queryTemplateSvc', function () {
       expect(replaced).toEqual(expectedReplaced);
     });
 
+    it('leaves unresolved parameters untouched', function() {
+
+      var queryText = 'rambo movie';
+
+      var qOption = {
+        category: 123456789,
+        from: 10
+      };
+
+      var template =  {
+        "query": {
+          "query": "#$query##",
+          "filter": "filter: #$filter##",
+          "size": "#$qOption.size##",
+          "category": "#$qOption.category##",
+          "sort": "#$qOption.sort|score##",
+          "from": "from #$qOption.from##"
+        },
+        "other": {
+          "param": "#$unknown.object.path##"
+        }
+      }
+
+      var replaced = queryTemplateSvc.hydrate(template, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
+
+      var expectedReplaced = {
+        "query": {
+          "query": "rambo movie",
+          "filter": "filter: #$filter##",
+          "size": "#$qOption.size##",
+          "category": 123456789,
+          "sort": "score",
+          "from": "from 10"
+        },
+        "other": {
+          "param": "#$unknown.object.path##"
+        }
+      }
+
+      expect(replaced).toEqual(expectedReplaced);
+    });
+
     it('supports old keywords parameters, 0-index based array access and default values', function() {
 
       var queryText = 'rambo movie';

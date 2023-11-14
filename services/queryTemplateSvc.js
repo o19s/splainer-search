@@ -26,7 +26,7 @@ angular.module('o19s.splainer-search')
      */
     function getDescendantProp(obj, desc) {
       const arr = desc.split(".").map((s) => s.trim()).filter((s) => s.length > 0);
-      while (arr.length) {
+      while (arr.length && obj != null) {
         let key = arr.shift();
         let defaultValue = null;
         // special case: key|default denotes a key with a default value, extract that default value
@@ -73,14 +73,13 @@ angular.module('o19s.splainer-search')
      */
     function replaceInString(s, optionValues) {
       const singleTemplateMatchRegex = /^#\$[\w.|]+##$/g;
-      const isSingleTemplateString = (s) => singleTemplateMatchRegex.test(s);
-      if (isSingleTemplateString(s)) {
-        // special case, full value replacement, i.e. to replace String value placeholders with different types
-        // just return only the replacement of the first and only matched pattern
-        return extractReplacements(s, optionValues)[0][1];
+      const replacements = extractReplacements(s, optionValues);
+      if (singleTemplateMatchRegex.test(s)) {
+        // special case, full value replacement, used to replace String value placeholders with different types
+        // return only the replacement of the first and only matched pattern
+        return replacements.length > 0 ? replacements[0][1] : s;
       } else {
         // pattern is embedded into the String (can be multiple times), replace each placeholder occurrence
-        const replacements = extractReplacements(s, optionValues);
         let replaced = s;
         replacements.forEach((replacement) => {
           replaced = replaced.replaceAll(replacement[0], replacement[1]);
