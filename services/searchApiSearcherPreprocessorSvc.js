@@ -7,7 +7,7 @@ angular.module('o19s.splainer-search')
       var self      = this;
       self.prepare  = prepare;
       
-      var replaceQuery = function(args, queryText) {
+      var replaceQuery = function(qOption, args, queryText) {
         // Allows full override of query if a JSON friendly format is sent in
         if (queryText instanceof Object) {
           return queryText;
@@ -19,7 +19,7 @@ angular.module('o19s.splainer-search')
 
           var replaced  = angular.toJson(args, true);
 
-          replaced      = queryTemplateSvc.hydrate(replaced, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
+          replaced      = queryTemplateSvc.hydrate(replaced, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
           replaced      = angular.fromJson(replaced);
 
           return replaced;
@@ -27,7 +27,7 @@ angular.module('o19s.splainer-search')
       };
       
       var prepareGetRequest = function (searcher) {
-        var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
+        var queryDsl        = replaceQuery(searcher.config.qOption, searcher.args, searcher.queryText);
         var paramsAsStrings = [];
         
         if (angular.isObject(queryDsl)){
@@ -52,7 +52,7 @@ angular.module('o19s.splainer-search')
       
       var preparePostRequest = function (searcher) {
        
-        var queryDsl        = replaceQuery(searcher.args, searcher.queryText);
+        var queryDsl        = replaceQuery(searcher.config.qOption, searcher.args, searcher.queryText);
 
         searcher.queryDsl   = queryDsl;
       };      
