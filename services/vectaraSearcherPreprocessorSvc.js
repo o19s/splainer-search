@@ -10,10 +10,10 @@ angular.module('o19s.splainer-search')
             // Functions
             self.prepare  = prepare;
 
-            const replaceQuery = function(args, queryText) {
+            const replaceQuery = function(qOption, args, queryText) {
                 var replaced  = angular.toJson(args, true);
 
-                replaced      = queryTemplateSvc.hydrate(replaced, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
+                replaced      = queryTemplateSvc.hydrate(replaced, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
                 replaced      = angular.fromJson(replaced);
 
                 return replaced;
@@ -30,7 +30,7 @@ angular.module('o19s.splainer-search')
                 searcher.pagerArgs  = angular.merge({}, defaultPagerArgs, pagerArgs);
                 delete searcher.args.pager;
 
-                var queryDsl    = replaceQuery(searcher.args, searcher.queryText);
+                var queryDsl    = replaceQuery(searcher.config.qOption, searcher.args, searcher.queryText);
 
                 searcher.queryDsl   = queryDsl;
             };
