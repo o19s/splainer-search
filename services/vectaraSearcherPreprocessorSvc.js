@@ -11,12 +11,7 @@ angular.module('o19s.splainer-search')
             self.prepare  = prepare;
 
             const replaceQuery = function(qOption, args, queryText) {
-                var replaced  = angular.toJson(args, true);
-
-                replaced      = queryTemplateSvc.hydrate(replaced, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
-                replaced      = angular.fromJson(replaced);
-
-                return replaced;
+                return queryTemplateSvc.hydrate(args, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
             };
 
             var preparePostRequest = function (searcher) {

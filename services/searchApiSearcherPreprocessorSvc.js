@@ -16,13 +16,7 @@ angular.module('o19s.splainer-search')
             queryText = queryText.replace(/\\/g, '\\\\');
             queryText = queryText.replace(/"/g, '\\\"');
           }
-
-          var replaced  = angular.toJson(args, true);
-
-          replaced      = queryTemplateSvc.hydrate(replaced, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
-          replaced      = angular.fromJson(replaced);
-
-          return replaced;
+          return queryTemplateSvc.hydrate(args, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
         }
       };
       
