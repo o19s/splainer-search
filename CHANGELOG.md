@@ -1,5 +1,10 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.30.2 (2023-11-16)
+- Bug fix for arrays passed into query templating via `qOptions`. https://github.com/o19s/splainer-search/pull/137 by @mkr.
+- Avoid the query object -> string -> hydrating -> string -> query object roundtrip and directly hydrate on the query object. https://github.com/o19s/splainer-search/pull/136 by @mkr.
+
+
 # 2.30.0 (2023-11-14)
 - Rewriting the query templating, allowing for query options hierarchical object to be passed into query templates as `qOptions`. https://github.com/o19s/splainer-search/pull/135 by @epugh and @mkr.
 
