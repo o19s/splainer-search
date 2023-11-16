@@ -85,6 +85,30 @@ describe('Service: queryTemplateSvc', function () {
       expect(replaced).toEqual(expectedReplaced);
     });
 
+    it('passes through arrays', function() {
+      const queryText = "test query"
+      const qOption = {
+        "complexDoc": {
+          "doc_id": 1,
+          "prefix": "doc"
+        }
+      }
+      const template  = {
+        "query": {
+          "query": "#$query##",
+          "docs": ["#$qOption.complexDoc##", "doc2", "doc3"]
+        }
+      }
+      const replaced = queryTemplateSvc.hydrate(template, queryText, { qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
+      var expectedReplaced = {
+        query: {
+          query: "test query",
+          docs: [ { "doc_id": 1, "prefix": "doc" }, "doc2", "doc3"]
+        }
+      }
+      expect(replaced).toEqual(expectedReplaced);
+    });
+
     it('leaves unresolved parameters untouched', function() {
 
       var queryText = 'rambo movie';

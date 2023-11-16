@@ -91,20 +91,21 @@ angular.module('o19s.splainer-search')
     const isObject = (a) => typeof a === 'object' && a !== null;
     const isString = (a) => typeof a === 'string';
 
-    function replaceInObjectRecursively(o, parameters) {
-      // copy the input to make sure we don't modify the original
-      const obj = { ...o };
-      for (const key of Object.keys(obj)) {
-        const value = obj[key];
-        if (Array.isArray(value)) {{
-          obj[key] = value.map((entry) => replaceInObjectRecursively(entry, parameters));
-        }} else if (isObject(value)) {
-          obj[key] = replaceInObjectRecursively(value, parameters);
-        } else if (isString(value)) {
-          obj[key] = replaceInString(value, parameters);
+    function applyTemplating(o, parameters) {
+        if (isString(o)) {
+            return replaceInString(o, parameters);
+        } else if (Array.isArray(o)) {
+            return o.map((entry) => applyTemplating(entry, parameters));
+        } else if (isObject(o)) {
+            // copy the input to make sure we don't modify the original
+            const obj = Object.assign({}, o);
+            for (const key of Object.keys(obj)) {
+                obj[key] = applyTemplating(obj[key], parameters);
+            }
+            return obj;
+        } else {
+            return o;
         }
-      }
-      return obj;
     }
 
     function hydrate(template, queryText, config) {
@@ -117,23 +118,18 @@ angular.module('o19s.splainer-search')
       }
 
       const parameters = Object.create(null);
-      parameters['query'] = encode(queryText, config);
+      parameters.query = encode(queryText, config);
 
       const keywords = queryText.split(/[ ,]+/).map((term) => encode(term.trim(), config));
-      parameters['keyword'] = keywords;
+      parameters.keyword = keywords;
       // legacy: also support #$keyword1## syntax
       keywords.forEach((keyword, idx) => parameters[`keyword${idx + 1}`] = keyword);
 
       if (config.qOption) {
-          parameters['qOption'] = config.qOption;
+          parameters.qOption = config.qOption;
       }
 
-      if (isObject(template)) {
-          return replaceInObjectRecursively(template, parameters);
-      } else if (isString(template)) {
-          return replaceInString(template, parameters);
-      }
-
-      return template;
+      return applyTemplating(template, parameters);
     }
+
   });
