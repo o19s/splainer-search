@@ -78,8 +78,10 @@
       //baseUrl = queryTemplateSvc.hydrate(baseUrl, self.queryText, {encodeURI: true, defaultKw: '""'});
       self.inError  = false;
 
+      var headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);
+
       activeQueries.count++;
-      return transport.query(url, payload, null)
+      return transport.query(url, payload, headers)
         .then(function success(httpConfig) {
           const data = httpConfig.data;
 
