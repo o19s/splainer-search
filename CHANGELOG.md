@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.30.4 (2023-11-27)
+- Custom Headers can now be used with Search API's. https://github.com/o19s/splainer-search/pull/138 by @dacox.  Thanks Doug Cox!
+
 # 2.30.3 (2023-11-16)
 - Bug fix for arrays passed into query templating via `qOptions`. https://github.com/o19s/splainer-search/pull/137 by @mkr.
 - Avoid the query object -> string -> hydrating -> string -> query object roundtrip and directly hydrate on the query object. https://github.com/o19s/splainer-search/pull/136 by @mkr.
