@@ -87,11 +87,14 @@ angular.module('o19s.splainer-search')
         if (addExplain){
           url = url + '_explain';
         }
-        else {
+        else if (type !== '_doc') {
           url = url + '_doc';
         }
-
-        url = url + '/' + id.replace(/#/g, '%23');
+        
+        if (!url.endsWith('/')) {
+          url += '/';
+        }
+        url = url + id.replace(/#/g, '%23');
 
         if (!addExplain){
           url = url + '?pretty=true';

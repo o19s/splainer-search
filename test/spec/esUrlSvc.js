@@ -155,6 +155,13 @@ describe('Service: esUrlSvc', function () {
 
       expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_doc/1?pretty=true');
     });
+    
+    fit('builds a proper doc URL from the doc info when the _type is _doc', function() {
+      doc._type = '_doc';
+      var docUrl = esUrlSvc.buildDocUrl(uri, doc);
+
+      expect(docUrl).toBe('http://localhost:9200/tmdb/_doc/1?pretty=true');
+    });
 
     it('escapes the # character if it exists in the _id field', function(){
       var doc2 = {
