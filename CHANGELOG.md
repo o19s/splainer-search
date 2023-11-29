@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.30.5 (2023-11-29)
+- Looking up individual documents from the search engine (i.e the DocResolver) didn't respect the proxy settings.   Also found a bug in creating direct link to OpenSearch docs where you could get doubled `/_doc/_doc/` in the url!  https://github.com/o19s/splainer-search/pull/139 by @epugh.  Thanks @david-fisher for finding the snapshot with proxies issue.
+
 # 2.30.4 (2023-11-27)
 - Custom Headers can now be used with Search API's. https://github.com/o19s/splainer-search/pull/138 by @dacox.  Thanks Doug Cox!
 
