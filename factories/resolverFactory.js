@@ -56,8 +56,8 @@
           },
           size: ids.length,
         };
-      } else if ( settings.searchEngine === 'vectara') {
-        // Vectara does not have an endpoint to retrieve per doc metadata directly
+      } else {
+        throw new Error('Search engine ' + settings.searchEngine + ' does not support retrieving per doc metadata directly');
       }
 
       self.config = {
@@ -67,6 +67,7 @@
         escapeQuery:  false,
         numberOfRows: ids.length,
         version:      self.settings.version,
+        proxyUrl:     self.settings.proxyUrl
       };
 
       self.searcher = searchSvc.createSearcher(

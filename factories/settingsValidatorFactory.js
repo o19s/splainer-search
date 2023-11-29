@@ -20,7 +20,7 @@
       self.version        = settings.version;
       self.customHeaders  = settings.customHeaders;
       
-      // we shouldn't unpack and set these settings to local variables
+      // we shouldn't unpack and set these settings to local variables (like above!)
       // because sometimes we don't know what they are all.  For example
       // for the searchapi we need to pass a bunch of extra settings through
       // to the searcher
