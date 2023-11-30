@@ -156,9 +156,10 @@ describe('Service: esUrlSvc', function () {
       expect(docUrl).toBe('http://localhost:9200/tmdb/movies/_doc/1?pretty=true');
     });
     
-    fit('builds a proper doc URL from the doc info when the _type is _doc', function() {
-      doc._type = '_doc';
-      var docUrl = esUrlSvc.buildDocUrl(uri, doc);
+    it('builds a proper doc URL from the doc info when the _type is _doc', function() {
+      var doc2 = angular.copy(doc);
+      doc2._type = '_doc';
+      var docUrl = esUrlSvc.buildDocUrl(uri, doc2);
 
       expect(docUrl).toBe('http://localhost:9200/tmdb/_doc/1?pretty=true');
     });
