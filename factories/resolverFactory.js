@@ -56,8 +56,9 @@
           },
           size: ids.length,
         };
-      } else {
-        throw new Error('Search engine ' + settings.searchEngine + ' does not support retrieving per doc metadata directly');
+      } else if ( settings.searchEngine === 'vectara' || settings.searchEngine === 'searchapi') {
+        // Some search endpoints do not have an endpoint to retrieve per doc metadata directly
+        // by not populating the args, this appears to behave.
       }
 
       self.config = {
