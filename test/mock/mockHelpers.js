@@ -77,26 +77,3 @@ window.urlMissingParams = function(url, params) {
     }
   };
 }
-
-window.mockSolrUrl =  "http://example.com:1234/solr/example";
-
-window.expectedSolrUrl = function(expected) {
-  return {
-    test: function(url) {
-      if (expected === undefined) {
-        expected = window.mockSolrUrl;
-      }
-      return url.indexOf(expected) === 0;
-    }
-  };
-};
-
-window.mockResults = {
-  response: {
-    numFound: 2,
-    docs : [
-      {id: 'doc1', field1: 'doc1field1val', field2: 'doc1field2val'},
-      {id: 'doc2', field1: 'doc2field1val', field2: 'doc2field2val'}
-    ]
-  }
-};
