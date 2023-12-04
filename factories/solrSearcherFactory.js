@@ -13,6 +13,7 @@
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
+      'esUrlSvc',
       SolrSearcherFactory
     ]);
 
@@ -20,7 +21,7 @@
     $q, $log,
     SolrDocFactory, SearcherFactory, transportSvc,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc
+    solrSearcherPreprocessorSvc, esUrlSvc
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -36,6 +37,16 @@
     Searcher.prototype.queryDetails     = {};
 
 
+    // Strips out the username:password@ that can be embedded in URL.
+    function removeUsernameAndPassword(urlString) {
+      const regex = /^((?:https?:\/\/)?)([^:@]+(:[^:@]+)?@)(.+)/;
+      const match = urlString.match(regex);
+      if (match && match[4]) {
+        return match[1] + match[4];
+      }
+      return urlString;
+    }
+    
     function addDocToGroup (groupedBy, group, solrDoc) {
       /*jslint validthis:true*/
       var self = this;
@@ -235,11 +246,20 @@
         if (self.config && self.config.apiMethod) {
           apiMethod = self.config.apiMethod;
         }
-        var proxyUrl = self.config.proxyUrl;
+
+        var uri       = esUrlSvc.parseUrl(url);
+        var headers   = esUrlSvc.getHeaders(uri, self.config.customHeaders);
+        var proxyUrl  = self.config.proxyUrl;
         
         var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
+        
+        // Theoretically the esUrlSvc can build a url that strips out the basic auth params, but
+        // that was causing issues on some of the request parameters, breaking tests.  So using
+        // this removeUsernameAndPassword method instead.
+        url = removeUsernameAndPassword(url);
 
-        transport.query(url, null, null)
+
+        transport.query(url, null, headers)
           .then(function success(resp) {
             var solrResp = resp.data;
             activeQueries.count--;

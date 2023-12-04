@@ -18,6 +18,25 @@ window.parseUrlParams = function(queryString) {
   return parsedParams;
 };
 
+window.urlHasNoBasicAuth = function() {
+  return {
+    test: function(requestedUrl) {
+      try {
+        const uri = new URL(requestedUrl);
+        if (uri.username === '' && uri.password === ''){
+          return true; 
+        }
+        else {
+          console.error('Expected username: ' + uri.username + ' and password: ' + uri.password + ' to both be missing from url ' + requestedUrl);
+          return false;
+        }          
+      } catch (error) {
+        return false; // Invalid URL
+      }      
+    }
+  }
+}
+
 window.arrayContains = function(list, value) {
   var contains = false;
   angular.forEach(list, function(listValue) {
@@ -41,7 +60,7 @@ window.urlContainsParams = function(url, params) {
         if (values instanceof Array) {
           angular.forEach(values, function(value) {
             if (!arrayContains(parsedParams[param], value)) {
-              console.log('Expected param: ' + param + ' missing');
+              console.error('Expected param: ' + param + ' missing');
               missingParam = true;
             }
           });
@@ -67,7 +86,7 @@ window.urlMissingParams = function(url, params) {
         if (values instanceof Array) {
           angular.forEach(values, function(value) {
             if (arrayContains(parsedParams[param], value)) {
-              console.log('Param: ' + param + ' should be missing, but found');
+              console.error('Param: ' + param + ' should be missing, but found');
               found = true;
             }
           });
