@@ -18,6 +18,25 @@ window.parseUrlParams = function(queryString) {
   return parsedParams;
 };
 
+window.urlHasBasicAuth = function() {
+  return {
+    test: function(requestedUrl) {
+      try {
+        const uri = new URL(requestedUrl);
+        if (uri.username !== '' && uri.password !== ''){
+          return true; 
+        }
+        else {
+          console.error('Expected username: ' + uri.username + ' and password: ' + uri.password + ' to both be embedded in url ' + requestedUrl);
+          return false;
+        }          
+      } catch (error) {
+        return false; // Invalid URL
+      }      
+    }
+  }
+}
+
 window.urlHasNoBasicAuth = function() {
   return {
     test: function(requestedUrl) {

@@ -89,6 +89,48 @@ describe('Service: searchSvc: Solr', function () {
     $httpBackend.verifyNoOutstandingExpectation();
     expect(searchSvc.activeQueries()).toEqual(0);    
   });
+  
+  fit('With JSONP, it preserves the username and password in the URL and does NOT add it to header property', function() {
+    var authSolrUrl = 'http://username:password@example.com:1234/solr/select';
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      authSolrUrl,
+      mockSolrParams,
+      mockQueryText,
+      { apiMethod: 'JSONP' },
+      'solr'
+    );
+
+    $httpBackend.expectJSONP(urlHasBasicAuth()).respond(200, mockResults);
+    searcher.search();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+    expect(searchSvc.activeQueries()).toEqual(0);    
+  });  
+  
+  it('Pass basic auth through the headers', function() {
+    //var authSolrUrl = 'http://example.com:1234/solr/select';
+    // username:password
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSolrUrl,
+      mockSolrParams,
+      mockQueryText,
+      { apiMethod: 'GET', customHeaders: '{\n "Authorization": "Basic ' + btoa('username:password') + '"\n}'},
+      'solr'
+    );
+
+    var expectedHeaders = {
+      'Accept': 'application/json, text/plain, */*',
+      'Authorization': 'Basic ' + btoa('username:password')
+    };
+
+    $httpBackend.expectGET(urlHasNoBasicAuth(), expectedHeaders).respond(200, mockResults);
+    searcher.search();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+    expect(searchSvc.activeQueries()).toEqual(0);    
+  });  
 
 
 

@@ -38,7 +38,7 @@
 
 
     // Strips out the username:password@ that can be embedded in URL.
-    function removeUsernameAndPassword(urlString) {
+    function removeEmbeddedUsernameAndPassword(urlString) {
       const regex = /^((?:https?:\/\/)?)([^:@]+(:[^:@]+)?@)(.+)/;
       const match = urlString.match(regex);
       if (match && match[4]) {
@@ -248,16 +248,21 @@
         }
 
         var uri       = esUrlSvc.parseUrl(url);
-        var headers   = esUrlSvc.getHeaders(uri, self.config.customHeaders);
+        var headers   = null;
         var proxyUrl  = self.config.proxyUrl;
         
         var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
         
-        // Theoretically the esUrlSvc can build a url that strips out the basic auth params, but
-        // that was causing issues on some of the request parameters, breaking tests.  So using
-        // this removeUsernameAndPassword method instead.
-        url = removeUsernameAndPassword(url);
-
+        if (apiMethod === 'JSONP'){
+          // JSONP is weird.  You don't get headers, and you must embed basic auth IN the url
+        }
+        else {
+          // Theoretically the esUrlSvc can build a url that strips out the basic auth params, but
+          // that was causing issues on some of the request parameters, breaking tests. 
+          url = removeEmbeddedUsernameAndPassword(url);  
+          
+          headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);                  
+        }
 
         transport.query(url, null, headers)
           .then(function success(resp) {
