@@ -109,8 +109,6 @@ describe('Service: searchSvc: Solr', function () {
   });  
   
   it('Pass basic auth through the headers', function() {
-    //var authSolrUrl = 'http://example.com:1234/solr/select';
-    // username:password
     var searcher = searchSvc.createSearcher(
       mockFieldSpec,
       mockSolrUrl,
