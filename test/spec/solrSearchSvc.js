@@ -67,7 +67,7 @@ describe('Service: searchSvc: Solr', function () {
     $httpBackend.verifyNoOutstandingExpectation();
   });
   
-  it('sets the proper headers for auth', function() {
+  it('strips out username and password from url and converts to header property', function() {
     var authSolrUrl = 'http://username:password@example.com:1234/solr/select';
     var searcher = searchSvc.createSearcher(
       mockFieldSpec,
@@ -78,14 +78,57 @@ describe('Service: searchSvc: Solr', function () {
       'solr'
     );
 
-    // The headers need to be removed from the URL, which we accomplish
-    // using the esUrlSvc.
-     var targetUrl = solrUrlSvc.buildUrl(solrUrlSvc.parseSolrUrl(authSolrUrl))
-     $httpBackend.expectGET(targetUrl, undefined, function(headers) {
-       return headers['Authorization'] == 'Basic ' + btoa('username:password');
-     }).
-     respond(200, mockResults);
+    var expectedHeaders = {
+      'Accept': 'application/json, text/plain, */*',
+      'Authorization': 'Basic ' + btoa('username:password')
+    };
+
+    $httpBackend.expectGET(urlHasNoBasicAuth(), expectedHeaders).respond(200, mockResults);
+    searcher.search();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+    expect(searchSvc.activeQueries()).toEqual(0);    
   });
+  
+  it('With JSONP, it preserves the username and password in the URL and does NOT add it to header property', function() {
+    var authSolrUrl = 'http://username:password@example.com:1234/solr/select';
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      authSolrUrl,
+      mockSolrParams,
+      mockQueryText,
+      { apiMethod: 'JSONP' },
+      'solr'
+    );
+
+    $httpBackend.expectJSONP(urlHasBasicAuth()).respond(200, mockResults);
+    searcher.search();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+    expect(searchSvc.activeQueries()).toEqual(0);    
+  });  
+  
+  it('Pass basic auth through the headers', function() {
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSolrUrl,
+      mockSolrParams,
+      mockQueryText,
+      { apiMethod: 'GET', customHeaders: '{\n "Authorization": "Basic ' + btoa('username:password') + '"\n}'},
+      'solr'
+    );
+
+    var expectedHeaders = {
+      'Accept': 'application/json, text/plain, */*',
+      'Authorization': 'Basic ' + btoa('username:password')
+    };
+
+    $httpBackend.expectGET(urlHasNoBasicAuth(), expectedHeaders).respond(200, mockResults);
+    searcher.search();
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+    expect(searchSvc.activeQueries()).toEqual(0);    
+  });  
 
 
 

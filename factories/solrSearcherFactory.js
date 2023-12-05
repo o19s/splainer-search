@@ -13,6 +13,7 @@
       'activeQueries',
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
+      'esUrlSvc',
       SolrSearcherFactory
     ]);
 
@@ -20,7 +21,7 @@
     $q, $log,
     SolrDocFactory, SearcherFactory, transportSvc,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc
+    solrSearcherPreprocessorSvc, esUrlSvc
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -34,8 +35,7 @@
     Searcher.prototype.search           = search;
     Searcher.prototype.explainOther     = explainOther;
     Searcher.prototype.queryDetails     = {};
-
-
+    
     function addDocToGroup (groupedBy, group, solrDoc) {
       /*jslint validthis:true*/
       var self = this;
@@ -235,11 +235,22 @@
         if (self.config && self.config.apiMethod) {
           apiMethod = self.config.apiMethod;
         }
-        var proxyUrl = self.config.proxyUrl;
+        
+        var headers   = null;
+        var proxyUrl  = self.config.proxyUrl;
         
         var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
+        
+        if (apiMethod === 'JSONP'){
+          // JSONP is weird.  You don't get headers, and you must embed basic auth IN the url
+        }
+        else {
+          let uri = esUrlSvc.parseUrl(url);
+          url     = esUrlSvc.buildUrl(uri);          
+          headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);                  
+        }
 
-        transport.query(url, null, null)
+        transport.query(url, null, headers)
           .then(function success(resp) {
             var solrResp = resp.data;
             activeQueries.count--;
