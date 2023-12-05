@@ -1,7 +1,10 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.30.7 (2023-12-05)
+- Support Custom Headers being passed through to Solr.  We have a nice refactoring of how headers are processed, and reusing the `esUrlSvc` in the `solrSearcherFactory`.  https://github.com/o19s/splainer-search/pull/143 by @epugh.  
+
 # 2.30.6 (2023-11-30)
-- It appears that the DocResolver is needed regardless of if you support it or not.  Weird stuff in Quepid otherwise happens.  https://github.com/o19s/splainer-search/pull/141 by @epugh rolls back the change.
+- It appears that the DocResolver is needed regardless of if you support it or not.  Weird stuff in Quepid otherwise happens.  https://github.com/o19s/splainer-search/pull/141 by @epugh rolls back the change.  Thanks @dacox for https://github.com/o19s/splainer-search/issues/140.
 
 # 2.30.5 (2023-11-29)
 - Looking up individual documents from the search engine (i.e the DocResolver) didn't respect the proxy settings.   Also found a bug in creating direct link to OpenSearch docs where you could get doubled `/_doc/_doc/` in the url!  https://github.com/o19s/splainer-search/pull/139 by @epugh.  Thanks @david-fisher for finding the snapshot with proxies issue.
