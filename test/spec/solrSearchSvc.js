@@ -1394,7 +1394,7 @@ describe('Service: searchSvc: Solr', function () {
           '{!edismax qf="bowl^10 sofritas" tie=1.0}#$query##'
         ],
         phraseScore: [
-          'div(product(sum(5,1),query($phrase)),product(query($phrase),##k##))'
+          'div(product(sum(##k##,1),query($phrase)),product(query($phrase),##k##))'
         ],
         texmexFunc: [
           'if(query($phrase),1.5,1)'
