@@ -35,17 +35,6 @@
     Searcher.prototype.search           = search;
     Searcher.prototype.explainOther     = explainOther;
     Searcher.prototype.queryDetails     = {};
-
-
-    // Strips out the username:password@ that can be embedded in URL.
-    function removeEmbeddedUsernameAndPassword(urlString) {
-      const regex = /^((?:https?:\/\/)?)([^:@]+(:[^:@]+)?@)(.+)/;
-      const match = urlString.match(regex);
-      if (match && match[4]) {
-        return match[1] + match[4];
-      }
-      return urlString;
-    }
     
     function addDocToGroup (groupedBy, group, solrDoc) {
       /*jslint validthis:true*/
@@ -246,8 +235,7 @@
         if (self.config && self.config.apiMethod) {
           apiMethod = self.config.apiMethod;
         }
-
-        var uri       = esUrlSvc.parseUrl(url);
+        
         var headers   = null;
         var proxyUrl  = self.config.proxyUrl;
         
@@ -257,10 +245,8 @@
           // JSONP is weird.  You don't get headers, and you must embed basic auth IN the url
         }
         else {
-          // Theoretically the esUrlSvc can build a url that strips out the basic auth params, but
-          // that was causing issues on some of the request parameters, breaking tests. 
-          url = removeEmbeddedUsernameAndPassword(url);  
-          
+          let uri = esUrlSvc.parseUrl(url);
+          url     = esUrlSvc.buildUrl(uri);          
           headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);                  
         }
 

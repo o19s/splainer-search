@@ -90,7 +90,7 @@ describe('Service: searchSvc: Solr', function () {
     expect(searchSvc.activeQueries()).toEqual(0);    
   });
   
-  fit('With JSONP, it preserves the username and password in the URL and does NOT add it to header property', function() {
+  it('With JSONP, it preserves the username and password in the URL and does NOT add it to header property', function() {
     var authSolrUrl = 'http://username:password@example.com:1234/solr/select';
     var searcher = searchSvc.createSearcher(
       mockFieldSpec,
