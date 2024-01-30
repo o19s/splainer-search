@@ -37,12 +37,6 @@
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
-    // Searcher.prototype.explainOther     = explainOther;
-    // Searcher.prototype.explain          = explain;
-    // Searcher.prototype.majorVersion     = majorVersion;
-    // Searcher.prototype.isTemplateCall   = isTemplateCall;
-    // Searcher.prototype.renderTemplate   = renderTemplate;
-
 
     /* jshint unused: false */
     function addDocToGroup (groupedBy, group, algoliaDoc) {
@@ -90,8 +84,7 @@
     function search () {
       /*jslint validthis:true*/
 
-
-      const self= this;
+      const self = this;
       var apiMethod = self.config.apiMethod;
       var proxyUrl  = self.config.proxyUrl;
       var url       = self.url;
@@ -106,10 +99,8 @@
         queryDslWithPagerArgs.size = self.pagerArgs.size;
       }
 
-      //var baseUrl = solrUrlSvc.buildUrl(url, self.args);
       url       = esUrlSvc.buildUrl(uri);
 
-      //baseUrl = queryTemplateSvc.hydrate(baseUrl, self.queryText, {encodeURI: true, defaultKw: '""'});
       self.inError  = false;
 
       var headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);
@@ -155,7 +146,7 @@
           console.log('Error');
           activeQueries.count--;
           self.inError = true;
-          msg.searchError = 'Error with Search API query or server. Review request manually.';
+          msg.searchError = 'Error with Algolia query or API endpoint. Review request manually.';
           return $q.reject(msg);
         })
         .catch(function(response) {
