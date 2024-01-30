@@ -19,13 +19,13 @@
       self.apiMethod      = settings.apiMethod;
       self.version        = settings.version;
       self.customHeaders  = settings.customHeaders;
-      
+
       // we shouldn't unpack and set these settings to local variables (like above!)
       // because sometimes we don't know what they are all.  For example
       // for the searchapi we need to pass a bunch of extra settings through
       // to the searcher
       self.settings       = settings;
-      
+
       if (settings.args){
         self.args = settings.args;
       }
@@ -42,7 +42,7 @@
       function setupSearcher () {
         var args    = { };
         var fields  = '*';
-        
+
         // Did we pass in some args externally that we want to use instead
         if (self.args) {
           args = self.args;
@@ -53,7 +53,7 @@
         } else if ( self.searchEngine === 'es' || self.searchEngine === 'os') {
           fields = null;
         } else if ( self.searchEngine === 'vectara') {
-          
+
           // When we have a caseOptions or engineOptions hash available, then this could look like "corpusId: '#$searchOptions['corpusId]##"
           args = { query: [
               {
@@ -65,7 +65,7 @@
               }
             ]};
         }
-        
+
         self.searcher = searchSvc.createSearcher(
           fieldSpecSvc.createFieldSpec(fields),
           self.searchUrl,
@@ -92,6 +92,9 @@
           }, fieldsFromDocumentMetadata);
         }
         else if ( self.searchEngine === 'searchapi' ) {
+          return doc.doc;
+        }
+        else if ( self.searchEngine === 'algolia' ) {
           return doc.doc;
         }
         else {
