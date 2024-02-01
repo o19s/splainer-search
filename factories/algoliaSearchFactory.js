@@ -37,6 +37,7 @@
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
+    Searcher.prototype.getTransportParameters = getTransportParameters;
 
     /* jshint unused: false */
     function addDocToGroup (groupedBy, group, algoliaDoc) {
@@ -79,6 +80,60 @@
       return nextSearcher;
     }
 
+    function getIndexName (url) {
+      var pathFragments = (new URL(url)).pathname.split('/').filter(function (item) {
+        return item.length > 0;
+      });
+
+      return pathFragments[pathFragments.length - 2];
+    }
+
+    function constructObjectQueryUrl(url) {
+      var urlObject = new URL(url);
+      urlObject.pathname = '/1/indexes/*/objects';
+      return urlObject.toString();
+    }
+
+    function getTransportParameters(retrieveObjects) {
+      var self = this;
+      var uri = esUrlSvc.parseUrl(self.url);
+      var url       = esUrlSvc.buildUrl(uri);
+      var headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);
+      var payload = {};
+
+      if (retrieveObjects) {
+        var indexName = getIndexName(url);
+        var objectsUrl = constructObjectQueryUrl(url);
+
+        var attributesToRetrieve = self.queryDsl && self.queryDsl.attributesToRetrieve ? self.queryDsl.attributesToRetrieve:undefined;
+
+        payload = {
+          requests: self.args.objectIds.map(id => {
+            return {
+              indexName: indexName,
+              objectID: id,
+              attributesToRetrieve: attributesToRetrieve
+            };
+          })
+        };
+
+        return {
+          url: objectsUrl,
+          headers: headers,
+          payload: payload,
+          responseKey: 'results',
+        };
+      } else {
+        payload = self.queryDsl;
+        return {
+          url: url,
+          headers: headers,
+          payload: payload,
+          responseKey: 'hits',
+        };
+      }
+    }
+
     // search (execute the query) and produce results
     // to the returned future
     function search () {
@@ -87,27 +142,17 @@
       const self = this;
       var apiMethod = self.config.apiMethod;
       var proxyUrl  = self.config.proxyUrl;
-      var url       = self.url;
-      var uri       = esUrlSvc.parseUrl(self.url);
-      var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
+      var transport = transportSvc.getTransport({ apiMethod: apiMethod, proxyUrl: proxyUrl });
 
+      var retrieveObjects = self.args.retrieveObjects;
 
-      var payload = self.queryDsl;
-      var queryDslWithPagerArgs = angular.copy(self.queryDsl);
-      if (self.pagerArgs) {
-        queryDslWithPagerArgs.page = self.pagerArgs.page;
-        queryDslWithPagerArgs.size = self.pagerArgs.size;
-      }
+      var transportParameters = self.getTransportParameters(retrieveObjects);
 
-      url       = esUrlSvc.buildUrl(uri);
-
-      self.inError  = false;
-
-      var headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);
+      self.inError = false;
 
       activeQueries.count++;
 
-      return transport.query(url, payload, headers)
+      return transport.query(transportParameters.url, transportParameters.payload, transportParameters.headers)
         .then(function success(httpConfig) {
           const data = httpConfig.data;
 
@@ -133,7 +178,7 @@
             });
           }
 
-          data.hits.forEach(function(item) {
+          data[transportParameters.responseKey].forEach(function(item) {
             mappedDocs.push(docMapper(item));
           });
 

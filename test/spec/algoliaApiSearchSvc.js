@@ -190,6 +190,43 @@ describe('Service: searchSvc: Algolia', function () {
     "serverTimeMS": 2
   };
 
+  var expectedGetObjectsPayload = {
+    requests: [{
+      indexName: "ecommerce-index",
+      objectID: "potato",
+    },{
+      indexName: "ecommerce-index",
+      objectID: "patato",
+    }, {
+      indexName: "ecommerce-index",
+      objectID: "tomato",
+    }, {
+      indexName: "ecommerce-index",
+      objectID: "tamato",
+    }]
+  }
+
+  var mockGetObjectsResponse = {
+    "results":[
+      {
+        "title": "Potato",
+        "objectID": "potato"
+      },
+      {
+        "title": "Patato",
+        "objectID": "patato"
+      },
+      {
+        "title": "Tomato",
+        "objectID": "tomato"
+      },
+      {
+        "title": "Tamato",
+        "objectID": "tamato"
+      },
+    ]
+  }
+
   beforeEach(inject(function($injector) {
     $httpBackend = $injector.get('$httpBackend');
   }));
@@ -263,6 +300,44 @@ describe('Service: searchSvc: Algolia', function () {
 
           called++;
         });
+
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+
+    expect(called).toEqual(1);
+  });
+
+  it('queries docs by id', function () {
+    var options = {
+      apiMethod: 'POST',
+
+    };
+
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockAlgoliaUrl,
+      {
+        objectIds: ['potato', 'patato', 'tomato', 'tamato'],
+        retrieveObjects: true
+      }, mockQueryText, options, 'algolia');
+
+    $httpBackend.expectPOST("https://index.algolianet.com/1/indexes/*/objects", expectedGetObjectsPayload).respond(200, mockGetObjectsResponse);
+
+    var called = 0;
+
+    searcher.search()
+      .then(function () {
+
+        var docs = searcher.docs;
+        expect(docs.length === 28);
+
+        expect(docs[0].title).toEqual("Potato");
+        expect(docs[0].id).toEqual("potato");
+        expect(docs[1].title).toEqual("Patato");
+        expect(docs[1].id).toEqual("patato");
+
+        called++;
+      });
 
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
