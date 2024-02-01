@@ -94,6 +94,23 @@
       return urlObject.toString();
     }
 
+    /**
+     * Algolia has a [separate endpoint ](https://www.algolia.com/doc/rest-api/search/#get-objects)to retrieve documents/objects
+     * Using the flag from self.retrieveObjects to switch to a different url.
+     * The logic below finds out the index from the configured URL and constructs the endpoint to retrieve the documents.
+     * This, however, won't work when we introduce the capability to query multiple indices at the same time.
+     *
+     * @typedef {object} TransportParameters
+     * @property {string} url
+     * @property {object} headers
+     * @property {string} headers.x-algolia-api-key
+     * @property {string} headers.x-algolia-application-id
+     * @property {object} payload
+     * @property {string} responseKey - This is used as key to retrieve array of documents from Algolia response.
+     * @param {boolean} retrieveObjects
+     *
+     * @returns {TransportParameters}
+     */
     function getTransportParameters(retrieveObjects) {
       var self = this;
       var uri = esUrlSvc.parseUrl(self.url);
@@ -121,7 +138,7 @@
           url: objectsUrl,
           headers: headers,
           payload: payload,
-          responseKey: 'results',
+          responseKey: 'results', // Object retrieval results array is in `results`
         };
       } else {
         payload = self.queryDsl;
@@ -129,7 +146,7 @@
           url: url,
           headers: headers,
           payload: payload,
-          responseKey: 'hits',
+          responseKey: 'hits', // Query results array is in `hits`
         };
       }
     }
