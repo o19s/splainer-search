@@ -68,7 +68,8 @@
         escapeQuery:  false,
         numberOfRows: ids.length,
         version:      self.settings.version,
-        proxyUrl:     self.settings.proxyUrl
+        proxyUrl:     self.settings.proxyUrl,
+        apiMethod:    self.settings.apiMethod
       };
 
       self.searcher = searchSvc.createSearcher(
