@@ -62,7 +62,8 @@
         // Some search endpoints do not have an endpoint to retrieve per doc metadata directly
         // by not populating the args, this appears to behave.
       } else if (settings.searchEngine === 'algolia') {
-        // Algolia requires separate endpoint to getch record by IDs. For this we would be setting up a flag to indicate to searchFactory about our intent.
+        // Algolia requires separate endpoint to fetch record by IDs. For this we will 
+        // set up a flag to indicate to searchFactory about our intent to retrieve records.
         self.args = {
           objectIds: ids,
           retrieveObjects: true

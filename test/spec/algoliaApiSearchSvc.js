@@ -310,7 +310,6 @@ describe('Service: searchSvc: Algolia', function () {
   it('queries docs by id', function () {
     var options = {
       apiMethod: 'POST',
-
     };
 
     var searcher = searchSvc.createSearcher(
