@@ -32,7 +32,9 @@
         var escapeIds = function(ids) {
           var newIds = [];
           angular.forEach(ids, function(id) {
-            newIds.push(solrUrlSvc.escapeUserQuery(id));
+            // SUSS_USE_OF_ESCAPING.  Going to disable this and see what happens.
+            // newIds.push(solrUrlSvc.escapeUserQuery(id));
+            newIds.push(id);
           });
           return newIds;
         };
