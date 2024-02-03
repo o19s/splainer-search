@@ -46,6 +46,7 @@ angular.module('o19s.splainer-search')
         }
 
         if (config.escapeQuery) {
+          console.warn('SUSS_USE_OF_ESCAPING.  Are you sure?');
           queryText = solrUrlSvc.escapeUserQuery(queryText);
         }
 

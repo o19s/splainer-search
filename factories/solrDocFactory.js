@@ -45,7 +45,9 @@
      * Builds Solr URL for a single Solr document.
      */
     var buildDocUrl = function(fieldList, url, idField, docId) {
-      var escId = encodeURIComponent(solrUrlSvc.escapeUserQuery(docId));
+      // SUSS_USE_OF_ESCAPING.  Going to disable this and see what happens.
+      //var escId = encodeURIComponent(solrUrlSvc.escapeUserQuery(docId));
+      var escId = encodeURIComponent(docId);
 
       var urlArgs = {
         'indent': ['true'],
