@@ -97,6 +97,12 @@ angular.module('o19s.splainer-search')
             normalDoc.translations[translationField] = doc[translationField];
         });
       };
+      
+      var assignUnabridgeds = function(normalDoc, doc, fieldSpec) {
+        angular.forEach(fieldSpec.unabridgeds, function (unabridgedField) {
+            normalDoc.unabridgeds[unabridgedField] = doc[unabridgedField];
+        });
+      };      
 
       var assignSubs = function(normalDoc, doc, fieldSpec) {
         var parseValue = function(value) {
@@ -159,13 +165,15 @@ angular.module('o19s.splainer-search')
         /* jshint -W106 */
         if (fieldSpec.thumb_options) {
             normalDoc.thumb_options = fieldSpec.thumb_options;
-        }        
+        }
         /* jshint +W106 */
         normalDoc.titleField = fieldSpec.title;
         normalDoc.embeds = {};
         assignEmbeds(normalDoc, doc, fieldSpec);
         normalDoc.translations = {};
         assignTranslations(normalDoc, doc, fieldSpec);
+        normalDoc.unabridgeds = {};
+        assignUnabridgeds(normalDoc, doc, fieldSpec);        
         normalDoc.subs = {};
         assignSubs(normalDoc, doc, fieldSpec);
       };
