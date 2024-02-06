@@ -308,7 +308,7 @@ For example, ES deprecated the `fields` parameter in favor of `stored_fields` (h
 
 To do so you only need to specify the version number in the `config` param when constructing a new searcher:
 
-### ElasticSearch
+### Elasticsearch
 
 ```js
 var options = {
