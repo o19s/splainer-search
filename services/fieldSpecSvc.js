@@ -35,6 +35,13 @@ angular.module('o19s.splainer-search')
 
           fieldSpec.translations.push(fieldName);
         }
+        if (fieldType === 'unabridged') {
+          if (!fieldSpec.hasOwnProperty('unabridged')) {
+            fieldSpec.unabridgeds = [];
+          }
+
+          fieldSpec.unabridgeds.push(fieldName);
+        }        
         if (fieldType === 'sub') {
           if (!fieldSpec.hasOwnProperty('subs')) {
             fieldSpec.subs = [];
@@ -159,6 +166,9 @@ angular.module('o19s.splainer-search')
           angular.forEach(this.translations, function(translate) {
             innerBody(translate);
           });
+          angular.forEach(this.unabridgeds, function(unabridged) {
+            innerBody(unabridged);
+          });          
           angular.forEach(this.highlights, function(hl) {
             innerBody(hl);
           });

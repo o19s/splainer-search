@@ -1,5 +1,14 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.32.0 (2024-02-06)
+- Splainer lets you do smart things around using highlighting in the query and/or snippeting to 200 characters to take a really large document field and shrink it to something that renders nicely.  However sometimes you just want to see ALL the text.  So now in a field specification you can control that by specifing `unabridged:body_content` for your long form text fields.  https://github.com/o19s/splainer-search/pull/148 by @epugh.
+
+
+# 2.31.0 (2024-02-05)
+- When using Solr and proxing through Quepid, we require you to use a GET.  However, when doing a doc lookup (to power snapshot compare) it falls back to JSONP, instead of using the specified GET.  https://github.com/o19s/splainer-search/pull/146 by @epugh.
+
+- POTENTIALLY BREAKING CHANGE!  Splainer-search has some logic around escaping queries.  For example `OR` becomes `\\OR`...  It is rather unclear if this is actually a fully baked set of logic, and has created some bugs like https://github.com/o19s/quepid/issues/910.   We've commented out the escaping in Splainer-search, added logging about it, but will leave the code, tagged with `SUSS_USE_OF_ESCAPING`.  Going to ship this in the next version of Quepid and get feedback from community on if there are regressions that warrant restoring some sort of escaping.  https://github.com/o19s/splainer-search/pull/147 by @epugh.
+
 # 2.30.7 (2023-12-05)
 - Support Custom Headers being passed through to Solr.  We have a nice refactoring of how headers are processed, and reusing the `esUrlSvc` in the `solrSearcherFactory`.  https://github.com/o19s/splainer-search/pull/143 by @epugh.  
 

@@ -78,9 +78,18 @@ describe('Service: fieldSpecSvc', function () {
     expect(fieldSpec.id).toEqual('foo_id');
     expect(fieldSpec.title).toEqual('atitlefield');
     expect(fieldSpec.subs).toContain('subfield1');
+    expect(fieldSpec.subs).not.toContain('subfield2');
     expect(fieldSpec.translations).toContain('subfield2');
   });
-
+  
+  it('extracts unabridged fields', function() {
+    var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 unabridged:subfield2 id:foo_id');
+    expect(fieldSpec.id).toEqual('foo_id');
+    expect(fieldSpec.title).toEqual('atitlefield');
+    expect(fieldSpec.subs).toContain('subfield1');
+    expect(fieldSpec.subs).not.toContain('subfield2');
+    expect(fieldSpec.unabridged).toContain('subfield2');
+  });
 
   it('gets plain field list', function() {
     var fieldSpec = fieldSpecSvc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 id:foo_id image:imagefield thumb:foo_img media:media1');
