@@ -61,6 +61,13 @@
       } else if ( settings.searchEngine === 'vectara' || settings.searchEngine === 'searchapi') {
         // Some search endpoints do not have an endpoint to retrieve per doc metadata directly
         // by not populating the args, this appears to behave.
+      } else if (settings.searchEngine === 'algolia') {
+        // Algolia requires separate endpoint to fetch record by IDs. For this we will 
+        // set up a flag to indicate to searchFactory about our intent to retrieve records.
+        self.args = {
+          objectIds: ids,
+          retrieveObjects: true
+        };
       }
 
       self.config = {
@@ -70,7 +77,8 @@
         escapeQuery:  false,
         numberOfRows: ids.length,
         version:      self.settings.version,
-        proxyUrl:     self.settings.proxyUrl,
+        proxyUrl:      self.settings.proxyUrl,
+        customHeaders: self.settings.customHeaders,
         apiMethod:    self.settings.apiMethod
       };
 
