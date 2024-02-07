@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.32.0 (2024-02-07)
+- Algolia support added!   Thanks @sumitsarker for the great contribution, https://github.com/o19s/splainer-search/pull/145.
+
 # 2.32.0 (2024-02-06)
 - Splainer lets you do smart things around using highlighting in the query and/or snippeting to 200 characters to take a really large document field and shrink it to something that renders nicely.  However sometimes you just want to see ALL the text.  So now in a field specification you can control that by specifing `unabridged:body_content` for your long form text fields.  https://github.com/o19s/splainer-search/pull/148 by @epugh.
 
