@@ -1332,6 +1332,36 @@ describe('Service: searchSvc: ElasticSearch', function() {
       expect(called).toEqual(1);
     });
   });
+  
+  describe('errors on GET versus POST', function() {
+    beforeEach(inject(function () {
+
+    }));
+
+    it('throws an Error on a GET', function() {
+      // the 'id' tells us that we have a templated search.
+      var mockEsParams  = {
+        id: 'tmdb-title-search-template',
+        params: {
+          search_query: 'star'
+        }
+      };
+      
+      var config = {
+        apiMethod: 'GET'
+      }
+   
+      expect(() => {searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        config,
+        'es'
+      );
+      }).toThrowError('Template queries must be executed via POST, not GET.');      
+    });
+  });
   describe('scripted fields', function() {
     var mockScriptedResults = {
       hits: {
