@@ -68,6 +68,13 @@
           objectIds: ids,
           retrieveObjects: true
         };
+      } else if (settings.searchEngine === 'a2') {
+        self.args = {
+          text: self.queryText,
+            catalog: [
+              ids
+              ]
+        }
       }
 
       self.config = {

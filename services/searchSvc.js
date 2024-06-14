@@ -8,6 +8,7 @@ angular.module('o19s.splainer-search')
     'EsSearcherFactory',
     'VectaraSearcherFactory',
     'AlgoliaSearcherFactory',
+    'A2SearcherFactory',
     'SearchApiSearcherFactory',
     'activeQueries',
     'defaultSolrConfig',
@@ -16,6 +17,7 @@ angular.module('o19s.splainer-search')
       EsSearcherFactory,
       VectaraSearcherFactory,
       AlgoliaSearcherFactory,
+      A2SearcherFactory,
       SearchApiSearcherFactory,
       activeQueries,
       defaultSolrConfig
@@ -69,6 +71,8 @@ angular.module('o19s.splainer-search')
           searcher = new VectaraSearcherFactory(options);
         } else if ( searchEngine === 'algolia') {
           searcher = new AlgoliaSearcherFactory(options);
+        } else if ( searchEngine === 'a2') {
+          searcher = new A2SearcherFactory(options);
         } else if ( searchEngine === 'searchapi') {
           searcher = new SearchApiSearcherFactory(options);
         }

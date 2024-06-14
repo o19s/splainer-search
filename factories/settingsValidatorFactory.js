@@ -97,6 +97,9 @@
         else if ( self.searchEngine === 'algolia' ) {
           return doc.doc;
         }
+        else if ( self.searchEngine === 'a2') {
+          return doc.doc;
+        }
         else {
           console.error('Need to determine how to source a doc for this search engine ' + self.searchEngine);
         }
