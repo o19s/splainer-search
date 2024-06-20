@@ -26,11 +26,9 @@
     SearcherFactory,
     transportSvc
   ) {
-
     var Searcher = function(options) {
       SearcherFactory.call(this, options, searchApiSearcherPreprocessorSvc);
     };
-
     Searcher.prototype = Object.create(SearcherFactory.prototype);
     Searcher.prototype.constructor = Searcher; // Reset the constructor
 

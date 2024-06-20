@@ -19,18 +19,19 @@
       self.config             = options.config;
       self.type               = options.type;
       self.customHeaders      = options.customHeaders;
-
+      
       self.docs               = [];
       self.grouped            = {};
       self.numFound           = 0;
       self.inError            = false;
       self.othersExplained    = {};
       self.parsedQueryDetails = {};
-
+      
       self.HIGHLIGHTING_PRE   = options.HIGHLIGHTING_PRE;
       self.HIGHLIGHTING_POST  = options.HIGHLIGHTING_POST;
-
+      
       preprocessor.prepare(self);
+      
     };
 
     // Return factory object

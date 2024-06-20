@@ -36,7 +36,7 @@
 
       self.setupSearcher  = setupSearcher;
       self.validateUrl    = validateUrl;
-
+      
       self.setupSearcher();
 
       function setupSearcher () {
@@ -75,6 +75,7 @@
           self.searchEngine
         );
       }
+      
 
       function sourceDoc(doc) {
         if ( self.searchEngine === 'solr' ) {
