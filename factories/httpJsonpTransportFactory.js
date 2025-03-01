@@ -20,7 +20,20 @@
 
     Transport.prototype.query = query;
 
-    function query(url) {
+    function query(url, payload, headers) {
+      
+      // JSONP doesn't support headers, so we need to encode the user password in the URL. 
+      // Special characters need to be encoded. 
+      if (headers && headers['Authorization']) {
+        let userPassword = headers['Authorization'];
+        userPassword = userPassword.replace('Basic ', '');
+        userPassword = atob(userPassword);
+        userPassword = userPassword.split(':');
+        userPassword = userPassword[0] + ':' + encodeURIComponent(userPassword[1]);
+
+        url = url.replace('://', '://' + userPassword + '@');
+      }
+      
       url = $sce.trustAsResourceUrl(url);
       
       // you don't get header or payload support with jsonp, it's akin to GET requests that way.

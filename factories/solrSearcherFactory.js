@@ -235,20 +235,14 @@
         if (self.config && self.config.apiMethod) {
           apiMethod = self.config.apiMethod;
         }
+
+        let uri = esUrlSvc.parseUrl(url);          
+        var headers   = esUrlSvc.getHeaders(uri, self.config.customHeaders);  
+        url = esUrlSvc.stripBasicAuth(url);
         
-        var headers   = null;
         var proxyUrl  = self.config.proxyUrl;
         
-        var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
-        
-        if (apiMethod === 'JSONP'){
-          // JSONP is weird.  You don't get headers, and you must embed basic auth IN the url
-        }
-        else {
-          let uri = esUrlSvc.parseUrl(url);
-          url     = esUrlSvc.buildUrl(uri);          
-          headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);                  
-        }
+        var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});        
 
         transport.query(url, null, headers)
           .then(function success(resp) {

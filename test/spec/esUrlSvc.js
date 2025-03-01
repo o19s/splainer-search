@@ -234,4 +234,22 @@ describe('Service: esUrlSvc', function () {
       expect(returnedUrl).toBe(url + '?foo=bar&bar=foo');
     });
   });
+  
+  describe('stripBasicAuth', function() {
+    it('removes embedded basic auth', function() {
+      var url = 'https://user:pass@example.com';
+      
+      var returnedUrl = esUrlSvc.stripBasicAuth(url);
+
+      expect(returnedUrl).toBe('https://example.com');
+    });
+    
+    it('doesnt have issues with no embedded basic auth', function() {
+      var url = 'https://example.com';
+      
+      var returnedUrl = esUrlSvc.stripBasicAuth(url);
+
+      expect(returnedUrl).toBe('https://example.com');
+    });
+  });
 });
