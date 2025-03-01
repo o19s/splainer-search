@@ -1,6 +1,6 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
-# 2.33.0 (2025-02-28)
+# 2.34.0 (2025-02-28)
 - Smarter handling of basic auth, especially when you have special characters like $ and @ in the password.  
 For all api methods except JSONP, we use the Authorization header, even if you pass in a url with the embedded basic auth like http://user:pass@myserver.com.  
 Then for JSONP, which does NOT support headers, we embed the basic auth back into the URL.  
