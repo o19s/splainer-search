@@ -401,6 +401,8 @@ Splainer-search is written using AngularJS project. It requires `npm` and `grunt
 * On Ubuntu [follow these instructions](https://rtcamp.com/tutorials/nodejs/node-js-npm-install-ubuntu/)
 * Use npm to install Grunt globally on your system (may require sudo)
 
+Make sure you have a recent Node.js version installed, older versions won't work.  Version 20 or newer.
+
 ```
 npm install -g grunt-cli
 ```

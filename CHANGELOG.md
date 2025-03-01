@@ -1,5 +1,12 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.33.0 (2025-02-28)
+- Smarter handling of basic auth, especially when you have special characters like $ and @ in the password.  
+For all api methods except JSONP, we use the Authorization header, even if you pass in a url with the embedded basic auth like http://user:pass@myserver.com.  
+Then for JSONP, which does NOT support headers, we embed the basic auth back into the URL.  
+FYI: Chrome does NOT allow you to use embedded username password in the URL.
+Thanks @atarora for opening https://github.com/o19s/quepid/issues/1245 and @david-fisher for isolating the root causes.
+
 # 2.32.0 (2024-02-07)
 - Algolia support added!   Thanks @sumitsarker for the great contribution, https://github.com/o19s/splainer-search/pull/145.
 

@@ -48,14 +48,23 @@ angular.module('o19s.splainer-search')
           type:           searchEngine
         };
 
-        // if we have options.config.basicAuthCredential, then inject it into the URL
-        // and let that go forward.
         if (options.config && options.config.basicAuthCredential && options.config.basicAuthCredential.length > 0) {
-          options.url = this.addBasicAuthToUrl(options.url, options.config.basicAuthCredential);
+          // set up basic auth as a header
+          var encoded = btoa(options.config.basicAuthCredential);
+          if (options.config.customHeaders && options.config.customHeaders.length > 0) {
+            // already something there, append a new entry
+            let head = JSON.parse(options.config.customHeaders);
+            head['Authorization'] = 'Basic ' + encoded;
+            options.config.customHeaders = JSON.stringify(head);
+          } else {
+              // empty, so insert
+            let head = { 'Authorization': 'Basic ' + encoded };
+            options.config.customHeaders = JSON.stringify(head);
+          }
         }
-
+        
         var searcher;
-
+        
         if ( searchEngine === 'solr') {
           options.HIGHLIGHTING_PRE  = svc.HIGHLIGHTING_PRE;
           options.HIGHLIGHTING_POST = svc.HIGHLIGHTING_POST;
@@ -80,9 +89,5 @@ angular.module('o19s.splainer-search')
         return activeQueries.count;
       };
 
-      this.addBasicAuthToUrl = function (url, basicAuthCredential) {
-        var authUrl = url.replace('://', '://' + basicAuthCredential + '@');
-        return authUrl;
-      };
     }
   ]);

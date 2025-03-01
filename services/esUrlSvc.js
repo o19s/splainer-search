@@ -23,6 +23,7 @@ angular.module('o19s.splainer-search')
       self.buildRenderTemplateUrl = buildRenderTemplateUrl;
       self.setParams        = setParams;
       self.getHeaders       = getHeaders;
+      self.stripBasicAuth   = stripBasicAuth;
       self.isBulkCall       = isBulkCall;
       self.isTemplateCall   = isTemplateCall;
 
@@ -196,6 +197,15 @@ angular.module('o19s.splainer-search')
         }
 
         return headers;
+      }
+      
+      /**
+       *
+       * Removes any embedded user:password@ from a URL.
+       *
+       */
+      function stripBasicAuth(url) {
+          return url.replace(/(:\/\/)([^@]+)@/, '$1');
       }
 
       function isBulkCall (uri) {
