@@ -3,8 +3,9 @@
 angular.module('o19s.splainer-search')
   .service('esSearcherPreprocessorSvc', [
     'queryTemplateSvc',
+    'esUrlSvc',
     'defaultESConfig',
-    function esSearcherPreprocessorSvc(queryTemplateSvc, defaultESConfig) {
+    function esSearcherPreprocessorSvc(queryTemplateSvc, esUrlSvc, defaultESConfig) {
       var self = this;
 
       // Attributes
@@ -90,6 +91,9 @@ angular.module('o19s.splainer-search')
       };
 
       var prepareGetRequest = function (searcher) {
+        if (esUrlSvc.isTemplateCall(searcher.args)) {
+          throw new Error('Template queries must be executed via POST, not GET.');
+        }
         searcher.url = searcher.url + '?q=' + searcher.queryText;
 
         var pagerArgs = angular.copy(searcher.args.pager);
