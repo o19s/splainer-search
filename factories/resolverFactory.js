@@ -79,7 +79,9 @@
         version:      self.settings.version,
         proxyUrl:      self.settings.proxyUrl,
         customHeaders: self.settings.customHeaders,
+        basicAuthCredential: self.settings.basicAuthCredential,
         apiMethod:    self.settings.apiMethod
+         
       };
 
       self.searcher = searchSvc.createSearcher(
