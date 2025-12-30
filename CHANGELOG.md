@@ -1,5 +1,9 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.36.0 (2025-12-30)
+- Handle Custom Search API that have extra query parameters.  Previously we would generate `http://mycompany.com/endpoints/search?status=active&param=x?query=shirt`!  https://github.com/o19s/splainer-search/pull/156 by @epugh.
+- Split out developer docs into DEVELOPER_GUIDE.md, plus version bumps. https://github.com/o19s/splainer-search/pull/155 by @epugh. 
+
 # 2.35.1 (2025-07-22)
 - Document Resolver (i.e look up a doc by id) didn't pick up the basic auth credentials, unlike the Searcher.  
 Shows up in Quepid as Snapshot compare failing.  Thanks @kiratraynor for identifying the bug and pairing on the fix.  https://github.com/o19s/splainer-search/pull/153 by @epugh.
