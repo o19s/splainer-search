@@ -34,12 +34,15 @@ angular.module('o19s.splainer-search')
           paramsAsStrings.push(queryDSLAsQuerySTring);
         }
         var finalUrl = searcher.url;
+        var hasQuery = finalUrl.indexOf('?') !== -1;
+        var endsWithQuestion = finalUrl.substring(finalUrl.length - 1) === '?';
+        var separator = '?' ;
 
-        if (finalUrl.substring(finalUrl.length - 1) === '?') {
-          finalUrl += paramsAsStrings.join('&');
-        } else {
-          finalUrl += '?' + paramsAsStrings.join('&');
+        if (hasQuery) {
+          separator = endsWithQuestion ? '' : '&';
         }
+
+        finalUrl += separator + paramsAsStrings.join('&');
         
         searcher.url = finalUrl;
       };
