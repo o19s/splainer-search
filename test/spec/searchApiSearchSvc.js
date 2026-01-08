@@ -132,5 +132,49 @@ describe('Service: searchSvc: SearchApi', function () {
     $httpBackend.verifyNoOutstandingExpectation();
 
     expect(called).toEqual(1);
-  });  
+  });
+  
+  it('respects numberOfRows configuration', function () {
+    
+    var options = { 
+      apiMethod: 'GET',
+      numberOfRows: 1
+    };
+    options.docsMapper = function(data){    
+      let docs = [];
+      for (let doc of data) {
+        docs.push ({
+          id: doc.id,
+          name: doc.name,
+          title: doc.title,
+        }
+        )
+      }
+      return docs
+    }
+    
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+                                                mockSearchApiParams, mockQueryText, options, 'searchapi');
+    
+    $httpBackend.expectGET("http://example.com:1234/api/search?query=rambo movie").respond(200, mockSearchApiResults);
+
+    var called = 0;
+
+    searcher.search()
+        .then(function () {
+
+          var docs = searcher.docs;
+          expect(docs.length).toEqual(1); // Should only return 1 doc despite mockSearchApiResults having 2
+
+          expect(docs[0].title).toEqual("Rambo");
+          expect(docs[0].id).toEqual(1);
+          
+          called++;
+        });
+    
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+
+    expect(called).toEqual(1);
+  }); 
 });
