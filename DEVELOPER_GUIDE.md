@@ -34,7 +34,7 @@ We use NP to publish splainer-search to npmjs.org.
 the `np` script bumps that file!   Check that file in.
 
 2. Create a granular access token on npmjs.com with at least these permissions: Publish (for the package scope you need) and Read (for install during the publish flow). Set it to “automation” type if offered; that avoids 2FA prompts.  
-  - Add it to npm config npm `config set //registry.npmjs.org/:_authToken=YOUR_TOKEN`
+  - Add it to npm config via `npm config set //registry.npmjs.org/:_authToken=YOUR_TOKEN`
   - Test it via `npm whoami`
 
 

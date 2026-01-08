@@ -1,6 +1,9 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
-# 2.36.0 (2025-12-30)
+# 2.36.2 (2026-01-08)
+- Custom Search API should respect the number of results setting, so if we ask for 20 results, and the custom search api is returning 30, then only return the first 20!  https://github.com/o19s/splainer-search/pull/157 by @epugh.
+
+# 2.36.1 (2025-12-30)
 - Handle Custom Search API that have extra query parameters.  Previously we would generate `http://mycompany.com/endpoints/search?status=active&param=x?query=shirt`!  https://github.com/o19s/splainer-search/pull/156 by @epugh.
 - Split out developer docs into DEVELOPER_GUIDE.md, plus version bumps. https://github.com/o19s/splainer-search/pull/155 by @epugh. 
 
