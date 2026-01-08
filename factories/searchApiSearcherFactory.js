@@ -124,6 +124,10 @@
               throw new Error('MapperError: ' + errMsg);
             }
           }
+
+          if (self.config.numberOfRows && mappedDocs.length > self.config.numberOfRows) {
+            mappedDocs = mappedDocs.slice(0, self.config.numberOfRows);
+          }
           
           angular.forEach(mappedDocs, function(mappedDoc) {
             const doc = parseDoc(mappedDoc);
