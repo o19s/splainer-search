@@ -17,7 +17,7 @@
       var self = this;
 
       angular.forEach(self.fieldsProperty(), function(fieldValue, fieldName) {
-        if ( fieldValue !== null && fieldValue.constructor === Array && fieldValue.length === 1 ) {
+        if ( fieldValue !== null && fieldValue !== undefined && fieldValue.constructor === Array && fieldValue.length === 1 ) {
           self[fieldName] = fieldValue[0];
         } else {
           self[fieldName] = fieldValue;
