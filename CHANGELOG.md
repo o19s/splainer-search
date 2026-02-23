@@ -1,5 +1,8 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 2.36.3 (2026-02-23)
+- Custom Search API should be better at handling when an array of filed values is provided.  https://github.com/o19s/splainer-search/pull/158 by @epugh.
+- 
 # 2.36.2 (2026-01-08)
 - Custom Search API should respect the number of results setting, so if we ask for 20 results, and the custom search api is returning 30, then only return the first 20!  https://github.com/o19s/splainer-search/pull/157 by @epugh.
 
