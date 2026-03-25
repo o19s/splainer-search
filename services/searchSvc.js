@@ -85,6 +85,22 @@ angular.module('o19s.splainer-search')
         return searcher;
       };
 
+      this.buildResolverArgs = function(ids, fieldSpec, searchEngine) {
+        if ( searchEngine === undefined || searchEngine === 'solr' ) {
+          return SolrSearcherFactory.buildResolverArgs(ids, fieldSpec);
+        } else if ( searchEngine === 'es' || searchEngine === 'os' ) {
+          return EsSearcherFactory.buildResolverArgs(ids, fieldSpec);
+        } else if ( searchEngine === 'algolia' ) {
+          return AlgoliaSearcherFactory.buildResolverArgs(ids, fieldSpec);
+        } else if ( searchEngine === 'vectara' ) {
+          return VectaraSearcherFactory.buildResolverArgs(ids, fieldSpec);
+        } else if ( searchEngine === 'searchapi' ) {
+          return SearchApiSearcherFactory.buildResolverArgs(ids, fieldSpec);
+        }
+        console.warn('buildResolverArgs: unrecognized searchEngine "' + searchEngine + '", returning empty args.');
+        return { args: {}, queryText: null };
+      };
+
       this.activeQueries = function() {
         return activeQueries.count;
       };

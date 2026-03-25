@@ -481,6 +481,19 @@
 
     }
 
+    // Returns the args and queryText needed to resolve documents by IDs in Elasticsearch/OpenSearch.
+    Searcher.buildResolverArgs = function(ids, fieldSpec) {
+      var args = {
+        query: {
+          terms: {
+            [fieldSpec.id]: ids,
+          },
+        },
+        size: ids.length,
+      };
+      return { args: args, queryText: null };
+    };
+
     // Return factory object
     return Searcher;
   }

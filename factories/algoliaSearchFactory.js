@@ -217,6 +217,16 @@
         });
     } // end of search()
 
+    // Returns the args and queryText needed to resolve documents by IDs in Algolia.
+    // Algolia requires a separate endpoint to fetch records by IDs.
+    Searcher.buildResolverArgs = function(ids, fieldSpec) {
+      var args = {
+        objectIds: ids,
+        retrieveObjects: true
+      };
+      return { args: args, queryText: null };
+    };
+
     // Return factory object
     return Searcher;
   }

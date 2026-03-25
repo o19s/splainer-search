@@ -157,6 +157,11 @@
         });
     } // end of search()
 
+    // Vectara does not support direct document retrieval by ID; return empty args.
+    Searcher.buildResolverArgs = function(ids, fieldSpec) {
+      return { args: {}, queryText: null };
+    };
+
     // Return factory object
     return Searcher;
   }

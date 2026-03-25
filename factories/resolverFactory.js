@@ -8,12 +8,11 @@
       '$q',
       '$log',
       'searchSvc',
-      'solrUrlSvc',
       'normalDocsSvc',
       ResolverFactory
     ]);
 
-  function ResolverFactory($q, $log, searchSvc, solrUrlSvc, normalDocsSvc) {
+  function ResolverFactory($q, $log, searchSvc, normalDocsSvc) {
     var Resolver = function(ids, settings, chunkSize) {
       var self        = this;
 
@@ -28,47 +27,9 @@
 
       self.fetchDocs  = fetchDocs;
 
-      if ( self.settings.searchEngine === undefined || self.settings.searchEngine === 'solr' ) {
-        var escapeIds = function(ids) {
-          var newIds = [];
-          angular.forEach(ids, function(id) {
-            // SUSS_USE_OF_ESCAPING.  Going to disable this and see what happens.
-            // newIds.push(solrUrlSvc.escapeUserQuery(id));
-            newIds.push(id);
-          });
-          return newIds;
-        };
-
-        var allIdsLuceneQuery = self.fieldSpec.id + ':(';
-        allIdsLuceneQuery += escapeIds(ids).join(' OR ');
-        allIdsLuceneQuery += ')';
-        self.queryText = allIdsLuceneQuery;
-
-        self.args = {
-          defType: ['lucene'],
-          rows: [ids.length],
-          q: ['#$query##']
-        };
-      } else if ( settings.searchEngine === 'es' ||  settings.searchEngine === 'os') {
-        self.args = {
-          query: {
-            terms: {
-              [self.fieldSpec.id]: ids,
-            },
-          },
-          size: ids.length,
-        };
-      } else if ( settings.searchEngine === 'vectara' || settings.searchEngine === 'searchapi') {
-        // Some search endpoints do not have an endpoint to retrieve per doc metadata directly
-        // by not populating the args, this appears to behave.
-      } else if (settings.searchEngine === 'algolia') {
-        // Algolia requires separate endpoint to fetch record by IDs. For this we will 
-        // set up a flag to indicate to searchFactory about our intent to retrieve records.
-        self.args = {
-          objectIds: ids,
-          retrieveObjects: true
-        };
-      }
+      var resolverArgs = searchSvc.buildResolverArgs(ids, self.fieldSpec, self.settings.searchEngine);
+      self.args      = resolverArgs.args;
+      self.queryText = resolverArgs.queryText;
 
       self.config = {
         sanitize:     false,

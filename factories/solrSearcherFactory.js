@@ -376,6 +376,17 @@
         });
     }
 
+    // Returns the args and queryText needed to resolve documents by IDs in Solr.
+    Searcher.buildResolverArgs = function(ids, fieldSpec) {
+      var queryText = fieldSpec.id + ':(' + ids.join(' OR ') + ')';
+      var args = {
+        defType: ['lucene'],
+        rows: [ids.length],
+        q: ['#$query##']
+      };
+      return { args: args, queryText: queryText };
+    };
+
     // Return factory object
     return Searcher;
   }
