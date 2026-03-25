@@ -34,6 +34,8 @@
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
     Searcher.prototype.explainOther     = explainOther;
+    Searcher.prototype.fetchDocs        = fetchDocs;
+    Searcher.prototype._extractSourceDoc = extractSourceDoc;
     Searcher.prototype.queryDetails     = {};
     
     function addDocToGroup (groupedBy, group, solrDoc) {
@@ -376,16 +378,34 @@
         });
     }
 
-    // Returns the args and queryText needed to resolve documents by IDs in Solr.
-    Searcher.buildResolverArgs = function(ids, fieldSpec) {
+    // Fetches documents from Solr by their IDs, with optional chunking.
+    function fetchDocs(ids, fieldSpec, chunkSize) {
+      /*jslint validthis:true*/
+      var self = this;
+      if (chunkSize !== undefined) {
+        return self._fetchDocsChunked(ids, fieldSpec, chunkSize);
+      }
       var queryText = fieldSpec.id + ':(' + ids.join(' OR ') + ')';
-      var args = {
-        defType: ['lucene'],
-        rows: [ids.length],
-        q: ['#$query##']
-      };
-      return { args: args, queryText: queryText };
-    };
+      var resolverSearcher = new Searcher({
+        fieldList:         fieldSpec.fieldList(),
+        hlFieldList:       fieldSpec.highlightFieldList(),
+        url:               self.url,
+        args:              { defType: ['lucene'], rows: [ids.length], q: ['#$query##'] },
+        queryText:         queryText,
+        config:            self.config,
+        type:              self.type,
+        HIGHLIGHTING_PRE:  self.HIGHLIGHTING_PRE,
+        HIGHLIGHTING_POST: self.HIGHLIGHTING_POST,
+      });
+      return resolverSearcher.search().then(function() {
+        return self._normalizeFetchedDocs(ids, fieldSpec, resolverSearcher);
+      });
+    }
+
+    // Returns the raw Solr doc fields for use by validateUrl().
+    function extractSourceDoc(doc) {
+      return doc.doc;
+    }
 
     // Return factory object
     return Searcher;

@@ -36,6 +36,8 @@
     Searcher.prototype.addDocToGroup    = addDocToGroup;
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
+    Searcher.prototype.fetchDocs        = fetchDocs;
+    Searcher.prototype._extractSourceDoc = extractSourceDoc;
 
 
     function addDocToGroup (groupedBy, group, vectaraDoc) {
@@ -157,10 +159,24 @@
         });
     } // end of search()
 
-    // Vectara does not support direct document retrieval by ID; return empty args.
-    Searcher.buildResolverArgs = function(ids, fieldSpec) {
-      return { args: {}, queryText: null };
-    };
+    // Vectara does not support direct document retrieval by ID; return placeholder stubs.
+    function fetchDocs(ids, fieldSpec, chunkSize) {
+      /*jslint validthis:true*/
+      var self = this;
+      if (chunkSize !== undefined) {
+        return self._fetchDocsChunked(ids, fieldSpec, chunkSize);
+      }
+      return $q.resolve(self._normalizeFetchedDocs(ids, fieldSpec, { docs: [] }));
+    }
+
+    // Extracts the raw field-value pairs from a Vectara document for use by validateUrl().
+    function extractSourceDoc(doc) {
+      var fieldsFromDocumentMetadata = doc.doc.metadata.reduce(function(map, obj) {
+        map[obj.name] = obj.value;
+        return map;
+      }, {});
+      return Object.assign({}, { id: doc.doc.id }, fieldsFromDocumentMetadata);
+    }
 
     // Return factory object
     return Searcher;

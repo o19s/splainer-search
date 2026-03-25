@@ -22,16 +22,12 @@ angular.module('o19s.splainer-search')
           apiMethod:           settings.apiMethod
         };
 
-        // Note: some engines (e.g. Vectara, SearchAPI) return empty args from buildResolverArgs
-        // because they do not support direct document retrieval by ID. In those cases
-        // fetchDocs will return placeholder stubs for all requested IDs.
-        var resolverArgs = searchSvc.buildResolverArgs(ids, fieldSpec, settings.searchEngine);
-
+        // fetchDocs on each engine searcher builds its own resolver query internally.
         var searcher = searchSvc.createSearcher(
           fieldSpec,
           settings.searchUrl,
-          resolverArgs.args,
-          resolverArgs.queryText,
+          {},
+          '',
           config,
           settings.searchEngine
         );

@@ -12,6 +12,7 @@ angular.module('o19s.splainer-search')
     'SearchApiSearcherFactory',
     'activeQueries',
     'defaultSolrConfig',
+    'fieldSpecSvc',
     function searchSvc(
       $log,
       SolrSearcherFactory,
@@ -20,7 +21,8 @@ angular.module('o19s.splainer-search')
       AlgoliaSearcherFactory,
       SearchApiSearcherFactory,
       activeQueries,
-      defaultSolrConfig
+      defaultSolrConfig,
+      fieldSpecSvc
     ) {
       var svc = this;
 
@@ -87,20 +89,25 @@ angular.module('o19s.splainer-search')
         return searcher;
       };
 
-      this.buildResolverArgs = function(ids, fieldSpec, searchEngine) {
-        if ( searchEngine === undefined || searchEngine === 'solr' ) {
-          return SolrSearcherFactory.buildResolverArgs(ids, fieldSpec);
-        } else if ( searchEngine === 'es' || searchEngine === 'os' ) {
-          return EsSearcherFactory.buildResolverArgs(ids, fieldSpec);
-        } else if ( searchEngine === 'algolia' ) {
-          return AlgoliaSearcherFactory.buildResolverArgs(ids, fieldSpec);
-        } else if ( searchEngine === 'vectara' ) {
-          return VectaraSearcherFactory.buildResolverArgs(ids, fieldSpec);
-        } else if ( searchEngine === 'searchapi' ) {
-          return SearchApiSearcherFactory.buildResolverArgs(ids, fieldSpec);
+      this.createValidator = function(settings) {
+        var searchEngine = settings.searchEngine || 'solr';
+        var args, fieldSpec;
+
+        if (searchEngine === 'solr') {
+          args      = { q: ['*:*'] };
+          fieldSpec = fieldSpecSvc.createFieldSpec('*');
+        } else if (searchEngine === 'es' || searchEngine === 'os') {
+          args      = {};
+          fieldSpec = fieldSpecSvc.createFieldSpec(null);
+        } else if (searchEngine === 'vectara') {
+          args = { query: [{ query: '#$query##', numResults: 10, corpusKey: [{ corpusId: 1 }] }] };
+          fieldSpec = fieldSpecSvc.createFieldSpec('*');
+        } else {
+          args      = settings.args || {};
+          fieldSpec = fieldSpecSvc.createFieldSpec('*');
         }
-        $log.warn('buildResolverArgs: unrecognized searchEngine "' + searchEngine + '", returning empty args.');
-        return { args: {}, queryText: null };
+
+        return svc.createSearcher(fieldSpec, settings.searchUrl, args, '', settings, searchEngine);
       };
 
       this.activeQueries = function() {
