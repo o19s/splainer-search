@@ -42,6 +42,8 @@
     Searcher.prototype.majorVersion     = majorVersion;
     Searcher.prototype.isTemplateCall   = isTemplateCall;
     Searcher.prototype.renderTemplate   = renderTemplate;
+    Searcher.prototype.fetchDocs        = fetchDocs;
+    Searcher.prototype._extractSourceDoc = extractSourceDoc;
 
 
     function addDocToGroup (groupedBy, group, solrDoc) {
@@ -479,6 +481,32 @@
           return $q.reject(response);
         });
 
+    }
+
+    // Fetches documents from Elasticsearch/OpenSearch by their IDs, with optional chunking.
+    function fetchDocs(ids, fieldSpec, chunkSize) {
+      /*jslint validthis:true*/
+      var self = this;
+      if (chunkSize !== undefined) {
+        return self._fetchDocsChunked(ids, fieldSpec, chunkSize);
+      }
+      var resolverSearcher = new Searcher({
+        fieldList:   fieldSpec.fieldList(),
+        hlFieldList: fieldSpec.highlightFieldList(),
+        url:         self.url,
+        args:        { query: { terms: { [fieldSpec.id]: ids } }, size: ids.length },
+        queryText:   null,
+        config:      self.config,
+        type:        self.type,
+      });
+      return resolverSearcher.search().then(function() {
+        return self._normalizeFetchedDocs(ids, fieldSpec, resolverSearcher);
+      });
+    }
+
+    // Returns the raw ES/OS source fields (including _id) for use by validateUrl().
+    function extractSourceDoc(doc) {
+      return Object.assign({ _id: doc.doc._id }, doc.doc._source);
     }
 
     // Return factory object

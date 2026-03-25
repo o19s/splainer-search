@@ -454,4 +454,145 @@ describe('Service: docResolverSvc', function () {
       });
     });
   });
+
+  describe('Searcher.fetchDocs (direct API)', function() {
+    var mockSolrUrl = 'http://example.com:1234/collection1/select';
+    var mockSolrResp = {
+      response: {
+        numFound: 2,
+        docs : [
+          {id: 'doc1', field1: 'title1'},
+          {id: 'doc2', field1: 'title2'}
+        ]
+      }
+    };
+    /*global addExplain*/
+    addExplain(mockSolrResp);
+
+    var mockSolrRespMissingDoc2 = {
+      response: {
+        numFound: 1,
+        docs : [
+          {id: 'doc1', field1: 'title1'}
+        ]
+      }
+    };
+    addExplain(mockSolrRespMissingDoc2);
+
+    var searchSvc;
+    var fieldSpecSvc;
+    var mockFieldSpec;
+
+    beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_) {
+      searchSvc    = _searchSvc_;
+      fieldSpecSvc = _fieldSpecSvc_;
+      mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1');
+    }));
+
+    it('fetches docs directly on a searcher without using docResolverSvc', function () {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        { q: ['#$query##'] },
+        'star wars',
+        { sanitize: false, highlight: false, debug: false, escapeQuery: false, numberOfRows: 2 },
+        'solr'
+      );
+
+      var expectedUrlParams = {
+        q: [encodeURIComponent('id:(doc1 OR doc2)')]
+      };
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
+        .respond(200, mockSolrResp);
+
+      var resolvedDocs = null;
+      searcher.fetchDocs(['doc1', 'doc2'], mockFieldSpec)
+        .then(function(docs) {
+          resolvedDocs = docs;
+        });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      $rootScope.$apply();
+      expect(resolvedDocs).not.toBeNull();
+      expect(resolvedDocs.length).toBe(2);
+      var ids = resolvedDocs.map(function(d) { return d.id; });
+      expect(ids).toContain('doc1');
+      expect(ids).toContain('doc2');
+    });
+
+    it('creates placeholder stubs for missing docs when called directly on a searcher', function () {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        { q: ['#$query##'] },
+        'star wars',
+        { sanitize: false, highlight: false, debug: false, escapeQuery: false, numberOfRows: 2 },
+        'solr'
+      );
+
+      var expectedUrlParams = {
+        q: [encodeURIComponent('id:(doc1 OR doc2)')]
+      };
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
+        .respond(200, mockSolrRespMissingDoc2);
+
+      var resolvedDocs = null;
+      searcher.fetchDocs(['doc1', 'doc2'], mockFieldSpec)
+        .then(function(docs) {
+          resolvedDocs = docs;
+        });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      $rootScope.$apply();
+      expect(resolvedDocs).not.toBeNull();
+      expect(resolvedDocs.length).toBe(2);
+      var ids = resolvedDocs.map(function(d) { return d.id; });
+      expect(ids).toContain('doc1');
+      expect(ids).toContain('doc2');
+    });
+
+    it('fetches docs in chunks when called directly on a searcher', function () {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        { q: ['#$query##'] },
+        'star wars',
+        { sanitize: false, highlight: false, debug: false, escapeQuery: false, numberOfRows: 4 },
+        'solr'
+      );
+
+      var chunk1Resp = {
+        response: { numFound: 2, docs: [{ id: 'doc1', field1: 'title1' }, { id: 'doc2', field1: 'title2' }] }
+      };
+      var chunk2Resp = {
+        response: { numFound: 2, docs: [{ id: 'doc3', field1: 'title3' }, { id: 'doc4', field1: 'title4' }] }
+      };
+      addExplain(chunk1Resp);
+      addExplain(chunk2Resp);
+
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, { q: [encodeURIComponent('id:(doc1 OR doc2)')] }))
+        .respond(200, chunk1Resp);
+      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, { q: [encodeURIComponent('id:(doc3 OR doc4)')] }))
+        .respond(200, chunk2Resp);
+
+      var resolvedDocs = null;
+      searcher.fetchDocs(['doc1', 'doc2', 'doc3', 'doc4'], mockFieldSpec, 2)
+        .then(function(docs) {
+          resolvedDocs = docs;
+        });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      $rootScope.$apply();
+      expect(resolvedDocs).not.toBeNull();
+      expect(resolvedDocs.length).toBe(4);
+      var ids = resolvedDocs.map(function(d) { return d.id; });
+      expect(ids).toContain('doc1');
+      expect(ids).toContain('doc2');
+      expect(ids).toContain('doc3');
+      expect(ids).toContain('doc4');
+    });
+  });
 });

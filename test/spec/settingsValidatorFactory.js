@@ -1,16 +1,16 @@
   'use strict';
 
 /*global describe,beforeEach,inject,it,expect*/
-describe('Factory: Settings Validator', function () {
+describe('Service: searchSvc.createValidator', function () {
   beforeEach(module('o19s.splainer-search'));
 
   var $httpBackend;
-  var SettingsValidatorFactory;
+  var searchSvc;
   var validator;
 
-  beforeEach(inject(function($injector, _SettingsValidatorFactory_) {
+  beforeEach(inject(function($injector, _searchSvc_) {
     $httpBackend = $injector.get('$httpBackend');
-    SettingsValidatorFactory = _SettingsValidatorFactory_;
+    searchSvc = _searchSvc_;
   }));
 
   describe('Solr:', function () {
@@ -90,7 +90,7 @@ describe('Factory: Settings Validator', function () {
         ];
 
     beforeEach( function () {
-      validator = new SettingsValidatorFactory(settings);
+      validator = searchSvc.createValidator(settings);
     });
 
     describe('Generates candidate ids', function() {
@@ -200,7 +200,7 @@ describe('Factory: Settings Validator', function () {
           apiMethod: 'GET',
           proxyUrl: proxyUrl
         };
-        validator = new SettingsValidatorFactory(settings);
+        validator = searchSvc.createValidator(settings);
         
         expect(validator.validateUrl()).toThrowError('It does not make sense to proxy a JSONP connection, use GET instead.');
       };
@@ -213,7 +213,7 @@ describe('Factory: Settings Validator', function () {
           apiMethod: 'GET',
           proxyUrl: proxyUrl
         };
-        validator = new SettingsValidatorFactory(settings);
+        validator = searchSvc.createValidator(settings);
         
         
         var expectedUrl = proxyUrl 
@@ -287,7 +287,7 @@ describe('Factory: Settings Validator', function () {
     };
 
     beforeEach( function () {
-      validator = new SettingsValidatorFactory(settings);
+      validator = searchSvc.createValidator(settings);
     });
 
     describe('Generates candidate ids', function() {
@@ -401,7 +401,7 @@ describe('Factory: Settings Validator', function () {
     ];
 
     beforeEach( function () {
-      validator = new SettingsValidatorFactory(settings);
+      validator = searchSvc.createValidator(settings);
     });
 
     describe('Generates candidate ids', function() {
@@ -428,7 +428,7 @@ describe('Factory: Settings Validator', function () {
     
     describe('Tracks the last response from the search api', function() {
 
-      it('selects only ids occuring across all docs', function() {
+      it('records the last response on the validator', function() {
         $httpBackend.expectGET(settings.searchUrl + '?' + settings.args).respond(200, fullResponse);
 
         var called = 0;
@@ -441,7 +441,7 @@ describe('Factory: Settings Validator', function () {
         $httpBackend.verifyNoOutstandingExpectation();
         expect(called).toBe(1);
         
-        expect(validator.searcher.lastResponse).toEqual(fullResponse);
+        expect(validator.lastResponse).toEqual(fullResponse);
       });
     });    
 

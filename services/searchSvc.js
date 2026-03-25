@@ -4,6 +4,7 @@
 // a set of generic documents
 angular.module('o19s.splainer-search')
   .service('searchSvc', [
+    '$log',
     'SolrSearcherFactory',
     'EsSearcherFactory',
     'VectaraSearcherFactory',
@@ -11,14 +12,17 @@ angular.module('o19s.splainer-search')
     'SearchApiSearcherFactory',
     'activeQueries',
     'defaultSolrConfig',
+    'fieldSpecSvc',
     function searchSvc(
+      $log,
       SolrSearcherFactory,
       EsSearcherFactory,
       VectaraSearcherFactory,
       AlgoliaSearcherFactory,
       SearchApiSearcherFactory,
       activeQueries,
-      defaultSolrConfig
+      defaultSolrConfig,
+      fieldSpecSvc
     ) {
       var svc = this;
 
@@ -83,6 +87,27 @@ angular.module('o19s.splainer-search')
         }
 
         return searcher;
+      };
+
+      this.createValidator = function(settings) {
+        var searchEngine = settings.searchEngine || 'solr';
+        var args, fieldSpec;
+
+        if (searchEngine === 'solr') {
+          args      = { q: ['*:*'] };
+          fieldSpec = fieldSpecSvc.createFieldSpec('*');
+        } else if (searchEngine === 'es' || searchEngine === 'os') {
+          args      = {};
+          fieldSpec = fieldSpecSvc.createFieldSpec(null);
+        } else if (searchEngine === 'vectara') {
+          args = { query: [{ query: '#$query##', numResults: 10, corpusKey: [{ corpusId: 1 }] }] };
+          fieldSpec = fieldSpecSvc.createFieldSpec('*');
+        } else {
+          args      = settings.args || {};
+          fieldSpec = fieldSpecSvc.createFieldSpec('*');
+        }
+
+        return svc.createSearcher(fieldSpec, settings.searchUrl, args, '', settings, searchEngine);
       };
 
       this.activeQueries = function() {

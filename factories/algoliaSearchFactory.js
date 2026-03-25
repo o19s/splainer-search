@@ -38,6 +38,8 @@
     Searcher.prototype.pager            = pager;
     Searcher.prototype.search           = search;
     Searcher.prototype.getTransportParameters = getTransportParameters;
+    Searcher.prototype.fetchDocs        = fetchDocs;
+    Searcher.prototype._extractSourceDoc = extractSourceDoc;
 
     /* jshint unused: false */
     function addDocToGroup (groupedBy, group, algoliaDoc) {
@@ -216,6 +218,32 @@
           return $q.reject(response);
         });
     } // end of search()
+
+    // Fetches documents from Algolia by their IDs using the objects endpoint, with optional chunking.
+    function fetchDocs(ids, fieldSpec, chunkSize) {
+      /*jslint validthis:true*/
+      var self = this;
+      if (chunkSize !== undefined) {
+        return self._fetchDocsChunked(ids, fieldSpec, chunkSize);
+      }
+      var resolverSearcher = new Searcher({
+        fieldList:   fieldSpec.fieldList(),
+        hlFieldList: fieldSpec.highlightFieldList(),
+        url:         self.url,
+        args:        { objectIds: ids, retrieveObjects: true },
+        queryText:   null,
+        config:      self.config,
+        type:        self.type,
+      });
+      return resolverSearcher.search().then(function() {
+        return self._normalizeFetchedDocs(ids, fieldSpec, resolverSearcher);
+      });
+    }
+
+    // Returns the raw Algolia doc fields for use by validateUrl().
+    function extractSourceDoc(doc) {
+      return doc.doc;
+    }
 
     // Return factory object
     return Searcher;
