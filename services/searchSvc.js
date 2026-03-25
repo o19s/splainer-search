@@ -4,6 +4,7 @@
 // a set of generic documents
 angular.module('o19s.splainer-search')
   .service('searchSvc', [
+    '$log',
     'SolrSearcherFactory',
     'EsSearcherFactory',
     'VectaraSearcherFactory',
@@ -12,6 +13,7 @@ angular.module('o19s.splainer-search')
     'activeQueries',
     'defaultSolrConfig',
     function searchSvc(
+      $log,
       SolrSearcherFactory,
       EsSearcherFactory,
       VectaraSearcherFactory,
@@ -97,7 +99,7 @@ angular.module('o19s.splainer-search')
         } else if ( searchEngine === 'searchapi' ) {
           return SearchApiSearcherFactory.buildResolverArgs(ids, fieldSpec);
         }
-        console.warn('buildResolverArgs: unrecognized searchEngine "' + searchEngine + '", returning empty args.');
+        $log.warn('buildResolverArgs: unrecognized searchEngine "' + searchEngine + '", returning empty args.');
         return { args: {}, queryText: null };
       };
 

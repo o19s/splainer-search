@@ -5,14 +5,12 @@
 (function() {
   angular.module('o19s.splainer-search')
     .factory('ResolverFactory', [
-      '$q',
       '$log',
       'searchSvc',
-      'normalDocsSvc',
       ResolverFactory
     ]);
 
-  function ResolverFactory($q, $log, searchSvc, normalDocsSvc) {
+  function ResolverFactory($log, searchSvc) {
     var Resolver = function(ids, settings, chunkSize) {
       var self        = this;
 
@@ -30,19 +28,20 @@
       var resolverArgs = searchSvc.buildResolverArgs(ids, self.fieldSpec, self.settings.searchEngine);
       self.args      = resolverArgs.args;
       self.queryText = resolverArgs.queryText;
+      // Note: some engines (e.g. Vectara, SearchAPI) return empty args because they do not support
+      // direct document retrieval by ID. In those cases fetchDocs will return empty results.
 
       self.config = {
-        sanitize:     false,
-        highlight:    false,
-        debug:        false,
-        escapeQuery:  false,
-        numberOfRows: ids.length,
-        version:      self.settings.version,
-        proxyUrl:      self.settings.proxyUrl,
-        customHeaders: self.settings.customHeaders,
+        sanitize:            false,
+        highlight:           false,
+        debug:               false,
+        escapeQuery:         false,
+        numberOfRows:        ids.length,
+        version:             self.settings.version,
+        proxyUrl:            self.settings.proxyUrl,
+        customHeaders:       self.settings.customHeaders,
         basicAuthCredential: self.settings.basicAuthCredential,
-        apiMethod:    self.settings.apiMethod
-         
+        apiMethod:           self.settings.apiMethod
       };
 
       self.searcher = searchSvc.createSearcher(
@@ -55,67 +54,15 @@
       );
 
       function fetchDocs () {
-        if ( self.chunkSize === undefined ) {
-          return self.searcher.search()
-            .then(function() {
-              var newDocs = self.searcher.docs;
-              self.docs.length = 0;
-              var idsToDocs = {};
-              angular.forEach(newDocs, function(doc) {
-                var normalDoc = normalDocsSvc.createNormalDoc(self.fieldSpec, doc);
-                idsToDocs[normalDoc.id] = normalDoc;
-              });
-
-              // Push either the doc from solr or a missing doc stub
-              angular.forEach(ids, function(docId) {
-                if (idsToDocs.hasOwnProperty(docId)) {
-                  self.docs.push(idsToDocs[docId]);
-                } else {
-                  var placeholderTitle = 'Missing Doc: ' + docId;
-                  var placeholderDoc = normalDocsSvc.createPlaceholderDoc(
-                    docId,
-                    placeholderTitle
-                  );
-                  self.docs.push(placeholderDoc);
-                }
-              });
-
-              return self.docs;
-            }).catch(function(response) {
-              $log.debug('Failed to fetch docs');
-              return response;
-            });
-        } else {
-          var sliceIds = function(ids, chunkSize) {
-            if (chunkSize > 0) {
-              // chunkSize = chunkSize | 0;
-              var slices = [];
-              for (var i = 0; i < ids.length; i+= chunkSize) {
-                slices.push(ids.slice(i, i + chunkSize));
-              }
-              return slices;
-            }
-          };
-
-          var deferred = $q.defer();
-          var promises = [];
-
-          angular.forEach(sliceIds(ids, chunkSize), function(sliceOfIds) {
-            var resolver = new Resolver(sliceOfIds, settings);
-            promises.push(resolver.fetchDocs());
+        return self.searcher.fetchDocs(ids, self.fieldSpec, chunkSize)
+          .then(function(docs) {
+            self.docs = docs;
+            return docs;
+          })
+          .catch(function(response) {
+            $log.debug('Failed to fetch docs');
+            return response;
           });
-
-          $q.all(promises)
-            .then(function(docsChunk) {
-              self.docs = self.docs.concat.apply(self.docs, docsChunk);
-              deferred.resolve();
-            }).catch(function(response) {
-              $log.debug('Failed to fetch docs');
-              return response;
-            });
-
-          return deferred.promise;
-        }
       }
     };
 
