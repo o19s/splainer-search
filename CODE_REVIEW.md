@@ -12,28 +12,12 @@
 | Severity | Count |
 |----------|-------|
 | High     | 0     |
-| Medium   | 12    |
-| Low      | 13    |
+| Medium   | 8     |
+| Low      | 11    |
 
 ---
 
 ## Medium Severity
-
-### 7. `queryExplainSvc.js:40` — Dead code: regex has no capture group
-
-**Branch:** both
-
-```js
-var weightRegex = /^weight\((?!FunctionScoreQuery).*/;
-if (match !== null && match.length > 1) {  // always false — no capture groups
-    this.realExplanation = match[1];        // never reached
-```
-
-The `(?!...)` is a lookahead, not a capture group. `match.length` is always 1, so the if-branch is dead code.
-
-**Fix:** Add a capture group to the regex: `/^weight\(((?!FunctionScoreQuery).*)\)/`.
-
----
 
 ### 10. `solrDocFactory.js:109,111` — Highlight tags used as unescaped regex
 
@@ -47,51 +31,6 @@ var postRegex = new RegExp(self.options().highlightingPost, 'g');
 User-configurable highlight strings are passed directly to `new RegExp()`. Tags containing regex metacharacters (`(`, `)`, `+`, `*`, `.`) will throw `SyntaxError` or match incorrectly.
 
 **Fix:** Escape the strings before creating the regex, or use `String.prototype.replaceAll()`.
-
----
-
-### 11. `vectaraDocFactory.js:58-65` — Crash if document has no metadata
-
-**Branch:** both
-
-```js
-const metadata = self.metadata;
-return metadata.reduce(...)  // TypeError if metadata is null/undefined
-```
-
-**Fix:** Default to empty array: `const metadata = self.metadata || [];`
-
----
-
-### 12. `algoliaSearchFactory.js:180-181` — Wrong response shape for object retrieval
-
-**Branch:** both
-
-```js
-self.numFound = data.nbHits;   // undefined for /objects endpoint
-self.nbPages = data.nbPages;   // undefined — breaks pager comparison
-```
-
-The Algolia `/1/indexes/*/objects` endpoint returns `{ results: [...] }` without `nbHits` or `nbPages`. Pager logic breaks because `undefined - 1` is `NaN`.
-
-**Fix:** Conditionally set `numFound` from `data.results.length` when using the objects endpoint.
-
----
-
-### 13. `searchApiSearcherFactory.js:52-55` — `pager()` returns `undefined` instead of `null`
-
-**Branch:** both
-
-```js
-function pager() {
-    console.log('Pager');
-    // no return — implicitly returns undefined
-}
-```
-
-Other searcher factories return `null` to signal "no more pages." `undefined` is truthy, so callers will attempt pagination on a non-existent searcher.
-
-**Fix:** Return `null` explicitly.
 
 ---
 
@@ -267,14 +206,6 @@ The `/g` flag is unnecessary for `.test()` and creates stateful behavior. Not cu
 
 ---
 
-### 30. `package.json` — AngularJS 1.8.3 is end-of-life
-
-**Branch:** both
-
-AngularJS reached EOL on December 31, 2021. No security patches are available.
-
----
-
 ### 31. `defaultSolrConfig.js` — Default `apiMethod: 'JSONP'` is a security concern
 
 **Branch:** both
@@ -290,19 +221,3 @@ JSONP bypasses CORS by injecting `<script>` tags, making it vulnerable to XSS if
 `"immed"`, `"regexp"`, `"smarttabs"` were removed in JSHint 2.0+. `"esnext"` is deprecated in favor of `"esversion": 6`. These options are silently ignored.
 
 ---
-
-### 33. `queryExplainSvc.js:109-111` — `MinExplain.influencers()` crashes on empty children
-
-**Branch:** both
-
-```js
-this.influencers = function() {
-    var infl = shallowArrayCopy(this.children);
-    infl.sort(function(a, b) { return a.score - b.score; });
-    return [infl[0]];  // undefined if children is empty
-};
-```
-
-Same pattern exists in `DismaxExplain.vectorize()` (line 183) and `DismaxTieExplain.vectorize()` (line 161).
-
-**Fix:** Guard against empty children arrays.

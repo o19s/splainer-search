@@ -46,12 +46,13 @@
       console.log('addDocToGroup');
     }
 
-    // return a new searcher that will give you
-    // the next page upon search(). To get the subsequent
-    // page, call pager on that searcher
+    // Other factories return a new searcher for the next page, or null when there is no
+    // next page (see esSearcherFactory, solrSearcherFactory, algoliaSearchFactory). Search
+    // API has no pager implementation yet; return null for the same contract.
     function pager (){
       /*jslint validthis:true*/
       console.log('Pager');
+      return null;
     }
 
     // search (execute the query) and produce results

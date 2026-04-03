@@ -10,16 +10,15 @@
 ## Table of Contents
 
 1. [Current State Assessment](#1-current-state-assessment)
-2. [Fix Blocking Bugs First](#2-fix-blocking-bugs-first)
-3. [Fix the Test Runner](#3-fix-the-test-runner)
-4. [Expand Test Coverage Before Migration](#4-expand-test-coverage-before-migration)
-5. [Angular API Inventory & Replacement Map](#5-angular-api-inventory--replacement-map)
-6. [Introduce Shim Layer](#6-introduce-shim-layer)
-7. [Decouple the DI System Incrementally](#7-decouple-the-di-system-incrementally)
-8. [Plan the HTTP/$q Replacement](#8-plan-the-httpq-replacement)
-9. [Modernize the Build Pipeline](#9-modernize-the-build-pipeline)
-10. [Migration Order](#10-migration-order)
-11. [Validation Strategy](#11-validation-strategy)
+2. [Fix the Test Runner](#2-fix-the-test-runner)
+3. [Expand Test Coverage Before Migration](#3-expand-test-coverage-before-migration)
+4. [Angular API Inventory & Replacement Map](#4-angular-api-inventory--replacement-map)
+5. [Introduce Shim Layer](#5-introduce-shim-layer)
+6. [Decouple the DI System Incrementally](#6-decouple-the-di-system-incrementally)
+7. [Plan the HTTP/$q Replacement](#7-plan-the-httpq-replacement)
+8. [Modernize the Build Pipeline](#8-modernize-the-build-pipeline)
+9. [Migration Order](#9-migration-order)
+10. [Validation Strategy](#10-validation-strategy)
 
 ---
 
@@ -31,7 +30,7 @@
 |-------|--------|
 | `migrationSafetyTests.js` | 49 test cases pinning deep-copy, null-safety, preprocessor contracts, engine routing, vector ops, transport routing, merge semantics, origin() behavior |
 | `vanilla-simplify` branch | Earlier full migration experiment (Angular removed, ES modules, fetch, Vitest, Playwright) — see opening note |
-| `CODE_REVIEW.md` | 34 known bugs documented, all present on both branches |
+| `CODE_REVIEW.md` | Known bugs documented, all present on both branches unless fixed on this branch |
 | Test coverage | 42 spec files covering most services/factories |
 
 ### Angular API usage (source files only)
@@ -57,7 +56,7 @@
 
 ---
 
-## 3. Fix the Test Runner
+## 2. Fix the Test Runner
 
 **The test suite cannot currently run.** Karma + ChromeHeadless crashes with a signal 6 / segfault. This is the single highest priority item — you cannot safely migrate without a green test suite.
 
@@ -77,7 +76,7 @@
 
 ---
 
-## 4. Expand Test Coverage Before Migration
+## 3. Expand Test Coverage Before Migration
 
 ### What `migrationSafetyTests.js` covers (49 tests)
 
@@ -160,7 +159,7 @@ This acts as a smoke test that the ES module rewiring didn't lose any exports.
 
 ---
 
-## 5. Angular API Inventory & Replacement Map
+## 4. Angular API Inventory & Replacement Map
 
 ### Drop-in replacements (safe to do before full migration)
 
@@ -200,7 +199,7 @@ $sce.trustAsResourceUrl                        →  remove (only needed for JSON
 
 ---
 
-## 6. Introduce Shim Layer
+## 5. Introduce Shim Layer
 
 Create thin wrapper functions **now**, while still on Angular, that isolate Angular-specific calls. Then the migration becomes "swap the shim internals" rather than "find-and-replace 300 call sites."
 
@@ -234,7 +233,7 @@ function deepMerge(target /*, ...sources */) {
 
 ---
 
-## 7. Decouple the DI System Incrementally
+## 6. Decouple the DI System Incrementally
 
 The 46 `angular.module(...).factory/service/value` registrations are the backbone of the Angular dependency. Each one injects dependencies via DI. The migration needs to convert these to ES module imports.
 
@@ -272,7 +271,7 @@ The 46 `angular.module(...).factory/service/value` registrations are the backbon
 
 ---
 
-## 8. Plan the HTTP/$q Replacement
+## 7. Plan the HTTP/$q Replacement
 
 `$http` is used in 6 transport factories. This is the highest-risk replacement because:
 - `$http` returns promises with `.data` (already-parsed JSON)
@@ -312,7 +311,7 @@ Most `$q` usage is straightforward:
 
 ---
 
-## 9. Modernize the Build Pipeline
+## 8. Modernize the Build Pipeline
 
 ### Current (Grunt-based)
 
@@ -341,15 +340,14 @@ eslint → linter (replaces jshint)
 
 ---
 
-## 10. Migration Order
+## 9. Migration Order
 
 Based on dependency analysis, risk, and the ability to validate incrementally:
 
 ### Phase 0: Preparation (this document)
-- [ ] Fix the 6 high-severity bugs from CODE_REVIEW.md
 - [ ] Fix the test runner (Karma/Chrome crash)
 - [ ] Get all 42 spec files passing green
-- [ ] Add missing migration safety tests (Section 4 above)
+- [ ] Add missing migration safety tests (Section 3 above)
 - [ ] Create utility shims (safeForEach, deepClone, deepMerge)
 - [ ] Baseline coverage report
 
@@ -383,7 +381,7 @@ Based on dependency analysis, risk, and the ability to validate incrementally:
 
 ---
 
-## 11. Validation Strategy
+## 10. Validation Strategy
 
 ### Before each phase
 

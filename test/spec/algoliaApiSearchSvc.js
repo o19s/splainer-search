@@ -328,7 +328,9 @@ describe('Service: searchSvc: Algolia', function () {
       .then(function () {
 
         var docs = searcher.docs;
-        expect(docs.length === 28);
+        expect(docs.length).toEqual(4);
+        expect(searcher.numFound).toEqual(4);
+        expect(searcher.nbPages).toEqual(1);
 
         expect(docs[0].title).toEqual("Potato");
         expect(docs[0].id).toEqual("potato");
@@ -342,6 +344,7 @@ describe('Service: searchSvc: Algolia', function () {
     $httpBackend.verifyNoOutstandingExpectation();
 
     expect(called).toEqual(1);
+    expect(searcher.pager()).toBeNull();
   });
 
   /**

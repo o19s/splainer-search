@@ -285,7 +285,7 @@ describe('Service: searchSvc: SearchApi', function () {
     expect(called).toEqual(1);
   });
 
-  it('pager is currently a stub and returns undefined', function() {
+  it('pager is a stub and returns null (same as other backends when there is no next page)', function() {
     var options = { apiMethod: 'GET' };
     options.docsMapper = function(data) {
       return data.map(function(d) { return { id: d.id, title: d.title }; });
@@ -295,7 +295,7 @@ describe('Service: searchSvc: SearchApi', function () {
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
       mockSearchApiParams, mockQueryText, options, 'searchapi');
 
-    expect(searcher.pager()).toBeUndefined();
+    expect(searcher.pager()).toBeNull();
   });
 
   it('addDocToGroup is callable (stub implementation)', function() {

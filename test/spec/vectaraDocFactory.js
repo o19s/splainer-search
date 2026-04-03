@@ -47,6 +47,13 @@ describe('Factory: VectaraDocFactory', function () {
       expect(doc.title).toEqual('Only Title');
       expect(doc.tags).toEqual(['tag1', 'tag2']);
     });
+
+    it('treats missing or null metadata as empty', function() {
+      expect(function() { makeDoc({}); }).not.toThrow();
+      expect(function() { makeDoc({ metadata: null }); }).not.toThrow();
+      var doc = makeDoc({});
+      expect(doc.fieldsProperty()).toEqual({});
+    });
   });
 
   describe('origin', function() {

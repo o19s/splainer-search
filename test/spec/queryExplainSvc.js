@@ -23,11 +23,11 @@ describe('Service: queryExplainSvc (via explainSvc)', function () {
       };
       var expl = explainSvc.createExplain(explJson);
       expect(expl.hasMatch()).toBe(true);
+      expect(expl.explanation()).toEqual('text:foo in 1234');
     });
 
     it('strips trailing product-of from realExplanation', function() {
-      // Build a realistic WeightExplain with full child structure so
-      // explanation() can call getMatch().formulaStr() without error.
+      // Realistic child tree (fieldWeight / queryWeight) matches typical Solr explains.
       var explJson = {
         value: 1.0,
         description: 'weight(text:bar in 5678) [DefaultSimilarity], product of:',
@@ -236,6 +236,17 @@ describe('Service: queryExplainSvc (via explainSvc)', function () {
       expect(vec.get('winner field')).toEqual(5.0);
       expect(vec.get('loser field')).toBeUndefined();
     });
+
+    it('returns an empty vector when there are no children', function() {
+      var explJson = {
+        value: 0,
+        description: 'max of',
+        details: []
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var vec = expl.vectorize();
+      expect(Object.keys(vec.vecObj).length).toEqual(0);
+    });
   });
 
   describe('DismaxTieExplain', function() {
@@ -256,6 +267,17 @@ describe('Service: queryExplainSvc (via explainSvc)', function () {
       expect(vec.get('winner')).toEqual(5.0);
       expect(vec.get('second')).toBeCloseTo(0.3, 5);
     });
+
+    it('returns an empty vector when there are no children', function() {
+      var explJson = {
+        value: 0,
+        description: 'max plus 0.1 times others of',
+        details: []
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var vec = expl.vectorize();
+      expect(Object.keys(vec.vecObj).length).toEqual(0);
+    });
   });
 
   describe('MinExplain', function() {
@@ -274,6 +296,18 @@ describe('Service: queryExplainSvc (via explainSvc)', function () {
       // MinExplain returns the minimum influencer's vector
       var vec = expl.vectorize();
       expect(vec.get('lower')).toBeDefined();
+    });
+
+    it('returns no influencers and an empty vector when there are no children', function() {
+      var explJson = {
+        value: 0,
+        description: 'Math.min of',
+        details: []
+      };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.influencers().length).toEqual(0);
+      var vec = expl.vectorize();
+      expect(Object.keys(vec.vecObj).length).toEqual(0);
     });
   });
 

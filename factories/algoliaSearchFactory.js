@@ -177,8 +177,15 @@
 
           activeQueries.count--;
 
-          self.numFound = data.nbHits;
-          self.nbPages = data.nbPages;
+          // Search responses include nbHits/nbPages; /1/indexes/*/objects returns only `results`.
+          if (retrieveObjects) {
+            var objectResults = data[transportParameters.responseKey] || [];
+            self.numFound = objectResults.length;
+            self.nbPages = 1;
+          } else {
+            self.numFound = data.nbHits;
+            self.nbPages = data.nbPages;
+          }
 
           var parseDoc = function(doc) {
             var options = {

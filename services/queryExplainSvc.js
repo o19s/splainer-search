@@ -1,6 +1,9 @@
 'use strict';
 
-// Explains that exist before you get to the match level
+// Explains that exist before you get to the match level.
+// MinExplain, DismaxExplain, and DismaxTieExplain handle an empty child list:
+// influencers/vectorize do not assume a winning child exists; vectorize() yields
+// an empty sparse vector (vectorSvc.create()) when there is nothing to recurse.
 angular.module('o19s.splainer-search')
   .service('queryExplainSvc', [
     'baseExplainSvc',
@@ -27,15 +30,13 @@ angular.module('o19s.splainer-search')
 
 
       this.WeightExplain = function(explJson) {
-        // take weight(text:foo in 1234), extract text:foo,
-        // this actually deliniates a "match" so the stuff
-        // underneath this level in the explain is search nerd trivia
-        // tf, idf, norms, etc.
-        // We break that out separately, not part of the main explain
-        // tree, but as a different hiererarchy
-        var weightRegex = /^weight\((?!FunctionScoreQuery).*/;
+        // take weight(text:foo in 1234), extract text:foo in 1234 for
+        // explanation() / matchDetails keys — shorter than the full Solr line.
+        // Skip FunctionScoreQuery so those nodes keep the full description (else branch).
+        // Inner capture must exist: match[1] is undefined if the group is missing.
+        var weightRegex = /^weight\(((?!FunctionScoreQuery).*)\)/;
         var description = explJson.description;
-        
+
         var match = description.match(weightRegex);
         if (match !== null && match.length > 1) {
           this.realExplanation = match[1];
@@ -60,12 +61,8 @@ angular.module('o19s.splainer-search')
           return null;
         };
 
+        // Human-readable label for the match node; match formula lives under children / matchDetails.
         this.explanation = function() {
-          var match = this.getMatch();
-          var matchStr = '';
-          if (match !== null) {
-            matchStr = '\n' + match.formulaStr();
-          }
           return this.realExplanation;
         };
 
@@ -107,6 +104,9 @@ angular.module('o19s.splainer-search')
         this.realExplaination = 'Minimum Of:';
 
         this.influencers = function() {
+          if (!this.children || this.children.length === 0) {
+            return [];
+          }
           var infl = shallowArrayCopy(this.children);
           infl.sort(function(a, b) {return a.score - b.score;});
           return [infl[0]];
@@ -115,9 +115,11 @@ angular.module('o19s.splainer-search')
         this.vectorize = function() {
           // pick the minimum, which is sorted by influencers
           var infl = this.influencers();
-          var minInfl = infl[0];
-          return minInfl.vectorize();
-          };
+          if (infl.length === 0) {
+            return vectorSvc.create();
+          }
+          return infl[0].vectorize();
+        };
       };
 
       this.CoordExplain = function(explJson, coordFactor) {
@@ -159,7 +161,9 @@ angular.module('o19s.splainer-search')
 
         this.vectorize = function() {
           var infl = this.influencers();
-          // infl[0] is the winner of the dismax competition
+          if (infl.length === 0) {
+            return vectorSvc.create();
+          }
           var rVal = infl[0].vectorize();
           angular.forEach(infl.slice(1), function(currInfl) {
             var vInfl = currInfl.vectorize();
@@ -184,6 +188,9 @@ angular.module('o19s.splainer-search')
           var infl = this.influencers();
           // Dismax, winner takes all, influencers
           // are sorted by influence
+          if (infl.length === 0) {
+            return vectorSvc.create();
+          }
           return infl[0].vectorize();
         };
       };

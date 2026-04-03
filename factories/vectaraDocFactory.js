@@ -58,7 +58,7 @@
     function fieldsProperty() {
       /*jslint validthis:true*/
       const self = this;
-      const metadata = self.metadata;
+      const metadata = self.metadata || [];
       return metadata.reduce(function(map, obj) {
         map[obj.name] = obj.value;
         return map;
