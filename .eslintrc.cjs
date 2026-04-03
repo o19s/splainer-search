@@ -45,6 +45,12 @@ module.exports = {
       },
     },
     {
+      files: ['karma.coverage.conf.cjs', 'karma.conf.js', 'karma.debug.conf.js'],
+      env: {
+        node: true,
+      },
+    },
+    {
       files: ['test/**/*.js'],
       env: {
         jasmine: true,

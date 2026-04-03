@@ -1,4 +1,5 @@
-// Karma configuration for code coverage
+// Karma configuration for code coverage. `.cjs` marks explicit CommonJS (Karma loads via require);
+// a plain `.js` file in this package triggers “convert to ES module” tooling hints that do not apply here.
 require('./scripts/karma-chrome-bin');
 
 module.exports = function(config) {
@@ -17,7 +18,9 @@ module.exports = function(config) {
       'test/spec/**/*.js'
     ],
     exclude: [],
+    // Instrument module.js (Angular module bootstrap) so coverage includes it, not only services/factories/values.
     preprocessors: {
+      'module.js': ['coverage'],
       'services/**/*.js': ['coverage'],
       'factories/**/*.js': ['coverage'],
       'values/**/*.js': ['coverage']

@@ -51,7 +51,7 @@ module.exports = function (grunt) {
           singleRun: true,
         },
         coverage: {
-          configFile: 'karma.coverage.conf.js',
+          configFile: 'karma.coverage.conf.cjs',
           singleRun: true,
         },
         debug: {
