@@ -13,7 +13,7 @@ angular.module('o19s.splainer-search')
         this.realContribution = this.score = parseFloat(explJson.value);
         this.realExplanation = this.description = explJson.description;
         var details = [];
-        if (explJson.hasOwnProperty('details')) {
+        if (Object.hasOwn(explJson, 'details')) {
           details = explJson.details;
         }
         this.children = [];
@@ -111,7 +111,6 @@ angular.module('o19s.splainer-search')
         };
 
         this.rawStr = function() {
-          /* global JSON */
           if (asRawStr === '') {
             asRawStr = JSON.stringify(this.asJson);
           }

@@ -1,6 +1,5 @@
 'use strict';
 
-/*global URI*/
 angular.module('o19s.splainer-search')
   .service('esUrlSvc', [
     'customHeadersJson',
@@ -34,7 +33,7 @@ angular.module('o19s.splainer-search')
        * Adds 'http://' to the beginning of the URL if no protocol was specified.
        *
        */
-      var protocolRegex = /^https{0,1}\:/;
+      var protocolRegex = /^https{0,1}:/;
       function fixURLProtocol(url) {
         if (!protocolRegex.test(url)) {
           url = 'http://' + url;

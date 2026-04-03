@@ -8,7 +8,7 @@ angular.module('o19s.splainer-search')
        * add 'http://' to the begining of the url if no protocol was
        * specified
        * */
-      var protocolRegex = /^https{0,1}\:/;
+      var protocolRegex = /^https{0,1}:/;
       function fixURLProtocol(url) {
         if (!protocolRegex.test(url)) {
           url = 'http://' + url;
@@ -43,7 +43,7 @@ angular.module('o19s.splainer-search')
         // Escape stray `%` so later URL handling does not treat them as invalid escapes.
         // Leave `%` untouched when it starts a valid percent-byte (%HH with hex digits).
         // https://en.wikipedia.org/wiki/Percent-encoding
-        rVal = rVal.replace(/\%(?![0-9A-Fa-f]{2})/g, '%25');
+        rVal = rVal.replace(/%(?![0-9A-Fa-f]{2})/g, '%25');
 
         return rVal.slice(0, -1); // take out last & or trailing ? if no args
       };
@@ -68,10 +68,10 @@ angular.module('o19s.splainer-search')
             var decodedValue = value;
             try {
               decodedValue = decodeURIComponent(value);
-            } catch (URIError) { // expected if the string is not actually URL encoded has a stray %, ie mm=50%
+            } catch (_err) { // expected if the string is not actually URL encoded has a stray %, ie mm=50%
               console.warn('Parameter ' + value + ' could not be URI decoded, this might be ok');
             }
-            if (!rVal.hasOwnProperty(name)) {
+            if (!Object.hasOwn(rVal, name)) {
               rVal[name] = [decodedValue];
             } else {
               rVal[name].push(decodedValue);

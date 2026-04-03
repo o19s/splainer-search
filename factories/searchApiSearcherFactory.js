@@ -40,8 +40,7 @@
     
 
 
-    /* jshint unused: false */
-    function addDocToGroup (groupedBy, group, searchApiDoc) {
+    function addDocToGroup (_groupedBy, _group, _searchApiDoc) {
       /*jslint validthis:true*/
       console.log('addDocToGroup');
     }

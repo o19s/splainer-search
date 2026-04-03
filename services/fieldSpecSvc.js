@@ -5,7 +5,7 @@ angular.module('o19s.splainer-search')
     function fieldSpecSvc() {
       var addFieldOfType = function(fieldSpec, fieldType, fieldName, fieldOptions) {
         if (['f', 'func', 'function'].includes(fieldType)) {
-          if (!fieldSpec.hasOwnProperty('functions')) {
+          if (!Object.hasOwn(fieldSpec, 'functions')) {
             fieldSpec.functions = [];
           }
           // a function query function:foo is really foo:$foo
@@ -16,34 +16,34 @@ angular.module('o19s.splainer-search')
           fieldSpec.functions.push(fieldName);
         }
         if (['highlight', 'hl'].includes(fieldType)) {
-          if (!fieldSpec.hasOwnProperty('highlights')) {
+          if (!Object.hasOwn(fieldSpec, 'highlights')) {
             fieldSpec.highlights = [];
           }
           fieldSpec.highlights.push(fieldName);
         }
         if (fieldType === 'media') {
-            if (!fieldSpec.hasOwnProperty('embeds')) {
+            if (!Object.hasOwn(fieldSpec, 'embeds')) {
               fieldSpec.embeds = [];
             }
 
             fieldSpec.embeds.push(fieldName);
         }
         if (fieldType === 'translate') {
-          if (!fieldSpec.hasOwnProperty('translations')) {
+          if (!Object.hasOwn(fieldSpec, 'translations')) {
             fieldSpec.translations = [];
           }
 
           fieldSpec.translations.push(fieldName);
         }
         if (fieldType === 'unabridged') {
-          if (!fieldSpec.hasOwnProperty('unabridgeds')) {
+          if (!Object.hasOwn(fieldSpec, 'unabridgeds')) {
             fieldSpec.unabridgeds = [];
           }
 
           fieldSpec.unabridgeds.push(fieldName);
         }        
         if (fieldType === 'sub') {
-          if (!fieldSpec.hasOwnProperty('subs')) {
+          if (!Object.hasOwn(fieldSpec, 'subs')) {
             fieldSpec.subs = [];
           }
           if (fieldSpec.subs !== '*') {
@@ -53,7 +53,7 @@ angular.module('o19s.splainer-search')
             fieldSpec.subs = '*';
           }
         }
-        else if (!fieldSpec.hasOwnProperty(fieldType)) {
+        else if (!Object.hasOwn(fieldSpec, fieldType)) {
           fieldSpec[fieldType] = fieldName;
           fieldSpec[fieldType + '_options'] = fieldOptions;
 
@@ -100,7 +100,7 @@ angular.module('o19s.splainer-search')
             var specElements = aField.split(':');
             if (specElements.length === 1) {
               fieldName = specElements[0];
-              if (fieldSpec.hasOwnProperty('title')) {
+              if (Object.hasOwn(fieldSpec, 'title')) {
                 fieldTypes = ['sub'];
               }
               else {
@@ -125,17 +125,17 @@ angular.module('o19s.splainer-search')
         this.fields = [];
         this.fieldSpecStr = fieldSpecStr;
         populateFieldSpec(this, fieldSpecStr);
-        if (!this.hasOwnProperty('id')) {
+        if (!Object.hasOwn(this, 'id')) {
           this.id = 'id';
           this.fields.push('id');
         }
 
-        if (!this.hasOwnProperty('title')) {
+        if (!Object.hasOwn(this, 'title')) {
           this.title = this.id;
         }
 
         this.fieldList = function() {
-          if (this.hasOwnProperty('subs') && this.subs === '*') {
+          if (Object.hasOwn(this, 'subs') && this.subs === '*') {
             return '*';
           }
           var rVal = [this.id];
@@ -151,13 +151,13 @@ angular.module('o19s.splainer-search')
 
         // Execute innerBody for each (non id) field
         this.forEachField = function(innerBody) {
-          if (this.hasOwnProperty('title')) {
+          if (Object.hasOwn(this, 'title')) {
             innerBody(this.title);
           }
-          if (this.hasOwnProperty('thumb')) {
+          if (Object.hasOwn(this, 'thumb')) {
             innerBody(this.thumb);
           }
-          if (this.hasOwnProperty('image')) {
+          if (Object.hasOwn(this, 'image')) {
             innerBody(this.image);
           }
           angular.forEach(this.embeds, function(embed) {

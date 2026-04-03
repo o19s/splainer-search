@@ -55,7 +55,7 @@ angular.module('o19s.splainer-search')
       };
 
       var tieRegex = /max plus ([0-9.]+) times/;
-      var prefixRegex = /\:.*?\*(\^.+?)?, product of/;
+      var prefixRegex = /:.*?\*(\^.+?)?, product of/;
       var weightRegex = /^weight\((?!FunctionScoreQuery).*/;
       var createExplain = function(explJson) {
         explJson = replaceBadExplanationJson(explJson);
@@ -66,7 +66,7 @@ angular.module('o19s.splainer-search')
         var tieMatch = description.match(tieRegex);
         var prefixMatch = description.match(prefixRegex);
         var weightMatch = description.match(weightRegex);
-        if (explJson.hasOwnProperty('details')) {
+        if (Object.hasOwn(explJson, 'details')) {
           details = explJson.details;
         }
         if (description.startsWith('score(')) {
@@ -132,7 +132,7 @@ angular.module('o19s.splainer-search')
             return IGNORED; // because Elasticsearch function queries always add 'queryBoost' of 1, even when boost not specified
           }
         }
-        else if (description.hasSubstr('constant score') && description.hasSubstr('no function provided')) {
+        else if (description.includes('constant score') && description.includes('no function provided')) {
           return IGNORED;
         }
         else if (description === 'weight') {
@@ -144,27 +144,27 @@ angular.module('o19s.splainer-search')
           DismaxTieExplain.prototype = base;
           return new DismaxTieExplain(explJson, tie);
         }
-        else if (description.hasSubstr('max of')) {
+        else if (description.includes('max of')) {
           DismaxExplain.prototype = base;
           return meOrOnlyChild(new DismaxExplain(explJson));
         }
-        else if (description.hasSubstr('sum of')) {
+        else if (description.includes('sum of')) {
           SumExplain.prototype = base;
           return meOrOnlyChild(new SumExplain(explJson));
         }
-        else if (description.hasSubstr('Math.min of')) {
+        else if (description.includes('Math.min of')) {
           MinExplain.prototype = base;
           return meOrOnlyChild(new MinExplain(explJson));
         }
-        else if (description.hasSubstr('min of')) {
+        else if (description.includes('min of')) {
           MinExplain.prototype = base;
           return meOrOnlyChild(new MinExplain(explJson));
         }
-        else if (description.hasSubstr('score mode [multiply]')) {
+        else if (description.includes('score mode [multiply]')) {
           ProductExplain.prototype = base;
           return meOrOnlyChild(new ProductExplain(explJson));
         }
-        else if (description.hasSubstr('product of')) {
+        else if (description.includes('product of')) {
           var coordExpl = null;
           if (details.length === 2) {
             angular.forEach(details, function(detail) {

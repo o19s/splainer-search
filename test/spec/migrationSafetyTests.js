@@ -1,6 +1,5 @@
 'use strict';
 
-/*global describe,beforeEach,inject,it,expect*/
 /*
  * Migration Safety Tests
  * ========================
@@ -571,6 +570,31 @@ describe('Migration Safety: vectorSvc pure functions', function() {
     expect(highIdx).toBeLessThan(midIdx);
     expect(midIdx).toBeLessThan(lowIdx);
   });
+
+  it('get ignores inherited properties on vecObj (own keys only)', function() {
+    var v = vectorSvc.create();
+    Object.setPrototypeOf(v.vecObj, { inherited: 42 });
+    expect(v.get('inherited')).toBeUndefined();
+  });
+
+  it('toStr recomputes after mutation once cached', function() {
+    var v = vectorSvc.create();
+    v.set('a', 1);
+    var first = v.toStr();
+    v.set('b', 2);
+    var second = v.toStr();
+    expect(second).toContain('b');
+    expect(second).not.toEqual(first);
+  });
+
+  it('toStr uses newline-terminated lines', function() {
+    var v = vectorSvc.create();
+    v.set('k', 1);
+    v.set('j', 2);
+    var lines = v.toStr().split('\n').filter(function(line) { return line.length > 0; });
+    expect(lines.length).toEqual(2);
+    expect(v.toStr().slice(-1)).toBe('\n');
+  });
 });
 
 describe('Migration Safety: transport routing', function() {
@@ -1054,7 +1078,7 @@ describe('Migration Safety: angular.copy edge cases', function() {
   it('preserves own properties whose value is undefined (JSON.stringify drops them)', function() {
     var src = { a: 1, b: undefined };
     var c = angular.copy(src);
-    expect(c.hasOwnProperty('b')).toBe(true);
+    expect(Object.hasOwn(c, 'b')).toBe(true);
     expect(c.b).toBeUndefined();
   });
 

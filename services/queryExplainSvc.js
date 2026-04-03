@@ -55,7 +55,7 @@ angular.module('o19s.splainer-search')
 
         this.getMatch = function() {
           // Match has lots of goodies based on similarity used
-          if (this.description.hasSubstr('DefaultSimilarity')) {
+          if (this.description.includes('DefaultSimilarity')) {
             return new DefaultSimilarityMatch(this.children);
           }
           return null;
@@ -129,7 +129,7 @@ angular.module('o19s.splainer-search')
           this.influencers = function() {
             var infl = [];
             for (var i = 0; i < this.children.length; i++) {
-              if (this.children[i].description.hasSubstr('coord')) {
+              if (this.children[i].description.includes('coord')) {
                 continue;
               } else {
                 infl.push(this.children[i]);
@@ -205,7 +205,7 @@ angular.module('o19s.splainer-search')
           var infl = [];
           angular.forEach(this.children, function(child) {
             // take advantage of commutative property
-            if (child.hasOwnProperty('isSumExplain') && child.isSumExplain) {
+            if (Object.hasOwn(child, 'isSumExplain') && child.isSumExplain) {
               angular.forEach(child.influencers(), function(grandchild) {
                 infl.push(grandchild);
               });

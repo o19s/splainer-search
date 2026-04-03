@@ -22,14 +22,14 @@ angular.module('o19s.splainer-search')
         };
 
         this.get = function(key) {
-          if (this.vecObj.hasOwnProperty(key)) {
+          if (Object.hasOwn(this.vecObj, key)) {
             return this.vecObj[key];
           }
           return undefined;
         };
 
         this.add = function(key, value) {
-          if (this.vecObj.hasOwnProperty(key)) {
+          if (Object.hasOwn(this.vecObj, key)) {
             this.vecObj[key] += value;
           }
           else {

@@ -1,6 +1,5 @@
 'use strict';
 
-/*global describe,beforeEach,inject,it,expect*/
 describe('Service: simExplainSvc (via explainSvc)', function () {
 
   // simExplainSvc types are tested through explainSvc.createExplain
@@ -9,8 +8,10 @@ describe('Service: simExplainSvc (via explainSvc)', function () {
   beforeEach(module('o19s.splainer-search'));
 
   var explainSvc = null;
-  beforeEach(inject(function (_explainSvc_) {
+  var simExplainSvc = null;
+  beforeEach(inject(function (_explainSvc_, _simExplainSvc_) {
     explainSvc = _explainSvc_;
+    simExplainSvc = _simExplainSvc_;
   }));
 
   describe('ScoreExplain', function() {
@@ -105,6 +106,42 @@ describe('Service: simExplainSvc (via explainSvc)', function () {
       var expl = explainSvc.createExplain(explJson);
       expect(expl.explanation()).toContain('Term Freq');
       expect(expl.explanation()).toContain('4');
+    });
+  });
+
+  describe('DefaultSimilarityMatch', function() {
+
+    function weightChild(label, tfContrib, idfContrib) {
+      return {
+        explanation: function() { return label; },
+        tf: function() { return { contribution: function() { return tfContrib; } }; },
+        idf: function() { return { contribution: function() { return idfContrib; } }; },
+        children: []
+      };
+    }
+
+    it('builds formulaStr from field weight tf/idf contributions', function() {
+      var fw = weightChild('Field Weight', 1.25, 3.5);
+      var qw = weightChild('Query Weight', 9, 9);
+      var match = new simExplainSvc.DefaultSimilarityMatch([fw, qw]);
+
+      expect(match.fieldWeight).toBe(fw);
+      expect(match.queryWeight).toBe(qw);
+      expect(match.formulaStr()).toEqual('TF=1.25 * IDF=3.5');
+    });
+
+    it('unwraps a single Score root to read field/query weights from its children', function() {
+      var fw = weightChild('Field Weight', 2, 4);
+      var qw = weightChild('Query Weight', 0, 0);
+      var scoreRoot = {
+        explanation: function() { return 'Score total'; },
+        children: [fw, qw]
+      };
+      var match = new simExplainSvc.DefaultSimilarityMatch([scoreRoot]);
+
+      expect(match.fieldWeight).toBe(fw);
+      expect(match.queryWeight).toBe(qw);
+      expect(match.formulaStr()).toEqual('TF=2 * IDF=4');
     });
   });
 

@@ -29,13 +29,13 @@
       '&': '&amp;',
       '<': '&lt;',
       '>': '&gt;',
-      '\"': '&quot;',
+      '"': '&quot;',
       '\'': '&#39;',
       '/': '&#x2F;'
     };
 
     var escapeHtml = function(string) {
-      return String(string).replace(/[&<>"'\/]/g, function (s) {
+      return String(string).replace(/[&<>"'/]/g, function (s) {
         return entityMap[s];
       });
     };
@@ -76,7 +76,7 @@
       /*jslint validthis:true*/
       var self = this;
 
-      if (self.options().explDict.hasOwnProperty(docId)) {
+      if (Object.hasOwn(self.options().explDict, docId)) {
         return self.options().explDict[docId];
       } else {
         return null;
@@ -87,9 +87,9 @@
       /*jslint validthis:true*/
       var self = this;
 
-      if (self.options().hlDict.hasOwnProperty(docId)) {
+      if (Object.hasOwn(self.options().hlDict, docId)) {
         var docHls = self.options().hlDict[docId];
-        if (docHls.hasOwnProperty(fieldName)) {
+        if (Object.hasOwn(docHls, fieldName)) {
           return docHls[fieldName];
         }
       }
@@ -106,6 +106,8 @@
       /*jslint validthis:true*/
       var self        = this;
       var fieldValue  = self.snippet(docId, fieldName);
+      var prePat;
+      var postPat;
 
       if (fieldValue && fieldValue instanceof Array) {
         if ( fieldValue.length === 0 ) {
@@ -113,8 +115,8 @@
         }
 
         var escapedValues = [];
-        var prePat  = escapeRegExp(self.options().highlightingPre);
-        var postPat = escapeRegExp(self.options().highlightingPost);
+        prePat  = escapeRegExp(self.options().highlightingPre);
+        postPat = escapeRegExp(self.options().highlightingPost);
 
         angular.forEach(fieldValue, function(value) {
           var esc       = escapeHtml(value);
@@ -128,9 +130,9 @@
 
         return escapedValues;
       } else if (fieldValue) {
+        prePat = escapeRegExp(self.options().highlightingPre);
+        postPat = escapeRegExp(self.options().highlightingPost);
         var esc       = escapeHtml(fieldValue);
-        var prePat    = escapeRegExp(self.options().highlightingPre);
-        var postPat   = escapeRegExp(self.options().highlightingPost);
         var preRegex  = new RegExp(prePat, 'g');
         var hlPre     = esc.replace(preRegex, preText);
         var postRegex = new RegExp(postPat, 'g');

@@ -14,9 +14,13 @@ angular.module('o19s.splainer-search')
         } else {
           if (queryText) {
             queryText = queryText.replace(/\\/g, '\\\\');
-            queryText = queryText.replace(/"/g, '\\\"');
+            queryText = queryText.replace(/"/g, '\\' + '"');
           }
-          return queryTemplateSvc.hydrate(args, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
+          return queryTemplateSvc.hydrate(args, queryText, {
+            qOption: qOption,
+            encodeURI: false,
+            defaultKw: '\\' + '"' + '\\' + '"',
+          });
         }
       };
       

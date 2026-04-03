@@ -10,7 +10,7 @@ services
 test
 values
 .travis.yml
-Gruntfile.js
+Gruntfile.cjs
 index.html
 karma.conf.js
 karma.debug.conf.js

@@ -42,7 +42,7 @@
       /*jslint validthis:true*/
       const self = this;
 
-      if (!self.grouped.hasOwnProperty(groupedBy)) {
+      if (!Object.hasOwn(self.grouped, groupedBy)) {
         self.grouped[groupedBy] = [];
       }
 
@@ -70,13 +70,13 @@
       let pagerArgs = {};
       let nextArgs  = angular.copy(self.args);
 
-      if (nextArgs.hasOwnProperty('pager') && nextArgs.pager !== undefined) {
+      if (Object.hasOwn(nextArgs, 'pager') && nextArgs.pager !== undefined) {
         pagerArgs = nextArgs.pager;
-      } else if (self.hasOwnProperty('pagerArgs') && self.pagerArgs !== undefined) {
+      } else if (Object.hasOwn(self, 'pagerArgs') && self.pagerArgs !== undefined) {
         pagerArgs = self.pagerArgs;
       }
 
-      if (pagerArgs.hasOwnProperty('from')) {
+      if (Object.hasOwn(pagerArgs, 'from')) {
         pagerArgs.from = parseInt(pagerArgs.from) + pagerArgs.size;
 
         if (pagerArgs.from >= self.numFound) {

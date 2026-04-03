@@ -12,13 +12,13 @@ angular.module('o19s.splainer-search')
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
-        '\"': '&quot;',
+        '"': '&quot;',
         '\'': '&#39;',
         '/': '&#x2F;'
       };
 
       var escapeHtml = function(string) {
-        return String(string).replace(/[&<>"'\/]/g, function (s) {
+        return String(string).replace(/[&<>"'/]/g, function (s) {
           return entityMap[s];
         });
       };
@@ -60,7 +60,7 @@ angular.module('o19s.splainer-search')
       // returns: obj['a']['b'] => c
       //
       var pathIndex = function(obj, keys) {
-        if (obj.hasOwnProperty(keys)){
+        if (Object.hasOwn(obj, keys)){
           return obj[keys];
         }
         else {
@@ -73,10 +73,10 @@ angular.module('o19s.splainer-search')
           try {
             var value = pathIndex(doc, field);
             normalDoc[toProperty] = (value !== null && value !== undefined) ? '' + value : '';
-          } catch (e) {
+          } catch (_e) {
             normalDoc[toProperty] = '';
           }
-        } else if ( doc.hasOwnProperty(field) ) {
+        } else if ( Object.hasOwn(doc, field) ) {
           var fieldVal = doc[field];
           normalDoc[toProperty] = (fieldVal !== null && fieldVal !== undefined) ? '' + fieldVal : '';
         }
@@ -136,7 +136,7 @@ angular.module('o19s.splainer-search')
                 console.error(e);
                 normalDoc.subs[subFieldName] = '';
               }
-            } else if ( doc.hasOwnProperty(subFieldName) ) {
+            } else if ( Object.hasOwn(doc, subFieldName) ) {
               normalDoc.subs[subFieldName] = parseValue(doc[subFieldName]);
             }
           });
@@ -144,7 +144,7 @@ angular.module('o19s.splainer-search')
             // for foo:$foo, look for foo
             var dispName = fieldDisplayName(functionField);
 
-            if (doc.hasOwnProperty(dispName)) {
+            if (Object.hasOwn(doc, dispName)) {
               normalDoc.subs[dispName] = parseValue(doc[dispName]);
             }
           });
@@ -161,15 +161,12 @@ angular.module('o19s.splainer-search')
         assignSingleField(normalDoc, doc, fieldSpec.title, 'title');
         assignSingleField(normalDoc, doc, fieldSpec.thumb, 'thumb');
         assignSingleField(normalDoc, doc, fieldSpec.image, 'image');
-        /* jshint -W106 */
         if (fieldSpec.image_options) {
             normalDoc.image_options = fieldSpec.image_options;
         }
-        /* jshint -W106 */
         if (fieldSpec.thumb_options) {
             normalDoc.thumb_options = fieldSpec.thumb_options;
         }
-        /* jshint +W106 */
         normalDoc.titleField = fieldSpec.title;
         normalDoc.embeds = {};
         assignEmbeds(normalDoc, doc, fieldSpec);
@@ -186,11 +183,11 @@ angular.module('o19s.splainer-search')
         this.doc = doc;
         assignFields(this, this.doc.origin(), fieldSpec);
         var hasThumb = false;
-        if (this.hasOwnProperty('thumb')) {
+        if (Object.hasOwn(this, 'thumb')) {
           hasThumb = true;
         }
         var hasImage = false;
-        if (this.hasOwnProperty('image')) {
+        if (Object.hasOwn(this, 'image')) {
           hasImage = true;
         }
         this.subsList = [];
@@ -318,7 +315,7 @@ angular.module('o19s.splainer-search')
       var getDocExplain = function(doc, nDoc) {
         var explJson = doc.explain(nDoc.id);
         if (explJson === null) {
-          if (doc.origin().hasOwnProperty('id')) {
+          if (Object.hasOwn(doc.origin(), 'id')) {
             return doc.explain(doc.origin().id);
           }
         }

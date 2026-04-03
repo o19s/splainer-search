@@ -48,7 +48,7 @@
         // Examine the responses and dequeue the corresponding
         // searches
         var bulkHttpResp = httpResp.data;
-        if (bulkHttpResp.hasOwnProperty('responses'))  {
+        if (Object.hasOwn(bulkHttpResp, 'responses'))  {
           var respLen = bulkHttpResp.responses.length;
           dequeuePendingSearches(bulkHttpResp);
           finishBatch(respLen);
@@ -89,7 +89,7 @@
         var queueIdx = 0;
         angular.forEach(bulkHttpResp.responses, function(resp) {
           var currRequest = queue[queueIdx];
-          if (resp.hasOwnProperty('error')) {
+          if (Object.hasOwn(resp, 'error')) {
             currRequest.defered.reject(resp);
             // individual query failure
           } else {

@@ -48,7 +48,7 @@
       /*jslint validthis:true*/
       var self = this;
 
-      if (!self.grouped.hasOwnProperty(groupedBy)) {
+      if (!Object.hasOwn(self.grouped, groupedBy)) {
         self.grouped[groupedBy] = [];
       }
 
@@ -76,13 +76,13 @@
       var pagerArgs = { from: 0, size: self.config.numberOfRows };
       var nextArgs  = angular.copy(self.args);
 
-      if (nextArgs.hasOwnProperty('pager') && nextArgs.pager !== undefined) {
+      if (Object.hasOwn(nextArgs, 'pager') && nextArgs.pager !== undefined) {
         pagerArgs = nextArgs.pager;
-      } else if (self.hasOwnProperty('pagerArgs') && self.pagerArgs !== undefined) {
+      } else if (Object.hasOwn(self, 'pagerArgs') && self.pagerArgs !== undefined) {
         pagerArgs = self.pagerArgs;
       }
 
-      if (pagerArgs.hasOwnProperty('from')) {
+      if (Object.hasOwn(pagerArgs, 'from')) {
         pagerArgs.from = parseInt(pagerArgs.from) + pagerArgs.size;
 
         if (pagerArgs.from >= self.numFound) {
@@ -160,7 +160,7 @@
       self.inError  = false;
 
       var getExplData = function(doc) {
-        if (doc.hasOwnProperty('_explanation')) {
+        if (Object.hasOwn(doc, '_explanation')) {
           return doc._explanation;
         }
         else {
@@ -169,7 +169,7 @@
       };
 
       var getHlData = function(doc) {
-        if (doc.hasOwnProperty('highlight')) {
+        if (Object.hasOwn(doc, 'highlight')) {
           return doc.highlight;
         } else {
           return null;
@@ -177,7 +177,7 @@
       };
 
       var getQueryParsingData = function(data) {
-        if (data.hasOwnProperty('profile')) {
+        if (Object.hasOwn(data, 'profile')) {
           return data.profile;
         }
         else {
@@ -192,12 +192,12 @@
               errorMsg = 'HTTP Error: ' + msg.status + ' ' + msg.statusText;
             }
             if (msg.status > 0) {
-              if (msg.hasOwnProperty('data') && msg.data) {
+              if (Object.hasOwn(msg, 'data') && msg.data) {
 
-                if (msg.data.hasOwnProperty('error')) {
+                if (Object.hasOwn(msg.data, 'error')) {
                   errorMsg += '\n' + JSON.stringify(msg.data.error, null, 2);
                 }
-                if (msg.data.hasOwnProperty('_shards')) {
+                if (Object.hasOwn(msg.data, '_shards')) {
                   angular.forEach(msg.data._shards.failures, function(failure) {
                     errorMsg += '\n' + JSON.stringify(failure, null, 2);
                   });
@@ -232,7 +232,7 @@
         .then(function success(httpConfig) {
           var data = httpConfig.data;
           activeQueries.count--;
-          if (data.hits.hasOwnProperty('total') && data.hits.total.hasOwnProperty('value')) {
+          if (Object.hasOwn(data.hits, 'total') && Object.hasOwn(data.hits.total, 'value')) {
             self.numFound = data.hits.total.value;
           }
           else {
@@ -434,12 +434,12 @@
               errorMsg = 'HTTP Error: ' + msg.status + ' ' + msg.statusText;
             }
             if (msg.status > 0) {
-              if (msg.hasOwnProperty('data') && msg.data) {
+              if (Object.hasOwn(msg, 'data') && msg.data) {
 
-                if (msg.data.hasOwnProperty('error')) {
+                if (Object.hasOwn(msg.data, 'error')) {
                   errorMsg += '\n' + JSON.stringify(msg.data.error, null, 2);
                 }
-                if (msg.data.hasOwnProperty('_shards')) {
+                if (Object.hasOwn(msg.data, '_shards')) {
                   angular.forEach(msg.data._shards.failures, function(failure) {
                     errorMsg += '\n' + JSON.stringify(failure, null, 2);
                   });

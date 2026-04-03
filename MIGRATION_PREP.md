@@ -38,7 +38,7 @@
 | `vanilla-simplify` | Historical experiment only — see [opening](#angular-removal-pre-migration-preparation) |
 | `CODE_REVIEW.md` | Known issues (7 medium, 11 low); address or explicitly accept during migration |
 | Test coverage | 43 spec files under `test/spec/` |
-| `npm run test:integration` | `test/integration/chunked-resolver-fetch.integration.js`; `npm run test:ci` = unit + integration |
+| `npm run test:integration` | `test/integration/chunked-resolver-fetch.integration.js`; `npm run test:ci` = ESLint + unit + integration |
 
 ### Angular API usage and replacements (canonical)
 
@@ -71,20 +71,18 @@ Single reference for counts and what to swap in. Tier labels: **drop-in** (direc
 - **`services/customHeadersJson.js`** — Safe JSON header parse; `esUrlSvc`; tests in `test/spec/customHeadersJson.js`.
 - **`resolverFactory.js`** — Optional settings copied onto `config` only when defined (avoids `angular.merge` clobbering with `undefined`). Failed chunked/single fetch **reject** instead of fulfilling with a raw error.
 - **`test/integration/chunked-resolver-fetch.integration.js`** — `npm run test:integration`.
+- **ESLint + Prettier** — `.eslintrc.cjs`, `Gruntfile.cjs` (default: eslint → karma → concat); `npm run lint`, `format` / `format:check`; JSHint removed from the pipeline.
+- **`stringPatch.js` removed** — `String.prototype.includes` at explain-service call sites (ES2015+).
 
 ---
 
 ## 2. Fix the Test Runner
 
-**Unit tests need Headless Chrome.** `karma.conf.js` uses Puppeteer’s Chromium when `CHROME_BIN` is unset; missing or incompatible binaries break Karma; some hosts see ChromeHeadless **signal 6**. **Green `npm test` is the gate.**
-
-**Done on this branch:** `puppeteer` pin, `scripts/karma-chrome-bin.js` (system Chrome fallback), `npm run test:coverage` in Grunt / `package.json`.
+Karma + ChromeHeadless (`scripts/karma-chrome-bin.js`, pinned `puppeteer`), `npm test`, and `npm run test:coverage` are wired on this branch. **Green `npm test` is the gate.**
 
 ### Vitest + Playwright (optional later)
 
-That stack was tried on `vanilla-simplify`. On **this** branch it is worth evaluating for speed and stable CI (no browser for unit tests; `vi.mock()` replaces `$httpBackend` / `$provide`).
-
-**Pragmatic default:** Treat it as a **follow-on or parallel track**, not a prerequisite for removing Angular. Stay on **Karma through Phase 3** (`fetch` + `$q` migration) while green. If Karma blocks all progress, pilot Vitest on a small slice first. Do not couple “new runner” with “new HTTP layer” in one big bang.
+That stack was tried on `vanilla-simplify`. Treat it as a **follow-on**, not a prerequisite for removing Angular. Stay on Karma through Phase 3 while green; pilot Vitest on a small slice if Karma blocks progress. Do not bundle “new runner” with “new HTTP layer.”
 
 ---
 
@@ -158,7 +156,7 @@ Call sites use **plain data** (configs, Solr/ES shapes). **`structuredClone`** i
    export function createSearcherFactory(httpClient, /* ... */) { /* ... */ }
    ```
 
-**Likely order (leaves → roots):** `values/*` → utilities (`stringPatch`, `vectorSvc`, `fieldSpecSvc`) → explain services → `*UrlSvc`, `*PreprocessorSvc` → doc factories → transport → searcher → `resolverFactory`, `settingsValidatorFactory` → `searchSvc`, `normalDocsSvc`.
+**Likely order (leaves → roots):** `values/*` → utilities (`vectorSvc`, `fieldSpecSvc`) → explain services → `*UrlSvc`, `*PreprocessorSvc` → doc factories → transport → searcher → `resolverFactory`, `settingsValidatorFactory` → `searchSvc`, `normalDocsSvc`.
 
 **File-level buckets:** [Appendix](#appendix-files-sorted-by-migration-complexity).
 
@@ -198,13 +196,12 @@ Six transport factories use `$http`. High risk because:
 
 ## 8. Modernize the Build Pipeline
 
-**Current:** Grunt → concat → `splainer-search.js`; Karma; JSHint (`force: true` → never fails).
+**Current:** Grunt → ESLint (default task) → Karma → concat → `splainer-search.js`; Prettier (`npm run format` / `format:check`); Karma coverage via `karma.coverage.conf.js`.
 
-**Target:** esbuild bundle; Vitest (optional timing [§2](#2-fix-the-test-runner)); Playwright; ESLint.
+**Target:** esbuild bundle; Vitest (optional timing [§2](#2-fix-the-test-runner)); Playwright.
 
 **Prep**
 
-- [ ] JSHint: stage strictness (local fixes first, or separate `jshint:strict` / CI target) before flipping `force` on the default task
 - [ ] `module.js` in `karma.coverage.conf.js` preprocessors
 - [ ] Optional `esbuild` script alongside Grunt during transition
 
@@ -213,10 +210,6 @@ Six transport factories use `$http`. High risk because:
 ## 9. Migration Order
 
 ### Phase 0: Preparation
-
-**Done:** Test runner + `test:coverage` wiring — [§2](#2-fix-the-test-runner).
-
-**Todo**
 
 - [ ] Shims: `safeForEach`, `deepClone`, `deepMerge`
 - [ ] Baseline coverage (`npm run test:coverage` — threshold, artifact, or PR note)
@@ -227,7 +220,6 @@ Mechanical edits + small PRs (one API or directory); `npm test` per batch. Rough
 
 - [ ] Drop-ins: `is*`, `fromJson`, `extend`, `element`, …
 - [ ] `forEach` / `copy` / `merge` → shims
-- [ ] Remove `stringPatch.js`; `hasSubstr` → `includes()` in `explainSvc`
 
 ### Phase 2: DI → ES modules
 
@@ -265,7 +257,6 @@ Leaves first ([§6](#6-decouple-the-di-system-incrementally), [Appendix](#append
 
 - `values/defaultSolrConfig.js`, `defaultESConfig.js`, `defaultVectaraConfig.js`, `activeQueries.js`
 - `services/customHeadersJson.js`
-- `services/stringPatch.js` (delete)
 - `services/vectorSvc.js`, `fieldSpecSvc.js` (`angular.forEach`)
 - `services/baseExplainSvc.js`, `simExplainSvc.js` (`angular.forEach`)
 

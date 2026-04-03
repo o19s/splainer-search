@@ -110,7 +110,7 @@
 
               // Push either the doc from solr or a missing doc stub
               angular.forEach(ids, function(docId) {
-                if (idsToDocs.hasOwnProperty(docId)) {
+                if (Object.hasOwn(idsToDocs, docId)) {
                   self.docs.push(idsToDocs[docId]);
                 } else {
                   var placeholderTitle = 'Missing Doc: ' + docId;

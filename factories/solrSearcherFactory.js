@@ -40,7 +40,7 @@
       /*jslint validthis:true*/
       var self = this;
 
-      if (!self.grouped.hasOwnProperty(groupedBy)) {
+      if (!Object.hasOwn(self.grouped, groupedBy)) {
         self.grouped[groupedBy] = [];
       }
 
@@ -69,11 +69,11 @@
       var rows      = self.config.numberOfRows;
       var nextArgs  = angular.copy(self.args);
 
-      if (nextArgs.hasOwnProperty('rows') && nextArgs.rows !== null) {
+      if (Object.hasOwn(nextArgs, 'rows') && nextArgs.rows !== null) {
         rows = parseInt(nextArgs.rows);
       }
 
-      if (nextArgs.hasOwnProperty('start') && nextArgs.start !== null) {
+      if (Object.hasOwn(nextArgs, 'start') && nextArgs.start !== null) {
         start = parseInt(nextArgs.start) + rows;
 
         if (start >= self.numFound) {
@@ -119,9 +119,9 @@
 
       var getExplData = function(solrResp) {
 
-        if (solrResp.hasOwnProperty('debug') && solrResp.debug !== null) {
+        if (Object.hasOwn(solrResp, 'debug') && solrResp.debug !== null) {
           var dbg = solrResp.debug;
-          if (dbg.hasOwnProperty('explain') && dbg.explain !== null) {
+          if (Object.hasOwn(dbg, 'explain') && dbg.explain !== null) {
             return dbg.explain;
           }
         }
@@ -129,9 +129,9 @@
       };
 
       var getOthersExplained = function(solrResp) {
-        if (solrResp.hasOwnProperty('debug') && solrResp.debug !== null) {
+        if (Object.hasOwn(solrResp, 'debug') && solrResp.debug !== null) {
           var dbg = solrResp.debug;
-          if (dbg.hasOwnProperty('explainOther') && dbg.explainOther !== null) {
+          if (Object.hasOwn(dbg, 'explainOther') && dbg.explainOther !== null) {
             return dbg.explainOther;
           }
         }
@@ -141,17 +141,17 @@
       // each event has nested tree like {name: 'blah', duration:43, events:[{name: 'foo', duration:20},{name: 'bar', duration:23}]
       var getTimingDetails = function(solrResp) {
         var queryTimingData = {};
-        if (solrResp.hasOwnProperty('debug') && solrResp.debug !== null) {
-          if (solrResp.debug.hasOwnProperty('timing') && solrResp.debug.timing !== null) {
+        if (Object.hasOwn(solrResp, 'debug') && solrResp.debug !== null) {
+          if (Object.hasOwn(solrResp.debug, 'timing') && solrResp.debug.timing !== null) {
             var timing = solrResp.debug.timing;
             queryTimingData = {
               name: 'timing',
               duration:timing.time,
               events:[]
             };
-            if (timing.hasOwnProperty('prepare') && timing.prepare !== null) {
+            if (Object.hasOwn(timing, 'prepare') && timing.prepare !== null) {
               let keys = Object.keys(timing.prepare);
-              if (timing.prepare.hasOwnProperty('time')) {
+              if (Object.hasOwn(timing.prepare, 'time')) {
                 keys.splice(keys.indexOf('time'), 1);
               }
               angular.forEach(keys, function(key) {
@@ -163,9 +163,9 @@
               });
             }
 
-            if (timing.hasOwnProperty('process') && timing.process !== null) {
+            if (Object.hasOwn(timing, 'process') && timing.process !== null) {
               let keys = Object.keys(timing.process);
-              if (timing.process.hasOwnProperty('time')) {
+              if (Object.hasOwn(timing.process, 'time')) {
                 keys.splice(keys.indexOf('time'), 1);
               }
               angular.forEach(keys, function(key) {
@@ -183,9 +183,9 @@
 
       var getQueryDetails = function(solrResp) {
         var queryDetails = {};
-        if (solrResp.hasOwnProperty('responseHeader') && solrResp.responseHeader !== null) {
+        if (Object.hasOwn(solrResp, 'responseHeader') && solrResp.responseHeader !== null) {
           var responseHeader = solrResp.responseHeader;
-          if (responseHeader.hasOwnProperty('params') && responseHeader.params !== null) {
+          if (Object.hasOwn(responseHeader, 'params') && responseHeader.params !== null) {
             queryDetails = solrResp.responseHeader.params;
           }
         }
@@ -194,12 +194,12 @@
 
       var getQueryParsingData = function(solrResp) {
         var queryParsingData = {};
-        if (solrResp.hasOwnProperty('debug') && solrResp.debug !== null) {
+        if (Object.hasOwn(solrResp, 'debug') && solrResp.debug !== null) {
           var keysToIgnore = ['track', 'timing', 'explain', 'explainOther'];
           var dbg = solrResp.debug;
           var keys = Object.keys(dbg);
           angular.forEach(keysToIgnore, function(keyToIgnore) {
-            if (dbg.hasOwnProperty(keyToIgnore)) {
+            if (Object.hasOwn(dbg, keyToIgnore)) {
               keys.splice(keys.indexOf(keyToIgnore), 1);
             }
           });
@@ -209,20 +209,18 @@
           });
         }
 
-        if (solrResp.hasOwnProperty('querqy.infoLog') && solrResp['querqy.infoLog'] !== null) {
+        if (Object.hasOwn(solrResp, 'querqy.infoLog') && solrResp['querqy.infoLog'] !== null) {
           queryParsingData['querqy.infoLog'] = solrResp['querqy.infoLog'];
         }
-        // Ignores jshint dot notation because it is a valid property name
-        /* jshint -W069*/
-        if (solrResp.hasOwnProperty('querqy_decorations') && solrResp['querqy_decorations'] !== null) {
+        // Bracket keys match Solr response field names (e.g. querqy_*).
+        if (Object.hasOwn(solrResp, 'querqy_decorations') && solrResp['querqy_decorations'] !== null) {
           queryParsingData['querqy_decorations'] = solrResp['querqy_decorations'];
         }
-        /* jsHint -W069 */
         return queryParsingData;
       };
 
       var getHlData = function(solrResp) {
-        if (solrResp.hasOwnProperty('highlighting') && solrResp.highlighting !== null) {
+        if (Object.hasOwn(solrResp, 'highlighting') && solrResp.highlighting !== null) {
           return solrResp.highlighting;
         }
         return {};
@@ -272,19 +270,19 @@
               return new SolrDocFactory(solrDoc, options);
             };
 
-            if (solrResp.hasOwnProperty('response') && solrResp.response !== null) {
+            if (Object.hasOwn(solrResp, 'response') && solrResp.response !== null) {
               angular.forEach(solrResp.response.docs, function(solrDoc) {
                 var doc = parseSolrDoc(solrDoc);
                 thisSearcher.numFound = solrResp.response.numFound;
                 thisSearcher.docs.push(doc);
               });
-            } else if (solrResp.hasOwnProperty('grouped') && solrResp.grouped !== null) {
+            } else if (Object.hasOwn(solrResp, 'grouped') && solrResp.grouped !== null) {
               angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
 
                 thisSearcher.numFound = groupedBy.matches;
                 // add docs for a top level group
                 //console.log(groupedBy.doclist.docs);
-                if (groupedBy.hasOwnProperty('doclist') && groupedBy.doclist !== null) {
+                if (Object.hasOwn(groupedBy, 'doclist') && groupedBy.doclist !== null) {
                   angular.forEach(groupedBy.doclist.docs, function (solrDoc) {
                     var doc = parseSolrDoc(solrDoc, groupedByName, solrDoc[groupedByName]);
                     thisSearcher.docs.push(doc);

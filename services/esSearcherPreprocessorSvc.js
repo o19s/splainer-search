@@ -21,15 +21,19 @@ angular.module('o19s.splainer-search')
         } else {
           if (queryText) {
             queryText = queryText.replace(/\\/g, '\\\\');
-            queryText = queryText.replace(/"/g, '\\\"');
+            queryText = queryText.replace(/"/g, '\\' + '"');
           }
-          return queryTemplateSvc.hydrate(args, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
+          return queryTemplateSvc.hydrate(args, queryText, {
+            qOption: qOption,
+            encodeURI: false,
+            defaultKw: '\\' + '"' + '\\' + '"',
+          });
         }
       };
 
       var prepareHighlighting = function (args, fields) {
         if ( angular.isDefined(fields) && fields !== null ) {
-          if ( fields.hasOwnProperty('fields') ) {
+          if ( Object.hasOwn(fields, 'fields') ) {
             fields = fields.fields;
           }
 
@@ -82,7 +86,7 @@ angular.module('o19s.splainer-search')
           });
         }
 
-        if ( !queryDsl.hasOwnProperty('highlight') ) {
+        if ( !Object.hasOwn(queryDsl, 'highlight') ) {
           queryDsl.highlight = prepareHighlighting(searcher.args, queryDsl[self.fieldsParamNames[0]]);
         }
 

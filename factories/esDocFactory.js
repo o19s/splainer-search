@@ -53,7 +53,7 @@
     function fieldsProperty() {
       /*jslint validthis:true*/
       var self = this;
-      // Ignores jshint dot notation because it is a valid property name
+      // Bracket notation for ES document keys (_source, fields).
       /*jslint -W069*/
       return Object.assign({}, self['_source'], self['fields']);
       /*jslint +W069*/
@@ -69,9 +69,9 @@
       /*jslint validthis:true*/
       var self = this;
 
-      if (self.doc.hasOwnProperty('highlight')) {
+      if (Object.hasOwn(self.doc, 'highlight')) {
         var docHls = self.doc.highlight;
-        if (docHls.hasOwnProperty(fieldName)) {
+        if (Object.hasOwn(docHls, fieldName)) {
           return docHls[fieldName];
         }
       }

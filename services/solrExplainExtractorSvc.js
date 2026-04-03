@@ -14,7 +14,7 @@ angular.module('o19s.splainer-search')
         var idFieldName = fieldSpec.id;
         var id          = doc[idFieldName];
 
-        if (id && explainData && explainData.hasOwnProperty(id)) {
+        if (id && explainData && Object.hasOwn(explainData, id)) {
           return explainData[id];
         }
 

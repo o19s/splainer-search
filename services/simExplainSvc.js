@@ -104,7 +104,7 @@ angular.module('o19s.splainer-search')
       //
       this.DefaultSimIdfExplain = function(explJson) {
         var desc = explJson.description;
-        if (this.children.length > 1 && desc.hasSubstr('sum of:')) {
+        if (this.children.length > 1 && desc.includes('sum of:')) {
           // then each child is an idf explain
           this.realExplanation = 'IDF Score';
           this.influencers = function() {

@@ -1,7 +1,5 @@
 'use strict';
 
-/*global describe,beforeEach,inject,it,expect*/
-
 describe('Service: vectorSvc', function () {
 
   // load the service's module
@@ -25,11 +23,16 @@ describe('Service: vectorSvc', function () {
     expect(vec.toStr()).toContain('5');
   });
 
-  it('adds vectors', function() {
-    var vec = vectorSvc.create();
-    vec.set('cat', 5);
+  it('merges two vectors via add', function() {
+    var vec1 = vectorSvc.create();
+    vec1.set('cat', 5);
+    var vec2 = vectorSvc.create();
+    vec2.set('dog', 7);
+    var merged = vectorSvc.add(vec1, vec2);
+    expect(merged.get('cat')).toEqual(5);
+    expect(merged.get('dog')).toEqual(7);
   });
-  
+
   it('toStr updates after set', function() {
     var vec1 = vectorSvc.create();
     vec1.set('cat', 5);

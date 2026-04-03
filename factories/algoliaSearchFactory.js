@@ -39,8 +39,7 @@
     Searcher.prototype.search           = search;
     Searcher.prototype.getTransportParameters = getTransportParameters;
 
-    /* jshint unused: false */
-    function addDocToGroup (groupedBy, group, algoliaDoc) {
+    function addDocToGroup (_groupedBy, _group, _algoliaDoc) {
       /*jslint validthis:true*/
       console.log('addDocToGroup');
     }
@@ -54,7 +53,7 @@
       var page = 0;
       var nextArgs = angular.copy(self.args);
 
-      if (nextArgs.hasOwnProperty('page') && nextArgs.page >= 0) {
+      if (Object.hasOwn(nextArgs, 'page') && nextArgs.page >= 0) {
         page = nextArgs.page;
       }
 
