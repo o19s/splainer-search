@@ -135,6 +135,7 @@
             return dbg.explainOther;
           }
         }
+        return {};
       };
 
       // Return information about how long a query took to run.

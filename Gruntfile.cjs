@@ -34,7 +34,6 @@ module.exports = function (grunt) {
     grunt.initConfig({
       eslint: {
         options: {
-          useEslintrc: true,
           fix: false,
         },
         target: ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js'],

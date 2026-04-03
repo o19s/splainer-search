@@ -105,6 +105,7 @@ angular.module('o19s.splainer-search')
         //this code captures the changed behavior
         else if (description.startsWith('weight(FunctionScoreQuery(')) {
           if (details.length === 1) {
+            ProductExplain.prototype = base;
             return meOrOnlyChild(new ProductExplain(explJson));
           }
           else { //fall back to default behavior of detecting 'weight' in descriptions

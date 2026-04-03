@@ -34,12 +34,14 @@ describe('Service: vectorSvc', function () {
   });
 
   it('toStr updates after set', function() {
-    var vec1 = vectorSvc.create();
-    vec1.set('cat', 5);
-    var vec2 = vectorSvc.create();
-    vec2.set('dog', 7);
-    var vec3 = vectorSvc.add(vec1, vec2);
-    expect(vec3.get('cat')).toEqual(5);
-    expect(vec3.get('dog')).toEqual(7);
+    var vec = vectorSvc.create();
+    vec.set('cat', 5);
+    var first = vec.toStr();
+    vec.set('dog', 7);
+    var second = vec.toStr();
+    expect(first).toContain('cat');
+    expect(first).not.toContain('dog');
+    expect(second).toContain('cat');
+    expect(second).toContain('dog');
   });
 });

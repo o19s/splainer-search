@@ -17,6 +17,8 @@
 1. [Current State Assessment](#1-current-state-assessment)
 2. [Fix the Test Runner](#2-fix-the-test-runner)
 3. [Expand Test Coverage Before Migration](#3-expand-test-coverage-before-migration)
+   - [Pragmatic review: more tests before migrate?](#pragmatic-review-more-tests-before-migrate)
+   - [Coverage baseline (recorded)](#coverage-baseline-recorded)
 4. [Angular API Replacements](#4-angular-api-replacements)
 5. [Introduce Shim Layer](#5-introduce-shim-layer)
 6. [Decouple the DI System Incrementally](#6-decouple-the-di-system-incrementally)
@@ -37,7 +39,7 @@
 | `migrationSafetyTests.js` | Canary suite — see [§3](#3-expand-test-coverage-before-migration). Resolver `chunkSize <= 0` lives in `docResolverSvc` spec. |
 | `vanilla-simplify` | Historical experiment only — see [opening](#angular-removal-pre-migration-preparation) |
 | `CODE_REVIEW.md` | Known issues (7 medium, 11 low); address or explicitly accept during migration |
-| Test coverage | 43 spec files under `test/spec/` |
+| Test coverage | 43 spec files under `test/spec/`; Karma baseline in [§3](#coverage-baseline-recorded) |
 | `npm run test:integration` | `test/integration/chunked-resolver-fetch.integration.js`; `npm run test:ci` = ESLint + unit + integration |
 
 ### Angular API usage and replacements (canonical)
@@ -92,6 +94,32 @@ That stack was tried on `vanilla-simplify`. Treat it as a **follow-on**, not a p
 
 Resolver `sliceIds()` / `chunkSize <= 0`, bulk **queue** iteration (not `requestBatches[url]`), missing Solr `response.docs`, preprocessor copy/merge shapes, `$http` / `$timeout` / DI surface — unless source regresses.
 
+### Pragmatic review: more tests before migrate?
+
+**Verdict:** Nothing here should block Phase 1 (utility swaps). Statement coverage is already high; the migration’s real risk is **HTTP / promise / timer behavior**, not a few uncovered branches in explain or URL helpers.
+
+| Area | Note |
+|------|------|
+| **Transports, searchers, resolver, `$q` / `$timeout`** | Biggest contract churn in Phase 3. Prefer **wrapper + dedicated tests** ([§7](#7-plan-the-httpq-replacement)) and existing `migrationSafetyTests.js` + `npm run test:integration` over front-loading more specs now. |
+| **Lower branch % today** (e.g. `esSearcherFactory.js`, `queryExplainSvc.js`, `solrUrlSvc.js` in the Karma table) | Treat as **opportunistic**: add cases when you edit that file or when a regression appears. Do not require a coverage sprint before shims. |
+| **Uniform `$http` mocks across six transports** | Still **optional** polish ([Optional later](#optional-later)); valuable when implementing the `fetch` wrapper, not a prerequisite for Phase 1. |
+| **Shims (`safeForEach`, `deepClone`, `deepMerge`)** | In `services/utilsSvc.js` with tests in `test/spec/utilsSvc.js` ([§5](#5-introduce-shim-layer)). |
+
+### Coverage baseline (recorded)
+
+**How we baseline:** The numbers below are the reference. After each phase, run `npm run test:coverage` and compare; note meaningful drops in a PR. Optional: attach or archive `coverage/html/index.html` from CI or locally — not required if this table stays updated when someone intentionally changes coverage.
+
+**Recorded:** 2026-04-03 (`splainer-rewrite`), Karma + ChromeHeadless, `npm run test:coverage` (see `karma.coverage.conf.cjs`). Instrumented: `module.js`, `services/**`, `factories/**`, `values/**`.
+
+| Metric | Coverage | Count |
+|--------|----------|-------|
+| Statements | **95.65%** | 2270 / 2373 |
+| Branches | **88.00%** | 822 / 934 |
+| Functions | **95.53%** | 471 / 493 |
+| Lines | **95.66%** | 2249 / 2351 |
+
+Per-file detail appears in the terminal summary after `npm run test:coverage`; refresh this table when the team agrees the baseline should move (e.g. after a large test-only PR).
+
 ### Optional later
 
 - Same `$http` success contract across transport factories (see [§7](#7-plan-the-httpq-replacement))
@@ -109,7 +137,7 @@ Section **§1** holds the full table (counts + tier + replacement). Here: **drop
 
 Thin wrappers **while still on Angular** so migration is “change shim internals,” not 300 scattered edits.
 
-**Suggested home:** `services/utilsSvc.js` (or similar).
+**Location:** `services/utilsSvc.js` (factory `utilsSvc`; becomes a plain module after migration).
 
 ```js
 // Angular service now; plain module after migration
@@ -196,23 +224,17 @@ Six transport factories use `$http`. High risk because:
 
 ## 8. Modernize the Build Pipeline
 
-**Current:** Grunt → ESLint (default task) → Karma → concat → `splainer-search.js`; Prettier (`npm run format` / `format:check`); Karma coverage via `karma.coverage.conf.js`.
+**Current:** Grunt → ESLint (default task) → Karma → concat → `splainer-search.js`; Prettier (`npm run format` / `format:check`); Karma coverage via `karma.coverage.conf.cjs`.
 
 **Target:** esbuild bundle; Vitest (optional timing [§2](#2-fix-the-test-runner)); Playwright.
 
 **Prep**
 
-- [ ] `module.js` in `karma.coverage.conf.js` preprocessors
 - [ ] Optional `esbuild` script alongside Grunt during transition
 
 ---
 
 ## 9. Migration Order
-
-### Phase 0: Preparation
-
-- [ ] Shims: `safeForEach`, `deepClone`, `deepMerge`
-- [ ] Baseline coverage (`npm run test:coverage` — threshold, artifact, or PR note)
 
 ### Phase 1: Angular API → table (§1)
 
@@ -245,7 +267,7 @@ Leaves first ([§6](#6-decouple-the-di-system-incrementally), [Appendix](#append
 
 ## 10. Validation Strategy
 
-- **Before each phase:** `npm test`; `npm run test:ci` when integration matters; coverage vs Phase 0 baseline
+- **Before each phase:** `npm test`; `npm run test:ci` when integration matters; `npm run test:coverage` vs [§3 baseline](#coverage-baseline-recorded) (or PR note if numbers move on purpose)
 - **During:** `migrationSafetyTests.js` after changes; targeted spec per touched file
 - **After:** Full suite; smaller bundle (Angular alone is on the order of **~170KB** minified — expect a noticeable drop); Solr/ES smoke if possible; **public API / semver** — [Public API & semver](#public-api--semver)
 

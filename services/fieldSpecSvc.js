@@ -183,7 +183,7 @@ angular.module('o19s.splainer-search')
 
       var transformFieldSpec = function(fieldSpecStr) {
         var defFieldSpec = 'id:id title:id *';
-        if (fieldSpecStr === null || fieldSpecStr.trim().length === 0) {
+        if (fieldSpecStr == null || fieldSpecStr.trim().length === 0) {
           return defFieldSpec;
         }
 
