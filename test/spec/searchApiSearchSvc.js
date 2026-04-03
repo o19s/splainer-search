@@ -176,5 +176,173 @@ describe('Service: searchSvc: SearchApi', function () {
     $httpBackend.verifyNoOutstandingExpectation();
 
     expect(called).toEqual(1);
-  }); 
+  });
+
+  it('rejects on HTTP error and sets inError', function() {
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+      mockSearchApiParams, mockQueryText, { apiMethod: 'POST' }, 'searchapi');
+
+    $httpBackend.expectPOST(mockSearchApiUrl).respond(500, { error: 'Server Error' });
+
+    var errorCalled = 0;
+    searcher.search()
+      .then(function() {
+        errorCalled--;
+      }, function(msg) {
+        expect(msg.searchError).toContain('Error with Search API');
+        expect(searcher.inError).toBe(true);
+        errorCalled++;
+      });
+
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+    expect(errorCalled).toEqual(1);
+  });
+
+  it('decrements activeQueries on error', function() {
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+      mockSearchApiParams, mockQueryText, { apiMethod: 'POST' }, 'searchapi');
+
+    var initialCount = activeQueries.count;
+    $httpBackend.expectPOST(mockSearchApiUrl).respond(500, {});
+
+    searcher.search().then(null, function() {});
+    $httpBackend.flush();
+    expect(activeQueries.count).toEqual(initialCount);
+  });
+
+  it('increments and decrements activeQueries on success', function() {
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+      mockSearchApiParams, mockQueryText, { apiMethod: 'GET' }, 'searchapi');
+
+    var initialCount = activeQueries.count;
+    $httpBackend.expectGET("http://example.com:1234/api/search?query=rambo movie").respond(200, mockSearchApiResults);
+
+    searcher.search();
+    $httpBackend.flush();
+    expect(activeQueries.count).toEqual(initialCount);
+  });
+
+  it('warns but does not throw when docsMapper is undefined', function() {
+    var options = { apiMethod: 'GET' };
+    // No docsMapper defined
+
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+      mockSearchApiParams, mockQueryText, options, 'searchapi');
+
+    $httpBackend.expectGET("http://example.com:1234/api/search?query=rambo movie").respond(200, mockSearchApiResults);
+
+    var called = 0;
+    searcher.search()
+      .then(function() {
+        // Should succeed but have no docs
+        expect(searcher.docs.length).toEqual(0);
+        called++;
+      });
+
+    $httpBackend.flush();
+    $httpBackend.verifyNoOutstandingExpectation();
+    expect(called).toEqual(1);
+  });
+
+  it('warns but does not throw when numberOfResultsMapper is undefined', function() {
+    var options = { apiMethod: 'GET' };
+    options.docsMapper = function(data) {
+      return data.map(function(d) { return { id: d.id, title: d.title }; });
+    };
+
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+      mockSearchApiParams, mockQueryText, options, 'searchapi');
+
+    $httpBackend.expectGET("http://example.com:1234/api/search?query=rambo movie").respond(200, mockSearchApiResults);
+
+    var called = 0;
+    searcher.search()
+      .then(function() {
+        // numFound stays at base-initialized value of 0 when no mapper is defined
+        expect(searcher.numFound).toEqual(0);
+        called++;
+      });
+
+    $httpBackend.flush();
+    expect(called).toEqual(1);
+  });
+
+  it('stores lastResponse on success', function() {
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+      mockSearchApiParams, mockQueryText, { apiMethod: 'GET' }, 'searchapi');
+
+    $httpBackend.expectGET("http://example.com:1234/api/search?query=rambo movie").respond(200, mockSearchApiResults);
+
+    var called = 0;
+    searcher.search().then(function() {
+      expect(searcher.lastResponse).toBeDefined();
+      expect(searcher.lastResponse.length).toEqual(2);
+      called++;
+    });
+
+    $httpBackend.flush();
+    expect(called).toEqual(1);
+  });
+
+  it('pager is currently a stub and returns undefined', function() {
+    var options = { apiMethod: 'GET' };
+    options.docsMapper = function(data) {
+      return data.map(function(d) { return { id: d.id, title: d.title }; });
+    };
+    options.numberOfResultsMapper = function(data) { return data.length; };
+
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+      mockSearchApiParams, mockQueryText, options, 'searchapi');
+
+    expect(searcher.pager()).toBeUndefined();
+  });
+
+  it('addDocToGroup is callable (stub implementation)', function() {
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+      mockSearchApiParams, mockQueryText, { apiMethod: 'GET' }, 'searchapi');
+    expect(function() {
+      searcher.addDocToGroup('field', 'g', { id: 1 });
+    }).not.toThrow();
+  });
+
+  it('treats docsMapper returning null like an empty list (angular.forEach no-op)', function() {
+    var options = {
+      apiMethod: 'GET',
+      docsMapper: function() { return null; },
+      numberOfResultsMapper: function() { return 0; },
+    };
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+      mockSearchApiParams, mockQueryText, options, 'searchapi');
+
+    $httpBackend.expectGET("http://example.com:1234/api/search?query=rambo movie").respond(200, mockSearchApiResults);
+
+    var called = 0;
+    searcher.search().then(function() {
+      expect(searcher.docs.length).toBe(0);
+      called++;
+    });
+    $httpBackend.flush();
+    expect(called).toBe(1);
+  });
+
+  it('handles docsMapper returning an empty array', function() {
+    var options = {
+      apiMethod: 'GET',
+      docsMapper: function() { return []; },
+      numberOfResultsMapper: function() { return 0; },
+    };
+    var searcher = searchSvc.createSearcher(mockFieldSpec, mockSearchApiUrl,
+      mockSearchApiParams, mockQueryText, options, 'searchapi');
+
+    $httpBackend.expectGET("http://example.com:1234/api/search?query=rambo movie").respond(200, mockSearchApiResults);
+
+    var called = 0;
+    searcher.search().then(function() {
+      expect(searcher.docs.length).toBe(0);
+      called++;
+    });
+    $httpBackend.flush();
+    expect(called).toBe(1);
+  });
 });

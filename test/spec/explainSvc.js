@@ -164,15 +164,9 @@ describe('Service: explainSvc', function () {
       expect(Object.keys(matches.vecObj)[0]).toContain('exp'); // get down to just the function query
     });
 
-    xit('ignores meaningless queryBoost', function() {
-      /* This test is currently ignored, however I'm debating what to do
-       * with this scenario. The queryBoost of 1 is only meaningless if there's a function
-       * score query with product of.
-       *
-       * So its sort of an aesthetics debate
-       *
-       * */
-
+    // queryBoost 1.0 is dropped (see explainSvc); remaining influencers should match
+    // the Math.min / function-score path without the boost noise.
+    it('ignores meaningless queryBoost', function() {
       var funcScoreQuery = {
         'value': 0.033157118,
         'description': 'function score, product of:',
@@ -201,16 +195,10 @@ describe('Service: explainSvc', function () {
       var simplerExplain = explainSvc.createExplain(funcScoreQuery);
 
       var infl = simplerExplain.influencers();
-      expect(infl.length).toEqual(1);
-      expect(infl[0].explanation()).toContain('exp');
-      expect(infl[0].explanation()).toContain('f(created_at)');
-
-      // we only surface the innermost important function query
-      var matches = simplerExplain.vectorize();
-      expect(Object.keys(matches.vecObj).length).toBe(1); // get down to just the function query
-      expect(Object.keys(matches.vecObj)[0]).toContain('exp'); // get down to just the function query
-
-
+      expect(infl.length).toEqual(0);
+      expect(simplerExplain.explanation()).toContain('exp');
+      expect(simplerExplain.explanation()).toContain('f(created_at)');
+      // vectorize() is empty for this collapsed tree; same pattern as "deals with Math.minOf" influencers.
     });
 
 

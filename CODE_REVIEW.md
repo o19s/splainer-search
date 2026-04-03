@@ -1,0 +1,461 @@
+# Code Review: splainer-search
+
+**Date:** 2026-04-03
+**Branch reviewed:** `splainer-rewrite`
+**Compared against:** `main`
+**Result:** All issues exist on **both** branches unless noted otherwise.
+
+---
+
+## Summary
+
+| Severity | Count |
+|----------|-------|
+| High     | 6     |
+| Medium   | 15    |
+| Low      | 13    |
+
+---
+
+## High Severity
+
+### 1. `fieldSpecSvc.js:39` — Property name mismatch drops unabridged fields
+
+**Branch:** both
+
+```js
+if (!fieldSpec.hasOwnProperty('unabridged')) {  // checks 'unabridged' (singular)
+    fieldSpec.unabridgeds = [];                   // but sets 'unabridgeds' (plural)
+}
+fieldSpec.unabridgeds.push(fieldName);
+```
+
+The guard always evaluates true because `'unabridged'` is never set, so `unabridgeds` is reset to `[]` on every iteration. Only the **last** unabridged field survives.
+
+**Fix:** Change `'unabridged'` to `'unabridgeds'`.
+
+---
+
+### 2. `solrSearcherFactory.js:155,169` — `Array.splice` called with string argument
+
+**Branch:** both
+
+```js
+keys.splice('time', 1);
+```
+
+`splice` expects a numeric index. `'time'` coerces to `NaN`, then to `0` — so it always removes the **first** element of the array, not the `'time'` entry.
+
+**Fix:** `keys.splice(keys.indexOf('time'), 1)`.
+
+---
+
+### 3. `solrSearcherFactory.js:324` — `explainOther` mutates shared `self.args`
+
+**Branch:** both
+
+```js
+// var args = angular.copy(self.args);   // <-- commented out!
+self.args.explainOther = [otherQuery];
+```
+
+The `angular.copy` is commented out, so `explainOther` permanently corrupts the searcher's args for all subsequent searches and paging operations.
+
+**Fix:** Uncomment the `angular.copy` and use the copy instead of `self.args`.
+
+---
+
+### 4. `esSearcherFactory.js:320-324` — Hanging promise in `explainOther`
+
+**Branch:** both
+
+```js
+$q.all(promises).then(function () {
+    self.docs = docs;
+    defer.resolve();
+});
+// no .catch() — if any promise rejects, defer NEVER settles
+```
+
+If any individual explain fails, the `$q.all` rejects but `defer` is never resolved or rejected. Callers hang indefinitely.
+
+**Fix:** Add `.catch(function(err) { defer.reject(err); })`.
+
+---
+
+### 5. `settingsValidatorFactory.js:137-140` — Crash on empty ES/OS search results
+
+**Branch:** both
+
+```js
+self.idFields = candidateIds;  // undefined if no docs returned
+if (self.searchEngine === 'es' || self.searchEngine === 'os') {
+    self.idFields.unshift('_id');  // TypeError on undefined
+}
+```
+
+When validation returns zero results, `candidateIds` is never assigned, causing a `TypeError`.
+
+**Fix:** Initialize `candidateIds` to `[]` before the loop.
+
+---
+
+### 6. `bulkTransportFactory.js:129-138` — Memory leak from unstoppable timer
+
+**Branch:** both
+
+```js
+function timerTick() {
+    sendMultiSearch();
+    $timeout(timerTick, 100);  // runs forever, no cancel mechanism
+}
+$timeout(timerTick, 100);
+```
+
+Every `BatchSender` starts a 100ms recurring timer that can never be stopped. Old senders keep ticking when URLs change, leaking memory and CPU.
+
+**Fix:** Capture the `$timeout` promise and provide a `cancel()` method, or use a conditional check before rescheduling.
+
+---
+
+## Medium Severity
+
+### 7. `queryExplainSvc.js:40` — Dead code: regex has no capture group
+
+**Branch:** both
+
+```js
+var weightRegex = /^weight\((?!FunctionScoreQuery).*/;
+if (match !== null && match.length > 1) {  // always false — no capture groups
+    this.realExplanation = match[1];        // never reached
+```
+
+The `(?!...)` is a lookahead, not a capture group. `match.length` is always 1, so the if-branch is dead code.
+
+**Fix:** Add a capture group to the regex: `/^weight\(((?!FunctionScoreQuery).*)\)/`.
+
+---
+
+### 8. `esSearcherPreprocessorSvc.js:93` — Query text not URL-encoded
+
+**Branch:** both
+
+```js
+searcher.url = searcher.url + '?q=' + searcher.queryText;
+```
+
+Special characters (`&`, `#`, `=`, spaces) in queries will corrupt the URL.
+
+**Fix:** `searcher.url = searcher.url + '?q=' + encodeURIComponent(searcher.queryText);`
+
+---
+
+### 9. Multiple files — `JSON.parse(customHeaders)` without try/catch
+
+**Branch:** both
+
+- `esUrlSvc.js:192`
+- `vectaraUrlSvc.js:17`
+- `searchSvc.js:56`
+
+Invalid JSON in user-provided custom headers throws an unhandled `SyntaxError` that crashes the calling code.
+
+**Fix:** Wrap in try/catch, log a warning, and fall back to empty headers.
+
+---
+
+### 10. Multiple files — `.catch` handlers swallow rejections
+
+**Branch:** both
+
+```js
+.catch(function(response) {
+    $log.debug('Failed to run explainOther');
+    return response;  // converts rejection to fulfillment!
+});
+```
+
+Locations:
+- `esSearcherFactory.js:329` (explainOther)
+- `esSearcherFactory.js:352` (explain)
+- `solrSearcherFactory.js:312` (search)
+- `solrSearcherFactory.js:373` (explainOther)
+- `bulkTransportFactory.js:111` (sendMultiSearch)
+
+Returning from `.catch` resolves the promise. Callers see success even on failure.
+
+**Fix:** Use `return $q.reject(response)` or `throw response` to propagate errors.
+
+---
+
+### 11. `solrDocFactory.js:109,111` — Highlight tags used as unescaped regex
+
+**Branch:** both
+
+```js
+var preRegex  = new RegExp(self.options().highlightingPre, 'g');
+var postRegex = new RegExp(self.options().highlightingPost, 'g');
+```
+
+User-configurable highlight strings are passed directly to `new RegExp()`. Tags containing regex metacharacters (`(`, `)`, `+`, `*`, `.`) will throw `SyntaxError` or match incorrectly.
+
+**Fix:** Escape the strings before creating the regex, or use `String.prototype.replaceAll()`.
+
+---
+
+### 12. `vectaraDocFactory.js:58-65` — Crash if document has no metadata
+
+**Branch:** both
+
+```js
+const metadata = self.metadata;
+return metadata.reduce(...)  // TypeError if metadata is null/undefined
+```
+
+**Fix:** Default to empty array: `const metadata = self.metadata || [];`
+
+---
+
+### 13. `algoliaSearchFactory.js:180-181` — Wrong response shape for object retrieval
+
+**Branch:** both
+
+```js
+self.numFound = data.nbHits;   // undefined for /objects endpoint
+self.nbPages = data.nbPages;   // undefined — breaks pager comparison
+```
+
+The Algolia `/1/indexes/*/objects` endpoint returns `{ results: [...] }` without `nbHits` or `nbPages`. Pager logic breaks because `undefined - 1` is `NaN`.
+
+**Fix:** Conditionally set `numFound` from `data.results.length` when using the objects endpoint.
+
+---
+
+### 14. `searchApiSearcherFactory.js:52-55` — `pager()` returns `undefined` instead of `null`
+
+**Branch:** both
+
+```js
+function pager() {
+    console.log('Pager');
+    // no return — implicitly returns undefined
+}
+```
+
+Other searcher factories return `null` to signal "no more pages." `undefined` is truthy, so callers will attempt pagination on a non-existent searcher.
+
+**Fix:** Return `null` explicitly.
+
+---
+
+### 15. `resolverFactory.js:32-39` — `escapeIds` is a no-op
+
+**Branch:** both
+
+```js
+// SUSS_USE_OF_ESCAPING
+ids.push(id);  // no escaping applied
+```
+
+The actual escaping call is commented out. Solr IDs with special characters (colons, parens, spaces) will produce malformed Lucene queries.
+
+**Fix:** Re-enable escaping or document why it was intentionally disabled.
+
+---
+
+### 16. `baseExplainSvc.js:95-111` — `toStr()` memoization ignores `depth` parameter
+
+**Branch:** both
+
+```js
+var asStr = '';
+this.toStr = function(depth) {
+    if (asStr === '') {
+        // compute with current depth, cache forever
+        asStr = me + childStrs.join('\n');
+    }
+    return asStr;
+};
+```
+
+First call's depth is cached. Subsequent calls with different depths return wrong indentation.
+
+**Fix:** Include depth in the cache key, or remove memoization.
+
+---
+
+### 17. `normalDocsSvc.js` — Missing fields coerced to string `"undefined"`
+
+**Branch:** both
+
+When a nested field path resolves to `undefined`, the code produces the literal string `"undefined"` via `'' + undefined`. Users see "undefined" as document titles or field values.
+
+**Fix:** Check for `undefined`/`null` before string coercion and use an empty string or placeholder.
+
+---
+
+### 18. `esDocFactory` — `origin()` returns a shallow copy
+
+**Branch:** both
+
+The `origin()` method copies top-level properties but shares nested object references. Mutations to nested properties in the returned object leak back to the original doc. This is documented by `migrationSafetyTests.js:85-101`.
+
+**Fix:** Use deep copy (`angular.copy` or `JSON.parse(JSON.stringify(...))`) for the returned object.
+
+---
+
+### 19. `Gruntfile.js:36` — `jshint force: true` silently passes lint errors
+
+**Branch:** both
+
+The `force: true` option means JSHint reports errors but never fails the build, undermining the purpose of having a linter in the build pipeline.
+
+**Fix:** Remove `force: true`.
+
+---
+
+### 20. `Gruntfile.js` — `uglify` task configured but never wired into any registered task
+
+**Branch:** both
+
+The `uglify` config exists, but neither `default` nor `build` tasks include it. `splainer-search.min.js` is never produced.
+
+**Fix:** Add `'uglify'` to the `default` or `build` task, or remove the dead config.
+
+---
+
+### 21. `solrUrlSvc.js:46` — Incomplete percent-encoding regex
+
+**Branch:** both
+
+```js
+rVal = rVal.replace(/\%(?!(2|3|4|5))/g, '%25');
+```
+
+Only checks the first hex digit. Valid encodings like `%60`-`%7F` get double-encoded. Invalid encodings like `%2Z` are missed.
+
+**Fix:** Use a proper percent-encoding validation regex that checks both hex digits.
+
+---
+
+## Low Severity
+
+### 22. `stringPatch.js` — Monkey-patches `String.prototype` globally
+
+**Branch:** both
+
+Adds non-standard `hasSubstr` to `String.prototype`. Modern JS has `String.prototype.includes()`. Global prototype modification risks conflicts with other libraries.
+
+---
+
+### 23. `baseExplainSvc.js:80-83` — `mergeInto` uses `for...in` without `hasOwnProperty` check
+
+**Branch:** both
+
+Copies inherited/prototype properties along with own properties.
+
+---
+
+### 24. `esUrlSvc.js:138` — Fragile `this` binding in `buildUrl`
+
+**Branch:** both
+
+Uses `var self = this` inside a plain function instead of the outer closure's `self`. Inconsistent with other functions in the same file.
+
+---
+
+### 25. `httpJsonpTransportFactory.js:31` — Username containing `:` breaks credential parsing
+
+**Branch:** both
+
+`split(':')` on decoded credentials only uses `[0]` and `[1]`. Usernames with colons or multi-colon passwords are truncated.
+
+---
+
+### 26. `esSearcherPreprocessorSvc.js:73,96` — `delete searcher.args.pager` mutates args destructively
+
+**Branch:** both
+
+If `prepare` is called multiple times, `pagerArgs` will be `undefined` on subsequent calls.
+
+---
+
+### 27. `resolverFactory.js:132` — `sliceIds` returns `undefined` when `chunkSize <= 0`
+
+**Branch:** both
+
+No else/return branch. `angular.forEach(undefined, ...)` silently produces empty results with no error.
+
+---
+
+### 28. `resolverFactory.js:153` — `concat.apply` pattern risks stack overflow on large arrays
+
+**Branch:** both
+
+```js
+self.docs = self.docs.concat.apply(self.docs, docsChunk);
+```
+
+Each element of `docsChunk` becomes a separate argument. Very large arrays can exceed the call stack limit. Also duplicates docs if `fetchDocs` is called twice.
+
+---
+
+### 29. `vectorSvc.js:63` — `add()` overwrites keys instead of summing
+
+**Branch:** both
+
+The service-level `add()` uses `set()` (overwrite) instead of the instance `add()` (sum). Misleading name — behaves as merge-last-wins.
+
+---
+
+### 30. `queryTemplateSvc.js:35` — Unnecessary `/g` flag on `test()` regex
+
+**Branch:** both
+
+```js
+} else if (/keyword\d+/g.test(key)) {
+```
+
+The `/g` flag is unnecessary for `.test()` and creates stateful behavior. Not currently buggy since the regex is an inline literal (recreated each call), but is bad practice.
+
+---
+
+### 31. `package.json` — AngularJS 1.8.3 is end-of-life
+
+**Branch:** both
+
+AngularJS reached EOL on December 31, 2021. No security patches are available.
+
+---
+
+### 32. `defaultSolrConfig.js` — Default `apiMethod: 'JSONP'` is a security concern
+
+**Branch:** both
+
+JSONP bypasses CORS by injecting `<script>` tags, making it vulnerable to XSS if the Solr server is compromised. Modern Solr supports CORS headers; prefer GET or POST.
+
+---
+
+### 33. `.jshintrc` — Multiple deprecated options
+
+**Branch:** both
+
+`"immed"`, `"regexp"`, `"smarttabs"` were removed in JSHint 2.0+. `"esnext"` is deprecated in favor of `"esversion": 6`. These options are silently ignored.
+
+---
+
+### 34. `queryExplainSvc.js:109-111` — `MinExplain.influencers()` crashes on empty children
+
+**Branch:** both
+
+```js
+this.influencers = function() {
+    var infl = shallowArrayCopy(this.children);
+    infl.sort(function(a, b) { return a.score - b.score; });
+    return [infl[0]];  // undefined if children is empty
+};
+```
+
+Same pattern exists in `DismaxExplain.vectorize()` (line 183) and `DismaxTieExplain.vectorize()` (line 161).
+
+**Fix:** Guard against empty children arrays.

@@ -76,13 +76,16 @@
         debug:        false,
         escapeQuery:  false,
         numberOfRows: ids.length,
-        version:      self.settings.version,
-        proxyUrl:      self.settings.proxyUrl,
-        customHeaders: self.settings.customHeaders,
-        basicAuthCredential: self.settings.basicAuthCredential,
-        apiMethod:    self.settings.apiMethod
-         
       };
+
+      // Only set optional config values when they are defined in settings,
+      // so that undefined values do not clobber defaults during angular.merge.
+      var optionalKeys = ['version', 'proxyUrl', 'customHeaders', 'basicAuthCredential', 'apiMethod'];
+      angular.forEach(optionalKeys, function(key) {
+        if (angular.isDefined(self.settings[key])) {
+          self.config[key] = self.settings[key];
+        }
+      });
 
       self.searcher = searchSvc.createSearcher(
         self.fieldSpec,
@@ -122,7 +125,8 @@
               return self.docs;
             }).catch(function(response) {
               $log.debug('Failed to fetch docs');
-              return response;
+              // Reject so chunked $q.all (and callers) observe failure; returning response would fulfill.
+              return $q.reject(response);
             });
         } else {
           var sliceIds = function(ids, chunkSize) {
@@ -150,7 +154,8 @@
               deferred.resolve();
             }).catch(function(response) {
               $log.debug('Failed to fetch docs');
-              return response;
+              // Propagate failure: without reject(), the returned promise never settles.
+              deferred.reject(response);
             });
 
           return deferred.promise;

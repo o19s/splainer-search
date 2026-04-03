@@ -1,7 +1,10 @@
 // Karma configuration
 // Generated on Fri Sep 02 2022 14:34:16 GMT-0400 (Eastern Daylight Time)
 
-process.env.CHROME_BIN = require('puppeteer').executablePath()
+// Prefer an explicit CHROME_BIN (e.g. CI); fall back to Puppeteer's Chromium.
+if (!process.env.CHROME_BIN) {
+  process.env.CHROME_BIN = require('puppeteer').executablePath();
+}
 
 module.exports = function(config) {
   config.set({

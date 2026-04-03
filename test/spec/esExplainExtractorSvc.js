@@ -79,5 +79,34 @@ describe('Service: ES Explain Extractor', function () {
       expect(docs.length).toBe(2);
       expect(Object.keys(docs[0].hotMatches().vecObj).length).toBe(1);
     });
+
+    it('returns empty array when docs is empty', function() {
+      var result = esExplainExtractorSvc.docsWithExplainOther([], mockFieldSpec);
+      expect(result).toEqual([]);
+    });
+
+    it('handles a single doc without explain data', function() {
+      var singleDoc = {
+        _index: 'test', _type: 'doc', _id: 'x1', _score: 1.0,
+        fields: { field: ['val'], field1: ['val1'] }
+      };
+      var esDocs = [new EsDocFactory(singleDoc, { fieldList: mockFieldSpec, url: 'http://example.com' })];
+      var result = esExplainExtractorSvc.docsWithExplainOther(esDocs, mockFieldSpec);
+      expect(result.length).toBe(1);
+      expect(result[0]).toBeDefined();
+    });
+
+    it('processes multiple docs preserving order', function() {
+      var esDocs = [];
+      for (var i = 0; i < 5; i++) {
+        var rawDoc = {
+          _index: 'test', _type: 'doc', _id: 'id_' + i, _score: i,
+          fields: { field: [i + '--field'], field1: [i + '--field1'] }
+        };
+        esDocs.push(new EsDocFactory(rawDoc, { fieldList: mockFieldSpec, url: 'http://example.com' }));
+      }
+      var result = esExplainExtractorSvc.docsWithExplainOther(esDocs, mockFieldSpec);
+      expect(result.length).toBe(5);
+    });
   });
 });

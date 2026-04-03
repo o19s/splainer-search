@@ -111,4 +111,70 @@ describe('Service: Solr Explain Extractor', function () {
       expect(docs[1].score()).toBe(3.3733945);
     });
   });
+
+  describe('getOverridingExplain edge cases', function() {
+    it('returns null when explainData is null', function() {
+      var result = solrExplainExtractorSvc.getOverridingExplain(
+        { id: 'doc1' }, mockFieldSpec, null
+      );
+      expect(result).toBeNull();
+    });
+
+    it('returns null when explainData is undefined', function() {
+      var result = solrExplainExtractorSvc.getOverridingExplain(
+        { id: 'doc1' }, mockFieldSpec, undefined
+      );
+      expect(result).toBeNull();
+    });
+
+    it('returns null when doc id is not in explainData', function() {
+      var explainData = { 'other_id': { value: 1.0 } };
+      var result = solrExplainExtractorSvc.getOverridingExplain(
+        { id: 'doc1' }, mockFieldSpec, explainData
+      );
+      expect(result).toBeNull();
+    });
+
+    it('returns null when doc has no id field', function() {
+      var explainData = { 'doc1': { value: 1.0 } };
+      var result = solrExplainExtractorSvc.getOverridingExplain(
+        { title: 'no id' }, mockFieldSpec, explainData
+      );
+      expect(result).toBeNull();
+    });
+
+    it('returns explain data when id matches', function() {
+      var explain = { value: 2.5, description: 'test weight' };
+      var explainData = { 'doc1': explain };
+      var result = solrExplainExtractorSvc.getOverridingExplain(
+        { id: 'doc1' }, mockFieldSpec, explainData
+      );
+      expect(result).toEqual(explain);
+    });
+
+    it('returns null when explainData is an empty object', function() {
+      var result = solrExplainExtractorSvc.getOverridingExplain(
+        { id: 'doc1' }, mockFieldSpec, {}
+      );
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('docsWithExplainOther edge cases', function() {
+    it('returns empty array when docs is empty', function() {
+      var result = solrExplainExtractorSvc.docsWithExplainOther([], mockFieldSpec, {});
+      expect(result).toEqual([]);
+    });
+
+    it('handles docs with no matching explain data', function() {
+      var options = {
+        groupedBy: '', group: '', fieldList: mockFieldSpec,
+        url: 'http://example.com', explDict: {}, hlDict: {},
+        highlightingPre: 'em', highlightingPost: '/em'
+      };
+      var solrDocs = [new SolrDocFactory({ id: 'doc1', title: 'Test' }, options)];
+      var result = solrExplainExtractorSvc.docsWithExplainOther(solrDocs, mockFieldSpec, {});
+      expect(result.length).toBe(1);
+    });
+  });
 });

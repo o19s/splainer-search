@@ -1,13 +1,18 @@
-// Karma configuration
-// http://karma-runner.github.io/0.12/config/configuration-file.html
-// Generated on 2014-07-17 using
-// generator-karma 0.8.3
+// Karma debug configuration
+// http://karma-runner.github.io/6.4/config/configuration-file.html
+//
+// Run: grunt karma:debug
+// Coverage HTML report: coverage/debug/index.html (see coverageReporter below).
 
-process.env.CHROME_BIN = require('puppeteer').executablePath();
+'use strict';
+
+var path = require('path');
+
+if (!process.env.CHROME_BIN) {
+  process.env.CHROME_BIN = require('puppeteer').executablePath();
+}
 
 module.exports = function(config) {
-  'use strict';
-
   config.set({
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: false,
@@ -34,17 +39,17 @@ module.exports = function(config) {
     // list of files / patterns to exclude
     exclude: [],
 
+    // Instrument library sources only (not specs or mocks).
+    preprocessors: {
+      'module.js': ['coverage'],
+      'services/**/*.js': ['coverage'],
+      'factories/**/*.js': ['coverage'],
+      'values/**/*.js': ['coverage']
+    },
+
     // web server port
     port: 8080,
 
-    // Start these browsers, currently available:
-    // - Chrome
-    // - ChromeCanary
-    // - Firefox
-    // - Opera
-    // - Safari (only Mac)
-    // - PhantomJS
-    // - IE (only Windows)
     browsers: [
       'ChromeHeadlessNoSandbox'
     ],
@@ -59,12 +64,21 @@ module.exports = function(config) {
     // Which plugins to enable
     plugins: [
       'karma-chrome-launcher',
-      'karma-jasmine',
-      'karma-coverage'
+      'karma-coverage',
+      'karma-jasmine'
     ],
 
-    // Continuous Integration mode
-    // if true, it capture browsers, run tests and exit
+    reporters: ['progress', 'coverage'],
+
+    coverageReporter: {
+      dir: path.join(__dirname, 'coverage'),
+      subdir: 'debug',
+      reporters: [
+        { type: 'html' },
+        { type: 'text-summary' }
+      ]
+    },
+
     singleRun: false,
 
     colors: true,

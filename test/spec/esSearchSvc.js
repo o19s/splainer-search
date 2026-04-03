@@ -1481,5 +1481,110 @@ describe('Service: searchSvc: ElasticSearch', function() {
       $httpBackend.verifyNoOutstandingExpectation();
       expect(called).toEqual(1);
     });
+
+    it('rejects with formatted error on HTTP error', function() {
+      $httpBackend.expectPOST('http://localhost:9200/_render/template')
+        .respond(400, {error: {reason: 'bad template syntax'}});
+
+      var errorCalled = 0;
+
+      searcher.renderTemplate()
+      .then(function() {
+        errorCalled--;
+      }, function(msg) {
+        expect(msg.searchError).toContain('HTTP Error');
+        expect(msg.searchError).toContain('400');
+        expect(msg.searchError).toContain('bad template syntax');
+        expect(searcher.inError).toBe(true);
+        errorCalled++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(errorCalled).toEqual(1);
+    });
+
+    it('rejects with network/CORS error on status -1', function() {
+      $httpBackend.expectPOST('http://localhost:9200/_render/template')
+        .respond(-1);
+
+      var errorCalled = 0;
+
+      searcher.renderTemplate()
+      .then(function() {
+        errorCalled--;
+      }, function(msg) {
+        expect(msg.searchError).toContain('Network Error');
+        expect(msg.searchError).toContain('CORS');
+        expect(searcher.inError).toBe(true);
+        errorCalled++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(errorCalled).toEqual(1);
+    });
+
+    it('rejects with shard failure details on partial failure', function() {
+      var shardFailureResponse = {
+        error: { reason: 'shard error' },
+        _shards: {
+          failed: 1,
+          failures: [{ reason: 'template compilation failed' }]
+        }
+      };
+
+      $httpBackend.expectPOST('http://localhost:9200/_render/template')
+        .respond(500, shardFailureResponse);
+
+      var errorCalled = 0;
+
+      searcher.renderTemplate()
+      .then(function() {
+        errorCalled--;
+      }, function(msg) {
+        expect(msg.searchError).toContain('template compilation failed');
+        expect(searcher.inError).toBe(true);
+        errorCalled++;
+      });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(errorCalled).toEqual(1);
+    });
+  });
+
+  describe('explainOther error handling', function() {
+    beforeEach(inject(function () {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        { version: '2.0' },
+        'es'
+      );
+    }));
+
+    it('handles search failure in explainOther gracefully', function() {
+      var otherQuery = 'message:foo';
+
+      // The initial search for explainOther fails
+      $httpBackend.expectPOST(mockEsUrl)
+        .respond(500, { error: 'Internal Server Error' });
+
+      var called = 0;
+
+      searcher.explainOther(otherQuery, mockFieldSpec)
+        .then(function(response) {
+          // explainOther catches the error and returns the response
+          // rather than rejecting
+          called++;
+        });
+
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+      expect(called).toEqual(1);
+    });
   });
 });
