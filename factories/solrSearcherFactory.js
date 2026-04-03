@@ -311,7 +311,7 @@
             reject(msg);
           }).catch(function(response) {
             $log.debug('Failed to run search');
-            return response;
+            reject(response);
           });
       });
     } // end of search()
@@ -375,7 +375,7 @@
         }).catch(function(response) {
           self.args = originalArgs;
           $log.debug('Failed to run explainOther');
-          return response;
+          return $q.reject(response);
         });
     }
 

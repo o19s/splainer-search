@@ -109,7 +109,7 @@
           pendingHttp.then(multiSearchSuccess, multiSearchFailed)
             .catch(function(response) {
               $log.debug('Failed to do multi search');
-              return response;
+              return $q.reject(response);
             });
         }
       }

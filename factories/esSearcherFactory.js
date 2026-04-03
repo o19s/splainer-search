@@ -329,7 +329,7 @@
           return defer.promise;
         }).catch(function(response) {
           $log.debug('Failed to run explainOther');
-          return response;
+          return $q.reject(response);
         });
     } // end of explainOther()
 
@@ -353,7 +353,7 @@
           return new EsDocFactory(doc, options);
         }).catch(function(response) {
           $log.debug('Failed to run explain');
-          return response;
+          return $q.reject(response);
         });
     } // end of explain()
 

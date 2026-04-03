@@ -12,7 +12,7 @@
 | Severity | Count |
 |----------|-------|
 | High     | 0     |
-| Medium   | 15    |
+| Medium   | 14    |
 | Low      | 13    |
 
 ---
@@ -63,31 +63,7 @@ Invalid JSON in user-provided custom headers throws an unhandled `SyntaxError` t
 
 ---
 
-### 10. Multiple files — `.catch` handlers swallow rejections
-
-**Branch:** both
-
-```js
-.catch(function(response) {
-    $log.debug('Failed to run explainOther');
-    return response;  // converts rejection to fulfillment!
-});
-```
-
-Locations:
-- `esSearcherFactory.js:329` (explainOther)
-- `esSearcherFactory.js:352` (explain)
-- `solrSearcherFactory.js:312` (search)
-- `solrSearcherFactory.js:373` (explainOther)
-- `bulkTransportFactory.js:111` (sendMultiSearch)
-
-Returning from `.catch` resolves the promise. Callers see success even on failure.
-
-**Fix:** Use `return $q.reject(response)` or `throw response` to propagate errors.
-
----
-
-### 11. `solrDocFactory.js:109,111` — Highlight tags used as unescaped regex
+### 10. `solrDocFactory.js:109,111` — Highlight tags used as unescaped regex
 
 **Branch:** both
 
@@ -102,7 +78,7 @@ User-configurable highlight strings are passed directly to `new RegExp()`. Tags 
 
 ---
 
-### 12. `vectaraDocFactory.js:58-65` — Crash if document has no metadata
+### 11. `vectaraDocFactory.js:58-65` — Crash if document has no metadata
 
 **Branch:** both
 
@@ -115,7 +91,7 @@ return metadata.reduce(...)  // TypeError if metadata is null/undefined
 
 ---
 
-### 13. `algoliaSearchFactory.js:180-181` — Wrong response shape for object retrieval
+### 12. `algoliaSearchFactory.js:180-181` — Wrong response shape for object retrieval
 
 **Branch:** both
 
@@ -130,7 +106,7 @@ The Algolia `/1/indexes/*/objects` endpoint returns `{ results: [...] }` without
 
 ---
 
-### 14. `searchApiSearcherFactory.js:52-55` — `pager()` returns `undefined` instead of `null`
+### 13. `searchApiSearcherFactory.js:52-55` — `pager()` returns `undefined` instead of `null`
 
 **Branch:** both
 
@@ -147,7 +123,7 @@ Other searcher factories return `null` to signal "no more pages." `undefined` is
 
 ---
 
-### 15. `resolverFactory.js:32-39` — `escapeIds` is a no-op
+### 14. `resolverFactory.js:32-39` — `escapeIds` is a no-op
 
 **Branch:** both
 
@@ -162,7 +138,7 @@ The actual escaping call is commented out. Solr IDs with special characters (col
 
 ---
 
-### 16. `baseExplainSvc.js:95-111` — `toStr()` memoization ignores `depth` parameter
+### 15. `baseExplainSvc.js:95-111` — `toStr()` memoization ignores `depth` parameter
 
 **Branch:** both
 
@@ -183,7 +159,7 @@ First call's depth is cached. Subsequent calls with different depths return wron
 
 ---
 
-### 17. `normalDocsSvc.js` — Missing fields coerced to string `"undefined"`
+### 16. `normalDocsSvc.js` — Missing fields coerced to string `"undefined"`
 
 **Branch:** both
 
@@ -193,7 +169,7 @@ When a nested field path resolves to `undefined`, the code produces the literal 
 
 ---
 
-### 18. `esDocFactory` — `origin()` returns a shallow copy
+### 17. `esDocFactory` — `origin()` returns a shallow copy
 
 **Branch:** both
 
@@ -203,7 +179,7 @@ The `origin()` method copies top-level properties but shares nested object refer
 
 ---
 
-### 19. `Gruntfile.js:36` — `jshint force: true` silently passes lint errors
+### 18. `Gruntfile.js:36` — `jshint force: true` silently passes lint errors
 
 **Branch:** both
 
@@ -213,7 +189,7 @@ The `force: true` option means JSHint reports errors but never fails the build, 
 
 ---
 
-### 20. `Gruntfile.js` — `uglify` task configured but never wired into any registered task
+### 19. `Gruntfile.js` — `uglify` task configured but never wired into any registered task
 
 **Branch:** both
 
@@ -223,7 +199,7 @@ The `uglify` config exists, but neither `default` nor `build` tasks include it. 
 
 ---
 
-### 21. `solrUrlSvc.js:46` — Incomplete percent-encoding regex
+### 20. `solrUrlSvc.js:46` — Incomplete percent-encoding regex
 
 **Branch:** both
 
@@ -239,7 +215,7 @@ Only checks the first hex digit. Valid encodings like `%60`-`%7F` get double-enc
 
 ## Low Severity
 
-### 22. `stringPatch.js` — Monkey-patches `String.prototype` globally
+### 21. `stringPatch.js` — Monkey-patches `String.prototype` globally
 
 **Branch:** both
 
@@ -247,7 +223,7 @@ Adds non-standard `hasSubstr` to `String.prototype`. Modern JS has `String.proto
 
 ---
 
-### 23. `baseExplainSvc.js:80-83` — `mergeInto` uses `for...in` without `hasOwnProperty` check
+### 22. `baseExplainSvc.js:80-83` — `mergeInto` uses `for...in` without `hasOwnProperty` check
 
 **Branch:** both
 
@@ -255,7 +231,7 @@ Copies inherited/prototype properties along with own properties.
 
 ---
 
-### 24. `esUrlSvc.js:138` — Fragile `this` binding in `buildUrl`
+### 23. `esUrlSvc.js:138` — Fragile `this` binding in `buildUrl`
 
 **Branch:** both
 
@@ -263,7 +239,7 @@ Uses `var self = this` inside a plain function instead of the outer closure's `s
 
 ---
 
-### 25. `httpJsonpTransportFactory.js:31` — Username containing `:` breaks credential parsing
+### 24. `httpJsonpTransportFactory.js:31` — Username containing `:` breaks credential parsing
 
 **Branch:** both
 
@@ -271,7 +247,7 @@ Uses `var self = this` inside a plain function instead of the outer closure's `s
 
 ---
 
-### 26. `esSearcherPreprocessorSvc.js:73,96` — `delete searcher.args.pager` mutates args destructively
+### 25. `esSearcherPreprocessorSvc.js:73,96` — `delete searcher.args.pager` mutates args destructively
 
 **Branch:** both
 
@@ -279,7 +255,7 @@ If `prepare` is called multiple times, `pagerArgs` will be `undefined` on subseq
 
 ---
 
-### 27. `resolverFactory.js:132` — `sliceIds` returns `undefined` when `chunkSize <= 0`
+### 26. `resolverFactory.js:132` — `sliceIds` returns `undefined` when `chunkSize <= 0`
 
 **Branch:** both
 
@@ -287,7 +263,7 @@ No else/return branch. `angular.forEach(undefined, ...)` silently produces empty
 
 ---
 
-### 28. `resolverFactory.js:153` — `concat.apply` pattern risks stack overflow on large arrays
+### 27. `resolverFactory.js:153` — `concat.apply` pattern risks stack overflow on large arrays
 
 **Branch:** both
 
@@ -299,7 +275,7 @@ Each element of `docsChunk` becomes a separate argument. Very large arrays can e
 
 ---
 
-### 29. `vectorSvc.js:63` — `add()` overwrites keys instead of summing
+### 28. `vectorSvc.js:63` — `add()` overwrites keys instead of summing
 
 **Branch:** both
 
@@ -307,7 +283,7 @@ The service-level `add()` uses `set()` (overwrite) instead of the instance `add(
 
 ---
 
-### 30. `queryTemplateSvc.js:35` — Unnecessary `/g` flag on `test()` regex
+### 29. `queryTemplateSvc.js:35` — Unnecessary `/g` flag on `test()` regex
 
 **Branch:** both
 
@@ -319,7 +295,7 @@ The `/g` flag is unnecessary for `.test()` and creates stateful behavior. Not cu
 
 ---
 
-### 31. `package.json` — AngularJS 1.8.3 is end-of-life
+### 30. `package.json` — AngularJS 1.8.3 is end-of-life
 
 **Branch:** both
 
@@ -327,7 +303,7 @@ AngularJS reached EOL on December 31, 2021. No security patches are available.
 
 ---
 
-### 32. `defaultSolrConfig.js` — Default `apiMethod: 'JSONP'` is a security concern
+### 31. `defaultSolrConfig.js` — Default `apiMethod: 'JSONP'` is a security concern
 
 **Branch:** both
 
@@ -335,7 +311,7 @@ JSONP bypasses CORS by injecting `<script>` tags, making it vulnerable to XSS if
 
 ---
 
-### 33. `.jshintrc` — Multiple deprecated options
+### 32. `.jshintrc` — Multiple deprecated options
 
 **Branch:** both
 
@@ -343,7 +319,7 @@ JSONP bypasses CORS by injecting `<script>` tags, making it vulnerable to XSS if
 
 ---
 
-### 34. `queryExplainSvc.js:109-111` — `MinExplain.influencers()` crashes on empty children
+### 33. `queryExplainSvc.js:109-111` — `MinExplain.influencers()` crashes on empty children
 
 **Branch:** both
 

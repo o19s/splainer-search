@@ -57,28 +57,6 @@
 
 ---
 
-## 2. Fix Blocking Bugs First
-
-These bugs will be **harder to diagnose after migration** because the symptoms will be ambiguous — "is this a migration regression or a pre-existing bug?" Fix them on this branch before starting migration work.
-
-### Must fix (will cause false positives during migration testing)
-
-| # | File | Bug | Why fix now |
-|---|------|-----|-------------|
-| 1 | `fieldSpecSvc.js:39` | `hasOwnProperty('unabridged')` vs `'unabridgeds'` | Drops all but last unabridged field — will look like a migration regression |
-| 2 | `solrSearcherFactory.js:155,169` | `keys.splice('time', 1)` with string arg | Always removes wrong element — will confuse timing validation |
-| 3 | `settingsValidatorFactory.js:137` | `candidateIds` undefined crash on empty results | Crash will be blamed on migration |
-| 5 | `solrSearcherFactory.js:324` | `angular.copy` commented out in `explainOther` | The mutation side-effect will behave differently post-migration |
-
-### Should fix (promise handling will change fundamentally)
-
-| # | File | Bug | Why fix now |
-|---|------|-----|-------------|
-| 4 | `esSearcherFactory.js:320` | Missing `.catch` on `$q.all` — hangs forever | When switching to native Promise, unhandled rejections become fatal |
-| 10 | Multiple files | `.catch` returns `response` instead of rejecting | Swallowed errors become visible with native Promises; fix now so tests reflect real behavior |
-
----
-
 ## 3. Fix the Test Runner
 
 **The test suite cannot currently run.** Karma + ChromeHeadless crashes with a signal 6 / segfault. This is the single highest priority item — you cannot safely migrate without a green test suite.
