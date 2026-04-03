@@ -181,15 +181,15 @@ describe('Service: normalDocsSvc', function () {
       expect(normalDoc.subs['meta.desc']).toEqual('nested sub');
     });
 
-    it('coerces missing nested value to string "undefined"', function() {
+    it('uses empty string for missing nested value instead of "undefined"', function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId title:a.b.missing');
       var origin = { myId: '1', a: { b: {} } };
       var doc = mockDoc(origin);
 
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc);
 
-      // a.b.missing resolves to undefined, then '' + undefined = 'undefined'
-      expect(normalDoc.title).toEqual('undefined');
+      // a.b.missing resolves to undefined; should be empty string, not "undefined"
+      expect(normalDoc.title).toEqual('');
     });
   });
 

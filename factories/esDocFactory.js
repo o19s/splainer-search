@@ -88,7 +88,7 @@
       var src = {};
       angular.forEach(self, function(value, field) {
         if (!angular.isFunction(value)) {
-          src[field] = value;
+          src[field] = angular.copy(value);
         }
       });
       delete src.doc;

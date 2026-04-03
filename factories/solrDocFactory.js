@@ -41,6 +41,16 @@
     };
 
     /**
+     * Escape a string so it can be used as a literal segment inside a RegExp pattern.
+     * User-configured highlight markers may contain regex metacharacters (e.g. parentheses).
+     * @param {string} string
+     * @returns {string}
+     */
+    var escapeRegExp = function(string) {
+      return String(string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+
+    /**
      *
      * Builds Solr URL for a single Solr document.
      */
@@ -103,12 +113,14 @@
         }
 
         var escapedValues = [];
+        var prePat  = escapeRegExp(self.options().highlightingPre);
+        var postPat = escapeRegExp(self.options().highlightingPost);
 
         angular.forEach(fieldValue, function(value) {
           var esc       = escapeHtml(value);
-          var preRegex  = new RegExp(self.options().highlightingPre, 'g');
+          var preRegex  = new RegExp(prePat, 'g');
           var hlPre     = esc.replace(preRegex, preText);
-          var postRegex = new RegExp(self.options().highlightingPost, 'g');
+          var postRegex = new RegExp(postPat, 'g');
           var hlPost    = hlPre.replace(postRegex, postText);
 
           escapedValues.push(hlPost);
@@ -117,9 +129,11 @@
         return escapedValues;
       } else if (fieldValue) {
         var esc       = escapeHtml(fieldValue);
-        var preRegex  = new RegExp(self.options().highlightingPre, 'g');
+        var prePat    = escapeRegExp(self.options().highlightingPre);
+        var postPat   = escapeRegExp(self.options().highlightingPost);
+        var preRegex  = new RegExp(prePat, 'g');
         var hlPre     = esc.replace(preRegex, preText);
-        var postRegex = new RegExp(self.options().highlightingPost, 'g');
+        var postRegex = new RegExp(postPat, 'g');
         var hlPost    = hlPre.replace(postRegex, postText);
 
         return hlPost;

@@ -1,24 +1,30 @@
 # Angular Removal: Pre-Migration Preparation
 
-**Date:** 2026-04-03
-**Current branch:** `splainer-rewrite` (based on `main` @ v2.36.4)
-**Target:** Remove AngularJS entirely, convert to vanilla JS ES modules
-**Note on `vanilla-simplify`:** That branch is an **earlier migration attempt**, not a known-good baseline. Do not depend on it for validation, diffs, copying code/tests, or signing off “done.” Ground truth is this document, **this** branch’s green tests (including `migrationSafetyTests.js`), and the public API contract with consumers. Elsewhere in this doc, `vanilla-simplify` is mentioned only as historical context (e.g. what stack was tried once).
+**Date:** 2026-04-03  
+**Current branch:** `splainer-rewrite` (based on `main` @ v2.36.4)  
+**Target:** Remove AngularJS entirely, convert to vanilla JS ES modules.
+
+**Ground truth:** This document, **this** branch’s green tests (including `migrationSafetyTests.js`), and the [public API](#public-api--semver) below. Do **not** use branch `vanilla-simplify` for validation, diffs, copying code/tests, or sign-off — it was an earlier full-stack experiment (ES modules, fetch, Vitest, Playwright). Mention it only as historical context.
+
+### Public API & semver
+
+`package.json` `main` → root `splainer-search.js`, built by Grunt (`module.js` + `services/`, `factories/`, `values/`). Consumers load that bundle with Angular as a peer. Keep response shapes, module/globals, and behavior stable unless you ship a **semver-major** release with documented breaks. After ESM, set `main` / `exports` explicitly.
 
 ---
 
 ## Table of Contents
 
-1. [Current State Assessment](#1-current-state-assessment) (includes [recent branch changes](#recent-branch-changes-splainer-rewrite))
+1. [Current State Assessment](#1-current-state-assessment)
 2. [Fix the Test Runner](#2-fix-the-test-runner)
 3. [Expand Test Coverage Before Migration](#3-expand-test-coverage-before-migration)
-4. [Angular API Inventory & Replacement Map](#4-angular-api-inventory--replacement-map)
+4. [Angular API Replacements](#4-angular-api-replacements)
 5. [Introduce Shim Layer](#5-introduce-shim-layer)
 6. [Decouple the DI System Incrementally](#6-decouple-the-di-system-incrementally)
 7. [Plan the HTTP/$q Replacement](#7-plan-the-httpq-replacement)
 8. [Modernize the Build Pipeline](#8-modernize-the-build-pipeline)
 9. [Migration Order](#9-migration-order)
 10. [Validation Strategy](#10-validation-strategy)
+11. [Appendix: Files by Complexity](#appendix-files-sorted-by-migration-complexity)
 
 ---
 
@@ -28,410 +34,252 @@
 
 | Asset | Status |
 |-------|--------|
-| `migrationSafetyTests.js` | 49 test cases pinning deep-copy, null-safety, preprocessor contracts, engine routing, vector ops, transport routing, merge semantics, origin() behavior |
-| `vanilla-simplify` branch | Earlier full migration experiment (Angular removed, ES modules, fetch, Vitest, Playwright) — see opening note |
-| `CODE_REVIEW.md` | Known issues (7 medium, 11 low); see file for paths and fixes — address or explicitly accept during migration |
-| Test coverage | 43 spec files under `test/spec/` covering most services/factories |
-| `npm run test:integration` | Node integration script (`test/integration/chunked-resolver-fetch.integration.js`); `npm run test:ci` runs unit + integration |
+| `migrationSafetyTests.js` | Canary suite — see [§3](#3-expand-test-coverage-before-migration). Resolver `chunkSize <= 0` lives in `docResolverSvc` spec. |
+| `vanilla-simplify` | Historical experiment only — see [opening](#angular-removal-pre-migration-preparation) |
+| `CODE_REVIEW.md` | Known issues (7 medium, 11 low); address or explicitly accept during migration |
+| Test coverage | 43 spec files under `test/spec/` |
+| `npm run test:integration` | `test/integration/chunked-resolver-fetch.integration.js`; `npm run test:ci` = unit + integration |
 
-### Angular API usage (source files only)
+### Angular API usage and replacements (canonical)
 
-| API | Occurrences | Replacement |
-|-----|-------------|-------------|
-| `angular.forEach` | ~124 | `Array.forEach` / `Object.entries` + null guards |
-| `angular.copy` | ~92 | `structuredClone()` (Node 17+, browsers 2022+) |
-| `angular.merge` | ~13 | Custom deep merge or `lodash.merge` |
-| `angular.isDefined` | ~23 | `!== undefined` |
-| `angular.isUndefined` | ~5 | `=== undefined` |
-| `angular.isObject` | ~3 | `typeof x === 'object' && x !== null` |
-| `angular.isString` | ~1 | `typeof x === 'string'` |
-| `angular.fromJson` | ~19 | `JSON.parse` |
-| `angular.extend` | ~1 | `Object.assign` |
-| `angular.element` | ~1 | `document.createElement` |
-| `angular.module` | 46 | ES module `export` / `import` |
-| `$http` | 6 transport factories | `fetch` API |
-| `$q` | ~37 | Native `Promise` |
-| `$log` | ~28 | `console` |
-| `$timeout` | ~49 | `setTimeout` |
-| `$sce` | ~9 | Remove (JSONP trusted URLs) |
+Single reference for counts and what to swap in. Tier labels: **drop-in** (direct substitute), **wrapper** (shim first — [§5](#5-introduce-shim-layer)), **arch** (structural change).
 
-### Recent branch changes (splainer-rewrite)
+| API | ~Count | Tier | Replacement |
+|-----|--------|------|-------------|
+| `angular.forEach` | ~124 | wrapper | `safeForEach` — null-safe; objects, arrays, strings (char iteration) |
+| `angular.copy` | ~92 | wrapper | `deepClone` — [contract](#deep-clone-contract); usually `structuredClone` for JSON-ish POJOs |
+| `angular.merge` | ~13 | wrapper | `deepMerge` — custom or `lodash.merge` |
+| `angular.isDefined` | ~23 | drop-in | `x !== undefined` |
+| `angular.isUndefined` | ~5 | drop-in | `x === undefined` |
+| `angular.isObject` | ~3 | drop-in | `typeof x === 'object' && x !== null` |
+| `angular.isString` | ~1 | drop-in | `typeof x === 'string'` |
+| `angular.isNumber` | (rare) | drop-in | `typeof x === 'number'` |
+| `angular.isFunction` | (rare) | drop-in | `typeof x === 'function'` |
+| `angular.fromJson` | ~19 | drop-in | `JSON.parse` |
+| `angular.toJson` | 0 today | drop-in | `JSON.stringify` if it appears |
+| `angular.extend` | ~1 | drop-in | `Object.assign` |
+| `angular.element` | ~1 | drop-in | `document.createElement` |
+| `angular.module` / `.factory` / `.service` / `.value` | 46 | arch | ES `import` / `export` |
+| `$http` | 6 transports | arch | `fetch` wrapper — [§7](#7-plan-the-httpq-replacement) |
+| `$q` | ~37 | arch | `Promise` |
+| `$log` | ~28 | arch | `console` |
+| `$timeout` | ~49 | arch | `setTimeout` |
+| `$sce` | ~9 | arch | Remove (JSONP trusted URLs only) |
 
-These are already on this branch; keep them in mind when diffing or porting tests.
+### Recent branch changes (`splainer-rewrite`)
 
-- **`services/customHeadersJson.js`** — Safe parse for custom JSON headers; consumed by `esUrlSvc` (see `test/spec/customHeadersJson.js`).
-- **`resolverFactory.js`** — Optional settings (`version`, `proxyUrl`, `customHeaders`, `basicAuthCredential`, `apiMethod`) are copied onto `config` only when defined, so `angular.merge` does not clobber defaults with `undefined`. Chunked / single fetch failures reject the promise instead of returning a raw error response as a fulfilled value.
-- **`test/integration/chunked-resolver-fetch.integration.js`** — Exercised via `npm run test:integration`.
+- **`services/customHeadersJson.js`** — Safe JSON header parse; `esUrlSvc`; tests in `test/spec/customHeadersJson.js`.
+- **`resolverFactory.js`** — Optional settings copied onto `config` only when defined (avoids `angular.merge` clobbering with `undefined`). Failed chunked/single fetch **reject** instead of fulfilling with a raw error.
+- **`test/integration/chunked-resolver-fetch.integration.js`** — `npm run test:integration`.
 
 ---
 
 ## 2. Fix the Test Runner
 
-**Unit tests require a working Headless Chrome.** `karma.conf.js` sets `CHROME_BIN` to Puppeteer’s Chromium when unset. If that binary is missing (incomplete `npm ci`, read-only cache) or incompatible with the host, Karma fails to launch. Some environments also report ChromeHeadless **signal 6 / segfault** with particular Chromium builds — treat a **green `npm test`** as the gate; without it you cannot safely migrate.
+**Unit tests need Headless Chrome.** `karma.conf.js` uses Puppeteer’s Chromium when `CHROME_BIN` is unset; missing or incompatible binaries break Karma; some hosts see ChromeHeadless **signal 6**. **Green `npm test` is the gate.**
 
-### Actions
+**Done on this branch:** `puppeteer` pin, `scripts/karma-chrome-bin.js` (system Chrome fallback), `npm run test:coverage` in Grunt / `package.json`.
 
-- [x] **Stabilize the browser binary** — Pin `puppeteer` to a known-good version, or set `CHROME_BIN` to system Chrome/Chromium for `karma-chrome-launcher`. Avoid relying on a floating `^24.0.0` if CI keeps breaking. (`package.json` pins `puppeteer`; `scripts/karma-chrome-bin.js` prefers system Chrome when `CHROME_BIN` is unset.)
-- [x] **Verify all 43 spec files pass** — Run `npm test` (Karma unit) and get a clean run before migration work; optionally `npm run test:ci` to include integration.
-- [x] **Add `npm run test:coverage`** — `karma.coverage.conf.js` exists but is not registered in `Gruntfile.js` and has no npm script. Add a `karma:coverage` target (or invoke Karma with `--config karma.coverage.conf.js`) and a script so baseline coverage is one command away.
+### Vitest + Playwright (optional later)
 
-### Longer term: consider switching test framework before migration
+That stack was tried on `vanilla-simplify`. On **this** branch it is worth evaluating for speed and stable CI (no browser for unit tests; `vi.mock()` replaces `$httpBackend` / `$provide`).
 
-**Vitest** (Node-based, no browser needed for unit tests) + **Playwright** (for browser integration tests) — a stack once tried on `vanilla-simplify`; worth evaluating on **this** branch on its own merits:
-
-- Eliminates the Karma/Chrome crash problem entirely
-- Vitest runs tests ~10x faster than Karma+Chrome
-- Vitest's `vi.mock()` replaces `$httpBackend` and `$provide`
+**Pragmatic default:** Treat it as a **follow-on or parallel track**, not a prerequisite for removing Angular. Stay on **Karma through Phase 3** (`fetch` + `$q` migration) while green. If Karma blocks all progress, pilot Vitest on a small slice first. Do not couple “new runner” with “new HTTP layer” in one big bang.
 
 ---
 
 ## 3. Expand Test Coverage Before Migration
 
-### What `migrationSafetyTests.js` covers (49 tests)
+### Already pinned (see `migrationSafetyTests.js`, `docResolverSvc.js`)
 
-- Deep-copy semantics (DocFactory, EsDocFactory, SolrDocFactory)
-- `angular.forEach` null-safety (fieldSpecSvc, normalDocsSvc)
-- Preprocessor output contracts (ES, Solr, Vectara)
-- Engine routing (searchSvc creates correct searcher for each engine)
-- Vector operations (add, sumOf, scale, toStr)
-- Transport routing (POST, GET, JSONP, BULK + proxy)
-- Deep-merge semantics (all 3 preprocessors)
-- `origin()` excludes functions (Algolia, Vectara, SearchApi doc factories)
-- Null-safety edge cases (baseExplainSvc, solrUrlSvc, fieldSpecSvc)
+Resolver `sliceIds()` / `chunkSize <= 0`, bulk **queue** iteration (not `requestBatches[url]`), missing Solr `response.docs`, preprocessor copy/merge shapes, `$http` / `$timeout` / DI surface — unless source regresses.
 
-### What's still missing — add these tests
+### Optional later
 
-#### A. `angular.forEach` null-safety in untested paths
-
-These source locations call `angular.forEach` on values that could be `null`/`undefined`. Native `for...of` or `.forEach()` will throw on `null` — need tests to pin current behavior:
-
-| File | Line(s) | What's iterated |
-|------|---------|-----------------|
-| `resolverFactory.js` | forEach on `sliceIds()` result | Returns `undefined` when `chunkSize <= 0` |
-| `bulkTransportFactory.js` | forEach on `requestBatches[url]` | Could be undefined if URL not in map |
-| `solrSearcherFactory.js:48` | forEach on `self.config.fields` | Could be undefined |
-| `solrSearcherFactory.js:207` | forEach on `data.response.docs` | Undefined if response shape is wrong |
-| `normalDocsSvc.js:90,96,102` | forEach on `fieldSpec.embeds`, `.translations`, `.functions` | Always undefined for minimal fieldSpecs (partially covered) |
-
-#### B. `angular.copy` deep-clone edge cases
-
-| Scenario | Why it matters |
-|----------|---------------|
-| Object with `Date` values | `structuredClone` preserves Dates; `JSON.parse(JSON.stringify())` converts to strings |
-| Object with `undefined` values | `angular.copy` preserves `undefined`; `JSON.parse(JSON.stringify())` drops them |
-| Object with circular references | `angular.copy` handles cycles; `structuredClone` does too; manual clone doesn't |
-| Searcher args deep-copy in preprocessors | ES/Solr/Vectara preprocessors all copy args — pin exact output shape |
-
-#### C. `angular.merge` vs `Object.assign` deep-merge
-
-Currently tested for preprocessor configs. Also add:
-
-| Scenario | Why it matters |
-|----------|---------------|
-| Merge with `null` source values | `angular.merge` copies `null`; `Object.assign` also copies `null` — but deep merge libs vary |
-| Merge with array values | `angular.merge` replaces arrays (doesn't concat); verify replacement libs match |
-
-#### D. `$http` response shape
-
-Pin down the exact response objects your code expects from `$http`:
-
-| Property | `$http` shape | `fetch` shape |
-|----------|---------------|---------------|
-| `response.data` | Parsed JSON body | Must use `response.json()` |
-| `response.status` | HTTP status code | `response.status` (same) |
-| `response.headers()` | Function returning headers | `response.headers.get()` |
-
-Write tests that assert the response properties your `.then()` callbacks access. This makes it explicit what the fetch wrapper must provide.
-
-#### E. `$timeout` / digest cycle behavior
-
-| Location | Usage | Risk |
-|----------|-------|------|
-| `bulkTransportFactory.js` | `$timeout(timerTick, 100)` batching loop | `setTimeout` won't trigger Angular digest — but post-migration that's fine |
-| Transport factories | `$timeout` for async queue | Timing behavior may change |
-
-#### F. Module/DI wiring
-
-Add a test that verifies the public API surface — every function/factory that consumers import:
-
-```js
-it('exports the complete public API', function() {
-  // Pin down every service/factory that consumers depend on
-  expect(searchSvc).toBeDefined();
-  expect(fieldSpecSvc).toBeDefined();
-  expect(normalDocsSvc).toBeDefined();
-  // ... etc for each exported service
-});
-```
-
-This acts as a smoke test that the ES module rewiring didn't lose any exports.
+- Same `$http` success contract across transport factories (see [§7](#7-plan-the-httpq-replacement))
+- New `angular.forEach` hot paths → extend the canary file
 
 ---
 
-## 4. Angular API Inventory & Replacement Map
+## 4. Angular API Replacements
 
-### Drop-in replacements (safe to do before full migration)
-
-These can be swapped **one at a time** with zero behavioral change, making the final migration smaller:
-
-```
-angular.isDefined(x)    →  x !== undefined
-angular.isUndefined(x)  →  x === undefined
-angular.isObject(x)     →  (typeof x === 'object' && x !== null)
-angular.isString(x)     →  typeof x === 'string'
-angular.isNumber(x)     →  typeof x === 'number'
-angular.isFunction(x)   →  typeof x === 'function'
-angular.fromJson(x)     →  JSON.parse(x)
-angular.toJson(x)       →  JSON.stringify(x)
-angular.extend(dst, src) →  Object.assign(dst, src)
-```
-
-### Require a wrapper function (create before migration)
-
-```
-angular.forEach(obj, fn)  →  safeForEach(obj, fn)  // null-safe, handles objects+arrays
-angular.copy(obj)         →  deepClone(obj)         // structuredClone or rfdc
-angular.merge(dst, ...src) →  deepMerge(dst, ...src) // custom or lodash.merge
-```
-
-### Require architectural change
-
-```
-angular.module / .factory / .service / .value  →  ES module exports
-$http                                          →  fetch wrapper
-$q                                             →  native Promise
-$q.defer()                                     →  new Promise((resolve, reject) => ...)
-$log                                           →  console
-$timeout                                       →  setTimeout
-$sce.trustAsResourceUrl                        →  remove (only needed for JSONP)
-```
+Section **§1** holds the full table (counts + tier + replacement). Here: **drop-in** = swap at call site; **wrapper** = implement behind `safeForEach` / `deepClone` / `deepMerge` then replace imports; **arch** = DI, HTTP, promises, logging, timers, `$sce` per §6–§7.
 
 ---
 
 ## 5. Introduce Shim Layer
 
-Create thin wrapper functions **now**, while still on Angular, that isolate Angular-specific calls. Then the migration becomes "swap the shim internals" rather than "find-and-replace 300 call sites."
+Thin wrappers **while still on Angular** so migration is “change shim internals,” not 300 scattered edits.
 
-### Recommended shims to create
-
-**File:** `services/utilsSvc.js` (or similar)
+**Suggested home:** `services/utilsSvc.js` (or similar).
 
 ```js
-// Create these as an Angular service NOW, migrate to plain module LATER
+// Angular service now; plain module after migration
 
 function safeForEach(collection, callback) {
-  // Matches angular.forEach behavior:
-  // - null/undefined → no-op
-  // - array → iterate values
-  // - object → iterate key/value pairs
-  // - string → iterate characters (current angular.forEach behavior)
+  // angular.forEach: null/undefined no-op; array; object k/v; string → characters
 }
 
 function deepClone(obj) {
-  // Currently: return angular.copy(obj);
-  // After migration: return structuredClone(obj);
+  // Now: angular.copy(obj). Later: structuredClone / fallback — see contract below.
 }
 
 function deepMerge(target /*, ...sources */) {
-  // Currently: return angular.merge.apply(null, arguments);
-  // After migration: custom implementation or lodash.merge
+  // Now: angular.merge. Later: lodash.merge or custom.
 }
 ```
 
-**Benefit:** You can write tests against the shims, then swap internals. The 124 `angular.forEach` calls become `safeForEach` calls, and the actual Angular removal is a one-line change inside the shim.
+#### Deep clone contract
+
+Call sites use **plain data** (configs, Solr/ES shapes). **`structuredClone`** is usually enough; it is **not** equivalent to `angular.copy` for functions, symbols, prototypes, DOM, or some cycles. Define what `deepClone` guarantees; use **rfdc** or lossy `JSON` round-trip only where acceptable.
+
+**Benefit:** Tests target the shims; Angular removal can be a one-liner inside each shim.
 
 ---
 
 ## 6. Decouple the DI System Incrementally
 
-The 46 `angular.module(...).factory/service/value` registrations are the backbone of the Angular dependency. Each one injects dependencies via DI. The migration needs to convert these to ES module imports.
+46 `angular.module(...)` registrations → ES imports. Steps:
 
-### Prep steps
+1. **Dependency graph** — Find leaves (no deps on other app services). Validate with search for injected names or **madge** once code is ESM.
 
-1. **Map the dependency graph** — Which services depend on which? Identify leaf nodes (no dependencies on other app services) that can be migrated first.
+2. **Per file** — Split Angular built-ins (`$http`, `$q`, `$log`, `$timeout`, `$sce`) from app services → imports vs shims/native APIs.
 
-   Likely migration order (leaves → roots):
-   ```
-   values/* (no deps)
-   → stringPatch, vectorSvc, fieldSpecSvc (utility services, no $http/$q)
-   → baseExplainSvc, simExplainSvc, queryExplainSvc, explainSvc
-   → *UrlSvc, *PreprocessorSvc
-   → *DocFactory, docFactory
-   → transportFactory, *TransportFactory
-   → *SearcherFactory, searcherFactory
-   → resolverFactory, settingsValidatorFactory
-   → searchSvc, normalDocsSvc (top-level orchestrators)
-   ```
+3. **Transition** — Keep logic in a plain function; Angular only wires DI. Then delete the wrapper and export.
 
-2. **For each file, list its injected dependencies** — separate Angular built-ins (`$http`, `$q`, `$log`, `$timeout`, `$sce`) from app services (other factories/services). App service deps become `import` statements; Angular built-ins become shims or native APIs.
-
-3. **Consider a transition pattern** — Each file can temporarily work as both:
    ```js
-   // Phase 1: Still registered as Angular service, but logic is in a plain function
-   function createSearcherFactory($http, $q, ...) {
-     // all logic here
+   function createSearcherFactory($http, $q, /* ... */) {
+     /* implementation */
    }
    angular.module('o19s.splainer-search')
-     .factory('SearcherFactory', ['$http', '$q', ..., createSearcherFactory]);
+     .factory('SearcherFactory', ['$http', '$q', /* ... */, createSearcherFactory]);
 
-   // Phase 2: Remove the angular.module wrapper, export the function
-   export function createSearcherFactory(httpClient, promiseLib, ...) { ... }
+   // Later: same function, ESM — inject fetch/Promise (or shims) instead of $http/$q
+   export function createSearcherFactory(httpClient, /* ... */) { /* ... */ }
    ```
+
+**Likely order (leaves → roots):** `values/*` → utilities (`stringPatch`, `vectorSvc`, `fieldSpecSvc`) → explain services → `*UrlSvc`, `*PreprocessorSvc` → doc factories → transport → searcher → `resolverFactory`, `settingsValidatorFactory` → `searchSvc`, `normalDocsSvc`.
+
+**File-level buckets:** [Appendix](#appendix-files-sorted-by-migration-complexity).
 
 ---
 
 ## 7. Plan the HTTP/$q Replacement
 
-`$http` is used in 6 transport factories. This is the highest-risk replacement because:
-- `$http` returns promises with `.data` (already-parsed JSON)
-- `fetch` returns a Response that needs `.json()` called
-- `$http` rejects on non-2xx; `fetch` only rejects on network errors
-- `$httpBackend` mocking in tests has no direct `fetch` equivalent
+Six transport factories use `$http`. High risk because:
 
-### Recommended approach
+- Success path: promise resolves to `{ data, status, ... }` with parsed JSON
+- `fetch` needs `.json()`; only rejects on network, not 4xx/5xx
+- Tests mock `$httpBackend`, not `fetch`
 
-1. **Create an HTTP wrapper** that provides the same interface as `$http`:
+**Approach**
+
+1. **`fetch` wrapper** with the same promise contract as `$http` for success **and** failure. Angular failures use a **response-shaped** object (`data`, `status`, `headers`, `config`, `statusText`); callers use `.then(, err)`, `.catch`, `$q.reject(response)` (e.g. `bulkTransportFactory.js`). **Audit all paths** before locking the wrapper — align thrown/rejected values with what those call sites read.
+
+   Starting point only (not the final contract):
+
    ```js
    function httpClient(config) {
-     return fetch(config.url, { method: config.method, ... })
-       .then(response => {
-         if (!response.ok) throw { status: response.status, data: null };
-         return response.json().then(data => ({ data, status: response.status }));
+     return fetch(config.url, { method: config.method, headers: config.headers, body: config.data, ... })
+       .then((response) => {
+         if (!response.ok) throw { status: response.status, data: null /* fill to match $http errors */ };
+         return response.json().then((data) => ({ data, status: response.status }));
        });
    }
    ```
 
-2. **Write tests for the wrapper** against real behavior: status codes, JSON parsing, error shapes.
+2. **Tests** for the wrapper: status codes, JSON parse, rejection shape.
 
-3. **For test mocking**, use one of:
-   - `vitest` with `vi.fn()` / `vi.mock()` (if switching test framework)
-   - `msw` (Mock Service Worker) for `fetch` interception
-   - Simple manual mock: `globalThis.fetch = vi.fn().mockResolvedValue(...)`
+3. **Mocks:** `msw`, `globalThis.fetch = mock`, or Vitest `vi.mock` if you have switched runners ([§2](#2-fix-the-test-runner)).
 
-### `$q` migration
-
-Most `$q` usage is straightforward:
-- `$q.defer()` → `new Promise((resolve, reject) => { ... })`
-- `$q.all(promises)` → `Promise.all(promises)`
-- `$q.reject(val)` → `Promise.reject(val)`
-- `$q.when(val)` → `Promise.resolve(val)`
-
-**Gotcha:** `$q` promises resolve asynchronously on the next `$digest`. Native Promises resolve on the microtask queue. In practice this rarely matters, but tests that use `$rootScope.$apply()` to flush promises will need to use `await` or `Promise.resolve().then(...)` chains instead.
+**`$q`:** `$q.defer()` → `new Promise((resolve, reject) => { ... })`; `$q.all` / `$q.reject` / `$q.when` → `Promise.all` / `Promise.reject` / `Promise.resolve`. **Digest vs microtasks:** rare in prod; tests that `$rootScope.$apply()` to flush may need `await` / microtask chains.
 
 ---
 
 ## 8. Modernize the Build Pipeline
 
-### Current (Grunt-based)
+**Current:** Grunt → concat → `splainer-search.js`; Karma; JSHint (`force: true` → never fails).
 
-```
-Gruntfile.js → grunt-contrib-concat → splainer-search.js
-             → grunt-karma → test runner
-             → grunt-contrib-jshint → linter (force:true, never fails)
-```
+**Target:** esbuild bundle; Vitest (optional timing [§2](#2-fix-the-test-runner)); Playwright; ESLint.
 
-### Target (modern stack)
+**Prep**
 
-```
-esbuild → splainer-search.js (ES module bundle)
-vitest → unit tests (Node, no browser needed)
-playwright → browser integration tests
-eslint → linter (replaces jshint)
-```
-
-### Prep steps
-
-- [ ] Remove `force: true` from jshint so lint errors are visible now
-- [x] Remove dead uglify config (no min bundle; `package.json` `main` is concat output only)
-- [ ] Add `module.js` to coverage preprocessors in `karma.coverage.conf.js`
-- [ ] Consider adding an `esbuild` build script alongside Grunt (can coexist during transition)
+- [ ] JSHint: stage strictness (local fixes first, or separate `jshint:strict` / CI target) before flipping `force` on the default task
+- [ ] `module.js` in `karma.coverage.conf.js` preprocessors
+- [ ] Optional `esbuild` script alongside Grunt during transition
 
 ---
 
 ## 9. Migration Order
 
-Based on dependency analysis, risk, and the ability to validate incrementally:
+### Phase 0: Preparation
 
-### Phase 0: Preparation (this document)
-- [ ] Fix the test runner (Karma + Chrome/Chromium available and stable)
-- [ ] Get all 43 spec files passing green (`npm test`; optional `npm run test:ci`)
-- [ ] Add missing migration safety tests (Section 3 above)
-- [ ] Create utility shims (safeForEach, deepClone, deepMerge)
-- [ ] Baseline coverage report
+**Done:** Test runner + `test:coverage` wiring — [§2](#2-fix-the-test-runner).
 
-### Phase 1: Drop-in Angular API replacements
-- [ ] Replace `angular.isDefined/isUndefined/isObject/isString/isFunction/fromJson` (60+ sites)
-- [ ] Replace `angular.forEach` → `safeForEach` shim (124 sites)
-- [ ] Replace `angular.copy` → `deepClone` shim (92 sites)
-- [ ] Replace `angular.merge` → `deepMerge` shim (13 sites)
-- [ ] Remove `stringPatch.js` — replace `hasSubstr` → `includes()` (used in explainSvc)
-- [ ] Run tests after each file — everything should still pass
+**Todo**
 
-### Phase 2: Convert DI to ES modules
-- [ ] Start with leaf nodes (values/, vectorSvc, fieldSpecSvc)
-- [ ] Work up the dependency tree
-- [ ] Keep Angular module registration as a thin wrapper during transition
-- [ ] Update tests incrementally (or keep Angular test harness until Phase 4)
+- [ ] Shims: `safeForEach`, `deepClone`, `deepMerge`
+- [ ] Baseline coverage (`npm run test:coverage` — threshold, artifact, or PR note)
 
-### Phase 3: Replace $http, $q, $log, $timeout, $sce
-- [ ] Introduce fetch wrapper with same response shape as $http
-- [ ] Replace `$q` with native Promise
-- [ ] Replace `$log` with `console`
-- [ ] Replace `$timeout` with `setTimeout`
-- [ ] Remove `$sce` (only used for JSONP trusted URLs)
+### Phase 1: Angular API → table (§1)
 
-### Phase 4: Remove Angular entirely
-- [ ] Delete `angular.module` registration from all files
-- [ ] Remove `angular` and `angular-mocks` from package.json
-- [ ] Switch from Karma to Vitest (or alternative)
-- [ ] Update bundle build (Grunt concat → esbuild)
-- [ ] Confirm completeness via tests and requirements on **this** branch
+Mechanical edits + small PRs (one API or directory); `npm test` per batch. Rough volumes (see §1): drop-ins **~60+**; `forEach` **~124**; `copy` **~92**; `merge` **~13**.
+
+- [ ] Drop-ins: `is*`, `fromJson`, `extend`, `element`, …
+- [ ] `forEach` / `copy` / `merge` → shims
+- [ ] Remove `stringPatch.js`; `hasSubstr` → `includes()` in `explainSvc`
+
+### Phase 2: DI → ES modules
+
+Leaves first ([§6](#6-decouple-the-di-system-incrementally), [Appendix](#appendix-files-sorted-by-migration-complexity)); thin Angular wrapper until Phase 4. Update tests file-by-file **or** keep the Angular test harness until Phase 4 if that stays faster.
+
+### Phase 3: `$http`, `$q`, `$log`, `$timeout`, `$sce`
+
+[§7](#7-plan-the-httpq-replacement); wrapper matches existing contracts.
+
+- [ ] `fetch` wrapper (same success/error shapes as `$http`)
+- [ ] `$q` → native `Promise`
+- [ ] `$log` → `console`; `$timeout` → `setTimeout`; drop `$sce` for JSONP as planned
+
+### Phase 4: Remove Angular
+
+- [ ] Strip `angular.module` registrations
+- [ ] Drop `angular` / `angular-mocks` from `package.json`
+- [ ] Vitest (or other) — optional timing [§2](#2-fix-the-test-runner)
+- [ ] Grunt concat → esbuild
+- [ ] Sign off on **this** branch’s tests and [public API](#public-api--semver)
 
 ---
 
 ## 10. Validation Strategy
 
-### Before each phase
-
-- All existing tests pass (green suite: `npm test`; use `npm run test:ci` when integration should be included)
-- Coverage report shows no regression (after `test:coverage` exists)
-
-### During migration
-
-- Run `migrationSafetyTests.js` after every change — it's the canary
-- For each converted file, run its specific spec file
-
-### After migration
-
-- Full test suite passes
-- Bundle size check (should decrease — Angular is ~170KB)
-- Smoke test with a real Solr/ES instance (if available)
-- Verify npm package exports match previous public API
+- **Before each phase:** `npm test`; `npm run test:ci` when integration matters; coverage vs Phase 0 baseline
+- **During:** `migrationSafetyTests.js` after changes; targeted spec per touched file
+- **After:** Full suite; smaller bundle (Angular alone is on the order of **~170KB** minified — expect a noticeable drop); Solr/ES smoke if possible; **public API / semver** — [Public API & semver](#public-api--semver)
 
 ---
 
 ## Appendix: Files Sorted by Migration Complexity
 
-### Simple (no $http/$q, few Angular APIs)
+### Simple (no `$http` / `$q`, few Angular APIs)
+
 - `values/defaultSolrConfig.js`, `defaultESConfig.js`, `defaultVectaraConfig.js`, `activeQueries.js`
-- `services/customHeadersJson.js` (small helper; no `$http` / `$q`)
-- `services/stringPatch.js` (delete entirely)
-- `services/vectorSvc.js` (only `angular.forEach`)
-- `services/fieldSpecSvc.js` (only `angular.forEach`)
-- `services/baseExplainSvc.js`, `simExplainSvc.js` (only `angular.forEach`)
+- `services/customHeadersJson.js`
+- `services/stringPatch.js` (delete)
+- `services/vectorSvc.js`, `fieldSpecSvc.js` (`angular.forEach`)
+- `services/baseExplainSvc.js`, `simExplainSvc.js` (`angular.forEach`)
 
-### Moderate (Angular utilities but no $http)
+### Moderate (Angular utilities, no `$http`)
+
 - `services/explainSvc.js`, `queryExplainSvc.js`
-- `services/normalDocsSvc.js` (heavy `angular.forEach` + `angular.copy`)
-- `services/*UrlSvc.js` (3 files, use `angular.isDefined`)
-- `services/*PreprocessorSvc.js` (5 files, use `angular.copy` + `angular.merge`)
-- `factories/docFactory.js`, `*DocFactory.js` (5 files, use `angular.copy`)
-- `factories/settingsValidatorFactory.js` (uses `angular.forEach`, `angular.copy`)
+- `services/normalDocsSvc.js` (`angular.forEach`, `angular.copy`)
+- `services/*UrlSvc.js` (`angular.isDefined`)
+- `services/*PreprocessorSvc.js` (`angular.copy`, `angular.merge`)
+- `factories/docFactory.js`, `*DocFactory.js` (`angular.copy`)
+- `factories/settingsValidatorFactory.js`
 
-### Complex ($http, $q, $timeout — core async machinery)
-- `factories/*TransportFactory.js` (5 files — GET, POST, JSONP, Proxy, Bulk)
-- `factories/transportFactory.js` (routing layer)
-- `factories/*SearcherFactory.js` (5 files — all use $q, some use $http indirectly)
-- `factories/resolverFactory.js` (uses $q.all, angular.forEach, angular.copy)
-- `services/searchSvc.js` (orchestrator — depends on everything)
-- `services/transportSvc.js` (depends on all transport factories)
+### Complex (`$http`, `$q`, `$timeout`)
+
+- `factories/*TransportFactory.js`, `transportFactory.js`
+- `factories/*SearcherFactory.js`, `resolverFactory.js`
+- `services/searchSvc.js`, `services/transportSvc.js`

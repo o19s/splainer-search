@@ -12,29 +12,16 @@
 | Severity | Count |
 |----------|-------|
 | High     | 0     |
-| Medium   | 7     |
+| Medium   | 6     |
 | Low      | 11    |
+
+**Importance** on each item (High / Medium / Low) is a pragmatic scheduling lens: how strongly we’d prioritize a fix in normal planning. It is not the same as **Severity** (how bad it is when it happens); the two can diverge—for example, a rare edge case can be medium severity but low importance.
 
 ---
 
 ## Medium Severity
 
-### 10. `solrDocFactory.js:109,111` — Highlight tags used as unescaped regex
-
-**Branch:** both
-
-```js
-var preRegex  = new RegExp(self.options().highlightingPre, 'g');
-var postRegex = new RegExp(self.options().highlightingPost, 'g');
-```
-
-User-configurable highlight strings are passed directly to `new RegExp()`. Tags containing regex metacharacters (`(`, `)`, `+`, `*`, `.`) will throw `SyntaxError` or match incorrectly.
-
-**Fix:** Escape the strings before creating the regex, or use `String.prototype.replaceAll()`.
-
----
-
-### 14. `resolverFactory.js:32-39` — `escapeIds` is a no-op
+### 14. `resolverFactory.js:32-39` — `escapeIds` is a no-op **— Importance: High**
 
 **Branch:** both
 
@@ -49,7 +36,7 @@ The actual escaping call is commented out. Solr IDs with special characters (col
 
 ---
 
-### 15. `baseExplainSvc.js:95-111` — `toStr()` memoization ignores `depth` parameter
+### 15. `baseExplainSvc.js:95-111` — `toStr()` memoization ignores `depth` parameter **— Importance: Medium**
 
 **Branch:** both
 
@@ -70,7 +57,7 @@ First call's depth is cached. Subsequent calls with different depths return wron
 
 ---
 
-### 16. `normalDocsSvc.js` — Missing fields coerced to string `"undefined"`
+### 16. `normalDocsSvc.js` — Missing fields coerced to string `"undefined"` **— Importance: High**
 
 **Branch:** both
 
@@ -80,7 +67,7 @@ When a nested field path resolves to `undefined`, the code produces the literal 
 
 ---
 
-### 17. `esDocFactory` — `origin()` returns a shallow copy
+### 17. `esDocFactory` — `origin()` returns a shallow copy **— Importance: High**
 
 **Branch:** both
 
@@ -90,7 +77,7 @@ The `origin()` method copies top-level properties but shares nested object refer
 
 ---
 
-### 18. `Gruntfile.js:36` — `jshint force: true` silently passes lint errors
+### 18. `Gruntfile.js:36` — `jshint force: true` silently passes lint errors **— Importance: Medium**
 
 **Branch:** both
 
@@ -100,23 +87,9 @@ The `force: true` option means JSHint reports errors but never fails the build, 
 
 ---
 
-### 20. `solrUrlSvc.js:46` — Incomplete percent-encoding regex
-
-**Branch:** both
-
-```js
-rVal = rVal.replace(/\%(?!(2|3|4|5))/g, '%25');
-```
-
-Only checks the first hex digit. Valid encodings like `%60`-`%7F` get double-encoded. Invalid encodings like `%2Z` are missed.
-
-**Fix:** Use a proper percent-encoding validation regex that checks both hex digits.
-
----
-
 ## Low Severity
 
-### 21. `stringPatch.js` — Monkey-patches `String.prototype` globally
+### 21. `stringPatch.js` — Monkey-patches `String.prototype` globally **— Importance: Low**
 
 **Branch:** both
 
@@ -124,7 +97,7 @@ Adds non-standard `hasSubstr` to `String.prototype`. Modern JS has `String.proto
 
 ---
 
-### 22. `baseExplainSvc.js:80-83` — `mergeInto` uses `for...in` without `hasOwnProperty` check
+### 22. `baseExplainSvc.js:80-83` — `mergeInto` uses `for...in` without `hasOwnProperty` check **— Importance: Low**
 
 **Branch:** both
 
@@ -132,7 +105,7 @@ Copies inherited/prototype properties along with own properties.
 
 ---
 
-### 23. `esUrlSvc.js:138` — Fragile `this` binding in `buildUrl`
+### 23. `esUrlSvc.js:138` — Fragile `this` binding in `buildUrl` **— Importance: Low**
 
 **Branch:** both
 
@@ -140,7 +113,7 @@ Uses `var self = this` inside a plain function instead of the outer closure's `s
 
 ---
 
-### 24. `httpJsonpTransportFactory.js:31` — Username containing `:` breaks credential parsing
+### 24. `httpJsonpTransportFactory.js:31` — Username containing `:` breaks credential parsing **— Importance: Low**
 
 **Branch:** both
 
@@ -148,7 +121,7 @@ Uses `var self = this` inside a plain function instead of the outer closure's `s
 
 ---
 
-### 25. `esSearcherPreprocessorSvc.js:73,96` — `delete searcher.args.pager` mutates args destructively
+### 25. `esSearcherPreprocessorSvc.js:73,96` — `delete searcher.args.pager` mutates args destructively **— Importance: Medium**
 
 **Branch:** both
 
@@ -156,7 +129,7 @@ If `prepare` is called multiple times, `pagerArgs` will be `undefined` on subseq
 
 ---
 
-### 26. `resolverFactory.js:132` — `sliceIds` returns `undefined` when `chunkSize <= 0`
+### 26. `resolverFactory.js:132` — `sliceIds` returns `undefined` when `chunkSize <= 0` **— Importance: Medium**
 
 **Branch:** both
 
@@ -164,7 +137,7 @@ No else/return branch. `angular.forEach(undefined, ...)` silently produces empty
 
 ---
 
-### 27. `resolverFactory.js:153` — `concat.apply` pattern risks stack overflow on large arrays
+### 27. `resolverFactory.js:153` — `concat.apply` pattern risks stack overflow on large arrays **— Importance: Low**
 
 **Branch:** both
 
@@ -176,7 +149,7 @@ Each element of `docsChunk` becomes a separate argument. Very large arrays can e
 
 ---
 
-### 28. `vectorSvc.js:63` — `add()` overwrites keys instead of summing
+### 28. `vectorSvc.js:63` — `add()` overwrites keys instead of summing **— Importance: Low**
 
 **Branch:** both
 
@@ -184,7 +157,7 @@ The service-level `add()` uses `set()` (overwrite) instead of the instance `add(
 
 ---
 
-### 29. `queryTemplateSvc.js:35` — Unnecessary `/g` flag on `test()` regex
+### 29. `queryTemplateSvc.js:35` — Unnecessary `/g` flag on `test()` regex **— Importance: Low**
 
 **Branch:** both
 
@@ -196,7 +169,7 @@ The `/g` flag is unnecessary for `.test()` and creates stateful behavior. Not cu
 
 ---
 
-### 31. `defaultSolrConfig.js` — Default `apiMethod: 'JSONP'` is a security concern
+### 31. `defaultSolrConfig.js` — Default `apiMethod: 'JSONP'` is a security concern **— Importance: Medium** (higher if Solr is exposed or untrusted)
 
 **Branch:** both
 
@@ -204,7 +177,7 @@ JSONP bypasses CORS by injecting `<script>` tags, making it vulnerable to XSS if
 
 ---
 
-### 32. `.jshintrc` — Multiple deprecated options
+### 32. `.jshintrc` — Multiple deprecated options **— Importance: Low**
 
 **Branch:** both
 

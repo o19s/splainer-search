@@ -1,9 +1,21 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "_comment": "Mutation-test library sources with the same Karma + Jasmine stack as npm test. Run: npm run stryker",
+  "_comment": "Mutation-test library sources with the same Karma + Jasmine stack as npm test. Run: npm run stryker. ignoreStatic skips load-time-only mutants (full reload + all tests each time). Concurrency is capped to avoid parallel ChromeHeadless starving (Karma browserNoActivityTimeout disconnects).",
   "packageManager": "npm",
   "testRunner": "karma",
+  "concurrency": 2,
+  "maxTestRunnerReuse": 40,
   "coverageAnalysis": "perTest",
+  "ignoreStatic": true,
+  "warnings": {
+    "slow": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "html",
+    "json"
+  ],
   "karma": {
     "projectType": "custom",
     "configFile": "karma.conf.js"

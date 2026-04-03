@@ -72,12 +72,13 @@ angular.module('o19s.splainer-search')
         if ( /\./.test(field) ) {
           try {
             var value = pathIndex(doc, field);
-            normalDoc[toProperty] = '' + value;
+            normalDoc[toProperty] = (value !== null && value !== undefined) ? '' + value : '';
           } catch (e) {
             normalDoc[toProperty] = '';
           }
         } else if ( doc.hasOwnProperty(field) ) {
-          normalDoc[toProperty] = '' + doc[field];
+          var fieldVal = doc[field];
+          normalDoc[toProperty] = (fieldVal !== null && fieldVal !== undefined) ? '' + fieldVal : '';
         }
       };
 
@@ -106,7 +107,9 @@ angular.module('o19s.splainer-search')
 
       var assignSubs = function(normalDoc, doc, fieldSpec) {
         var parseValue = function(value) {
-          if ( typeof value === 'object' ) {
+          if (value === null || value === undefined) {
+            return '';
+          } else if ( typeof value === 'object' ) {
             return value;
           } else {
             return '' + value;

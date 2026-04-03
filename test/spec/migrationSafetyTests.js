@@ -11,6 +11,12 @@
  * 3. fieldSpecSvc full API contract (used by every consumer)
  * 4. Doc factory isolation (angular.copy in base constructor)
  * 5. Preprocessor output contracts (what searchers expect from preprocessors)
+ * 6. angular.merge edge cases (null leaves, array merge-by-index vs whole-array replace)
+ * 7. $http response shape (.data, .status, .headers()) for fetch wrappers
+ * 8. BulkTransportFactory $timeout-driven batching (vs setTimeout + digest)
+ * 9. Registered injectables as the public API surface for DI / ES-module export parity
+ *
+ * ResolverFactory with chunkSize <= 0 is covered in test/spec/docResolverSvc.js (sliceIds undefined).
  */
 
 describe('Migration Safety: deep-copy semantics', function () {
@@ -82,7 +88,7 @@ describe('Migration Safety: deep-copy semantics', function () {
       expect(orig1).not.toBe(orig2);
     });
 
-    it('origin() is a SHALLOW copy — nested mutations DO leak (migration hazard)', function() {
+    it('origin() is a DEEP copy — nested mutations do NOT leak', function() {
       var rawDoc = {
         _id: '1',
         _source: {
@@ -95,9 +101,8 @@ describe('Migration Safety: deep-copy semantics', function () {
       orig1.metadata.nested = 'changed';
 
       var orig2 = doc.origin();
-      // This documents the CURRENT (shallow) behavior.
-      // During migration, if origin() switches to structuredClone, this should become 'value'.
-      expect(orig2.metadata.nested).toEqual('changed');
+      // origin() now deep-copies, so mutations to orig1 do not affect orig2
+      expect(orig2.metadata.nested).toEqual('value');
     });
 
     it('flattens single-element arrays from _source', function() {
@@ -233,11 +238,11 @@ describe('Migration Safety: angular.forEach null-safety', function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId title:myTitle sub:desc');
       var origin = { myId: '1', myTitle: null, desc: undefined };
 
-      // angular.forEach on null/undefined is no-op; this tests current behavior
+      // null and undefined fields should produce empty strings, not "null"/"undefined"
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, mockDoc(origin));
 
       expect(normalDoc.id).toEqual('1');
-      expect(normalDoc.title).toEqual('null');
+      expect(normalDoc.title).toEqual('');
     });
   });
 });
@@ -932,4 +937,346 @@ describe('Migration Safety: angular.forEach null safety in source code', functio
       expect(spec.id).toBeDefined();
     });
   });
+});
+
+// =============================================================================
+// A (supplement). angular.forEach on possibly undefined collections
+// =============================================================================
+describe('Migration Safety: angular.forEach on undefined collections (source paths)', function() {
+
+  beforeEach(module('o19s.splainer-search'));
+
+  it('angular.forEach(undefined/null) is a no-op (native forEach would throw)', function() {
+    var n = 0;
+    angular.forEach(undefined, function() { n++; });
+    angular.forEach(null, function() { n++; });
+    expect(n).toBe(0);
+  });
+
+  describe('SolrSearcherFactory.search with malformed response.docs', function() {
+    var searchSvc;
+    var fieldSpecSvc;
+    var $httpBackend;
+
+    beforeEach(inject(function(_searchSvc_, _fieldSpecSvc_, $injector) {
+      searchSvc = _searchSvc_;
+      fieldSpecSvc = _fieldSpecSvc_;
+      $httpBackend = $injector.get('$httpBackend');
+    }));
+
+    it('does not throw when response exists but docs is missing (angular.forEach(undefined) no-op)', function() {
+      var fieldSpec = fieldSpecSvc.createFieldSpec('id field');
+      var searcher = searchSvc.createSearcher(
+        fieldSpec,
+        'http://localhost:8983/solr/select',
+        { q: ['#$query##'] },
+        'test',
+        { apiMethod: 'GET' },
+        'solr'
+      );
+      var body = { response: { numFound: 0 } };
+      $httpBackend.expectGET(/.*/).respond(200, body);
+      var settled = false;
+      searcher.search().then(function() {
+        settled = true;
+        expect(searcher.docs.length).toBe(0);
+      });
+      $httpBackend.flush();
+      expect(settled).toBe(true);
+    });
+  });
+
+  describe('normalDocsSvc fieldSpec.functions and highlights (forEach paths)', function() {
+    var normalDocsSvc;
+    var fieldSpecSvc;
+
+    beforeEach(inject(function(_normalDocsSvc_, _fieldSpecSvc_) {
+      normalDocsSvc = _normalDocsSvc_;
+      fieldSpecSvc = _fieldSpecSvc_;
+    }));
+
+    var mockDoc = function(origin) {
+      return {
+        origin: function() { return origin; },
+        explain: function() { return null; },
+        highlight: function() { return null; },
+        _url: function() { return 'http://example.com'; }
+      };
+    };
+
+    it('handles fieldSpec with function and highlight fields without throwing', function() {
+      var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId, myTitle, func:foo, hl:bar');
+      var origin = { myId: '1', myTitle: 'T', foo: 'fv', bar: 'hlval' };
+      var doc = normalDocsSvc.createNormalDoc(fieldSpec, mockDoc(origin));
+      expect(doc.subs.foo).toEqual('fv');
+      expect(doc.subs.bar).toEqual('hlval');
+    });
+  });
+
+  describe('BulkTransportFactory queue forEach (replaces legacy requestBatches map)', function() {
+    var BulkTransportFactory;
+    var $httpBackend;
+    var $timeout;
+
+    beforeEach(inject(function(_BulkTransportFactory_, $injector) {
+      BulkTransportFactory = _BulkTransportFactory_;
+      $httpBackend = $injector.get('$httpBackend');
+      $timeout = $injector.get('$timeout');
+    }));
+
+    it('multiSearchFailed still runs angular.forEach(queue, ...) when queue is non-empty', function() {
+      var bulk = new BulkTransportFactory();
+      var url = 'http://es.example.com/i/_msearch';
+      var p = bulk.query(url, { query: 1 }, {});
+      var rejected = false;
+      p.catch(function() { rejected = true; });
+      $httpBackend.expectPOST(url).respond(500, { error: 'fail' });
+      $timeout.flush();
+      $httpBackend.flush();
+      expect(rejected).toBe(true);
+    });
+  });
+});
+
+// =============================================================================
+// B. angular.copy vs JSON.stringify / shallow clone (migration hazards)
+// =============================================================================
+describe('Migration Safety: angular.copy edge cases', function() {
+
+  it('preserves Date instances (JSON.parse(JSON.stringify) would stringify)', function() {
+    var d = new Date(Date.UTC(2020, 0, 2));
+    var src = { at: d };
+    var c = angular.copy(src);
+    expect(c.at instanceof Date).toBe(true);
+    expect(c.at.getTime()).toEqual(d.getTime());
+  });
+
+  it('preserves own properties whose value is undefined (JSON.stringify drops them)', function() {
+    var src = { a: 1, b: undefined };
+    var c = angular.copy(src);
+    expect(c.hasOwnProperty('b')).toBe(true);
+    expect(c.b).toBeUndefined();
+  });
+
+  it('copies objects with circular references', function() {
+    var src = { a: 1 };
+    src.self = src;
+    var c = angular.copy(src);
+    expect(c).not.toBe(src);
+    expect(c.self).toBe(c);
+  });
+});
+
+describe('Migration Safety: preprocessor angular.copy output shape', function() {
+
+  beforeEach(module('o19s.splainer-search'));
+
+  describe('esSearcherPreprocessorSvc', function() {
+    var esSearcherPreprocessorSvc;
+
+    beforeEach(inject(function(_esSearcherPreprocessorSvc_) {
+      esSearcherPreprocessorSvc = _esSearcherPreprocessorSvc_;
+    }));
+
+    it('leaves searcher.args.query independent of queryDsl.query after prepare', function() {
+      var inner = { match_all: {} };
+      var searcher = {
+        args: { query: inner },
+        queryText: 'x',
+        config: { apiMethod: 'POST', numberOfRows: 5 },
+        fieldList: ['title'],
+        url: 'http://localhost:9200/idx/_search'
+      };
+      esSearcherPreprocessorSvc.prepare(searcher);
+      inner.match_all.boost = 42;
+      expect(searcher.queryDsl).toBeDefined();
+      expect(searcher.queryDsl.query).toBeDefined();
+      expect(searcher.queryDsl.query.match_all.boost).toBeUndefined();
+    });
+  });
+
+  describe('solrSearcherPreprocessorSvc', function() {
+    var solrSearcherPreprocessorSvc;
+
+    beforeEach(inject(function(_solrSearcherPreprocessorSvc_) {
+      solrSearcherPreprocessorSvc = _solrSearcherPreprocessorSvc_;
+    }));
+
+    it('builds callUrl from a copy; original args stay templated', function() {
+      var args = { q: ['#$query##'], fq: ['x:1'] };
+      var searcher = {
+        args: args,
+        queryText: 'hello',
+        url: 'http://localhost:8983/solr/select',
+        config: { escapeQuery: false, numberOfRows: 10, sanitize: true, highlight: false },
+        fieldList: ['id'],
+        hlFieldList: [],
+        HIGHLIGHTING_PRE: 'P',
+        HIGHLIGHTING_POST: 'S'
+      };
+      solrSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.callUrl).toContain('hello');
+      expect(args.q[0]).toEqual('#$query##');
+      expect(args.fq[0]).toEqual('x:1');
+    });
+  });
+
+  describe('vectaraSearcherPreprocessorSvc', function() {
+    var vectaraSearcherPreprocessorSvc;
+
+    beforeEach(inject(function(_vectaraSearcherPreprocessorSvc_) {
+      vectaraSearcherPreprocessorSvc = _vectaraSearcherPreprocessorSvc_;
+    }));
+
+    it('queryDsl is not mutated when args.query row is mutated after prepare', function() {
+      var row = { query: '#$query##', numResults: 10 };
+      var searcher = {
+        args: { query: [row] },
+        queryText: 'qtext',
+        config: { numberOfRows: 10 },
+        url: 'http://api.vectara.io/v1/query'
+      };
+      vectaraSearcherPreprocessorSvc.prepare(searcher);
+      var numBefore = searcher.queryDsl.query[0].numResults;
+      row.numResults = 999;
+      expect(searcher.queryDsl.query[0].numResults).toEqual(numBefore);
+    });
+  });
+});
+
+// =============================================================================
+// C. angular.merge: null leaves, array replacement (vs Object.assign / other libs)
+// =============================================================================
+describe('Migration Safety: angular.merge edge cases', function() {
+
+  it('overwrites with null from a later source (destination key becomes null)', function() {
+    var out = angular.merge({}, { a: { b: 1 } }, { a: null });
+    expect(out.a).toBeNull();
+  });
+
+  it('merges arrays element-by-index (does not replace the whole array; migration hazard)', function() {
+    var out = angular.merge({}, { tags: [1, 2] }, { tags: [9] });
+    expect(out.tags).toEqual([9, 2]);
+  });
+});
+
+// =============================================================================
+// D. $http response shape (fetch wrapper must supply data, status, headers)
+// =============================================================================
+describe('Migration Safety: $http response shape for transport success handlers', function() {
+
+  beforeEach(module('o19s.splainer-search'));
+
+  it('HttpPostTransportFactory passes $http response with data, status, headers()', inject(
+    function(HttpPostTransportFactory, $httpBackend) {
+      var Transport = HttpPostTransportFactory;
+      var t = new Transport({});
+      var url = 'http://example.com/post';
+      $httpBackend.expectPOST(url).respond(201, { ok: true }, { 'X-Test': '1' });
+      var seen = null;
+      t.query(url, { a: 1 }, {}).then(function(resp) {
+        seen = resp;
+      });
+      $httpBackend.flush();
+      expect(seen.data).toEqual({ ok: true });
+      expect(seen.status).toBe(201);
+      expect(typeof seen.headers).toBe('function');
+      expect(seen.headers('X-Test')).toBe('1');
+    }
+  ));
+});
+
+// =============================================================================
+// E. $timeout batching in BulkTransportFactory (vs raw setTimeout + digest)
+// =============================================================================
+describe('Migration Safety: BulkTransportFactory $timeout scheduling', function() {
+
+  beforeEach(module('o19s.splainer-search'));
+
+  it('does not POST until $timeout is flushed (batching uses $timeout, not immediate send)', inject(
+    function(BulkTransportFactory, $httpBackend, $timeout) {
+      var bulk = new BulkTransportFactory();
+      var url = 'http://es.example.com/i/_msearch';
+      bulk.query(url, { q: 1 }, {});
+      $httpBackend.expectPOST(url).respond(200, { responses: [{ hits: { total: 0, hits: [] } }] });
+      expect(function() {
+        $httpBackend.flush();
+      }).toThrow();
+      $timeout.flush();
+      $httpBackend.flush();
+    }
+  ));
+});
+
+// =============================================================================
+// F. Module public API — every injectable consumers rely on stays registered
+// =============================================================================
+describe('Migration Safety: Angular module public API surface', function() {
+
+  beforeEach(module('o19s.splainer-search'));
+
+  // Keep in sync with all .factory / .service / .value registrations under factories/, services/, values/.
+  // If you add a new provider, append it here so ES-module migration cannot drop exports silently.
+  var EXPECTED_INJECTABLES = [
+    'activeQueries',
+    'AlgoliaDocFactory',
+    'AlgoliaSearcherFactory',
+    'algoliaSearcherPreprocessorSvc',
+    'baseExplainSvc',
+    'BulkTransportFactory',
+    'customHeadersJson',
+    'defaultESConfig',
+    'defaultSolrConfig',
+    'defaultVectaraConfig',
+    'DocFactory',
+    'docResolverSvc',
+    'EsDocFactory',
+    'esExplainExtractorSvc',
+    'EsSearcherFactory',
+    'esSearcherPreprocessorSvc',
+    'esUrlSvc',
+    'explainSvc',
+    'fieldSpecSvc',
+    'HttpGetTransportFactory',
+    'HttpJsonpTransportFactory',
+    'HttpPostTransportFactory',
+    'HttpProxyTransportFactory',
+    'normalDocsSvc',
+    'queryExplainSvc',
+    'queryTemplateSvc',
+    'ResolverFactory',
+    'SearchApiDocFactory',
+    'SearchApiSearcherFactory',
+    'searchApiSearcherPreprocessorSvc',
+    'searchSvc',
+    'SearcherFactory',
+    'SettingsValidatorFactory',
+    'simExplainSvc',
+    'SolrDocFactory',
+    'SolrSearcherFactory',
+    'solrExplainExtractorSvc',
+    'solrSearcherPreprocessorSvc',
+    'solrUrlSvc',
+    'transportSvc',
+    'TransportFactory',
+    'VectaraDocFactory',
+    'VectaraSearcherFactory',
+    'vectaraSearcherPreprocessorSvc',
+    'vectaraUrlSvc',
+    'vectorSvc'
+  ];
+
+  it('registers every expected injectable', inject(function($injector) {
+    EXPECTED_INJECTABLES.forEach(function(name) {
+      expect($injector.has(name)).toBe(true);
+    });
+  }));
+
+  it('instantiates each injectable without throwing', inject(function($injector) {
+    EXPECTED_INJECTABLES.forEach(function(name) {
+      expect(function() {
+        $injector.get(name);
+      }).not.toThrow();
+    });
+  }));
 });

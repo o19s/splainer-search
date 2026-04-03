@@ -155,6 +155,21 @@ describe('Factory: SolrDocFactory', function () {
       expect(result).not.toContain('<script>');
       expect(result).toContain('&lt;script&gt;');
     });
+
+    it('treats highlight pre/post markers as literal text (regex metacharacters)', function() {
+      var hlDict = {
+        'doc1': { title: 'H(LPRE matched HLPOST text' }
+      };
+      var doc = makeDoc({ id: 'doc1' }, {
+        hlDict: hlDict,
+        highlightingPre: 'H(LPRE',
+        highlightingPost: 'HLPOST'
+      });
+
+      var result = doc.highlight('doc1', 'title', '<b>', '</b>');
+      expect(result).toContain('<b>');
+      expect(result).toContain('matched');
+    });
   });
 
   describe('_url', function() {
