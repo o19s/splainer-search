@@ -235,6 +235,22 @@ describe('Service: esUrlSvc', function () {
     });
   });
   
+  describe('getHeaders', function() {
+    it('falls back to URI basic auth when customHeaders JSON is invalid', function() {
+      spyOn(console, 'warn');
+      var uri = esUrlSvc.parseUrl('http://user:secret@localhost:9200/_search');
+      var headers = esUrlSvc.getHeaders(uri, 'not-json');
+      expect(headers.Authorization).toBe('Basic ' + btoa('user:secret'));
+      expect(console.warn).toHaveBeenCalled();
+    });
+
+    it('does not add URI basic auth when customHeaders is valid empty object', function() {
+      var uri = esUrlSvc.parseUrl('http://user:secret@localhost:9200/_search');
+      var headers = esUrlSvc.getHeaders(uri, '{}');
+      expect(headers).toEqual({});
+    });
+  });
+
   describe('stripBasicAuth', function() {
     it('removes embedded basic auth', function() {
       var url = 'https://user:pass@example.com';

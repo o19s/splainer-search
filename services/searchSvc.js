@@ -11,6 +11,7 @@ angular.module('o19s.splainer-search')
     'SearchApiSearcherFactory',
     'activeQueries',
     'defaultSolrConfig',
+    'customHeadersJson',
     function searchSvc(
       SolrSearcherFactory,
       EsSearcherFactory,
@@ -18,7 +19,8 @@ angular.module('o19s.splainer-search')
       AlgoliaSearcherFactory,
       SearchApiSearcherFactory,
       activeQueries,
-      defaultSolrConfig
+      defaultSolrConfig,
+      customHeadersJson
     ) {
       var svc = this;
 
@@ -53,7 +55,8 @@ angular.module('o19s.splainer-search')
           var encoded = btoa(options.config.basicAuthCredential);
           if (options.config.customHeaders && options.config.customHeaders.length > 0) {
             // already something there, append a new entry
-            let head = JSON.parse(options.config.customHeaders);
+            var parsed = customHeadersJson.tryParseObject(options.config.customHeaders);
+            var head = parsed.ok ? angular.copy(parsed.headers) : {};
             head['Authorization'] = 'Basic ' + encoded;
             options.config.customHeaders = JSON.stringify(head);
           } else {

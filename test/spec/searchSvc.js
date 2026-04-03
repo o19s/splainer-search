@@ -108,6 +108,25 @@ describe('Service: searchSvc', function() {
       expect(headers['X-Custom']).toBe('1');
     });
 
+    it('uses Authorization-only headers when customHeaders JSON is invalid', function() {
+      spyOn(console, 'warn');
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsArgs,
+        'elastic',
+        {
+          basicAuthCredential: 'u:p',
+          customHeaders: 'not-json'
+        },
+        'es'
+      );
+      var headers = JSON.parse(searcher.config.customHeaders);
+      expect(headers.Authorization).toBe('Basic ' + btoa('u:p'));
+      expect(Object.keys(headers).length).toBe(1);
+      expect(console.warn).toHaveBeenCalled();
+    });
+
     it('does not set customHeaders when basicAuthCredential is empty', function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,

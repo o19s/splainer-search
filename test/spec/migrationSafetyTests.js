@@ -345,7 +345,7 @@ describe('Migration Safety: preprocessor output contracts', function() {
 
       esSearcherPreprocessorSvc.prepare(searcher);
 
-      expect(searcher.url).toContain('q=hello world');
+      expect(searcher.url).toContain('q=hello%20world');
       expect(searcher.url).toContain('size=25');
     });
   });

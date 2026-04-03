@@ -3,6 +3,7 @@
 /*global URI*/
 angular.module('o19s.splainer-search')
   .service('esUrlSvc', [
+    'customHeadersJson',
 
     /**
      *
@@ -11,7 +12,7 @@ angular.module('o19s.splainer-search')
      */
 
 
-    function esUrlSvc() {
+    function esUrlSvc(customHeadersJson) {
 
       var self      = this;
 
@@ -188,8 +189,13 @@ angular.module('o19s.splainer-search')
         customHeaders = customHeaders || '';
 
         if (customHeaders.length > 0) {
-          // TODO: Validate before saving? Or throw exception when this is called
-          headers = JSON.parse(customHeaders);
+          var parsed = customHeadersJson.tryParseObject(customHeaders);
+          if (parsed.ok) {
+            headers = parsed.headers;
+          } else if ( angular.isDefined(uri.username) && uri.username !== '' &&
+            angular.isDefined(uri.password) && uri.password !== '') {
+            headers = { 'Authorization': 'Basic ' + btoa(uri.username + ':' + uri.password) };
+          }
         } else if ( angular.isDefined(uri.username) && uri.username !== '' &&
           angular.isDefined(uri.password) && uri.password !== '') {
           var authorization = 'Basic ' + btoa(uri.username + ':' + uri.password);

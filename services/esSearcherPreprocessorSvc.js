@@ -90,7 +90,7 @@ angular.module('o19s.splainer-search')
       };
 
       var prepareGetRequest = function (searcher) {
-        searcher.url = searcher.url + '?q=' + searcher.queryText;
+        searcher.url = searcher.url + '?q=' + encodeURIComponent(searcher.queryText);
 
         var pagerArgs = angular.copy(searcher.args.pager);
         delete searcher.args.pager;

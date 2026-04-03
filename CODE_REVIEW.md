@@ -12,7 +12,7 @@
 | Severity | Count |
 |----------|-------|
 | High     | 0     |
-| Medium   | 14    |
+| Medium   | 12    |
 | Low      | 13    |
 
 ---
@@ -32,34 +32,6 @@ if (match !== null && match.length > 1) {  // always false — no capture groups
 The `(?!...)` is a lookahead, not a capture group. `match.length` is always 1, so the if-branch is dead code.
 
 **Fix:** Add a capture group to the regex: `/^weight\(((?!FunctionScoreQuery).*)\)/`.
-
----
-
-### 8. `esSearcherPreprocessorSvc.js:93` — Query text not URL-encoded
-
-**Branch:** both
-
-```js
-searcher.url = searcher.url + '?q=' + searcher.queryText;
-```
-
-Special characters (`&`, `#`, `=`, spaces) in queries will corrupt the URL.
-
-**Fix:** `searcher.url = searcher.url + '?q=' + encodeURIComponent(searcher.queryText);`
-
----
-
-### 9. Multiple files — `JSON.parse(customHeaders)` without try/catch
-
-**Branch:** both
-
-- `esUrlSvc.js:192`
-- `vectaraUrlSvc.js:17`
-- `searchSvc.js:56`
-
-Invalid JSON in user-provided custom headers throws an unhandled `SyntaxError` that crashes the calling code.
-
-**Fix:** Wrap in try/catch, log a warning, and fall back to empty headers.
 
 ---
 

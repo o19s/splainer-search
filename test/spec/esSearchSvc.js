@@ -1576,9 +1576,8 @@ describe('Service: searchSvc: ElasticSearch', function() {
       var called = 0;
 
       searcher.explainOther(otherQuery, mockFieldSpec)
-        .then(function(response) {
-          // explainOther catches the error and returns the response
-          // rather than rejecting
+        .catch(function(response) {
+          // explainOther now properly rejects on failure
           called++;
         });
 

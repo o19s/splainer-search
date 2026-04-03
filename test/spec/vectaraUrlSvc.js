@@ -26,9 +26,9 @@ describe('Service: vectaraUrlSvc', function() {
     expect(headers).toEqual({ 'X-Custom': '1', 'Authorization': 'Bearer t' });
   });
 
-  it('throws when customHeaders is not valid JSON', function() {
-    expect(function() {
-      vectaraUrlSvc.getHeaders('not-json');
-    }).toThrow();
+  it('returns empty object when customHeaders is not valid JSON', function() {
+    spyOn(console, 'warn');
+    expect(vectaraUrlSvc.getHeaders('not-json')).toEqual({});
+    expect(console.warn).toHaveBeenCalled();
   });
 });
