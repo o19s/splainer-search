@@ -97,7 +97,7 @@ describe('Service: searchSvc: Vectara', function() {
       searcher.search()
           .then(function () {
             var docs = searcher.docs;
-            expect(docs.length === 2);
+            expect(docs.length).toEqual(2);
 
             expect(docs[0].field1).toEqual("1--field1 value");
             expect(docs[0].field2).toEqual("1--field2 value");

@@ -72,14 +72,15 @@ describe('Service: transport: es bulk transport', function() {
 
   var containsExpectedHeaders = function(expectedHeaders) {
     return function(headerSent) {
+        var match = true;
         angular.forEach(expectedHeaders, function(headerValue, headerKey) {
           if (!headerSent.hasOwnProperty(headerKey)) {
-            return false;
+            match = false;
           } else if (headerSent[headerKey] !== headerValue) {
-            return false;
+            match = false;
           }
         });
-        return true;
+        return match;
       };
   };
 

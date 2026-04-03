@@ -101,7 +101,7 @@ angular.module('o19s.splainer-search')
       };
 
       this.MinExplain = function() {
-        this.realExplaination = 'Minimum Of:';
+        this.realExplanation = 'Minimum Of:';
 
         this.influencers = function() {
           if (!this.children || this.children.length === 0) {

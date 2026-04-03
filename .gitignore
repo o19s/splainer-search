@@ -22,5 +22,9 @@ bower_components
 # karma's coverage reporting
 coverage
 
+# Stryker mutation testing (instrumented copies and temp output)
+.stryker-tmp
+reports/mutation
+
 #vim
 *.swp

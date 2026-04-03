@@ -1,8 +1,8 @@
 # Code Review: splainer-search
 
-**Date:** 2026-04-03
-**Branch reviewed:** `splainer-rewrite`
-**Compared against:** `main`
+**Date:** 2026-04-03  
+**Branch reviewed:** `splainer-rewrite`  
+**Compared against:** `main`  
 **Result:** All issues exist on **both** branches unless noted otherwise.
 
 ---
@@ -12,7 +12,7 @@
 | Severity | Count |
 |----------|-------|
 | High     | 0     |
-| Medium   | 8     |
+| Medium   | 7     |
 | Low      | 11    |
 
 ---
@@ -97,16 +97,6 @@ The `origin()` method copies top-level properties but shares nested object refer
 The `force: true` option means JSHint reports errors but never fails the build, undermining the purpose of having a linter in the build pipeline.
 
 **Fix:** Remove `force: true`.
-
----
-
-### 19. `Gruntfile.js` — `uglify` task configured but never wired into any registered task
-
-**Branch:** both
-
-The `uglify` config exists, but neither `default` nor `build` tasks include it. `splainer-search.min.js` is never produced.
-
-**Fix:** Add `'uglify'` to the `default` or `build` task, or remove the dead config.
 
 ---
 

@@ -85,7 +85,7 @@
 
       nextArgs.rows       = ['' + rows];
       nextArgs.start      = ['' + start];
-      var pageConfig      = defaultSolrConfig;
+      var pageConfig      = angular.copy(defaultSolrConfig);
       pageConfig.sanitize = false;
       pageConfig.escapeQuery = self.config.escapeQuery;
       pageConfig.apiMethod   = self.config.apiMethod;

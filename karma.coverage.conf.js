@@ -1,7 +1,5 @@
 // Karma configuration for code coverage
-if (!process.env.CHROME_BIN) {
-  process.env.CHROME_BIN = require('puppeteer').executablePath();
-}
+require('./scripts/karma-chrome-bin');
 
 module.exports = function(config) {
   config.set({

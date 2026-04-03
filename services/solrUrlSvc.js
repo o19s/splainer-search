@@ -40,10 +40,10 @@ angular.module('o19s.splainer-search')
           }
         });
 
-        // percentages need to be escaped before url escaping
-        // but only if it is not part of a percent encoding character
+        // Escape stray `%` so later URL handling does not treat them as invalid escapes.
+        // Leave `%` untouched when it starts a valid percent-byte (%HH with hex digits).
         // https://en.wikipedia.org/wiki/Percent-encoding
-        rVal = rVal.replace(/\%(?!(2|3|4|5))/g, '%25');
+        rVal = rVal.replace(/\%(?![0-9A-Fa-f]{2})/g, '%25');
 
         return rVal.slice(0, -1); // take out last & or trailing ? if no args
       };

@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutation-test library sources with the same Karma + Jasmine stack as npm test. Run: npm run stryker",
+  "packageManager": "npm",
+  "testRunner": "karma",
+  "coverageAnalysis": "perTest",
+  "karma": {
+    "projectType": "custom",
+    "configFile": "karma.conf.js"
+  },
+  "mutate": [
+    "module.js",
+    "services/**/*.js",
+    "factories/**/*.js",
+    "values/**/*.js"
+  ]
+}

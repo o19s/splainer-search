@@ -213,5 +213,17 @@ describe('Service: solrUrlSvc', function () {
       solrArgsEqual(solrArgs, parsedBack);
     });
 
+    it('does not double-encode valid percent bytes outside the old 2x–5x range', function() {
+      // %60 (backtick), %7E (~), %0A, %A0 must survive formatSolrArgs intact.
+      var solrArgs = { fq: ['id:%60x%7Ey%0Az%A0w'] };
+      var formatted = solrUrlSvc.formatSolrArgs(solrArgs);
+      expect(formatted).toBe('fq=id:%60x%7Ey%0Az%A0w');
+    });
+
+    it('escapes percent when not followed by two hex digits', function() {
+      expect(solrUrlSvc.formatSolrArgs({ mm: ['50%'] })).toBe('mm=50%25');
+      expect(solrUrlSvc.formatSolrArgs({ q: ['bad%2Ztail'] })).toBe('q=bad%252Ztail');
+    });
+
   });
 });

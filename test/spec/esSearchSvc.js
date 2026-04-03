@@ -141,7 +141,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         searcher.search()
         .then(function() {
           var docs = searcher.docs;
-          expect(docs.length === 2);
+          expect(docs.length).toEqual(2);
 
           var firstHit  = mockES7Results.hits.hits[0];
           var secondHit = mockES7Results.hits.hits[1];
@@ -265,7 +265,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         searcher.search()
         .then(function() {
           var docs = searcher.docs;
-          expect(docs.length === 2);
+          expect(docs.length).toEqual(2);
 
           var firstHit  = mockES7Results.hits.hits[0];
           var secondHit = mockES7Results.hits.hits[1];
@@ -1212,7 +1212,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       searcher.search()
       .then(function() {
         var docs = searcher.docs;
-        expect(docs.length === 2);
+        expect(docs.length).toEqual(2);
 
         expect(searcher.numFound).toEqual(2);
         called++;
@@ -1264,7 +1264,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       searcher.search()
       .then(function() {
         var docs = searcher.docs;
-        expect(docs.length === 2);
+        expect(docs.length).toEqual(2);
 
         expect(searcher.numFound).toEqual(2);
         called++;
@@ -1321,7 +1321,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       searcher.search()
       .then(function() {
         var docs = searcher.docs;
-        expect(docs.length === 2);
+        expect(docs.length).toEqual(2);
 
         expect(searcher.numFound).toEqual(2);
         called++;
@@ -1403,7 +1403,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       searcher.search()
       .then(function() {
         var docs = searcher.docs;
-        expect(docs.length === 2);
+        expect(docs.length).toEqual(2);
 
         expect(searcher.numFound).toEqual(2);
 

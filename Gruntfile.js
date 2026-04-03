@@ -17,7 +17,6 @@ module.exports = function(grunt) {
 	@toc 2.
 	*/
 	grunt.loadNpmTasks('grunt-contrib-concat');
-	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-karma');
 	/**
@@ -47,19 +46,13 @@ module.exports = function(grunt) {
 					dest:   'splainer-search.js'
         }
       },
-			uglify: {
-				options: {
-					mangle: false
-				},
-				build: {
-					files:  {},
-					src:    ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js'],
-					dest:   'splainer-search.min.js'
-				}
-			},
 			karma: {
 				unit: {
 					configFile: 'karma.conf.js',
+					singleRun: true,
+				},
+				coverage: {
+					configFile: 'karma.coverage.conf.js',
 					singleRun: true,
 				},
 				debug: {

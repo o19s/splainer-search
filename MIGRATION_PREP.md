@@ -9,7 +9,7 @@
 
 ## Table of Contents
 
-1. [Current State Assessment](#1-current-state-assessment)
+1. [Current State Assessment](#1-current-state-assessment) (includes [recent branch changes](#recent-branch-changes-splainer-rewrite))
 2. [Fix the Test Runner](#2-fix-the-test-runner)
 3. [Expand Test Coverage Before Migration](#3-expand-test-coverage-before-migration)
 4. [Angular API Inventory & Replacement Map](#4-angular-api-inventory--replacement-map)
@@ -30,8 +30,9 @@
 |-------|--------|
 | `migrationSafetyTests.js` | 49 test cases pinning deep-copy, null-safety, preprocessor contracts, engine routing, vector ops, transport routing, merge semantics, origin() behavior |
 | `vanilla-simplify` branch | Earlier full migration experiment (Angular removed, ES modules, fetch, Vitest, Playwright) — see opening note |
-| `CODE_REVIEW.md` | Known bugs documented, all present on both branches unless fixed on this branch |
-| Test coverage | 42 spec files covering most services/factories |
+| `CODE_REVIEW.md` | Known issues (7 medium, 11 low); see file for paths and fixes — address or explicitly accept during migration |
+| Test coverage | 43 spec files under `test/spec/` covering most services/factories |
+| `npm run test:integration` | Node integration script (`test/integration/chunked-resolver-fetch.integration.js`); `npm run test:ci` runs unit + integration |
 
 ### Angular API usage (source files only)
 
@@ -54,17 +55,25 @@
 | `$timeout` | ~49 | `setTimeout` |
 | `$sce` | ~9 | Remove (JSONP trusted URLs) |
 
+### Recent branch changes (splainer-rewrite)
+
+These are already on this branch; keep them in mind when diffing or porting tests.
+
+- **`services/customHeadersJson.js`** — Safe parse for custom JSON headers; consumed by `esUrlSvc` (see `test/spec/customHeadersJson.js`).
+- **`resolverFactory.js`** — Optional settings (`version`, `proxyUrl`, `customHeaders`, `basicAuthCredential`, `apiMethod`) are copied onto `config` only when defined, so `angular.merge` does not clobber defaults with `undefined`. Chunked / single fetch failures reject the promise instead of returning a raw error response as a fulfilled value.
+- **`test/integration/chunked-resolver-fetch.integration.js`** — Exercised via `npm run test:integration`.
+
 ---
 
 ## 2. Fix the Test Runner
 
-**The test suite cannot currently run.** Karma + ChromeHeadless crashes with a signal 6 / segfault. This is the single highest priority item — you cannot safely migrate without a green test suite.
+**Unit tests require a working Headless Chrome.** `karma.conf.js` sets `CHROME_BIN` to Puppeteer’s Chromium when unset. If that binary is missing (incomplete `npm ci`, read-only cache) or incompatible with the host, Karma fails to launch. Some environments also report ChromeHeadless **signal 6 / segfault** with particular Chromium builds — treat a **green `npm test`** as the gate; without it you cannot safely migrate.
 
 ### Actions
 
-- [ ] **Pin Puppeteer version** — `"puppeteer": "^24.0.0"` is pulling the latest Chromium which crashes in this environment. Pin to a known-working version or switch to `karma-chrome-launcher` with system Chrome.
-- [ ] **Verify all 42 spec files pass** — Run `npm test` and get a clean run before any migration work.
-- [ ] **Add `npm run test:coverage`** — Wire up `karma.coverage.conf.js` (already created) so you can see baseline coverage numbers. The coverage config exists but has no npm script to invoke it.
+- [x] **Stabilize the browser binary** — Pin `puppeteer` to a known-good version, or set `CHROME_BIN` to system Chrome/Chromium for `karma-chrome-launcher`. Avoid relying on a floating `^24.0.0` if CI keeps breaking. (`package.json` pins `puppeteer`; `scripts/karma-chrome-bin.js` prefers system Chrome when `CHROME_BIN` is unset.)
+- [x] **Verify all 43 spec files pass** — Run `npm test` (Karma unit) and get a clean run before migration work; optionally `npm run test:ci` to include integration.
+- [x] **Add `npm run test:coverage`** — `karma.coverage.conf.js` exists but is not registered in `Gruntfile.js` and has no npm script. Add a `karma:coverage` target (or invoke Karma with `--config karma.coverage.conf.js`) and a script so baseline coverage is one command away.
 
 ### Longer term: consider switching test framework before migration
 
@@ -317,7 +326,6 @@ Most `$q` usage is straightforward:
 
 ```
 Gruntfile.js → grunt-contrib-concat → splainer-search.js
-             → grunt-contrib-uglify → splainer-search.min.js (broken — not wired)
              → grunt-karma → test runner
              → grunt-contrib-jshint → linter (force:true, never fails)
 ```
@@ -334,7 +342,7 @@ eslint → linter (replaces jshint)
 ### Prep steps
 
 - [ ] Remove `force: true` from jshint so lint errors are visible now
-- [ ] Wire uglify into the build task or remove the dead config
+- [x] Remove dead uglify config (no min bundle; `package.json` `main` is concat output only)
 - [ ] Add `module.js` to coverage preprocessors in `karma.coverage.conf.js`
 - [ ] Consider adding an `esbuild` build script alongside Grunt (can coexist during transition)
 
@@ -345,8 +353,8 @@ eslint → linter (replaces jshint)
 Based on dependency analysis, risk, and the ability to validate incrementally:
 
 ### Phase 0: Preparation (this document)
-- [ ] Fix the test runner (Karma/Chrome crash)
-- [ ] Get all 42 spec files passing green
+- [ ] Fix the test runner (Karma + Chrome/Chromium available and stable)
+- [ ] Get all 43 spec files passing green (`npm test`; optional `npm run test:ci`)
 - [ ] Add missing migration safety tests (Section 3 above)
 - [ ] Create utility shims (safeForEach, deepClone, deepMerge)
 - [ ] Baseline coverage report
@@ -385,8 +393,8 @@ Based on dependency analysis, risk, and the ability to validate incrementally:
 
 ### Before each phase
 
-- All existing tests pass (green suite)
-- Coverage report shows no regression
+- All existing tests pass (green suite: `npm test`; use `npm run test:ci` when integration should be included)
+- Coverage report shows no regression (after `test:coverage` exists)
 
 ### During migration
 
@@ -406,6 +414,7 @@ Based on dependency analysis, risk, and the ability to validate incrementally:
 
 ### Simple (no $http/$q, few Angular APIs)
 - `values/defaultSolrConfig.js`, `defaultESConfig.js`, `defaultVectaraConfig.js`, `activeQueries.js`
+- `services/customHeadersJson.js` (small helper; no `$http` / `$q`)
 - `services/stringPatch.js` (delete entirely)
 - `services/vectorSvc.js` (only `angular.forEach`)
 - `services/fieldSpecSvc.js` (only `angular.forEach`)

@@ -118,7 +118,7 @@ describe('Service: searchSvc: SearchApi', function () {
         .then(function () {
 
           var docs = searcher.docs;
-          expect(docs.length === 2);
+          expect(docs.length).toEqual(2);
 
           expect(docs[0].title).toEqual("Rambo");
           expect(docs[0].id).toEqual(1);

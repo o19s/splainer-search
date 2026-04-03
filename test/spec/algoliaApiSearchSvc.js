@@ -242,12 +242,10 @@ describe('Service: searchSvc: Algolia', function () {
 
 
   it('access Algolia using GET', function() {
-    try {
-      var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
+    expect(function() {
+      searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
         mockAlgoliaParams, mockQueryText, { apiMethod: 'GET' }, 'algolia');
-    } catch (e) {
-      expect(e.message === 'GET is not supported by Algolia');
-    }
+    }).toThrowError('GET is not supported by Algolia');
   });
 
   it('access Algolia using POST', function() {
@@ -291,7 +289,7 @@ describe('Service: searchSvc: Algolia', function () {
         .then(function () {
 
           var docs = searcher.docs;
-          expect(docs.length === 28);
+          expect(docs.length).toEqual(5);
 
           expect(docs[0].title).toEqual("Custom Post-it Notes®");
           expect(docs[0].id).toEqual("postItNotes");
