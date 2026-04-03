@@ -134,7 +134,7 @@
               return self.fields.indexOf(attribute) < 0;
             }));
           });
-          self.idFields = candidateIds;
+          self.idFields = candidateIds || [];
           if (self.searchEngine === 'es' || self.searchEngine === 'os') {
             self.fields.unshift('_id');
             self.idFields.unshift('_id');

@@ -36,7 +36,7 @@ angular.module('o19s.splainer-search')
           fieldSpec.translations.push(fieldName);
         }
         if (fieldType === 'unabridged') {
-          if (!fieldSpec.hasOwnProperty('unabridged')) {
+          if (!fieldSpec.hasOwnProperty('unabridgeds')) {
             fieldSpec.unabridgeds = [];
           }
 

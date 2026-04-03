@@ -1,0 +1,1 @@
+- The previous commit should be safe if we need to rollback at any point to an earlier stable state. Almost all changes are additional tests with some very minimal bug fixes. The code is still Angular.

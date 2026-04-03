@@ -152,7 +152,7 @@
             if (timing.hasOwnProperty('prepare') && timing.prepare !== null) {
               let keys = Object.keys(timing.prepare);
               if (timing.prepare.hasOwnProperty('time')) {
-                keys.splice('time', 1);
+                keys.splice(keys.indexOf('time'), 1);
               }
               angular.forEach(keys, function(key) {
                 var event = {
@@ -166,7 +166,7 @@
             if (timing.hasOwnProperty('process') && timing.process !== null) {
               let keys = Object.keys(timing.process);
               if (timing.process.hasOwnProperty('time')) {
-                keys.splice('time', 1);
+                keys.splice(keys.indexOf('time'), 1);
               }
               angular.forEach(keys, function(key) {
                 var event = {
@@ -320,7 +320,8 @@
       /*jslint validthis:true*/
       var self = this;
 
-      // var args = angular.copy(self.args);
+      var originalArgs = self.args;
+      self.args = angular.copy(self.args);
       self.args.explainOther = [otherQuery];
       solrSearcherPreprocessorSvc.prepare(self);
 
@@ -369,8 +370,10 @@
             .then(function() {
               self.numFound        = otherSearcher.numFound;
               self.docs            = otherSearcher.docs;
+              self.args            = originalArgs;
             });
         }).catch(function(response) {
+          self.args = originalArgs;
           $log.debug('Failed to run explainOther');
           return response;
         });

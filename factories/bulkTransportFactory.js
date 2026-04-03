@@ -123,19 +123,39 @@
           payload: query,
         };
         queue.push(pendingQuery);
+        ensureTimer();
         return defered.promise;
       }
 
+      var timerPromise = null;
+
       function timerTick() {
         sendMultiSearch();
-        $timeout(timerTick, 100);
+        if (queue.length > 0) {
+          timerPromise = $timeout(timerTick, 100);
+        } else {
+          timerPromise = null;
+        }
       }
+
+      function ensureTimer() {
+        if (!timerPromise) {
+          timerPromise = $timeout(timerTick, 100);
+        }
+      }
+
+      function cancel() {
+        if (timerPromise) {
+          $timeout.cancel(timerPromise);
+          timerPromise = null;
+        }
+      }
+
+      self.cancel = cancel;
 
       function getUrl() {
         return url;
       }
-
-      $timeout(timerTick, 100);
 
 
     };
@@ -146,6 +166,7 @@
         self.batchSender = new BatchSender(url, headers);
       }
       else if (self.batchSender.url() !== url) {
+        self.batchSender.cancel();
         self.batchSender = new BatchSender(url, headers);
       }
       return self.batchSender.enqueue(payload);

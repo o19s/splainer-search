@@ -321,6 +321,9 @@
             .then(function () {
               self.docs = docs;
               defer.resolve();
+            })
+            .catch(function (err) {
+              defer.reject(err);
             });
 
           return defer.promise;
