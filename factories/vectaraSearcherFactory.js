@@ -4,7 +4,6 @@
 
 export function VectaraSearcherFactory(
   $q,
-  $log,
   VectaraDocFactory,
   activeQueries,
   vectaraSearcherPreprocessorSvc,
@@ -142,7 +141,7 @@ export function VectaraSearcherFactory(
         },
       )
       .catch(function (response) {
-        $log.debug('Failed to execute search');
+        console.debug('Failed to execute search');
         return $q.reject(response);
       });
   } // end of search()
@@ -157,7 +156,6 @@ if (typeof angular !== 'undefined') {
     .module('o19s.splainer-search')
     .factory('VectaraSearcherFactory', [
       '$q',
-      '$log',
       'VectaraDocFactory',
       'activeQueries',
       'vectaraSearcherPreprocessorSvc',

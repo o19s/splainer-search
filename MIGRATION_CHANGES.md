@@ -96,3 +96,48 @@ The branch dip is not a regression. In Karma, Angular is always loaded, so the
 `false` path of `if (typeof angular !== 'undefined')` is never taken. These
 branches will be removed entirely in Phase 4 when Angular registration code is
 deleted.
+
+---
+
+## Phase 3a — `$log` → `console`
+
+**Behavioral changes: None.**
+
+Angular's `$log` service is a thin wrapper around `console` with identical
+method signatures. This codebase only uses `$log.debug()` and `$log.error()`,
+both of which map 1:1 to `console.debug()` and `console.error()`.
+
+### Files changed (7)
+
+| File | `$log` calls replaced |
+|------|----------------------|
+| `factories/esSearcherFactory.js` | 4 (`debug`) |
+| `factories/solrSearcherFactory.js` | 2 (`debug`) |
+| `factories/searchApiSearcherFactory.js` | 2 (`error`) + 1 (`debug`) |
+| `factories/algoliaSearchFactory.js` | 1 (`debug`) |
+| `factories/vectaraSearcherFactory.js` | 1 (`debug`) |
+| `factories/bulkTransportFactory.js` | 1 (`debug`) |
+| `factories/resolverFactory.js` | 2 (`debug`) |
+
+In each file:
+1. `$log` removed from the function parameter list
+2. `'$log'` removed from the Angular DI annotation array
+3. `$log.debug(...)` → `console.debug(...)`, `$log.error(...)` → `console.error(...)`
+
+### What did NOT change
+
+- **No logging behavior changed.** The same messages are logged at the same
+  levels. `console.debug` and `console.error` are the exact methods that
+  Angular's `$log` delegates to.
+- **No test logic changed.** No tests were injecting or mocking `$log`.
+- **No other DI wiring changed.** Only `$log` was removed from each factory's
+  dependency list; all other dependencies remain in the same order.
+
+### Coverage comparison
+
+| Metric | After Phase 2 | After Phase 3a | Note |
+|--------|---------------|----------------|------|
+| Statements | 95.72% | 95.72% | Identical |
+| Branches | 84.56% | 84.56% | Identical |
+| Functions | 95.39% | 95.39% | Identical |
+| Lines | 95.75% | 95.75% | Identical |

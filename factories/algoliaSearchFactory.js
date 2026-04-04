@@ -4,7 +4,6 @@
 
 export function AlgoliaSearcherFactory(
   $q,
-  $log,
   AlgoliaDocFactory,
   activeQueries,
   algoliaSearcherPreprocessorSvc,
@@ -210,7 +209,7 @@ export function AlgoliaSearcherFactory(
         },
       )
       .catch(function (response) {
-        $log.debug('Failed to execute search: ' + response.type + ':' + response.message);
+        console.debug('Failed to execute search: ' + response.type + ':' + response.message);
         return $q.reject(response);
       });
   } // end of search()
@@ -225,7 +224,6 @@ if (typeof angular !== 'undefined') {
     .module('o19s.splainer-search')
     .factory('AlgoliaSearcherFactory', [
       '$q',
-      '$log',
       'AlgoliaDocFactory',
       'activeQueries',
       'algoliaSearcherPreprocessorSvc',

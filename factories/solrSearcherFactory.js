@@ -4,7 +4,6 @@
 
 export function SolrSearcherFactory(
   $q,
-  $log,
   SolrDocFactory,
   SearcherFactory,
   transportSvc,
@@ -306,7 +305,7 @@ export function SolrSearcherFactory(
           },
         )
         .catch(function (response) {
-          $log.debug('Failed to run search');
+          console.debug('Failed to run search');
           reject(response);
         });
     });
@@ -371,7 +370,7 @@ export function SolrSearcherFactory(
       })
       .catch(function (response) {
         self.args = originalArgs;
-        $log.debug('Failed to run explainOther');
+        console.debug('Failed to run explainOther');
         return $q.reject(response);
       });
   }
@@ -386,7 +385,6 @@ if (typeof angular !== 'undefined') {
     .module('o19s.splainer-search')
     .factory('SolrSearcherFactory', [
       '$q',
-      '$log',
       'SolrDocFactory',
       'SearcherFactory',
       'transportSvc',

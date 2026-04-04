@@ -2,7 +2,7 @@
 
 /*jslint latedef:false*/
 
-export function BulkTransportFactory(TransportFactory, $http, $q, $timeout, $log, utilsSvc) {
+export function BulkTransportFactory(TransportFactory, $http, $q, $timeout, utilsSvc) {
   var Transport = function (options) {
     TransportFactory.call(this, options);
     this.batchSender = null;
@@ -93,7 +93,7 @@ export function BulkTransportFactory(TransportFactory, $http, $q, $timeout, $log
         var payload = buildMultiSearch();
         pendingHttp = $http.post(url, payload, requestConfig);
         pendingHttp.then(multiSearchSuccess, multiSearchFailed).catch(function (response) {
-          $log.debug('Failed to do multi search');
+          console.debug('Failed to do multi search');
           return $q.reject(response);
         });
       }
@@ -166,7 +166,6 @@ if (typeof angular !== 'undefined') {
       '$http',
       '$q',
       '$timeout',
-      '$log',
       'utilsSvc',
       BulkTransportFactory,
     ]);

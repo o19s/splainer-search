@@ -4,7 +4,6 @@
 
 export function SearchApiSearcherFactory(
   $q,
-  $log,
   SearchApiDocFactory,
   activeQueries,
   searchApiSearcherPreprocessorSvc,
@@ -84,7 +83,7 @@ export function SearchApiSearcherFactory(
               self.numFound = self.config.numberOfResultsMapper(data);
             } catch (error) {
               const errMsg = 'Attemping to run numberOfResultsMapper failed: ' + error;
-              $log.error(errMsg);
+              console.error(errMsg);
               throw new Error('MapperError: ' + errMsg);
             }
           }
@@ -104,7 +103,7 @@ export function SearchApiSearcherFactory(
               mappedDocs = self.config.docsMapper(data);
             } catch (error) {
               const errMsg = 'Attemping to run docsMapper failed: ' + error;
-              $log.error(errMsg);
+              console.error(errMsg);
               throw new Error('MapperError: ' + errMsg);
             }
           }
@@ -127,7 +126,7 @@ export function SearchApiSearcherFactory(
         },
       )
       .catch(function (response) {
-        $log.debug('Failed to execute search: ' + response.type + ':' + response.message);
+        console.debug('Failed to execute search: ' + response.type + ':' + response.message);
         return $q.reject(response);
       });
   } // end of search()
@@ -142,7 +141,6 @@ if (typeof angular !== 'undefined') {
     .module('o19s.splainer-search')
     .factory('SearchApiSearcherFactory', [
       '$q',
-      '$log',
       'SearchApiDocFactory',
       'activeQueries',
       'searchApiSearcherPreprocessorSvc',

@@ -62,7 +62,7 @@ Only `angular.forEach`, `angular.copy`, `angular.merge` remain — inside `utils
 | `angular.module()` registrations | All 47 source files (guarded) | Phase 4 (delete) |
 | `$http` | 6 transport factories | Phase 3 (`fetch` wrapper) |
 | `$q` | ~37 uses across factories | Phase 3 (native `Promise`) |
-| `$log` | ~28 uses | Phase 3 (`console`) |
+| ~~`$log`~~ | ~~7 factories~~ | ~~Phase 3~~ — **done** (`console`) |
 | `$timeout` | ~49 uses | Phase 3 (`setTimeout`) |
 | `$sce` | ~9 uses | Phase 3 (remove — JSONP trusted URLs only) |
 
@@ -145,7 +145,8 @@ Six transport factories use `$http`. High risk because:
 
 - [ ] `fetch` wrapper (same success/error shapes as `$http`)
 - [ ] `$q` → native `Promise`
-- [ ] `$log` → `console`; `$timeout` → `setTimeout`; drop `$sce` for JSONP as planned
+- [x] `$log` → `console` (7 factories, 0 behavioral change)
+- [ ] `$timeout` → `setTimeout`; drop `$sce` for JSONP as planned
 - [ ] Swap `utilsSvc` internals from `angular.*` to native implementations
 
 ### Phase 4: Remove Angular

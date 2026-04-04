@@ -5,7 +5,6 @@
 export function EsSearcherFactory(
   $http,
   $q,
-  $log,
   EsDocFactory,
   activeQueries,
   esSearcherPreprocessorSvc,
@@ -255,7 +254,7 @@ export function EsSearcherFactory(
         },
       )
       .catch(function (response) {
-        $log.debug('Failed to execute search');
+        console.debug('Failed to execute search');
         return $q.reject(response);
       });
   } // end of search()
@@ -313,7 +312,7 @@ export function EsSearcherFactory(
         return defer.promise;
       })
       .catch(function (response) {
-        $log.debug('Failed to run explainOther');
+        console.debug('Failed to run explainOther');
         return $q.reject(response);
       });
   } // end of explainOther()
@@ -339,7 +338,7 @@ export function EsSearcherFactory(
         return new EsDocFactory(doc, options);
       })
       .catch(function (response) {
-        $log.debug('Failed to run explain');
+        console.debug('Failed to run explain');
         return $q.reject(response);
       });
   } // end of explain()
@@ -466,7 +465,7 @@ export function EsSearcherFactory(
         },
       )
       .catch(function (response) {
-        $log.debug('Failed to render template');
+        console.debug('Failed to render template');
         return $q.reject(response);
       });
   }
@@ -482,7 +481,6 @@ if (typeof angular !== 'undefined') {
     .factory('EsSearcherFactory', [
       '$http',
       '$q',
-      '$log',
       'EsDocFactory',
       'activeQueries',
       'esSearcherPreprocessorSvc',
