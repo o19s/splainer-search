@@ -2,78 +2,81 @@
 
 /*jslint latedef:false*/
 
-(function() {
-  angular.module('o19s.splainer-search')
-    .factory('AlgoliaDocFactory', [
-      'DocFactory',
-      'utilsSvc',
-      AlgoliaDocFactory
-    ]);
+export function AlgoliaDocFactory(DocFactory, utilsSvc) {
+  const Doc = function (doc, options) {
+    DocFactory.call(this, doc, options);
 
-  function AlgoliaDocFactory(DocFactory, utilsSvc) {
-    const Doc = function(doc, options) {
-      DocFactory.call(this, doc, options);
+    const self = this;
 
-      const self = this;
+    utilsSvc.safeForEach(self.fieldsProperty(), function (fieldValue, fieldName) {
+      if (
+        fieldValue !== null &&
+        fieldValue !== undefined &&
+        fieldValue.constructor === Array &&
+        fieldValue.length === 1
+      ) {
+        self[fieldName] = fieldValue[0];
+      } else {
+        self[fieldName] = fieldValue;
+      }
+    });
+  };
 
-      utilsSvc.safeForEach(self.fieldsProperty(), function(fieldValue, fieldName) {
-        if ( fieldValue !== null && fieldValue !== undefined && fieldValue.constructor === Array && fieldValue.length === 1 ) {
-          self[fieldName] = fieldValue[0];
-        } else {
-          self[fieldName] = fieldValue;
-        }
-      });
-    };
+  Doc.prototype = Object.create(DocFactory.prototype);
+  Doc.prototype.constructor = Doc; // Reset the constructor
+  Doc.prototype._url = _url;
+  Doc.prototype.origin = origin;
+  Doc.prototype.fieldsProperty = fieldsProperty;
+  Doc.prototype.explain = explain;
+  Doc.prototype.snippet = snippet;
+  Doc.prototype.highlight = highlight;
 
-    Doc.prototype = Object.create(DocFactory.prototype);
-    Doc.prototype.constructor = Doc; // Reset the constructor
-    Doc.prototype._url           = _url;
-    Doc.prototype.origin         = origin;
-    Doc.prototype.fieldsProperty = fieldsProperty;
-    Doc.prototype.explain        = explain;
-    Doc.prototype.snippet        = snippet;
-    Doc.prototype.highlight      = highlight;
-
-    function _url () {
-      // no _url functionality implemented
-      return null;
-    }
-
-    function origin () {
-      /*jslint validthis:true*/
-      var self = this;
-
-      var src = {};
-      utilsSvc.safeForEach(self, function(value, field) {
-        if (typeof value !== 'function') {
-          src[field] = value;
-        }
-      });
-      delete src.doc;
-      return src;
-    }
-
-    function fieldsProperty() {
-      /*jslint validthis:true*/
-      const self = this;
-      return self;
-    }
-
-    function explain () {
-      // no explain functionality implemented
-      return {};
-    }
-
-    function snippet () {
-      // no snippet functionality implemented
-      return null;
-    }
-
-    function highlight () {
-      // no highlighting functionality implemented
-      return null;
-    }
-
-    return Doc;
+  function _url() {
+    // no _url functionality implemented
+    return null;
   }
-})();
+
+  function origin() {
+    /*jslint validthis:true*/
+    var self = this;
+
+    var src = {};
+    utilsSvc.safeForEach(self, function (value, field) {
+      if (typeof value !== 'function') {
+        src[field] = value;
+      }
+    });
+    delete src.doc;
+    return src;
+  }
+
+  function fieldsProperty() {
+    /*jslint validthis:true*/
+    const self = this;
+    return self;
+  }
+
+  function explain() {
+    // no explain functionality implemented
+    return {};
+  }
+
+  function snippet() {
+    // no snippet functionality implemented
+    return null;
+  }
+
+  function highlight() {
+    // no highlighting functionality implemented
+    return null;
+  }
+
+  return Doc;
+}
+
+// Angular DI registration (removed in Phase 4)
+if (typeof angular !== 'undefined') {
+  angular
+    .module('o19s.splainer-search')
+    .factory('AlgoliaDocFactory', ['DocFactory', 'utilsSvc', AlgoliaDocFactory]);
+}

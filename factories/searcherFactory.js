@@ -2,38 +2,38 @@
 
 /*jslint latedef:false*/
 
-(function() {
-  angular.module('o19s.splainer-search')
-    .factory('SearcherFactory', [SearcherFactory]);
+export function SearcherFactory() {
+  var Searcher = function (options, preprocessor) {
+    var self = this;
 
-  function SearcherFactory() {
-    var Searcher = function(options, preprocessor) {
-      var self                = this;
+    // Methods that we expect all engines to provide
+    self.fieldList = options.fieldList;
+    self.hlFieldList = options.hlFieldList;
+    self.url = options.url;
+    self.args = options.args;
+    self.queryText = options.queryText;
+    self.config = options.config;
+    self.type = options.type;
+    self.customHeaders = options.customHeaders;
 
-      // Methods that we expect all engines to provide
-      self.fieldList          = options.fieldList;
-      self.hlFieldList        = options.hlFieldList;
-      self.url                = options.url;
-      self.args               = options.args;
-      self.queryText          = options.queryText;
-      self.config             = options.config;
-      self.type               = options.type;
-      self.customHeaders      = options.customHeaders;
+    self.docs = [];
+    self.grouped = {};
+    self.numFound = 0;
+    self.inError = false;
+    self.othersExplained = {};
+    self.parsedQueryDetails = {};
 
-      self.docs               = [];
-      self.grouped            = {};
-      self.numFound           = 0;
-      self.inError            = false;
-      self.othersExplained    = {};
-      self.parsedQueryDetails = {};
+    self.HIGHLIGHTING_PRE = options.HIGHLIGHTING_PRE;
+    self.HIGHLIGHTING_POST = options.HIGHLIGHTING_POST;
 
-      self.HIGHLIGHTING_PRE   = options.HIGHLIGHTING_PRE;
-      self.HIGHLIGHTING_POST  = options.HIGHLIGHTING_POST;
+    preprocessor.prepare(self);
+  };
 
-      preprocessor.prepare(self);
-    };
+  // Return factory object
+  return Searcher;
+}
 
-    // Return factory object
-    return Searcher;
-  }
-})();
+// Angular DI registration (removed in Phase 4)
+if (typeof angular !== 'undefined') {
+  angular.module('o19s.splainer-search').factory('SearcherFactory', [SearcherFactory]);
+}

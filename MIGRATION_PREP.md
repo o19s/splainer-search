@@ -1,10 +1,12 @@
-# Angular Removal: Pre-Migration Preparation
+# Angular Removal: Migration Plan
 
-**Date:** 2026-04-03  
+**Date:** 2026-04-03 (started) — 2026-04-04 (Phase 2 complete)  
 **Current branch:** `splainer-rewrite` (based on `main` @ v2.36.4)  
 **Target:** Remove AngularJS entirely, convert to vanilla JS ES modules.
 
 **Ground truth:** This document, **this** branch’s green tests (including `migrationSafetyTests.js`), and the [public API](#public-api--semver) below. Do **not** use branch `vanilla-simplify` for validation, diffs, copying code/tests, or sign-off — it was an earlier full-stack experiment (ES modules, fetch, Vitest, Playwright). Mention it only as historical context.
+
+**Change log:** See `MIGRATION_CHANGES.md` for a record of what changed and what didn’t in each phase.
 
 ### Public API & semver
 
@@ -14,169 +16,86 @@
 
 ## Table of Contents
 
-1. [Current State Assessment](#1-current-state-assessment)
-2. [Test runner (status)](#2-test-runner-status)
-3. [Expand Test Coverage Before Migration](#3-expand-test-coverage-before-migration)
-   - [Pragmatic review: more tests before migrate?](#pragmatic-review-more-tests-before-migrate)
-   - [Coverage baseline (recorded)](#coverage-baseline-recorded)
-4. [Angular API Replacements](#4-angular-api-replacements)
-5. [Introduce Shim Layer](#5-introduce-shim-layer)
-6. [Decouple the DI System Incrementally](#6-decouple-the-di-system-incrementally)
-7. [Plan the HTTP/$q Replacement](#7-plan-the-httpq-replacement)
-8. [Modernize the Build Pipeline](#8-modernize-the-build-pipeline)
-9. [Migration Order](#9-migration-order)
-10. [Validation Strategy](#10-validation-strategy)
-11. [Appendix: Files by Complexity](#appendix-files-sorted-by-migration-complexity)
+1. [Completed Work](#1-completed-work)
+2. [Test Runners](#2-test-runners)
+3. [Coverage Baseline](#3-coverage-baseline)
+4. [Plan the HTTP/$q Replacement](#4-plan-the-httpq-replacement)
+5. [Modernize the Build Pipeline](#5-modernize-the-build-pipeline)
+6. [Remaining Migration Order](#6-remaining-migration-order)
+7. [Validation Strategy](#7-validation-strategy)
 
 ---
 
-## 1. Current State Assessment
+## 1. Completed Work
 
-### What exists already
+### Phase 1: Angular utility API replacements (complete)
 
-| Asset | Status |
-|-------|--------|
-| `migrationSafetyTests.js` | Canary suite — see [§3](#3-expand-test-coverage-before-migration). Resolver `chunkSize <= 0` lives in `docResolverSvc` spec. |
-| `vanilla-simplify` | Historical experiment only — see [opening](#angular-removal-pre-migration-preparation) |
-| `CODE_REVIEW.md` | Known issues (7 medium, 11 low); address or explicitly accept during migration |
-| Test coverage | 43 spec files under `test/spec/`; Karma baseline in [§3](#coverage-baseline-recorded) |
-| `npm run test:integration` | `test/integration/chunked-resolver-fetch.integration.js`; `npm run test:ci` = ESLint + unit + integration |
+All `angular.isDefined`, `isUndefined`, `isObject`, `isString`, `fromJson`, `extend`, `element` replaced with native JS equivalents. `angular.forEach`, `angular.copy`, `angular.merge` routed through `utilsSvc` shims (`safeForEach`, `deepClone`, `copyOnto`, `deepMerge`) that currently delegate to the Angular originals. Zero `angular.*` utility calls remain in source files.
 
-### Angular API usage and replacements (canonical)
+### Phase 2: DI decoupling — ES module exports (complete)
 
-Single reference for counts and what to swap in. Tier labels: **drop-in** (direct substitute), **wrapper** (shim first — [§5](#5-introduce-shim-layer)), **arch** (structural change).
+All 47 source files (`services/`, `factories/`, `values/`) converted to ES modules:
+- Each file exports its constructor/factory/value with `export`
+- Angular `.module().service()`/`.factory()`/`.value()` registrations guarded with `if (typeof angular !== ‘undefined’)`
+- Vitest set up as a dual test runner alongside Karma (6 test files, 43 tests)
+- Custom `scripts/karma-strip-exports.cjs` preprocessor strips `export` keywords for Karma and Istanbul coverage
+- Grunt concat `process` function strips exports from the `splainer-search.js` bundle
+- Integration test `loadScript()` strips exports before `eval()`
 
-| API | ~Count | Tier | Replacement |
-|-----|--------|------|-------------|
-| `angular.forEach` | ~124 | wrapper | `safeForEach` — null-safe; objects, arrays, strings (char iteration) |
-| `angular.copy` | ~92 | wrapper | `deepClone` — [contract](#deep-clone-contract); usually `structuredClone` for JSON-ish POJOs |
-| `angular.merge` | ~13 | wrapper | `deepMerge` — custom or `lodash.merge` |
-| `angular.isDefined` | ~23 | drop-in | `x !== undefined` |
-| `angular.isUndefined` | ~5 | drop-in | `x === undefined` |
-| `angular.isObject` | ~3 | drop-in | `typeof x === 'object' && x !== null` |
-| `angular.isString` | ~1 | drop-in | `typeof x === 'string'` |
-| `angular.isNumber` | (rare) | drop-in | `typeof x === 'number'` |
-| `angular.isFunction` | (rare) | drop-in | `typeof x === 'function'` |
-| `angular.fromJson` | ~19 | drop-in | `JSON.parse` |
-| `angular.toJson` | 0 today | drop-in | `JSON.stringify` if it appears |
-| `angular.extend` | ~1 | drop-in | `Object.assign` |
-| `angular.element` | ~1 | drop-in | `document.createElement` |
-| `angular.module` / `.factory` / `.service` / `.value` | 46 | arch | ES `import` / `export` |
-| `$http` | 6 transports | arch | `fetch` wrapper — [§7](#7-plan-the-httpq-replacement) |
-| `$q` | ~37 | arch | `Promise` |
-| `$log` | ~28 | arch | `console` |
-| `$timeout` | ~49 | arch | `setTimeout` |
-| `$sce` | ~9 | arch | Remove (JSONP trusted URLs only) |
+### Shim layer (complete)
 
----
-
-## 2. Test runner (status)
-
-Karma + ChromeHeadless (`scripts/karma-chrome-bin.js`, pinned `puppeteer`); `npm test` and `npm run test:coverage`. **Green `npm test` is the gate.** Vitest + Playwright were tried on `vanilla-simplify`; treat them as a **follow-on**, not a prerequisite for removing Angular. Stay on Karma through Phase 3 while green; pilot Vitest on a small slice if Karma blocks progress. Do not bundle “new runner” with “new HTTP layer.”
-
----
-
-## 3. Expand Test Coverage Before Migration
-
-**Canary tests** (`migrationSafetyTests.js`, `docResolverSvc.js` spec) cover: resolver `sliceIds()` / `chunkSize <= 0`, bulk **queue** iteration (not `requestBatches[url]`), missing Solr `response.docs`, preprocessor copy/merge shapes, `$http` / `$timeout` / DI surface — unless source regresses.
-
-### Pragmatic review: more tests before migrate?
-
-**Verdict:** Nothing here should block Phase 1 (utility swaps). Statement coverage is already high; the migration’s real risk is **HTTP / promise / timer behavior**, not a few uncovered branches in explain or URL helpers.
-
-| Area | Note |
-|------|------|
-| **Transports, searchers, resolver, `$q` / `$timeout`** | Biggest contract churn in Phase 3. Prefer **wrapper + dedicated tests** ([§7](#7-plan-the-httpq-replacement)) and existing `migrationSafetyTests.js` + `npm run test:integration` over front-loading more specs now. |
-| **Lower branch % today** (e.g. `esSearcherFactory.js`, `queryExplainSvc.js`, `solrUrlSvc.js` in the Karma table) | Treat as **opportunistic**: add cases when you edit that file or when a regression appears. Do not require a coverage sprint before shims. |
-| **Uniform `$http` mocks across six transports** | Still **optional** polish ([Optional later](#optional-later)); valuable when implementing the `fetch` wrapper, not a prerequisite for Phase 1. |
-| **Shims (`safeForEach`, `deepClone`, `deepMerge`)** | In `services/utilsSvc.js` with tests in `test/spec/utilsSvc.js` ([§5](#5-introduce-shim-layer)). |
-
-### Coverage baseline (recorded)
-
-**How we baseline:** The numbers below are the reference. After each phase, run `npm run test:coverage` and compare; note meaningful drops in a PR. Optional: attach or archive `coverage/html/index.html` from CI or locally — not required if this table stays updated when someone intentionally changes coverage.
-
-**Recorded:** 2026-04-03 (`splainer-rewrite`), Karma + ChromeHeadless, `npm run test:coverage` (see `karma.coverage.conf.cjs`). Instrumented: `module.js`, `services/**`, `factories/**`, `values/**`.
-
-| Metric | Coverage | Count |
-|--------|----------|-------|
-| Statements | **95.65%** | 2270 / 2373 |
-| Branches | **88.00%** | 822 / 934 |
-| Functions | **95.53%** | 471 / 493 |
-| Lines | **95.66%** | 2249 / 2351 |
-
-Per-file detail appears in the terminal summary after `npm run test:coverage`; refresh this table when the team agrees the baseline should move (e.g. after a large test-only PR).
-
-### Optional later
-
-- Same `$http` success contract across transport factories (see [§7](#7-plan-the-httpq-replacement))
-- New `angular.forEach` hot paths → extend the canary file
-
----
-
-## 4. Angular API Replacements
-
-Section **§1** holds the full table (counts + tier + replacement). Here: **drop-in** = swap at call site; **wrapper** = implement behind `safeForEach` / `deepClone` / `deepMerge` then replace imports; **arch** = DI, HTTP, promises, logging, timers, `$sce` per §6–§7.
-
----
-
-## 5. Introduce Shim Layer
-
-Thin wrappers **while still on Angular** so migration is “change shim internals,” not 300 scattered edits.
-
-**Location:** `services/utilsSvc.js` (factory `utilsSvc`; becomes a plain module after migration).
-
-```js
-// Angular service now; plain module after migration
-
-function safeForEach(collection, callback) {
-  // angular.forEach: null/undefined no-op; array; object k/v; string → characters
-}
-
-function deepClone(obj) {
-  // Now: angular.copy(obj). Later: structuredClone / fallback — see contract below.
-}
-
-function deepMerge(target /*, ...sources */) {
-  // Now: angular.merge. Later: lodash.merge or custom.
-}
-```
+`services/utilsSvc.js` provides `safeForEach`, `deepClone`, `copyOnto`, `deepMerge`. Internals still delegate to `angular.forEach`/`angular.copy`/`angular.merge`. Phase 3 will swap internals to native implementations.
 
 #### Deep clone contract
 
-Call sites use **plain data** (configs, Solr/ES shapes). **`structuredClone`** is usually enough; it is **not** equivalent to `angular.copy` for functions, symbols, prototypes, DOM, or some cycles. Define what `deepClone` guarantees; use **rfdc** or lossy `JSON` round-trip only where acceptable.
+Call sites use **plain data** (configs, Solr/ES shapes). **`structuredClone`** is usually enough; it is **not** equivalent to `angular.copy` for functions, symbols, prototypes, DOM, or some cycles. A native-JS stub is already in `test/vitest/helpers/utilsSvcStub.js`.
 
-**Benefit:** Tests target the shims; Angular removal can be a one-liner inside each shim.
+### Remaining Angular API in source files
 
----
+Only `angular.forEach`, `angular.copy`, `angular.merge` remain — inside `utilsSvc.js` internals only. All other source files are Angular-free except for the guarded `angular.module()` DI registrations.
 
-## 6. Decouple the DI System Incrementally
-
-46 `angular.module(...)` registrations → ES imports. Steps:
-
-1. **Dependency graph** — Find leaves (no deps on other app services). Validate with search for injected names or **madge** once code is ESM.
-
-2. **Per file** — Split Angular built-ins (`$http`, `$q`, `$log`, `$timeout`, `$sce`) from app services → imports vs shims/native APIs.
-
-3. **Transition** — Keep logic in a plain function; Angular only wires DI. Then delete the wrapper and export.
-
-   ```js
-   function createSearcherFactory($http, $q, /* ... */) {
-     /* implementation */
-   }
-   angular.module('o19s.splainer-search')
-     .factory('SearcherFactory', ['$http', '$q', /* ... */, createSearcherFactory]);
-
-   // Later: same function, ESM — inject fetch/Promise (or shims) instead of $http/$q
-   export function createSearcherFactory(httpClient, /* ... */) { /* ... */ }
-   ```
-
-**Likely order (leaves → roots):** `values/*` → utilities (`vectorSvc`, `fieldSpecSvc`) → explain services → `*UrlSvc`, `*PreprocessorSvc` → doc factories → transport → searcher → `resolverFactory`, `settingsValidatorFactory` → `searchSvc`, `normalDocsSvc`.
-
-**File-level buckets:** [Appendix](#appendix-files-sorted-by-migration-complexity).
+| API | Where | Phase to remove |
+|-----|-------|-----------------|
+| `angular.forEach` | `utilsSvc.js` internals | Phase 3 (swap to native) |
+| `angular.copy` | `utilsSvc.js` internals | Phase 3 (swap to `structuredClone`) |
+| `angular.merge` | `utilsSvc.js` internals | Phase 3 (swap to custom `deepMerge`) |
+| `angular.module()` registrations | All 47 source files (guarded) | Phase 4 (delete) |
+| `$http` | 6 transport factories | Phase 3 (`fetch` wrapper) |
+| `$q` | ~37 uses across factories | Phase 3 (native `Promise`) |
+| `$log` | ~28 uses | Phase 3 (`console`) |
+| `$timeout` | ~49 uses | Phase 3 (`setTimeout`) |
+| `$sce` | ~9 uses | Phase 3 (remove — JSONP trusted URLs only) |
 
 ---
 
-## 7. Plan the HTTP/$q Replacement
+## 2. Test Runners
+
+**Karma** (primary): ChromeHeadless, `npm test` — 619 tests. Stays as the gate through Phase 3.
+
+**Vitest** (secondary): `npm run test:vitest` — 43 tests across 6 files in `test/vitest/`. Imports ES modules directly without Angular. Uses `test/vitest/helpers/utilsSvcStub.js` for `utilsSvc` dependency.
+
+**Integration**: `npm run test:integration` — Node.js + jsdom, real HTTP server.
+
+**CI**: `npm run test:ci` = ESLint + Karma + Vitest + integration.
+
+---
+
+## 3. Coverage Baseline
+
+**Post-Phase 2** (2026-04-04), Karma + ChromeHeadless, `npm run test:coverage`:
+
+| Metric | Coverage | Count |
+|--------|----------|-------|
+| Statements | **95.72%** | 2309 / 2412 |
+| Branches | **84.56%** | 871 / 1030 |
+| Functions | **95.39%** | 456 / 478 |
+| Lines | **95.75%** | 2299 / 2401 |
+
+Branch dip from original 88.00% is entirely from `if (typeof angular !== ‘undefined’)` guards (47 files × 1 uncovered `false` branch). These are deleted in Phase 4.
+
+---
+
+## 4. Plan the HTTP/$q Replacement
 
 Six transport factories use `$http`. High risk because:
 
@@ -202,82 +121,47 @@ Six transport factories use `$http`. High risk because:
 
 2. **Tests** for the wrapper: status codes, JSON parse, rejection shape.
 
-3. **Mocks:** `msw`, `globalThis.fetch = mock`, or Vitest `vi.mock` if you have switched runners ([§2](#2-test-runner-status)).
+3. **Mocks:** `msw`, `globalThis.fetch = mock`, or Vitest `vi.mock`.
 
 **`$q`:** `$q.defer()` → `new Promise((resolve, reject) => { ... })`; `$q.all` / `$q.reject` / `$q.when` → `Promise.all` / `Promise.reject` / `Promise.resolve`. **Digest vs microtasks:** rare in prod; tests that `$rootScope.$apply()` to flush may need `await` / microtask chains.
 
 ---
 
-## 8. Modernize the Build Pipeline
+## 5. Modernize the Build Pipeline
 
-**Current:** Grunt → ESLint (default task) → Karma → concat → `splainer-search.js`; Prettier (`npm run format` / `format:check`); Karma coverage via `karma.coverage.conf.cjs`.
+**Current:** Grunt → ESLint → Karma → concat (with export stripping) → `splainer-search.js`; Prettier; Karma coverage with `strip-exports` preprocessor; Vitest alongside.
 
-**Target:** esbuild bundle; Vitest (optional timing [§2](#2-test-runner-status)); Playwright.
-
-**Prep**
+**Target:** esbuild bundle; Vitest as primary runner; drop Karma + Grunt.
 
 - [ ] Optional `esbuild` script alongside Grunt during transition
 
 ---
 
-## 9. Migration Order
-
-### Phase 1: Angular API → table (§1)
-
-Mechanical edits + small PRs (one API or directory); `npm test` per batch. Rough volumes (see §1): drop-ins **~60+**; remaining `forEach` / `copy` / `merge` counts in §1 for call sites not yet behind shims.
-
-- [ ] Drop-ins: `is*`, `fromJson`, `extend`, `element`, … (remaining call sites outside the shim sweep)
-
-### Phase 2: DI → ES modules
-
-Leaves first ([§6](#6-decouple-the-di-system-incrementally), [Appendix](#appendix-files-sorted-by-migration-complexity)); thin Angular wrapper until Phase 4. Update tests file-by-file **or** keep the Angular test harness until Phase 4 if that stays faster.
+## 6. Remaining Migration Order
 
 ### Phase 3: `$http`, `$q`, `$log`, `$timeout`, `$sce`
 
-[§7](#7-plan-the-httpq-replacement); wrapper matches existing contracts.
+[§4](#4-plan-the-httpq-replacement); wrapper matches existing contracts.
 
 - [ ] `fetch` wrapper (same success/error shapes as `$http`)
 - [ ] `$q` → native `Promise`
 - [ ] `$log` → `console`; `$timeout` → `setTimeout`; drop `$sce` for JSONP as planned
+- [ ] Swap `utilsSvc` internals from `angular.*` to native implementations
 
 ### Phase 4: Remove Angular
 
-- [ ] Strip `angular.module` registrations
+- [ ] Strip `if (typeof angular !== ‘undefined’)` registrations from all 47 files
+- [ ] Delete `module.js`
 - [ ] Drop `angular` / `angular-mocks` from `package.json`
-- [ ] Vitest (or other) — optional timing [§2](#2-test-runner-status)
+- [ ] Migrate remaining Karma specs to Vitest; drop Karma
 - [ ] Grunt concat → esbuild
 - [ ] Sign off on **this** branch’s tests and [public API](#public-api--semver)
 
 ---
 
-## 10. Validation Strategy
+## 7. Validation Strategy
 
-- **Before each phase:** `npm test`; `npm run test:ci` when integration matters; `npm run test:coverage` vs [§3 baseline](#coverage-baseline-recorded) (or PR note if numbers move on purpose)
+- **Before each phase:** `npm run test:ci` (ESLint + Karma + Vitest + integration); `npm run test:coverage` vs [§3 baseline](#3-coverage-baseline)
 - **During:** `migrationSafetyTests.js` after changes; targeted spec per touched file
-- **After:** Full suite; smaller bundle (Angular alone is on the order of **~170KB** minified — expect a noticeable drop); Solr/ES smoke if possible; **public API / semver** — [Public API & semver](#public-api--semver)
-
----
-
-## Appendix: Files Sorted by Migration Complexity
-
-### Simple (no `$http` / `$q`, few Angular APIs)
-
-- `values/defaultSolrConfig.js`, `defaultESConfig.js`, `defaultVectaraConfig.js`, `activeQueries.js`
-- `services/customHeadersJson.js`
-- `services/vectorSvc.js`, `fieldSpecSvc.js` (`angular.forEach`)
-- `services/baseExplainSvc.js`, `simExplainSvc.js` (`angular.forEach`)
-
-### Moderate (Angular utilities, no `$http`)
-
-- `services/explainSvc.js`, `queryExplainSvc.js`
-- `services/normalDocsSvc.js` (`angular.forEach`, `angular.copy`)
-- `services/*UrlSvc.js` (`angular.isDefined`)
-- `services/*PreprocessorSvc.js` (`angular.copy`, `angular.merge`)
-- `factories/docFactory.js`, `*DocFactory.js` (`angular.copy`)
-- `factories/settingsValidatorFactory.js`
-
-### Complex (`$http`, `$q`, `$timeout`)
-
-- `factories/*TransportFactory.js`, `transportFactory.js`
-- `factories/*SearcherFactory.js`, `resolverFactory.js`
-- `services/searchSvc.js`, `services/transportSvc.js`
+- **After:** Full suite; smaller bundle (Angular alone is ~170KB minified — expect a noticeable drop); Solr/ES smoke if possible; **public API / semver** — [Public API & semver](#public-api--semver)
+- **Change log:** Update `MIGRATION_CHANGES.md` after each phase

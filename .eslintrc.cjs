@@ -40,7 +40,7 @@ module.exports = {
   overrides: [
     {
       // Source files migrated to ES modules (Phase 2+)
-      files: ['values/**/*.js', 'services/**/*.js'],
+      files: ['values/**/*.js', 'services/**/*.js', 'factories/**/*.js'],
       parserOptions: {
         sourceType: 'module',
       },
