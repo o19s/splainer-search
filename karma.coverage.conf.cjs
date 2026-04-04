@@ -6,6 +6,12 @@ module.exports = function(config) {
   config.set({
     basePath: '',
     frameworks: ['jasmine'],
+    plugins: [
+      'karma-jasmine',
+      'karma-chrome-launcher',
+      'karma-coverage',
+      require('./scripts/karma-strip-exports.cjs'),
+    ],
     files: [
       'node_modules/angular/angular.js',
       'node_modules/angular-mocks/angular-mocks.js',
@@ -19,11 +25,12 @@ module.exports = function(config) {
     ],
     exclude: [],
     // Instrument module.js (Angular module bootstrap) so coverage includes it, not only services/factories/values.
+    // esbuild strips ESM export syntax from migrated files before coverage instruments them.
     preprocessors: {
       'module.js': ['coverage'],
-      'services/**/*.js': ['coverage'],
-      'factories/**/*.js': ['coverage'],
-      'values/**/*.js': ['coverage']
+      'services/**/*.js': ['strip-exports', 'coverage'],
+      'factories/**/*.js': ['strip-exports', 'coverage'],
+      'values/**/*.js': ['strip-exports', 'coverage']
     },
     reporters: ['progress', 'coverage'],
     coverageReporter: {

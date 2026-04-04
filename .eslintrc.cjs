@@ -39,7 +39,14 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['Gruntfile.cjs'],
+      // Source files migrated to ES modules (Phase 2+)
+      files: ['values/**/*.js', 'services/**/*.js'],
+      parserOptions: {
+        sourceType: 'module',
+      },
+    },
+    {
+      files: ['Gruntfile.cjs', 'scripts/**/*.cjs'],
       env: {
         node: true,
       },
@@ -51,12 +58,38 @@ module.exports = {
       },
     },
     {
-      files: ['test/**/*.js'],
+      // Vitest config is ESM (import/export); default project parser is script.
+      files: ['vitest.config.js'],
+      env: {
+        node: true,
+      },
+      parserOptions: {
+        sourceType: 'module',
+      },
+    },
+    {
+      files: ['test/spec/**/*.js', 'test/mock/**/*.js'],
       env: {
         jasmine: true,
       },
       globals: {
         module: 'readonly',
+      },
+    },
+    {
+      files: ['test/vitest/**/*.js'],
+      parserOptions: {
+        sourceType: 'module',
+      },
+      env: {
+        es2023: true,
+      },
+    },
+    {
+      // Node-driven integration scripts (CommonJS require, __dirname, process).
+      files: ['test/integration/**/*.js'],
+      env: {
+        node: true,
       },
     },
   ],

@@ -1,10 +1,10 @@
 'use strict';
 
-(function() {
-  var activeQueries = {
-    count: 0
-  };
+export var activeQueries = {
+  count: 0,
+};
 
-  angular.module('o19s.splainer-search')
-    .value('activeQueries', activeQueries);
-})();
+// Angular DI registration (removed in Phase 4)
+if (typeof angular !== 'undefined') {
+  angular.module('o19s.splainer-search').value('activeQueries', activeQueries);
+}

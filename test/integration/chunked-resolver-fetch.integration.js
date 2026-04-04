@@ -19,6 +19,9 @@ var root = path.join(__dirname, '..', '..');
 
 function loadScript(window, filePath) {
   var code = fs.readFileSync(filePath, 'utf8');
+  // Strip ESM export keywords so eval() (script context) doesn't throw.
+  // Source files use `export function ...` / `export var ...` during the ESM migration.
+  code = code.replace(/^export\s+/gm, '');
   window.eval(code + '\n//# sourceURL=' + path.basename(filePath));
 }
 
@@ -48,7 +51,7 @@ function startMockSolrJsonpServer() {
       var u;
       try {
         u = new URL(req.url, 'http://127.0.0.1');
-      } catch (e) {
+      } catch (_e) {
         res.statusCode = 400;
         res.end();
         return;
@@ -58,7 +61,7 @@ function startMockSolrJsonpServer() {
       var q;
       try {
         q = decodeURIComponent(qRaw);
-      } catch (e2) {
+      } catch (_e2) {
         q = qRaw;
       }
 
@@ -102,7 +105,7 @@ function main() {
   var JSDOM;
   try {
     JSDOM = require('jsdom').JSDOM;
-  } catch (e) {
+  } catch (_e) {
     console.error('Missing jsdom. Run: npm install');
     process.exit(1);
   }

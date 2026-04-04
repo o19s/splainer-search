@@ -37,12 +37,12 @@ module.exports = function(config) {
     // list of files / patterns to exclude
     exclude: [],
 
-    // Instrument library sources only (not specs or mocks).
+    // strip-exports removes ESM export keywords; coverage instruments the result.
     preprocessors: {
       'module.js': ['coverage'],
-      'services/**/*.js': ['coverage'],
-      'factories/**/*.js': ['coverage'],
-      'values/**/*.js': ['coverage']
+      'services/**/*.js': ['strip-exports', 'coverage'],
+      'factories/**/*.js': ['strip-exports', 'coverage'],
+      'values/**/*.js': ['strip-exports', 'coverage']
     },
 
     // web server port
@@ -63,6 +63,7 @@ module.exports = function(config) {
     plugins: [
       'karma-chrome-launcher',
       'karma-coverage',
+      require('./scripts/karma-strip-exports.cjs'),
       'karma-jasmine'
     ],
 

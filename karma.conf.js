@@ -14,6 +14,12 @@ module.exports = function(config) {
     // available frameworks: https://www.npmjs.com/search?q=keywords:karma-adapter
     frameworks: ['jasmine'],
 
+    plugins: [
+      'karma-jasmine',
+      'karma-chrome-launcher',
+      require('./scripts/karma-strip-exports.cjs'),
+    ],
+
 
     // list of files / patterns to load in the browser
     files: [
@@ -37,6 +43,9 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://www.npmjs.com/search?q=keywords:karma-preprocessor
     preprocessors: {
+      'services/**/*.js': ['strip-exports'],
+      'factories/**/*.js': ['strip-exports'],
+      'values/**/*.js': ['strip-exports'],
     },
 
 
