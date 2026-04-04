@@ -1,5 +1,12 @@
 'use strict';
 
+// Yield to the microtask queue so native Promise .then() callbacks settle.
+function flushMicrotasks() {
+  return Promise.resolve().then(function () {
+    return Promise.resolve();
+  });
+}
+
 describe('Service: transport: es bulk transport', function() {
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
@@ -118,7 +125,7 @@ describe('Service: transport: es bulk transport', function() {
   });
 
 
-  it('resolves whats in flight', function () {
+  it('resolves whats in flight', async function () {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
     var payloadTemplate = {'test': 0};
@@ -152,11 +159,12 @@ describe('Service: transport: es bulk transport', function() {
     .respond(200, mockResults);
     jasmine.clock().tick(100);
     $httpBackend.flush();
+    await flushMicrotasks();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(numToQuery);
   });
 
-  it('rejects individual errors', function () {
+  it('rejects individual errors', async function () {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
     var payloadTemplate = {'test': 0};
@@ -200,12 +208,13 @@ describe('Service: transport: es bulk transport', function() {
     .respond(200, mockResults);
     jasmine.clock().tick(100);
     $httpBackend.flush();
+    await flushMicrotasks();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(8);
     expect(promisesRejected).toBe(2);
   });
 
-  it('rejects all on http errors', function () {
+  it('rejects all on http errors', async function () {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
     var payloadTemplate = {'test': 0};
@@ -243,13 +252,14 @@ describe('Service: transport: es bulk transport', function() {
     .respond(400, {});
     jasmine.clock().tick(100);
     $httpBackend.flush();
+    await flushMicrotasks();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(0);
     expect(promisesRejected).toBe(numToQuery);
 
   });
 
-  it('bulks requests serially', function () {
+  it('bulks requests serially', async function () {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
     var payloadTemplate = {'test': 0};
@@ -296,6 +306,7 @@ describe('Service: transport: es bulk transport', function() {
     }
 
     $httpBackend.flush();
+    await flushMicrotasks();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(numToQuery);
 
@@ -306,6 +317,7 @@ describe('Service: transport: es bulk transport', function() {
     .respond(200, mockResults);
     jasmine.clock().tick(100);
     $httpBackend.flush();
+    await flushMicrotasks();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(numToQuery * 2);
   });

@@ -1,6 +1,6 @@
 # Angular Removal: Migration Plan
 
-**Date:** 2026-04-03 (started) — 2026-04-04 (Phase 2 complete, Phase 3 plan revised)  
+**Date:** 2026-04-03 (started) — 2026-04-04 (Phase 3 in progress)  
 **Current branch:** `splainer-rewrite` (based on `main` @ v2.36.4)  
 **Target:** Remove AngularJS entirely, convert to vanilla JS ES modules.
 
@@ -16,7 +16,7 @@
 
 ## Table of Contents
 
-1. [Completed Work](#1-completed-work)
+1. [Progress log](#1-progress-log)
 2. [Test Runners](#2-test-runners)
 3. [Coverage Baseline](#3-coverage-baseline)
 4. [Plan the HTTP/$q Replacement](#4-plan-the-httpq-replacement)
@@ -26,53 +26,35 @@
 
 ---
 
-## 1. Completed Work
+## 1. Progress log
 
-### Phase 1: Angular utility API replacements (complete)
+**Do not maintain a second copy of finished phases here.** Everything already shipped (Phases 1–2, Phase 3a–b, and incremental HTTP/`Promise` work) is summarized in **`MIGRATION_CHANGES.md`** with file lists and behavioral notes.
 
-All `angular.isDefined`, `isUndefined`, `isObject`, `isString`, `fromJson`, `extend`, `element` replaced with native JS equivalents. `angular.forEach`, `angular.copy`, `angular.merge` routed through `utilsSvc` shims (`safeForEach`, `deepClone`, `copyOnto`, `deepMerge`) that currently delegate to the Angular originals. Zero `angular.*` utility calls remain in source files.
+This file stays **plan + remaining order** ([§4](#4-plan-the-httpq-replacement), [§6](#6-remaining-migration-order)). After each mergeable chunk of work, update the change log first, then adjust [§6](#6-remaining-migration-order) checkboxes below.
 
-### Phase 2: DI decoupling — ES module exports (complete)
+### Angular-related surface still in sources (snapshot)
 
-All 47 source files (`services/`, `factories/`, `values/`) converted to ES modules:
-- Each file exports its constructor/factory/value with `export`
-- Angular `.module().service()`/`.factory()`/`.value()` registrations guarded with `if (typeof angular !== ‘undefined’)`
-- Vitest set up as a dual test runner alongside Karma (6 test files, 43 tests)
-- Custom `scripts/karma-strip-exports.cjs` preprocessor strips `export` keywords for Karma and Istanbul coverage
-- Grunt concat `process` function strips exports from the `splainer-search.js` bundle
-- Integration test `loadScript()` strips exports before `eval()`
+| API | Where | Notes |
+|-----|-------|--------|
+| `angular.forEach` / `angular.copy` / `angular.merge` | `utilsSvc.js` only | Still delegate to Angular; swap to native in Phase 3 |
+| `angular.module()` … | All 47 source files (guarded) | Removed in Phase 4 |
+| `$http` | Via `httpClient` factory only | Angular registration still returns `$http` so `$httpBackend` tests work; `createFetchClient` is the fetch/script JSONP implementation for Vitest and future DI |
+| `$sce` | `httpJsonpTransportFactory` | Called only when `$sce.trustAsResourceUrl` exists (Vitest passes `null`) |
+| `$q` | Several factories | Reduced: no `$q.defer()` / `$q()` executor in bulk enqueue, Solr search wrapper, resolver chunked path, or ES `explainOther` coordination; many `.catch` paths still use `$q.reject()` until Step 4–5 |
+| ~~`$log`~~ | — | Replaced with `console` (see change log) |
+| ~~`$timeout`~~ | — | Replaced with `setTimeout`/`clearTimeout` in bulk transport (see change log) |
 
-### Shim layer (complete)
+#### Deep clone contract (`utilsSvc`)
 
-`services/utilsSvc.js` provides `safeForEach`, `deepClone`, `copyOnto`, `deepMerge`. Internals still delegate to `angular.forEach`/`angular.copy`/`angular.merge`. Phase 3 will swap internals to native implementations.
-
-#### Deep clone contract
-
-Call sites use **plain data** (configs, Solr/ES shapes). **`structuredClone`** is usually enough; it is **not** equivalent to `angular.copy` for functions, symbols, prototypes, DOM, or some cycles. A native-JS stub is already in `test/vitest/helpers/utilsSvcStub.js`.
-
-### Remaining Angular API in source files
-
-Only `angular.forEach`, `angular.copy`, `angular.merge` remain — inside `utilsSvc.js` internals only. All other source files are Angular-free except for the guarded `angular.module()` DI registrations.
-
-| API | Where | Phase to remove |
-|-----|-------|-----------------|
-| `angular.forEach` | `utilsSvc.js` internals | Phase 3 (swap to native) |
-| `angular.copy` | `utilsSvc.js` internals | Phase 3 (swap to `structuredClone`) |
-| `angular.merge` | `utilsSvc.js` internals | Phase 3 (swap to custom `deepMerge`) |
-| `angular.module()` registrations | All 47 source files (guarded) | Phase 4 (delete) |
-| ~~`$log`~~ | ~~7 factories~~ | ~~Phase 3~~ — **done** (`console`) |
-| ~~`$timeout`~~ | ~~1 factory (`bulkTransportFactory`)~~ | ~~Phase 3~~ — **done** (`setTimeout`/`clearTimeout`) |
-| `$http` | 3 transport factories + 2 direct callers | Phase 3 Steps 1-2 (`fetch` wrapper) |
-| `$sce` | 1 factory (`httpJsonpTransportFactory`) | Phase 3 Step 1 (removed with `$http.jsonp`) |
-| `$q` | ~37 uses across 7 factories | Phase 3 Steps 3-5 (native `Promise`; depends on `$http` removal) |
+Call sites use **plain data** (configs, Solr/ES shapes). **`structuredClone`** is usually enough; it is **not** equivalent to `angular.copy` for functions, symbols, prototypes, DOM, or some cycles. A native-JS stub lives in `test/vitest/helpers/utilsSvcStub.js`.
 
 ---
 
 ## 2. Test Runners
 
-**Karma** (primary): ChromeHeadless, `npm test` — 619 tests. Stays as the gate through Phase 3.
+**Karma** (primary): ChromeHeadless, `npm test` — on the order of 620 tests. Stays as the gate through Phase 3.
 
-**Vitest** (secondary): `npm run test:vitest` — 43 tests across 6 files in `test/vitest/`. Imports ES modules directly without Angular. Uses `test/vitest/helpers/utilsSvcStub.js` for `utilsSvc` dependency.
+**Vitest** (secondary): `npm run test:vitest` — 70 tests across 8 spec files in `test/vitest/`. Imports ES modules directly without Angular. Uses `test/vitest/helpers/utilsSvcStub.js` where `utilsSvc` is required.
 
 **Integration**: `npm run test:integration` — Node.js + jsdom, real HTTP server.
 
@@ -108,8 +90,10 @@ transport.query()      →  $q promise
        ↓
 searcher.search()      →  $q promise (chains .then/.catch on transport)
        ↓
-resolver.fetchDocs()   →  $q promise ($q.all, $q.defer)
+resolver.fetchDocs()   →  $q promise ($q.all, $q.defer)  ← chunked path now uses Promise.all (see change log)
 ```
+
+**Current branch note:** `httpClient` indirection and some native `Promise` segments are already in place (`MIGRATION_CHANGES.md`, Phases 3c–d); the diagram above is the original mental model. Tests may need both `flush()` and microtask/digest flushing where the two worlds meet.
 
 Angular's test infrastructure (`$httpBackend.flush()`, `$rootScope.$apply()`) resolves the **entire chain synchronously** during a digest cycle. Introducing a single native `Promise` anywhere in the chain breaks that synchronous resolution — `$q` treats native promises as async thenables, so tests that assert immediately after `flush()` fail.
 
@@ -121,10 +105,10 @@ Each step produces a green test suite before the next step starts.
 
 #### Step 1: `fetch` wrapper — replace `$http` in transport factories
 
-Create a thin `fetch` wrapper that returns the same **response shape** as `$http` (`{ data, status, statusText, headers, config }`). This is the single highest-leverage change: three transport factories (`httpPostTransportFactory`, `httpGetTransportFactory`, `httpJsonpTransportFactory`) call `$http` directly and return the result.
+Create a thin client that returns the same **response shape** as `$http` (`{ data, status, statusText }` at minimum). **Status:** `services/httpClient.js` introduces `httpClient` (Angular factory currently returns `$http`) and `createFetchClient()` (Fetch for GET/POST, JSONP via dynamic `<script>` + optional `jsonpRequest` for tests). Transport factories inject `httpClient` instead of `$http`. Full swap of the Angular `httpClient` registration to `createFetchClient()` (and retiring `$httpBackend` for those paths) is still open.
 
-**Files changed:** 3 transport factories + new wrapper module
-**Test impact:** Replace `$httpBackend` mocks with `fetch` mocks (per-file, scoped to transport tests)
+**Files changed (so far):** 3 transport factories + `httpClient` + tests (Karma + Vitest)  
+**Test impact:** Transport Karma specs can override `httpClient` with `createFetchClient({ fetch: spy })`; library Vitest covers `createFetchClient` and transport factories without Angular
 
 `$http` contract to preserve:
 - Success: resolves to `{ data, status, statusText, headers, config }` with parsed JSON
@@ -154,28 +138,22 @@ Wrapper gets its own Vitest tests: status codes, JSON parse, rejection shape, ne
 
 #### Step 2: Replace `$http.post()` in direct callers
 
-Two files call `$http` directly (not through transport):
-- `bulkTransportFactory.js` — `$http.post()` in `sendMultiSearch()`
-- `esSearcherFactory.js` — `$http.post()` in `explain()`
+Two files called `$http` directly (not through transport): `bulkTransportFactory.js` (`_msearch`) and `esSearcherFactory.js` (`explain`). **Status:** both use `httpClient.post()` with the same DI name; under Angular this still resolves to `$http` until Step 1’s registration is swapped to fetch.
 
-Replace with the same `fetch` wrapper from Step 1.
-
-**Files changed:** 2 factories
-**Test impact:** Replace `$httpBackend` mocks in `bulkTransportFactory` tests; `esSearcherFactory` explain tests
+**Test impact:** Existing `$httpBackend` expectations still apply until the `httpClient` factory stops delegating to `$http`.
 
 #### Step 3: Replace `$q.defer()` / `$q.all()` / `$q()` constructor patterns
 
-With all upstream promises now native, these replacements are safe:
+**Status (done for listed sites):** Native `Promise` can interleave with remaining `$q` chains; some specs use a small `flushAll` helper (alternate `Promise.resolve()` ticks and `$rootScope.$apply()`) where assertions follow `$httpBackend.flush()`.
 
 | File | Pattern | Replacement |
 |------|---------|-------------|
-| `bulkTransportFactory.js` | `$q.defer()` — resolve/reject stashed on pending query objects | `new Promise()` with resolve/reject stashed on object |
-| `resolverFactory.js` | `$q.defer()` + `$q.all()` — chunked fetch coordination | `return Promise.all(promises).then(...)` (eliminates deferred anti-pattern) |
-| `esSearcherFactory.js` | `$q.defer()` + `$q.all()` — explainOther coordination | `return Promise.all(promises).then(...)` |
-| `solrSearcherFactory.js` | `$q(function(resolve, reject) {...})` — wraps transport chain | Remove wrapper, return transport chain directly |
+| `bulkTransportFactory.js` | `$q.defer()` on queued queries | `new Promise()`; `pendingQuery.resolve` / `pendingQuery.reject` |
+| `resolverFactory.js` | `$q.defer()` + `$q.all()` for chunked fetch | `return Promise.all(promises).then(...)`; `throw` in `catch` |
+| `esSearcherFactory.js` | `$q.defer()` + `$q.all()` for `explainOther` | `return Promise.all(promises).then(...)` |
+| `solrSearcherFactory.js` | `$q(function(resolve, reject){...})` around transport | Return `transport.query(...).then(...)` directly |
 
-**Files changed:** 4 factories
-**Test impact:** Tests already work with native promises after Steps 1-2; `$rootScope.$apply()` calls in resolver tests can be removed (no digest needed)
+**Test impact:** `docResolverSvc`, `esSearchSvc`, and `migrationSafetyTests` adjusted where microtask ordering matters; not every `$rootScope.$apply()` can be dropped yet while `$q.reject` remains downstream.
 
 #### Step 4: Remove `$q.reject()` calls
 
@@ -193,7 +171,7 @@ Strip `$q` from function parameters and the `angular.module()` registration arra
 
 ### `$sce` (JSONP)
 
-`$sce.trustAsResourceUrl()` is used only in `httpJsonpTransportFactory.js` for JSONP trusted URLs. When `$http.jsonp()` is replaced with `fetch` in Step 1, `$sce` is removed at the same time. If JSONP support is still needed, implement it as a dynamic `<script>` tag injection in the wrapper; otherwise drop JSONP entirely.
+`httpJsonpTransportFactory` still calls `$sce.trustAsResourceUrl` when the Angular `$http` JSONP path is active. `createFetchClient()` uses dynamic `<script>` tag JSONP (no `$sce`). Longer-term default transport / CORS direction is noted in **`FUTURE.md`**.
 
 ### Test migration strategy
 
@@ -221,16 +199,18 @@ The transition from `$httpBackend` to `fetch` mocks happens file-by-file alongsi
 
 ### Phase 3: `$http`, `$q`, `$log`, `$timeout`, `$sce`
 
-[§4](#4-plan-the-httpq-replacement) explains **why order matters** and describes each step in detail. Summary:
+[§4](#4-plan-the-httpq-replacement) explains **why order matters** and describes each step in detail. Summary (see **`MIGRATION_CHANGES.md`** for details):
 
-- [x] `$log` → `console` (7 factories, 0 behavioral change)
-- [x] `$timeout` → `setTimeout`/`clearTimeout` (1 factory, tests updated to `jasmine.clock()`)
-- [ ] **Step 1:** `fetch` wrapper + replace `$http` in 3 transport factories (+ drop `$sce`)
-- [ ] **Step 2:** Replace `$http.post()` in `bulkTransportFactory` and `esSearcherFactory`
-- [ ] **Step 3:** Replace `$q.defer()` / `$q.all()` / `$q()` constructor (4 factories)
-- [ ] **Step 4:** Replace `$q.reject()` → `throw` in `.then()`/`.catch()` handlers (7 factories)
-- [ ] **Step 5:** Remove `$q` from function signatures and DI arrays (7 factories)
+- [x] `$log` → `console`
+- [x] `$timeout` → `setTimeout`/`clearTimeout` (bulk transport + tests)
+- [x] **Step 1 (partial):** `httpClient` + `createFetchClient`; transports use `httpClient`; Angular `httpClient` still wraps `$http`
+- [x] **Step 2:** `bulkTransportFactory` and `esSearcherFactory` call `httpClient.post()`
+- [x] **Step 3:** Native `Promise` / `Promise.all` in bulk enqueue, resolver chunked fetch, ES `explainOther`, Solr search chain (no `$q.defer` / `$q()` for those paths)
+- [ ] **Step 1 (finish):** Register `createFetchClient()` in Angular and migrate remaining `$httpBackend` tests to `fetch` mocks
+- [ ] **Step 4:** Replace remaining `$q.reject(...)` in handlers with `throw` / `return Promise.reject(...)` as appropriate
+- [ ] **Step 5:** Remove `$q` from factory signatures and DI arrays where no longer referenced
 - [ ] Swap `utilsSvc` internals from `angular.*` to native implementations
+- [ ] Optional: drop `$sce` from JSONP factory once JSONP is fully non-Angular (see `FUTURE.md` for JSONP/CORS direction)
 
 ### Phase 4: Remove Angular
 

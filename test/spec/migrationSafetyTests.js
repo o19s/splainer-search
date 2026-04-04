@@ -1049,7 +1049,7 @@ describe('Migration Safety: angular.forEach on undefined collections (source pat
       $httpBackend = $injector.get('$httpBackend');
     }));
 
-    it('multiSearchFailed still runs angular.forEach(queue, ...) when queue is non-empty', function() {
+    it('multiSearchFailed still runs angular.forEach(queue, ...) when queue is non-empty', async function() {
       var bulk = new BulkTransportFactory();
       var url = 'http://es.example.com/i/_msearch';
       var p = bulk.query(url, { query: 1 }, {});
@@ -1058,6 +1058,7 @@ describe('Migration Safety: angular.forEach on undefined collections (source pat
       $httpBackend.expectPOST(url).respond(500, { error: 'fail' });
       jasmine.clock().tick(100);
       $httpBackend.flush();
+      await Promise.resolve().then(function () { return Promise.resolve(); });
       expect(rejected).toBe(true);
     });
   });

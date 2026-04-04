@@ -288,7 +288,6 @@ export function EsSearcherFactory(
       .then(function () {
         self.numFound = otherSearcher.numFound;
 
-        var defer = $q.defer();
         var promises = [];
         var docs = [];
 
@@ -300,16 +299,9 @@ export function EsSearcherFactory(
           promises.push(promise);
         });
 
-        $q.all(promises)
-          .then(function () {
-            self.docs = docs;
-            defer.resolve();
-          })
-          .catch(function (err) {
-            defer.reject(err);
-          });
-
-        return defer.promise;
+        return Promise.all(promises).then(function () {
+          self.docs = docs;
+        });
       })
       .catch(function (response) {
         console.debug('Failed to run explainOther');

@@ -48,7 +48,7 @@ export function BulkTransportFactory(TransportFactory, httpClient, $q, utilsSvc)
       var numInFlight = 0;
       utilsSvc.safeForEach(queue, function (pendingQuery) {
         if (pendingQuery.inFlight) {
-          pendingQuery.deferred.reject(bulkHttpResp);
+          pendingQuery.reject(bulkHttpResp);
           numInFlight++;
         }
       });
@@ -76,11 +76,11 @@ export function BulkTransportFactory(TransportFactory, httpClient, $q, utilsSvc)
       utilsSvc.safeForEach(bulkHttpResp.responses, function (resp) {
         var currRequest = queue[queueIdx];
         if (Object.hasOwn(resp, 'error')) {
-          currRequest.deferred.reject(resp);
+          currRequest.reject(resp);
           // individual query failure
         } else {
           // make the response look like standard response
-          currRequest.deferred.resolve({ data: resp });
+          currRequest.resolve({ data: resp });
         }
 
         queueIdx++;
@@ -100,16 +100,21 @@ export function BulkTransportFactory(TransportFactory, httpClient, $q, utilsSvc)
     }
 
     function enqueue(query) {
-      var deferred = $q.defer();
+      var resolve, reject;
+      var promise = new Promise(function (res, rej) {
+        resolve = res;
+        reject = rej;
+      });
 
       var pendingQuery = {
-        deferred: deferred,
+        resolve: resolve,
+        reject: reject,
         inFlight: false,
         payload: query,
       };
       queue.push(pendingQuery);
       ensureTimer();
-      return deferred.promise;
+      return promise;
     }
 
     var timerId = null;

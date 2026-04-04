@@ -6,6 +6,17 @@
  * hits, and optional settings merged into searcher config.
  */
 /*global urlContainsParams*/
+// Alternate between native Promise microtask flushing and Angular digest
+// cycles. Promise.all wrapping $q promises creates a ping-pong: microtasks
+// schedule $q $evalAsync callbacks (need digest) and digests fire native
+// Promise resolve (need microtask).
+async function flushAll($rootScope) {
+  for (var i = 0; i < 10; i++) {
+    await Promise.resolve();
+    try { $rootScope.$apply(); } catch (_e) { /* no-op if nothing to apply */ }
+  }
+}
+
 describe('Service: docResolverSvc', function () {
 
   // load the service's module
@@ -32,50 +43,6 @@ describe('Service: docResolverSvc', function () {
         q: ['#$query##'],
       },
       tryNo: 2
-    };
-
-    var mockFullQueriesResp = {
-      queries: {
-        displayOrder: [2,1,0],
-        queries: {
-          '0': {
-            'arrangedAt': '3681400536',
-            'arrangedNext': '4294967295',
-            'deleted': 'false',
-            'queryId': '0',
-            'query_text': 'symptoms of heart attack',
-            'doc1': '10',
-            'doc2': '9',
-            'doc3': '8',
-            'doc4': '7',
-            'doc5': '6',
-            'doc6': '5',
-            'doc7': '4',
-            'doc8': '3',
-            'doc9': '2',
-            'doc10': '2',
-            'doc11': '1',
-            'doc12': '1'
-          },
-          '1': {
-            'arrangedAt': '3067833780',
-            'arrangedNext': '3681400536',
-            'deleted': 'true',
-            'queryId': '1',
-            'query_text': 'how is kidney cancer diagnosed'
-          },
-          '2': {
-            'arrangedAt': '0',
-            'arrangedNext': '613566756',
-            'deleted': 'false',
-            'l_31284': '10',
-            'queryId': '2',
-            'query_text': 'prognosis of alzheimers',
-            'doc1': '1',
-            'doc2': '10'
-          }
-        }
-      }
     };
 
     var mockSolrResp = {
@@ -354,7 +321,7 @@ describe('Service: docResolverSvc', function () {
         expect(ids.length).toEqual(4);
       };
 
-      it('resolves in single chunks', function() {
+      it('resolves in single chunks', async function() {
         resolver = docResolverSvc.createResolver(docIds, mockSettings, 1);
         var expectedUrlParamsChunk1 = {
           q:[encodeURIComponent('id:(doc1)')]
@@ -386,12 +353,12 @@ describe('Service: docResolverSvc', function () {
           });
 
         $httpBackend.flush();
+        await flushAll($rootScope);
         $httpBackend.verifyNoOutstandingExpectation();
-        $rootScope.$apply();
         expect(called).toBe(1);
       });
 
-      it('resolves in two chunks', function() {
+      it('resolves in two chunks', async function() {
         resolver = docResolverSvc.createResolver(docIds, mockSettings, 2);
         var expectedUrlParamsChunk1 = {
           q:[encodeURIComponent('id:(doc1 OR doc2)')]
@@ -410,16 +377,16 @@ describe('Service: docResolverSvc', function () {
           expectAllDocsPresent(resolver);
         });
         $httpBackend.flush();
+        await flushAll($rootScope);
         $httpBackend.verifyNoOutstandingExpectation();
-        $rootScope.$apply();
         expect(called).toBe(1);
       });
 
       /**
        * When chunkSize is 0, sliceIds() returns undefined and angular.forEach skips it, so no HTTP
-       * requests run and $q.all([]) resolves immediately with an empty doc list.
+       * requests run and Promise.all([]) resolves immediately with an empty doc list.
        */
-      it('with chunkSize 0 performs no requests and yields empty docs', function() {
+      it('with chunkSize 0 performs no requests and yields empty docs', async function() {
         resolver = docResolverSvc.createResolver(docIds, mockSettings, 0);
         var called = 0;
         resolver.fetchDocs()
@@ -427,12 +394,12 @@ describe('Service: docResolverSvc', function () {
             called++;
             expect(resolver.docs.length).toBe(0);
           });
-        $rootScope.$apply();
+        await flushAll($rootScope);
         expect(called).toBe(1);
         $httpBackend.verifyNoOutstandingExpectation();
       });
 
-      it('resolves in an exact chunk', function() {
+      it('resolves in an exact chunk', async function() {
         resolver = docResolverSvc.createResolver(docIds, mockSettings, 4);
         var expectedUrlParamsChunk1 = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4)')]
@@ -446,12 +413,12 @@ describe('Service: docResolverSvc', function () {
           expectAllDocsPresent(resolver);
         });
         $httpBackend.flush();
+        await flushAll($rootScope);
         $httpBackend.verifyNoOutstandingExpectation();
-        $rootScope.$apply();
         expect(called).toBe(1);
       });
 
-      it('resolves in a bigger than needed chunk', function() {
+      it('resolves in a bigger than needed chunk', async function() {
         resolver = docResolverSvc.createResolver(docIds, mockSettings, 424);
         var expectedUrlParamsChunk1 = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4)')]
@@ -465,8 +432,8 @@ describe('Service: docResolverSvc', function () {
           expectAllDocsPresent(resolver);
         });
         $httpBackend.flush();
+        await flushAll($rootScope);
         $httpBackend.verifyNoOutstandingExpectation();
-        $rootScope.$apply();
         expect(called).toBe(1);
       });
     });

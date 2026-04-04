@@ -50,8 +50,8 @@ already the constructor/factory identity.
 - **No Angular DI wiring changed.** The same dependency names in the same order
   are passed to `.service()`/`.factory()`. The only difference is that the
   constructor is now a named reference instead of an inline function expression.
-- **No test logic changed.** All 619 Karma tests and the integration test pass
-  without modification.
+- **No test logic changed.** All Karma tests and the integration test passed at
+  Phase 2 completion (619 specs at the time); the suite has since grown — see Phase 3c–d for current approximate counts.
 
 ### Structural changes (non-behavioral)
 
@@ -172,7 +172,7 @@ promises resolve.
 ### What did NOT change
 
 - **No batching behavior changed.** The same 100ms timer drives the same
-  `sendMultiSearch()` → `$http.post()` flow. Only the scheduling mechanism
+  `sendMultiSearch()` → `httpClient.post()` (still `$http` under Angular). Only the scheduling mechanism
   changed from Angular's `$timeout` to native `setTimeout`.
 - **Non-BULK transport tests unchanged.** Tests for `HttpPostTransportFactory`,
   `HttpGetTransportFactory`, `HttpJsonpTransportFactory`, and `ProxyTransport`
@@ -188,3 +188,66 @@ promises resolve.
 | Branches | 84.56% | 84.56% | Identical |
 | Functions | 95.39% | 95.39% | Identical |
 | Lines | 95.75% | 95.75% | Identical |
+
+---
+
+## Phase 3c — `httpClient` abstraction (`$http` indirection)
+
+**Behavioral changes: None in production under Angular** — the registered `httpClient` factory still returns Angular’s `$http`, so existing `$httpBackend` tests and promise/digest behavior are unchanged.
+
+Structural / preparatory changes:
+
+| Area | What changed |
+|------|----------------|
+| New module | `services/httpClient.js` exports `createFetchClient(options)` — Fetch-based GET/POST with the same resolve/reject shape as `$http` (`{ data, status, statusText }`); JSONP via dynamic `<script>` (or optional `jsonpRequest` for unit tests) |
+| Angular DI | `httpClient` factory wraps `$http` until Step 1 is finished (fetch registration) |
+| Transports | `HttpGetTransportFactory`, `HttpPostTransportFactory`, `HttpJsonpTransportFactory` inject `httpClient` instead of `$http` |
+| Direct POST | `BulkTransportFactory`, `EsSearcherFactory` use `httpClient.post()` for `_msearch` and explain |
+| JSONP + `$sce` | `HttpJsonpTransportFactory` calls `$sce.trustAsResourceUrl` only when `$sce` provides it (non-Angular / Vitest callers can pass `null`) |
+
+### Vitest & Karma tests
+
+| Addition | Purpose |
+|----------|---------|
+| `test/vitest/httpClient.test.js` | Contract tests for `createFetchClient` (success, 4xx/5xx, network error, JSONP overrides / DOM mock) |
+| `test/vitest/transportFactories.test.js` | Transport factories with `createFetchClient` and `TransportFactory`, no Angular |
+| `test/spec/http{Get,Post,Jsonp}TransportFactory.js` | Karma: `$provide` override of `httpClient` with `createFetchClient({ fetch: spy })` or `jsonpRequest` spy |
+
+### Documentation
+
+| File | Purpose |
+|------|---------|
+| `FUTURE.md` | Recommends eventual JSONP deprecation in favor of Solr CORS + GET default (semver-major) |
+
+---
+
+## Phase 3d — Native `Promise` replacing `$q.defer` / `$q()` in selected factories
+
+**Behavioral changes: Subtle timing only in tests** — mixing native `Promise` microtasks with `$q` means a few specs must flush both (e.g. `flushAll`: `await Promise.resolve()` in a loop with `$rootScope.$apply()`). Production behavior of batching, chunking, and search/explain flows is unchanged.
+
+### Source changes
+
+| File | Change |
+|------|--------|
+| `factories/bulkTransportFactory.js` | `enqueue()` returns `new Promise`; pending items use `resolve` / `reject` instead of `deferred`; failure paths call `pendingQuery.reject` / `currRequest.reject` / `resolve` accordingly |
+| `factories/resolverFactory.js` | Chunked `fetchDocs` returns `Promise.all(promises)`; errors rethrown in `catch` (non-chunked path still uses `$q.reject` for failure propagation) |
+| `factories/esSearcherFactory.js` | `explainOther` uses `Promise.all(promises).then(...)` instead of `$q.defer()` wrapping `$q.all` |
+| `factories/solrSearcherFactory.js` | Solr `search` returns the transport `.query().then(...)` chain directly (no outer `$q(function (resolve, reject) { ... })` executor); `activeQueries` increment/decrement aligned with that chain |
+
+### Test & spec hygiene
+
+| File | Change |
+|------|--------|
+| `test/spec/bulkTransportFactory.js` | Expectations updated for `resolve`/`reject` on pending queue items where migration safety tests inspect internals |
+| `test/spec/docResolverSvc.js` | Chunked and edge-case tests use `flushAll` instead of a single `$apply` where needed; removed unused `mockFullQueriesResp` fixture |
+| `test/spec/esSearchSvc.js` | Shared `flushAll`; inject `$rootScope`; `Object.hasOwn` instead of `hasOwnProperty`; duplicate explain fixtures removed from profile-only `describe`; minor unused-variable / catch-signature fixes; async `explainOther` doc test |
+| `test/spec/migrationSafetyTests.js` | Extra microtask tick after bulk failure flush where rejection is observed asynchronously |
+
+### Dual runner counts (approximate, post Phase 3c–d)
+
+| Runner | Count (approx.) |
+|--------|------------------|
+| Karma (`npm test`) | ~620 tests |
+| Vitest (`npm run test:vitest`) | 70 tests in 8 files under `test/vitest/` |
+
+---

@@ -113,7 +113,7 @@ export function ResolverFactory($q, searchSvc, solrUrlSvc, normalDocsSvc, utilsS
           })
           .catch(function (response) {
             console.debug('Failed to fetch docs');
-            // Reject so chunked $q.all (and callers) observe failure; returning response would fulfill.
+            // Reject so chunked Promise.all (and callers) observe failure; returning response would fulfill.
             return $q.reject(response);
           });
       } else {
@@ -128,7 +128,6 @@ export function ResolverFactory($q, searchSvc, solrUrlSvc, normalDocsSvc, utilsS
           }
         };
 
-        var deferred = $q.defer();
         var promises = [];
 
         utilsSvc.safeForEach(sliceIds(ids, chunkSize), function (sliceOfIds) {
@@ -136,18 +135,14 @@ export function ResolverFactory($q, searchSvc, solrUrlSvc, normalDocsSvc, utilsS
           promises.push(resolver.fetchDocs());
         });
 
-        $q.all(promises)
+        return Promise.all(promises)
           .then(function (docsChunk) {
             self.docs = self.docs.concat.apply(self.docs, docsChunk);
-            deferred.resolve();
           })
           .catch(function (response) {
             console.debug('Failed to fetch docs');
-            // Propagate failure: without reject(), the returned promise never settles.
-            deferred.reject(response);
+            throw response;
           });
-
-        return deferred.promise;
       }
     }
   };
