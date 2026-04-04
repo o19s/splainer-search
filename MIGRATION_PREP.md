@@ -15,7 +15,7 @@
 ## Table of Contents
 
 1. [Current State Assessment](#1-current-state-assessment)
-2. [Fix the Test Runner](#2-fix-the-test-runner)
+2. [Test runner (status)](#2-test-runner-status)
 3. [Expand Test Coverage Before Migration](#3-expand-test-coverage-before-migration)
    - [Pragmatic review: more tests before migrate?](#pragmatic-review-more-tests-before-migrate)
    - [Coverage baseline (recorded)](#coverage-baseline-recorded)
@@ -68,32 +68,17 @@ Single reference for counts and what to swap in. Tier labels: **drop-in** (direc
 | `$timeout` | ~49 | arch | `setTimeout` |
 | `$sce` | ~9 | arch | Remove (JSONP trusted URLs only) |
 
-### Recent branch changes (`splainer-rewrite`)
-
-- **`services/customHeadersJson.js`** — Safe JSON header parse; `esUrlSvc`; tests in `test/spec/customHeadersJson.js`.
-- **`resolverFactory.js`** — Optional settings copied onto `config` only when defined (avoids `angular.merge` clobbering with `undefined`). Failed chunked/single fetch **reject** instead of fulfilling with a raw error.
-- **`test/integration/chunked-resolver-fetch.integration.js`** — `npm run test:integration`.
-- **ESLint + Prettier** — `.eslintrc.cjs`, `Gruntfile.cjs` (default: eslint → karma → concat); `npm run lint`, `format` / `format:check`; JSHint removed from the pipeline.
-- **`stringPatch.js` removed** — `String.prototype.includes` at explain-service call sites (ES2015+).
-- **Factories and services → `utilsSvc` shims** — `angular.forEach` / `angular.copy` / `angular.merge` call sites in `factories/**` and `services/**` now use `safeForEach`, `deepClone`, `copyOnto`, and `deepMerge` ([§5](#5-introduce-shim-layer)); some `angular.isDefined` / `angular.isFunction` replaced with `!== undefined` / `typeof` checks. **`bulkTransportFactory`:** property spelling `defered` → `deferred`.
-
 ---
 
-## 2. Fix the Test Runner
+## 2. Test runner (status)
 
-Karma + ChromeHeadless (`scripts/karma-chrome-bin.js`, pinned `puppeteer`), `npm test`, and `npm run test:coverage` are wired on this branch. **Green `npm test` is the gate.**
-
-### Vitest + Playwright (optional later)
-
-That stack was tried on `vanilla-simplify`. Treat it as a **follow-on**, not a prerequisite for removing Angular. Stay on Karma through Phase 3 while green; pilot Vitest on a small slice if Karma blocks progress. Do not bundle “new runner” with “new HTTP layer.”
+Karma + ChromeHeadless (`scripts/karma-chrome-bin.js`, pinned `puppeteer`); `npm test` and `npm run test:coverage`. **Green `npm test` is the gate.** Vitest + Playwright were tried on `vanilla-simplify`; treat them as a **follow-on**, not a prerequisite for removing Angular. Stay on Karma through Phase 3 while green; pilot Vitest on a small slice if Karma blocks progress. Do not bundle “new runner” with “new HTTP layer.”
 
 ---
 
 ## 3. Expand Test Coverage Before Migration
 
-### Already pinned (see `migrationSafetyTests.js`, `docResolverSvc.js`)
-
-Resolver `sliceIds()` / `chunkSize <= 0`, bulk **queue** iteration (not `requestBatches[url]`), missing Solr `response.docs`, preprocessor copy/merge shapes, `$http` / `$timeout` / DI surface — unless source regresses.
+**Canary tests** (`migrationSafetyTests.js`, `docResolverSvc.js` spec) cover: resolver `sliceIds()` / `chunkSize <= 0`, bulk **queue** iteration (not `requestBatches[url]`), missing Solr `response.docs`, preprocessor copy/merge shapes, `$http` / `$timeout` / DI surface — unless source regresses.
 
 ### Pragmatic review: more tests before migrate?
 
@@ -217,7 +202,7 @@ Six transport factories use `$http`. High risk because:
 
 2. **Tests** for the wrapper: status codes, JSON parse, rejection shape.
 
-3. **Mocks:** `msw`, `globalThis.fetch = mock`, or Vitest `vi.mock` if you have switched runners ([§2](#2-fix-the-test-runner)).
+3. **Mocks:** `msw`, `globalThis.fetch = mock`, or Vitest `vi.mock` if you have switched runners ([§2](#2-test-runner-status)).
 
 **`$q`:** `$q.defer()` → `new Promise((resolve, reject) => { ... })`; `$q.all` / `$q.reject` / `$q.when` → `Promise.all` / `Promise.reject` / `Promise.resolve`. **Digest vs microtasks:** rare in prod; tests that `$rootScope.$apply()` to flush may need `await` / microtask chains.
 
@@ -227,7 +212,7 @@ Six transport factories use `$http`. High risk because:
 
 **Current:** Grunt → ESLint (default task) → Karma → concat → `splainer-search.js`; Prettier (`npm run format` / `format:check`); Karma coverage via `karma.coverage.conf.cjs`.
 
-**Target:** esbuild bundle; Vitest (optional timing [§2](#2-fix-the-test-runner)); Playwright.
+**Target:** esbuild bundle; Vitest (optional timing [§2](#2-test-runner-status)); Playwright.
 
 **Prep**
 
@@ -239,7 +224,7 @@ Six transport factories use `$http`. High risk because:
 
 ### Phase 1: Angular API → table (§1)
 
-Mechanical edits + small PRs (one API or directory); `npm test` per batch. Rough volumes (see §1): drop-ins **~60+**; `forEach` **~124**; `copy` **~92**; `merge` **~13**. **`forEach` / `copy` / `merge` in `factories/**` and `services/**`:** done via `utilsSvc` ([§5](#5-introduce-shim-layer), [Recent branch changes](#recent-branch-changes-splainer-rewrite)).
+Mechanical edits + small PRs (one API or directory); `npm test` per batch. Rough volumes (see §1): drop-ins **~60+**; remaining `forEach` / `copy` / `merge` counts in §1 for call sites not yet behind shims.
 
 - [ ] Drop-ins: `is*`, `fromJson`, `extend`, `element`, … (remaining call sites outside the shim sweep)
 
@@ -259,7 +244,7 @@ Leaves first ([§6](#6-decouple-the-di-system-incrementally), [Appendix](#append
 
 - [ ] Strip `angular.module` registrations
 - [ ] Drop `angular` / `angular-mocks` from `package.json`
-- [ ] Vitest (or other) — optional timing [§2](#2-fix-the-test-runner)
+- [ ] Vitest (or other) — optional timing [§2](#2-test-runner-status)
 - [ ] Grunt concat → esbuild
 - [ ] Sign off on **this** branch’s tests and [public API](#public-api--semver)
 

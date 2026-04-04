@@ -1,8 +1,10 @@
 'use strict';
 
-var defaultVectaraConfig = {
-  apiMethod:    'POST',
-};
+(function() {
+  var defaultVectaraConfig = {
+    apiMethod:    'POST',
+  };
 
-angular.module('o19s.splainer-search')
-  .value('defaultVectaraConfig', defaultVectaraConfig);
+  angular.module('o19s.splainer-search')
+    .value('defaultVectaraConfig', defaultVectaraConfig);
+})();
