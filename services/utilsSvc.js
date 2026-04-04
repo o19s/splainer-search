@@ -12,7 +12,7 @@
  *
  * @see MIGRATION_PREP.md §5 Introduce Shim Layer
  */
-angular.module('o19s.splainer-search').factory('utilsSvc', function utilsSvcFactory() {
+export function utilsSvcFactory() {
   /**
    * Iterates like `angular.forEach`: `null` / `undefined` are no-ops; arrays yield
    * `(value, index, array)`; objects own keys yield `(value, key, obj)`; strings yield
@@ -71,4 +71,9 @@ angular.module('o19s.splainer-search').factory('utilsSvc', function utilsSvcFact
     copyOnto: copyOnto,
     deepMerge: deepMerge,
   };
-});
+}
+
+// Angular DI registration (removed in Phase 4)
+if (typeof angular !== 'undefined') {
+  angular.module('o19s.splainer-search').factory('utilsSvc', utilsSvcFactory);
+}

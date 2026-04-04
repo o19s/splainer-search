@@ -39,6 +39,12 @@ module.exports = function (grunt) {
         target: ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js'],
       },
       concat: {
+        options: {
+          // Strip ESM export keywords so the bundle loads as a classic <script>.
+          process: function (src) {
+            return src.replace(/^export\s+/gm, '');
+          },
+        },
         dist: {
           src: ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js'],
           dest: 'splainer-search.js',
