@@ -2,7 +2,7 @@
 
 /*jslint latedef:false*/
 
-export function HttpGetTransportFactory(TransportFactory, $http) {
+export function HttpGetTransportFactory(TransportFactory, httpClient) {
   var Transport = function (options) {
     TransportFactory.call(this, options);
   };
@@ -14,7 +14,7 @@ export function HttpGetTransportFactory(TransportFactory, $http) {
 
   function query(url, payload, headers) {
     var requestConfig = { headers: headers };
-    return $http.get(url, requestConfig);
+    return httpClient.get(url, requestConfig);
   }
 
   return Transport;
@@ -24,5 +24,5 @@ export function HttpGetTransportFactory(TransportFactory, $http) {
 if (typeof angular !== 'undefined') {
   angular
     .module('o19s.splainer-search')
-    .factory('HttpGetTransportFactory', ['TransportFactory', '$http', HttpGetTransportFactory]);
+    .factory('HttpGetTransportFactory', ['TransportFactory', 'httpClient', HttpGetTransportFactory]);
 }

@@ -2,7 +2,7 @@
 
 /*jslint latedef:false*/
 
-export function HttpJsonpTransportFactory(TransportFactory, $http, $sce) {
+export function HttpJsonpTransportFactory(TransportFactory, httpClient, $sce) {
   var Transport = function (options) {
     TransportFactory.call(this, options);
   };
@@ -28,7 +28,7 @@ export function HttpJsonpTransportFactory(TransportFactory, $http, $sce) {
     url = $sce.trustAsResourceUrl(url);
 
     // you don't get header or payload support with jsonp, it's akin to GET requests that way.
-    return $http.jsonp(url, { jsonpCallbackParam: 'json.wrf' });
+    return httpClient.jsonp(url, { jsonpCallbackParam: 'json.wrf' });
   }
 
   return Transport;
@@ -40,7 +40,7 @@ if (typeof angular !== 'undefined') {
     .module('o19s.splainer-search')
     .factory('HttpJsonpTransportFactory', [
       'TransportFactory',
-      '$http',
+      'httpClient',
       '$sce',
       HttpJsonpTransportFactory,
     ]);
