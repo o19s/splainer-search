@@ -203,14 +203,62 @@ describe('createFetchClient', function () {
   });
 
   describe('jsonp()', function () {
-    it('issues a GET request (JSONP via fetch fallback)', async function () {
-      var fetchFn = mockFetch(200, { response: { docs: [] } });
-      var client = createFetchClient(fetchFn);
+    it('uses custom jsonpRequest when provided', async function () {
+      var jsonpSpy = vi.fn().mockResolvedValue({
+        data: { response: { docs: [] } },
+        status: 200,
+        statusText: 'OK',
+      });
+      var client = createFetchClient({ jsonpRequest: jsonpSpy });
 
-      var result = await client.jsonp('http://example.com/solr/select?q=*:*', {});
+      var result = await client.jsonp('http://example.com/solr/select?q=*:*', {
+        jsonpCallbackParam: 'json.wrf',
+      });
 
       expect(result.data).toEqual({ response: { docs: [] } });
-      expect(fetchFn.mock.calls[0][1].method).toBe('GET');
+      expect(jsonpSpy).toHaveBeenCalledWith('http://example.com/solr/select?q=*:*', {
+        jsonpCallbackParam: 'json.wrf',
+      });
+    });
+
+    it('uses script injection when no jsonpRequest override is provided', async function () {
+      // Mock the DOM APIs needed for script tag injection
+      var mockHead = {
+        appendChild: vi.fn(function (script) {
+          // Simulate the server invoking the callback
+          var callbackName = new URL(script.src).searchParams.get('callback');
+          globalThis[callbackName]({ response: { docs: ['a'] } });
+        }),
+        removeChild: vi.fn(),
+      };
+      var hadDocument = 'document' in globalThis;
+      var origDocument = globalThis.document;
+
+      globalThis.document = {
+        head: mockHead,
+        createElement: function (tag) {
+          if (tag === 'script') {
+            return { parentNode: mockHead, removeChild: vi.fn() };
+          }
+        },
+      };
+
+      try {
+        var client = createFetchClient({ fetch: vi.fn() });
+        var result = await client.jsonp('http://example.com/solr/select?q=*:*', {
+          jsonpCallbackParam: 'callback',
+        });
+
+        expect(result.data).toEqual({ response: { docs: ['a'] } });
+        expect(result.status).toBe(200);
+        expect(mockHead.appendChild).toHaveBeenCalled();
+      } finally {
+        if (hadDocument) {
+          globalThis.document = origDocument;
+        } else {
+          delete globalThis.document;
+        }
+      }
     });
   });
 

@@ -25,7 +25,12 @@ export function HttpJsonpTransportFactory(TransportFactory, httpClient, $sce) {
       url = url.replace('://', '://' + userPassword + '@');
     }
 
-    url = $sce.trustAsResourceUrl(url);
+    // $sce.trustAsResourceUrl is required by Angular's $http.jsonp().
+    // When httpClient is swapped to createFetchClient (which uses <script> tag
+    // injection for JSONP), $sce will no longer be needed and can be removed.
+    if ($sce && $sce.trustAsResourceUrl) {
+      url = $sce.trustAsResourceUrl(url);
+    }
 
     // you don't get header or payload support with jsonp, it's akin to GET requests that way.
     return httpClient.jsonp(url, { jsonpCallbackParam: 'json.wrf' });

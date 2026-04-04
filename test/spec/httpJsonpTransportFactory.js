@@ -1,60 +1,78 @@
 'use strict';
 
 /**
- * Tests for HttpJsonpTransportFactory: JSONP requests and Basic-auth-in-URL workaround.
+ * Tests for HttpJsonpTransportFactory using fetch-based httpClient.
+ * Validates JSONP requests and the Basic-auth-in-URL workaround.
  */
-/*global describe,beforeEach,module,inject,it,expect*/
-describe('Factory: HttpJsonpTransportFactory', function() {
+/*global createFetchClient*/
+describe('Factory: HttpJsonpTransportFactory (fetch)', function () {
   beforeEach(module('o19s.splainer-search'));
 
-  var $httpBackend;
-  var $timeout;
   var HttpJsonpTransportFactory;
+  var jsonpSpy;
 
-  var $sce;
+  // Override httpClient to createFetchClient with a mock jsonpRequest,
+  // and provide a passthrough $sce since the factory still conditionally uses it.
+  beforeEach(module(function ($provide) {
+    jsonpSpy = jasmine.createSpy('jsonpRequest').and.returnValue(
+      Promise.resolve({ data: { ok: true }, status: 200, statusText: 'OK' })
+    );
+    $provide.factory('httpClient', function () {
+      return createFetchClient({
+        fetch: function () { throw new Error('fetch should not be called for JSONP'); },
+        jsonpRequest: jsonpSpy,
+      });
+    });
+    // Passthrough $sce — in the fetch path, $sce.trustAsResourceUrl is a no-op
+    $provide.value('$sce', {
+      trustAsResourceUrl: function (url) { return url; },
+    });
+  }));
 
-  beforeEach(inject(function($injector, _HttpJsonpTransportFactory_) {
-    $httpBackend = $injector.get('$httpBackend');
-    $timeout = $injector.get('$timeout');
-    $sce = $injector.get('$sce');
+  beforeEach(inject(function (_HttpJsonpTransportFactory_) {
     HttpJsonpTransportFactory = _HttpJsonpTransportFactory_;
   }));
 
-  it('issues a JSONP GET without rewriting the URL when no Authorization header is set', function() {
+  it('issues a JSONP request without rewriting the URL when no Authorization header is set', function (done) {
     var transport = new HttpJsonpTransportFactory();
     var url = 'https://search.example.com/api?q=test';
-    transport.query(url, {}, {});
-    $httpBackend.expectJSONP(function(u) {
-      return u.indexOf('https://search.example.com/api?q=test') === 0;
-    }).respond(200, { ok: true });
-    $timeout.flush();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    transport.query(url, {}, {}).then(function () {
+      var callArgs = jsonpSpy.calls.mostRecent().args;
+      expect(callArgs[0]).toBe(url);
+      expect(callArgs[1]).toEqual({ jsonpCallbackParam: 'json.wrf' });
+      done();
+    }).catch(done.fail);
   });
 
-  it('embeds decoded Basic credentials in the URL because JSONP cannot send headers', function() {
+  it('embeds decoded Basic credentials in the URL because JSONP cannot send headers', function (done) {
     var transport = new HttpJsonpTransportFactory();
     var url = 'https://search.example.com/solr/select';
     var headers = { Authorization: 'Basic ' + btoa('admin:secret/w') };
-    transport.query(url, {}, headers);
-    var expectedPrefix = 'https://admin:' + encodeURIComponent('secret/w') + '@search.example.com/solr/select';
-    $httpBackend.expectJSONP(function(u) {
-      return u.indexOf(expectedPrefix) === 0;
-    }).respond(200, {});
-    $timeout.flush();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    transport.query(url, {}, headers).then(function () {
+      var calledUrl = jsonpSpy.calls.mostRecent().args[0];
+      var expectedPrefix = 'https://admin:' + encodeURIComponent('secret/w') + '@search.example.com/solr/select';
+      expect(calledUrl).toBe(expectedPrefix);
+      done();
+    }).catch(done.fail);
   });
 
-  it('invokes $sce.trustAsResourceUrl on the final URL before issuing JSONP', function() {
-    spyOn($sce, 'trustAsResourceUrl').and.callThrough();
+  it('does not modify the URL when Authorization header is not Basic auth', function (done) {
     var transport = new HttpJsonpTransportFactory();
-    var url = 'https://search.example.com/solr/select?q=1';
-    transport.query(url, {}, {});
-    $httpBackend.expectJSONP(function() { return true; }).respond(200, {});
-    $timeout.flush();
-    $httpBackend.flush();
-    expect($sce.trustAsResourceUrl).toHaveBeenCalled();
-    expect($sce.trustAsResourceUrl.calls.mostRecent().args[0]).toContain('search.example.com');
+    var url = 'https://search.example.com/solr/select';
+    // No Authorization header at all
+    transport.query(url, {}, { 'X-Other': 'value' }).then(function () {
+      var calledUrl = jsonpSpy.calls.mostRecent().args[0];
+      expect(calledUrl).toBe(url);
+      done();
+    }).catch(done.fail);
+  });
+
+  it('passes the jsonpCallbackParam config to httpClient.jsonp', function (done) {
+    var transport = new HttpJsonpTransportFactory();
+    transport.query('https://example.com/solr/select', {}, {}).then(function () {
+      var config = jsonpSpy.calls.mostRecent().args[1];
+      expect(config.jsonpCallbackParam).toBe('json.wrf');
+      done();
+    }).catch(done.fail);
   });
 });
