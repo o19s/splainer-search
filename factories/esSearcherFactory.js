@@ -3,7 +3,7 @@
 /*jslint latedef:false*/
 
 export function EsSearcherFactory(
-  $http,
+  httpClient,
   $q,
   EsDocFactory,
   activeQueries,
@@ -324,7 +324,7 @@ export function EsSearcherFactory(
     var url = esUrlSvc.buildExplainUrl(uri, doc);
     var headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);
 
-    return $http
+    return httpClient
       .post(url, { query: self.queryDsl.query }, { headers: headers })
       .then(function (response) {
         var explDict = response.data.explanation || null;
@@ -479,7 +479,7 @@ if (typeof angular !== 'undefined') {
   angular
     .module('o19s.splainer-search')
     .factory('EsSearcherFactory', [
-      '$http',
+      'httpClient',
       '$q',
       'EsDocFactory',
       'activeQueries',

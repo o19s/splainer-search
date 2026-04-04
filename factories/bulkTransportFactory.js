@@ -2,7 +2,7 @@
 
 /*jslint latedef:false*/
 
-export function BulkTransportFactory(TransportFactory, $http, $q, utilsSvc) {
+export function BulkTransportFactory(TransportFactory, httpClient, $q, utilsSvc) {
   var Transport = function (options) {
     TransportFactory.call(this, options);
     this.batchSender = null;
@@ -91,7 +91,7 @@ export function BulkTransportFactory(TransportFactory, $http, $q, utilsSvc) {
       if (!pendingHttp && queue.length > 0) {
         // Implementation of Elasticsearch's _msearch ("Multi Search") API
         var payload = buildMultiSearch();
-        pendingHttp = $http.post(url, payload, requestConfig);
+        pendingHttp = httpClient.post(url, payload, requestConfig);
         pendingHttp.then(multiSearchSuccess, multiSearchFailed).catch(function (response) {
           console.debug('Failed to do multi search');
           return $q.reject(response);
@@ -163,7 +163,7 @@ if (typeof angular !== 'undefined') {
     .module('o19s.splainer-search')
     .factory('BulkTransportFactory', [
       'TransportFactory',
-      '$http',
+      'httpClient',
       '$q',
       'utilsSvc',
       BulkTransportFactory,
