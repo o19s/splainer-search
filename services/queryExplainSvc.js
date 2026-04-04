@@ -9,7 +9,8 @@ angular.module('o19s.splainer-search')
     'baseExplainSvc',
     'vectorSvc',
     'simExplainSvc',
-    function explainSvc(baseExplainSvc, vectorSvc, simExplainSvc) {
+    'utilsSvc',
+    function explainSvc(baseExplainSvc, vectorSvc, simExplainSvc, utilsSvc) {
       var DefaultSimilarityMatch = simExplainSvc.DefaultSimilarityMatch;
 
       this.MatchAllDocsExplain = function() {
@@ -93,7 +94,7 @@ angular.module('o19s.splainer-search')
           fieldName = match[1];
         }
         var explText = 'f(' + fieldName + ') = ';
-        angular.forEach(this.children, function(child) {
+        utilsSvc.safeForEach(this.children, function(child) {
           explText += child.description + ' ';
         });
         this.realExplanation = explText;
@@ -141,7 +142,7 @@ angular.module('o19s.splainer-search')
           this.vectorize = function() {
             // scale the others by coord factor
             var rVal = vectorSvc.create();
-            angular.forEach(this.influencers(), function(infl) {
+            utilsSvc.safeForEach(this.influencers(), function(infl) {
               rVal = vectorSvc.add(rVal, infl.vectorize());
             });
             rVal = vectorSvc.scale(rVal, coordFactor);
@@ -165,7 +166,7 @@ angular.module('o19s.splainer-search')
             return vectorSvc.create();
           }
           var rVal = infl[0].vectorize();
-          angular.forEach(infl.slice(1), function(currInfl) {
+          utilsSvc.safeForEach(infl.slice(1), function(currInfl) {
             var vInfl = currInfl.vectorize();
             var vInflScaled = vectorSvc.scale(vInfl, tie);
             rVal = vectorSvc.add(rVal, vInflScaled);
@@ -203,10 +204,10 @@ angular.module('o19s.splainer-search')
           // Well then the child is the real influencer, we're taking sum
           // of one thing
           var infl = [];
-          angular.forEach(this.children, function(child) {
+          utilsSvc.safeForEach(this.children, function(child) {
             // take advantage of commutative property
             if (Object.hasOwn(child, 'isSumExplain') && child.isSumExplain) {
-              angular.forEach(child.influencers(), function(grandchild) {
+              utilsSvc.safeForEach(child.influencers(), function(grandchild) {
                 infl.push(grandchild);
               });
             } else {
@@ -219,7 +220,7 @@ angular.module('o19s.splainer-search')
         this.vectorize = function() {
           // vector sum all the components
           var rVal = vectorSvc.create();
-          angular.forEach(this.influencers(), function(infl) {
+          utilsSvc.safeForEach(this.influencers(), function(infl) {
             rVal = vectorSvc.sumOf(rVal, infl.vectorize());
           });
           return rVal;

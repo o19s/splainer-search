@@ -6,7 +6,8 @@
 // more similarity types (ie sweet spot, bm25) as needed
 angular.module('o19s.splainer-search')
   .service('simExplainSvc', [
-    function explainSvc() {
+    'utilsSvc',
+    function explainSvc(utilsSvc) {
 
       this.DefaultSimilarityMatch = function(children) {
         var infl = children;
@@ -17,7 +18,7 @@ angular.module('o19s.splainer-search')
         this.fieldWeight = null;
         this.queryWeight = null;
         var match = this;
-        angular.forEach(infl, function(child) {
+        utilsSvc.safeForEach(infl, function(child) {
           if (child.explanation() === 'Field Weight') {
             match.fieldWeight = child;
           } else if (child.explanation() === 'Query Weight') {
@@ -34,7 +35,7 @@ angular.module('o19s.splainer-search')
       var tfIdfable = function(explain) {
         var tfExpl = null;
         var idfExpl = null;
-        angular.forEach(explain.children, function(child) {
+        utilsSvc.safeForEach(explain.children, function(child) {
           if (child.explanation().startsWith('Term')) {
             tfExpl = child;
           } else if (child.explanation().startsWith('IDF')) {

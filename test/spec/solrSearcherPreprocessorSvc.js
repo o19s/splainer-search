@@ -26,6 +26,19 @@ describe('Service: solrSearcherPreprocessorSvc', function() {
     solrSearcherPreprocessorSvc = _solrSearcherPreprocessorSvc_;
   }));
 
+  // Simple recursive merge for test setup — replaces angular.merge.
+  function testDeepMerge(target, source) {
+    Object.keys(source).forEach(function(key) {
+      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) &&
+          target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])) {
+        testDeepMerge(target[key], source[key]);
+      } else {
+        target[key] = source[key];
+      }
+    });
+    return target;
+  }
+
   function baseSearcher(overrides) {
     var o = {
       fieldList: ['id', 'title'],
@@ -45,9 +58,9 @@ describe('Service: solrSearcherPreprocessorSvc', function() {
       HIGHLIGHTING_PRE: 'PRE',
       HIGHLIGHTING_POST: 'POST'
     };
-    // Use merge (not extend) so partial overrides like { config: { debug: true } }
+    // Use deep merge (not Object.assign) so partial overrides like { config: { debug: true } }
     // patch nested fields instead of replacing the whole config object.
-    return angular.merge({}, o, overrides || {});
+    return testDeepMerge(structuredClone(o), overrides || {});
   }
 
   it('merges default Solr config when config is partially specified', function() {

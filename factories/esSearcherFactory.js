@@ -14,6 +14,7 @@
       'esUrlSvc',
       'SearcherFactory',
       'transportSvc',
+      'utilsSvc',
       EsSearcherFactory
     ]);
 
@@ -23,7 +24,8 @@
     activeQueries,
     esSearcherPreprocessorSvc, esUrlSvc,
     SearcherFactory,
-    transportSvc
+    transportSvc,
+    utilsSvc
   ) {
 
     var Searcher = function(options) {
@@ -53,7 +55,7 @@
       }
 
       var found = null;
-      angular.forEach(self.grouped[groupedBy], function(groupedDocs) {
+      utilsSvc.safeForEach(self.grouped[groupedBy], function(groupedDocs) {
         if (groupedDocs.value === group && !found) {
           found = groupedDocs;
         }
@@ -74,7 +76,7 @@
       /*jslint validthis:true*/
       var self      = this;
       var pagerArgs = { from: 0, size: self.config.numberOfRows };
-      var nextArgs  = angular.copy(self.args);
+      var nextArgs  = utilsSvc.deepClone(self.args);
 
       if (Object.hasOwn(nextArgs, 'pager') && nextArgs.pager !== undefined) {
         pagerArgs = nextArgs.pager;
@@ -138,7 +140,7 @@
       var url       = esUrlSvc.buildUrl(uri);
       var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
 
-      var queryDslWithPagerArgs = angular.copy(self.queryDsl);
+      var queryDslWithPagerArgs = utilsSvc.deepClone(self.queryDsl);
       if (self.pagerArgs) {
         if (templateCall) {
           queryDslWithPagerArgs.params.from = self.pagerArgs.from;
@@ -198,7 +200,7 @@
                   errorMsg += '\n' + JSON.stringify(msg.data.error, null, 2);
                 }
                 if (Object.hasOwn(msg.data, '_shards')) {
-                  angular.forEach(msg.data._shards.failures, function(failure) {
+                  utilsSvc.safeForEach(msg.data._shards.failures, function(failure) {
                     errorMsg += '\n' + JSON.stringify(failure, null, 2);
                   });
                 }
@@ -257,12 +259,12 @@
             return new EsDocFactory(doc, options);
           };
 
-          angular.forEach(data.hits.hits, function(hit) {
+          utilsSvc.safeForEach(data.hits.hits, function(hit) {
             var doc = parseDoc(hit);
             self.docs.push(doc);
           });
 
-          if ( angular.isDefined(data._shards) && data._shards.failed > 0 ) {
+          if ( data._shards !== undefined && data._shards.failed > 0 ) {
             return $q.reject(formatError(httpConfig));
           }
         }, function error(msg) {
@@ -294,7 +296,7 @@
         type:       self.type,
       };
 
-      if ( angular.isDefined(self.pagerArgs) && self.pagerArgs !== null ) {
+      if ( self.pagerArgs !== undefined && self.pagerArgs !== null ) {
         otherSearcherOptions.args.pager = self.pagerArgs;
       }
 
@@ -308,7 +310,7 @@
           var promises  = [];
           var docs      = [];
 
-          angular.forEach(otherSearcher.docs, function(doc) {
+          utilsSvc.safeForEach(otherSearcher.docs, function(doc) {
             var promise = self.explain(doc)
               .then(function(parsedDoc) {
                 docs.push(parsedDoc);
@@ -361,8 +363,8 @@
     function majorVersion() {
       var self = this;
 
-      if ( angular.isDefined(self.config) &&
-        angular.isDefined(self.config.version) &&
+      if ( self.config !== undefined &&
+        self.config.version !== undefined &&
         self.config.version !== null &&
         self.config.version !== ''
       ) {
@@ -406,7 +408,7 @@
       var url       = esUrlSvc.buildRenderTemplateUrl(uri);
       var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
 
-      var queryDslWithPagerArgs = angular.copy(self.queryDsl);
+      var queryDslWithPagerArgs = utilsSvc.deepClone(self.queryDsl);
       if (self.pagerArgs) {
         if (templateCall) {
           queryDslWithPagerArgs.params.from = self.pagerArgs.from;
@@ -440,7 +442,7 @@
                   errorMsg += '\n' + JSON.stringify(msg.data.error, null, 2);
                 }
                 if (Object.hasOwn(msg.data, '_shards')) {
-                  angular.forEach(msg.data._shards.failures, function(failure) {
+                  utilsSvc.safeForEach(msg.data._shards.failures, function(failure) {
                     errorMsg += '\n' + JSON.stringify(failure, null, 2);
                   });
                 }

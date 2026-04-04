@@ -113,7 +113,7 @@ angular.module('o19s.splainer-search')
         config = defaultConfig;
       }
 
-      if (queryText === null || angular.isUndefined(queryText)) {
+      if (queryText === null || queryText === undefined) {
         return template;
       }
 

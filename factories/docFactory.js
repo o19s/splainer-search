@@ -4,12 +4,12 @@
 
 (function() {
   angular.module('o19s.splainer-search')
-    .factory('DocFactory', [DocFactory]);
+    .factory('DocFactory', ['utilsSvc', DocFactory]);
 
-  function DocFactory() {
+  function DocFactory(utilsSvc) {
     var Doc = function(doc, opts) {
       var self = this;
-      angular.copy(doc, self);
+      utilsSvc.copyOnto(self, doc);
       self.doc = doc;
       self.opts = opts;
     };

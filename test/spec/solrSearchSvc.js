@@ -17,7 +17,7 @@ describe('Service: searchSvc: Solr', function () {
     q: ['#$query##'],
     fq: ['field:value', 'field1:value', 'field2:#$query##']
   };
-  var expectedParams = angular.copy(mockSolrParams);
+  var expectedParams = structuredClone(mockSolrParams);
   var mockQueryText = 'query text';
   var mockFieldSpec = null;
   expectedParams.q[0] =   encodeURIComponent(mockQueryText);
@@ -217,7 +217,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('asks for highlights', function() {
       createSearcherHlOn();
-      var copiedResp = angular.copy(fullSolrResp);
+      var copiedResp = structuredClone(fullSolrResp);
       copiedResp.highlighting = highlighting;
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedHlParams))
@@ -234,7 +234,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('gets highlight snippet field values if returned', function() {
       createSearcherHlOn();
-      var copiedResp = angular.copy(fullSolrResp);
+      var copiedResp = structuredClone(fullSolrResp);
       copiedResp.highlighting = highlighting;
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
@@ -261,7 +261,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('gets null if no highlights for field', function() {
       createSearcherHlOn();
-      var copiedResp = angular.copy(fullSolrResp);
+      var copiedResp = structuredClone(fullSolrResp);
       copiedResp.highlighting = highlighting;
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
@@ -287,7 +287,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('gets null if no highlights', function() {
       createSearcherHlOn();
-      var copiedResp = angular.copy(fullSolrResp);
+      var copiedResp = structuredClone(fullSolrResp);
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
       var called = 0;
@@ -312,7 +312,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('doesnt request hls if hls off', function() {
       createSearcherHlOff();
-      var copiedResp = angular.copy(fullSolrResp);
+      var copiedResp = structuredClone(fullSolrResp);
       $httpBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedHlParams))
                               .respond(200, copiedResp);
       var called = 0;
@@ -515,7 +515,7 @@ describe('Service: searchSvc: Solr', function () {
     it('identifies querqy.infoLogging presence and adds to parsedQueryDetails', function() {
       createSearcherWithDebug();
 
-      var mockSolrResultsWithQuerqyInfolog = angular.copy(fullSolrResp);
+      var mockSolrResultsWithQuerqyInfolog = structuredClone(fullSolrResp);
       mockSolrResultsWithQuerqyInfolog['querqy.infoLog']= mockQuerqyInfolog;
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
@@ -536,7 +536,7 @@ describe('Service: searchSvc: Solr', function () {
     it('identifies querqy_decorations presence and adds to parsedQueryDetails', function() {
       createSearcherWithDebug();
 
-      var mockSolrResultsWithQuerqyDecorations = angular.copy(fullSolrResp);
+      var mockSolrResultsWithQuerqyDecorations = structuredClone(fullSolrResp);
       mockSolrResultsWithQuerqyDecorations['querqy_decorations']= mockQuerqyDecorations;
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
@@ -591,7 +591,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('returns empty hash on no params', function() {
       createSearcherWithDebug();
-      var copiedResp = angular.copy(fullSolrResp);
+      var copiedResp = structuredClone(fullSolrResp);
       delete copiedResp.responseHeader;
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, copiedResp);
@@ -608,7 +608,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('returns null on no explain', function() {
       createSearcherWithDebug();
-      var copiedResp = angular.copy(fullSolrResp);
+      var copiedResp = structuredClone(fullSolrResp);
       delete copiedResp.debug;
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
@@ -624,7 +624,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('doesnt request debug info when configured not to', function() {
       createSearcherDebugOff();
-      var copiedResp = angular.copy(fullSolrResp);
+      var copiedResp = structuredClone(fullSolrResp);
       delete copiedResp.debug;
       $httpBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, copiedResp);
@@ -639,7 +639,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('handles parsing the debug json when debug is set to null versus empty array', function() {
       createSearcherWithDebug();
-      var copiedResp = angular.copy(fullSolrResp);
+      var copiedResp = structuredClone(fullSolrResp);
       copiedResp.debug = null;
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
@@ -681,7 +681,7 @@ describe('Service: searchSvc: Solr', function () {
         expect(solrDocs.length).toEqual(2);
         expect(numDocs).toEqual(2);
         // sanity check on these docs
-        angular.forEach(solrDocs, function(queryDoc) {
+        solrDocs.forEach(function(queryDoc) {
           expect(['alt_doc1', 'alt_doc2']).toContain(queryDoc.altId);
         });
       });
@@ -698,7 +698,7 @@ describe('Service: searchSvc: Solr', function () {
         expect(solrDocs.length).toEqual(2);
         expect(numDocs).toEqual(2);
         // sanity check on these docs
-        angular.forEach(solrDocs, function(queryDoc) {
+        solrDocs.forEach(function(queryDoc) {
           var generatedUrl = queryDoc._url('altId', queryDoc.altId);
           expect(generatedUrl.indexOf('q=altId:' + queryDoc.altId)).not.toBe(-1);
         });
@@ -709,9 +709,9 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('escapes percents in the query', function() {
-      var mockSolrParamsWithMm = angular.copy(mockSolrParams);
+      var mockSolrParamsWithMm = structuredClone(mockSolrParams);
       mockSolrParamsWithMm.mm = ['100%'];
-      var expectedParamsMm = angular.copy(expectedParams);
+      var expectedParamsMm = structuredClone(expectedParams);
       mockSolrParamsWithMm.mm = ['100%25'];
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:altId');
       var searcher = searchSvc.createSearcher(fieldSpec, mockSolrUrl,
@@ -743,7 +743,7 @@ describe('Service: searchSvc: Solr', function () {
         mockQueryText
       );
 
-      var expectedSearchParams = angular.copy(expectedParams);
+      var expectedSearchParams = structuredClone(expectedParams);
       expectedSearchParams.rows = ['10'];
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedSearchParams))
@@ -767,7 +767,7 @@ describe('Service: searchSvc: Solr', function () {
         { numberOfRows: 30 }
       );
 
-      var expectedSearchParams = angular.copy(expectedParams);
+      var expectedSearchParams = structuredClone(expectedParams);
       expectedSearchParams.rows = ['30'];
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedSearchParams))
@@ -801,7 +801,7 @@ describe('Service: searchSvc: Solr', function () {
         var expectedFacetField = {
           'facet.field': ['field1', 'field']
         };
-        angular.forEach(solrDocs, function(doc) {
+        solrDocs.forEach(function(doc) {
           expect(urlContainsParams(mockSolrUrl, expectedFacetField).test(doc._url('id', '12'))).toBeFalsy();
 
           expect(doc._url('id', '12').indexOf('wt=json')).not.toBe(-1);
@@ -820,7 +820,7 @@ describe('Service: searchSvc: Solr', function () {
                               .respond(200, mockResults);
       searcher.search().then(function() {
         var solrDocs = searcher.docs;
-        angular.forEach(solrDocs, function(doc) {
+        solrDocs.forEach(function(doc) {
           var tokenUrl = doc._url('id', 'http://12');
           expect(tokenUrl.indexOf('http://12')).toBe(-1);
           var encId = encodeURIComponent('http\\://12');
@@ -853,7 +853,7 @@ describe('Service: searchSvc: Solr', function () {
 
     it('sanitizes solr arguments', function() {
       var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
-      var mockUncleanSolrParams = angular.copy(mockSolrParams);
+      var mockUncleanSolrParams = structuredClone(mockSolrParams);
       // make it filthy with these params we need to strip out!
       mockUncleanSolrParams.wt = ['xml'];
       mockUncleanSolrParams.rows = ['20'];
@@ -903,7 +903,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('escape special chars in queryText', function() {
-      var thisExpectedParams    = angular.copy(expectedParams);
+      var thisExpectedParams    = structuredClone(expectedParams);
       var queryWithSpecialChars = '+-!(){}[]^"~*?:\\';
       var escapedQuery          = '\\+\\-\\!\\(\\)\\{\\}\\[\\]\\^\\\"\\~\\*\\?\\:\\\\';
       thisExpectedParams.q[0]   = encodeURIComponent(escapedQuery);
@@ -1171,7 +1171,7 @@ describe('Service: searchSvc: Solr', function () {
         expect(gpd.text[0].docs[1].group()).toEqual('would');
         expect(gpd.text[0].docs[2].origin().id).toEqual('l_3845');
         expect(gpd.text[0].docs[2].group()).toEqual('would');
-        angular.forEach(gpd.text[0].docs, function(doc) {
+        gpd.text[0].docs.forEach(function(doc) {
           expect(doc.group()).toEqual('would');
           expect(doc.groupedBy()).toEqual('text');
         });
@@ -1181,13 +1181,13 @@ describe('Service: searchSvc: Solr', function () {
         expect(gpd.text[1].docs[0].origin().id).toEqual('l_5780');
         expect(gpd.text[1].docs[1].origin().id).toEqual('l_16271');
         expect(gpd.text[1].docs[2].origin().id).toEqual('l_20837');
-        angular.forEach(gpd.text[1].docs, function(doc) {
+        gpd.text[1].docs.forEach(function(doc) {
           expect(doc.group()).toEqual('within');
           expect(doc.groupedBy()).toEqual('text');
         });
 
         /*jshint camelcase: false */
-        angular.forEach(gpd.catch_line[0].docs, function(doc) {
+        gpd.catch_line[0].docs.forEach(function(doc) {
           expect(doc.group()).toEqual('would');
           expect(doc.groupedBy()).toEqual('catch_line');
         });
@@ -1204,7 +1204,7 @@ describe('Service: searchSvc: Solr', function () {
       var mockSolrParams = {
         q: ['#$query##'],
       };
-      var expectedParams = angular.copy(mockSolrParams);
+      var expectedParams = structuredClone(mockSolrParams);
       expectedParams.q[0] = encodeURIComponent(mockQueryText);
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
@@ -1221,7 +1221,7 @@ describe('Service: searchSvc: Solr', function () {
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2##'],
       };
-      var expectedParams = angular.copy(mockSolrParams);
+      var expectedParams = structuredClone(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco';
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
@@ -1238,7 +1238,7 @@ describe('Service: searchSvc: Solr', function () {
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
       };
-      var expectedParams = angular.copy(mockSolrParams);
+      var expectedParams = structuredClone(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing ';
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
@@ -1255,7 +1255,7 @@ describe('Service: searchSvc: Solr', function () {
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3|someDefault##'],
       };
-      var expectedParams = angular.copy(mockSolrParams);
+      var expectedParams = structuredClone(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing someDefault';
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
@@ -1272,7 +1272,7 @@ describe('Service: searchSvc: Solr', function () {
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3|someDefault## #$keyword3|otherDefaults## #$keyword2##'],
       };
-      var expectedParams = angular.copy(mockSolrParams);
+      var expectedParams = structuredClone(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing someDefault otherDefaults taco';
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
@@ -1289,7 +1289,7 @@ describe('Service: searchSvc: Solr', function () {
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3|someDefault## #$keyword3|otherDefaults## #$keyword3## #$keyword2##'],
       };
-      var expectedParams = angular.copy(mockSolrParams);
+      var expectedParams = structuredClone(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing someDefault otherDefaults  taco';
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
@@ -1306,7 +1306,7 @@ describe('Service: searchSvc: Solr', function () {
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
       };
-      var expectedParams = angular.copy(mockSolrParams);
+      var expectedParams = structuredClone(mockSolrParams);
       expectedParams.q[0] = 'burrito query taco nothing nacho';
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
@@ -1330,7 +1330,7 @@ describe('Service: searchSvc: Solr', function () {
           '_val_:"product($texmexFunc,1)"'
         ],
       };
-      var expectedParams = angular.copy(mockSolrParams);
+      var expectedParams = structuredClone(mockSolrParams);
       expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
 
       var searcher = searchSvc.createSearcher(
@@ -1365,7 +1365,7 @@ describe('Service: searchSvc: Solr', function () {
           '{!edismax qf="bowl sofritas"}#$query##'
         ],
       };
-      var expectedParams = angular.copy(mockSolrParams);
+      var expectedParams = structuredClone(mockSolrParams);
       expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
       expectedParams.keywords[0] = '{!edismax qf="bowl^10 sofritas" tie=1.0}' + encodeURIComponent(mockQueryText);
       expectedParams.fq[0] = '{!edismax qf="bowl sofritas"}' + encodeURIComponent(mockQueryText);
@@ -1406,7 +1406,7 @@ describe('Service: searchSvc: Solr', function () {
           '{!edismax qf="bowl sofritas"}#$query##'
         ],
       };
-      var expectedParams = angular.copy(mockSolrParams);
+      var expectedParams = structuredClone(mockSolrParams);
       expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
       expectedParams.keywords[0] = '{!edismax qf="bowl^10 sofritas" tie=1.0}' + encodeURIComponent(mockQueryText);
       expectedParams.fq[0] = '{!edismax qf="bowl sofritas"}' + encodeURIComponent(mockQueryText);
@@ -1514,7 +1514,7 @@ describe('Service: searchSvc: Solr', function () {
 
       // get page 2
       var nextSearcher = searcher.pager();
-      var expectedPageParams = angular.copy(expectedParams);
+      var expectedPageParams = structuredClone(expectedParams);
       expectedPageParams.rows = ['10'];
       expectedPageParams.start = ['10'];
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
@@ -1537,7 +1537,7 @@ describe('Service: searchSvc: Solr', function () {
     });
 
     it('accounts for custom rows count', function() {
-      var solrRespCustRows = angular.copy(fullSolrResp)
+      var solrRespCustRows = structuredClone(fullSolrResp)
       solrRespCustRows.response.numFound = 61;
 
       var searcher = searchSvc.createSearcher(
@@ -1548,7 +1548,7 @@ describe('Service: searchSvc: Solr', function () {
         { numberOfRows: 30 }
       );
 
-      var expectedPageParams = angular.copy(expectedParams);
+      var expectedPageParams = structuredClone(expectedParams);
       expectedPageParams.rows = ['30'];
 
       $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
@@ -1559,7 +1559,7 @@ describe('Service: searchSvc: Solr', function () {
 
       // get page 2
       var nextSearcher = searcher.pager();
-      var expectedPageParams = angular.copy(expectedParams);
+      var expectedPageParams = structuredClone(expectedParams);
       expectedPageParams.rows = ['30'];
       expectedPageParams.start = ['30'];
 
@@ -1593,7 +1593,7 @@ describe('Service: searchSvc: Solr', function () {
 
       // get page 2
       var nextSearcher        = searcher.pager();
-      var expectedPageParams  = angular.copy(expectedParams);
+      var expectedPageParams  = structuredClone(expectedParams);
 
       expectedPageParams.rows       = ['10'];
       expectedPageParams.start      = ['10'];

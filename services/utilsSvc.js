@@ -2,8 +2,8 @@
 
 /**
  * Migration shims for {@link https://docs.angularjs.org/api/ng/function/angular.forEach angular.forEach},
- * {@link https://docs.angularjs.org/api/ng/function/angular.copy angular.copy}, and
- * {@link https://docs.angularjs.org/api/ng/function/angular.merge angular.merge}.
+ * {@link https://docs.angularjs.org/api/ng/function/angular.copy angular.copy} (including copy-onto),
+ * and {@link https://docs.angularjs.org/api/ng/function/angular.merge angular.merge}.
  *
  * Call sites should depend on this service (or future plain exports) instead of calling those APIs
  * directly. Implementations delegate to Angular while the library still ships as an Angular module;
@@ -41,6 +41,20 @@ angular.module('o19s.splainer-search').factory('utilsSvc', function utilsSvcFact
   }
 
   /**
+   * Clears `destination`, then deep-copies all properties from `source` into it (mutates
+   * `destination`), matching two-argument `angular.copy(source, destination)`.
+   *
+   * **Note:** existing own properties on `destination` are removed before copying.
+   *
+   * @param {Object} destination Object to receive properties (cleared first).
+   * @param {Object} source Source object (plain data — same contract as {@link deepClone}).
+   * @returns {Object} `destination`
+   */
+  function copyOnto(destination, source) {
+    return angular.copy(source, destination);
+  }
+
+  /**
    * Deep-merges sources into `target` (mutates `target`), matching `angular.merge`.
    *
    * @param {Object} target Destination object.
@@ -54,6 +68,7 @@ angular.module('o19s.splainer-search').factory('utilsSvc', function utilsSvcFact
   return {
     safeForEach: safeForEach,
     deepClone: deepClone,
+    copyOnto: copyOnto,
     deepMerge: deepMerge,
   };
 });

@@ -7,10 +7,11 @@
     .factory('SettingsValidatorFactory', [
       'fieldSpecSvc',
       'searchSvc',
+      'utilsSvc',
       SettingsValidatorFactory
     ]);
 
-  function SettingsValidatorFactory(fieldSpecSvc, searchSvc) {
+  function SettingsValidatorFactory(fieldSpecSvc, searchSvc, utilsSvc) {
     var Validator = function(settings) {
       var self  = this;
 
@@ -110,7 +111,7 @@
       }
 
       function updateCandidateIds(candidateIds, attributes) {
-        if (angular.isUndefined(candidateIds)) {
+        if (candidateIds === undefined) {
           return attributes;
         }
         // Guarantee that the candidateIds set occurs in every field
@@ -126,7 +127,7 @@
           // the entire list of fields possible.
           // This is not perfect as the top 10 results might not include
           // a comprehensive list, but it's the best we can do.
-          angular.forEach(self.searcher.docs, function(doc) {
+          utilsSvc.safeForEach(self.searcher.docs, function(doc) {
             var attributes = Object.keys(sourceDoc(doc));
             candidateIds = updateCandidateIds(candidateIds, attributes);
 

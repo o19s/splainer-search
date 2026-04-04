@@ -6,16 +6,17 @@
   angular.module('o19s.splainer-search')
     .factory('SearchApiDocFactory', [
       'DocFactory',
+      'utilsSvc',
       SearchApiDocFactory
     ]);
 
-  function SearchApiDocFactory(DocFactory) {
+  function SearchApiDocFactory(DocFactory, utilsSvc) {
     const Doc = function(doc, options) {
       DocFactory.call(this, doc, options);
 
       const self = this;
 
-      angular.forEach(self.fieldsProperty(), function(fieldValue, fieldName) {
+      utilsSvc.safeForEach(self.fieldsProperty(), function(fieldValue, fieldName) {
         if ( Array.isArray(fieldValue) && fieldValue.length === 1 ) {
           self[fieldName] = fieldValue[0];
         } else {
@@ -43,8 +44,8 @@
       var self = this;
 
       var src = {};
-      angular.forEach(self, function(value, field) {
-        if (!angular.isFunction(value)) {
+      utilsSvc.safeForEach(self, function(value, field) {
+        if (typeof value !== 'function') {
           src[field] = value;
         }
       });

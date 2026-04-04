@@ -10,10 +10,11 @@
       'searchSvc',
       'solrUrlSvc',
       'normalDocsSvc',
+      'utilsSvc',
       ResolverFactory
     ]);
 
-  function ResolverFactory($q, $log, searchSvc, solrUrlSvc, normalDocsSvc) {
+  function ResolverFactory($q, $log, searchSvc, solrUrlSvc, normalDocsSvc, utilsSvc) {
     var Resolver = function(ids, settings, chunkSize) {
       var self        = this;
 
@@ -31,7 +32,7 @@
       if ( self.settings.searchEngine === undefined || self.settings.searchEngine === 'solr' ) {
         var escapeIds = function(ids) {
           var newIds = [];
-          angular.forEach(ids, function(id) {
+          utilsSvc.safeForEach(ids, function(id) {
             // SUSS_USE_OF_ESCAPING.  Going to disable this and see what happens.
             // newIds.push(solrUrlSvc.escapeUserQuery(id));
             newIds.push(id);
@@ -81,8 +82,8 @@
       // Only set optional config values when they are defined in settings,
       // so that undefined values do not clobber defaults during angular.merge.
       var optionalKeys = ['version', 'proxyUrl', 'customHeaders', 'basicAuthCredential', 'apiMethod'];
-      angular.forEach(optionalKeys, function(key) {
-        if (angular.isDefined(self.settings[key])) {
+      utilsSvc.safeForEach(optionalKeys, function(key) {
+        if (self.settings[key] !== undefined) {
           self.config[key] = self.settings[key];
         }
       });
@@ -103,13 +104,13 @@
               var newDocs = self.searcher.docs;
               self.docs.length = 0;
               var idsToDocs = {};
-              angular.forEach(newDocs, function(doc) {
+              utilsSvc.safeForEach(newDocs, function(doc) {
                 var normalDoc = normalDocsSvc.createNormalDoc(self.fieldSpec, doc);
                 idsToDocs[normalDoc.id] = normalDoc;
               });
 
               // Push either the doc from solr or a missing doc stub
-              angular.forEach(ids, function(docId) {
+              utilsSvc.safeForEach(ids, function(docId) {
                 if (Object.hasOwn(idsToDocs, docId)) {
                   self.docs.push(idsToDocs[docId]);
                 } else {
@@ -143,7 +144,7 @@
           var deferred = $q.defer();
           var promises = [];
 
-          angular.forEach(sliceIds(ids, chunkSize), function(sliceOfIds) {
+          utilsSvc.safeForEach(sliceIds(ids, chunkSize), function(sliceOfIds) {
             var resolver = new Resolver(sliceOfIds, settings);
             promises.push(resolver.fetchDocs());
           });

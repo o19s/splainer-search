@@ -2,7 +2,8 @@
 
 angular.module('o19s.splainer-search')
   .service('solrUrlSvc', [
-    function solrUrlSvc() {
+    'utilsSvc',
+    function solrUrlSvc(utilsSvc) {
 
       /* private method fixURLProtocol
        * add 'http://' to the begining of the url if no protocol was
@@ -30,11 +31,11 @@ angular.module('o19s.splainer-search')
       this.formatSolrArgs = function(argsObj) {
         var rVal = '';
 
-        angular.forEach(argsObj, function(values, param) {
-          if ( angular.isString(values) ) {
+        utilsSvc.safeForEach(argsObj, function(values, param) {
+          if ( typeof values === 'string' ) {
             rVal += param + '=' + values + '&';
           } else {
-            angular.forEach(values, function(value) {
+            utilsSvc.safeForEach(values, function(value) {
               rVal += param + '=' + value + '&';
             });
           }
@@ -60,7 +61,7 @@ angular.module('o19s.splainer-search')
         }
         var vars = argsStr.split('&');
         var rVal = {};
-        angular.forEach(vars, function(qVar) {
+        utilsSvc.safeForEach(vars, function(qVar) {
           var nameAndValue = qVar.split(/=(.*)/);
           if (nameAndValue.length >= 2) {
             var name  = nameAndValue[0];

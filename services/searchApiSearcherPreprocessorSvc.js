@@ -3,7 +3,8 @@
 angular.module('o19s.splainer-search')
   .service('searchApiSearcherPreprocessorSvc', [
     'queryTemplateSvc',
-    function searchApiSearcherPreprocessorSvc(queryTemplateSvc) {
+    'utilsSvc',
+    function searchApiSearcherPreprocessorSvc(queryTemplateSvc, utilsSvc) {
       var self      = this;
       self.prepare  = prepare;
       
@@ -28,14 +29,14 @@ angular.module('o19s.splainer-search')
         var queryDsl        = replaceQuery(searcher.config.qOption, searcher.args, searcher.queryText);
         var paramsAsStrings = [];
         
-        if (angular.isObject(queryDsl)){
-          angular.forEach(queryDsl, function(value, key) {
+        if (typeof queryDsl === 'object' && queryDsl !== null){
+          utilsSvc.safeForEach(queryDsl, function(value, key) {
             paramsAsStrings.push(key + '=' + value);
           });
         }
         else {
-          var queryDSLAsQuerySTring = queryDsl.toString();
-          paramsAsStrings.push(queryDSLAsQuerySTring);
+          var queryDslAsQueryString = queryDsl.toString();
+          paramsAsStrings.push(queryDslAsQueryString);
         }
         var finalUrl = searcher.url;
         var hasQuery = finalUrl.indexOf('?') !== -1;

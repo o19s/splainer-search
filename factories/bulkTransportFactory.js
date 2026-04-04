@@ -10,11 +10,12 @@
       '$q',
       '$timeout',
       '$log',
+      'utilsSvc',
       BulkTransportFactory
     ]);
 
 
-  function BulkTransportFactory(TransportFactory, $http, $q, $timeout, $log) {
+  function BulkTransportFactory(TransportFactory, $http, $q, $timeout, $log, utilsSvc) {
     var Transport = function(options) {
       TransportFactory.call(this, options);
       this.batchSender = null;
@@ -60,9 +61,9 @@
       function multiSearchFailed(bulkHttpResp) {
         // Handle HTTP failure, which should fail all in flight searches
         var numInFlight = 0;
-        angular.forEach(queue, function(pendingQuery) {
+        utilsSvc.safeForEach(queue, function(pendingQuery) {
           if (pendingQuery.inFlight) {
-            pendingQuery.defered.reject(bulkHttpResp);
+            pendingQuery.deferred.reject(bulkHttpResp);
             numInFlight++;
           }
         });
@@ -74,7 +75,7 @@
         // https://www.elastic.co/guide/en/elasticsearch/reference/1.4/search-multi-search.html
         var sharedHeader = JSON.stringify({});
         var queryLines = [];
-        angular.forEach(queue, function(pendingQuery) {
+        utilsSvc.safeForEach(queue, function(pendingQuery) {
           queryLines.push(sharedHeader);
           pendingQuery.inFlight = true;
           queryLines.push(JSON.stringify(pendingQuery.payload));
@@ -87,14 +88,14 @@
         // Examine the responses and dequeue the corresponding
         // searches
         var queueIdx = 0;
-        angular.forEach(bulkHttpResp.responses, function(resp) {
+        utilsSvc.safeForEach(bulkHttpResp.responses, function(resp) {
           var currRequest = queue[queueIdx];
           if (Object.hasOwn(resp, 'error')) {
-            currRequest.defered.reject(resp);
+            currRequest.deferred.reject(resp);
             // individual query failure
           } else {
             // make the response look like standard response
-            currRequest.defered.resolve({'data': resp});
+            currRequest.deferred.resolve({'data': resp});
           }
 
           queueIdx++;
@@ -115,16 +116,16 @@
       }
 
       function enqueue(query) {
-        var defered = $q.defer();
+        var deferred = $q.defer();
 
         var pendingQuery = {
-          defered: defered,
+          deferred: deferred,
           inFlight: false,
           payload: query,
         };
         queue.push(pendingQuery);
         ensureTimer();
-        return defered.promise;
+        return deferred.promise;
       }
 
       var timerPromise = null;

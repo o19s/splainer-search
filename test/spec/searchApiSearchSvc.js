@@ -15,7 +15,7 @@ describe('Service: searchSvc: SearchApi', function () {
   var mockSearchApiParams = {
     query: "#$query##"
   };
-  var expectedParams = angular.copy(mockSearchApiParams);
+  var expectedParams = structuredClone(mockSearchApiParams);
   var mockQueryText = 'rambo movie';
   var mockFieldSpec = null;
   expectedParams.query = encodeURIComponent(mockQueryText);

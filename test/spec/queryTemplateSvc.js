@@ -21,7 +21,7 @@ describe('Service: queryTemplateSvc', function () {
       
       var replaced = queryTemplateSvc.hydrate(template, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
       
-      replaced = angular.fromJson(replaced)
+      replaced = JSON.parse(replaced)
       
       var expectedReplaced = {
         query: "rambo movie"
@@ -162,7 +162,7 @@ describe('Service: queryTemplateSvc', function () {
 
       var replaced = queryTemplateSvc.hydrate(template, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
 
-      replaced = angular.fromJson(replaced)
+      replaced = JSON.parse(replaced)
 
       var expectedReplaced = {
         query: "rambo and movie and other"

@@ -7,16 +7,17 @@
     .factory('EsDocFactory', [
       'esUrlSvc',
       'DocFactory',
+      'utilsSvc',
       EsDocFactory
     ]);
 
-  function EsDocFactory(esUrlSvc, DocFactory) {
+  function EsDocFactory(esUrlSvc, DocFactory, utilsSvc) {
     var Doc = function(doc, options) {
       DocFactory.call(this, doc, options);
 
       var self = this;
 
-      angular.forEach(self.fieldsProperty(), function(fieldValue, fieldName) {
+      utilsSvc.safeForEach(self.fieldsProperty(), function(fieldValue, fieldName) {
         if ( fieldValue !== null && fieldValue !== undefined && fieldValue.constructor === Array && fieldValue.length === 1 ) {
           self[fieldName] = fieldValue[0];
         } else {
@@ -86,9 +87,9 @@
       // fields to display, ES only returns those specific fields.
       // And we are assigning the fields to the doc itself in this case.
       var src = {};
-      angular.forEach(self, function(value, field) {
-        if (!angular.isFunction(value)) {
-          src[field] = angular.copy(value);
+      utilsSvc.safeForEach(self, function(value, field) {
+        if (typeof value !== 'function') {
+          src[field] = utilsSvc.deepClone(value);
         }
       });
       delete src.doc;
@@ -105,7 +106,7 @@
 
       if (fieldValue) {
         var newValue = [];
-        angular.forEach(fieldValue, function (value) {
+        utilsSvc.safeForEach(fieldValue, function (value) {
           // Doing the naive thing and assuming that the highlight tags
           // were not overridden in the query DSL.
           var preRegex  = new RegExp('<em>', 'g');

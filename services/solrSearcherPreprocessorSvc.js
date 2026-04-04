@@ -5,12 +5,13 @@ angular.module('o19s.splainer-search')
     'solrUrlSvc',
     'defaultSolrConfig',
     'queryTemplateSvc',
-    function solrSearcherPreprocessorSvc(solrUrlSvc, defaultSolrConfig, queryTemplateSvc) {
+    'utilsSvc',
+    function solrSearcherPreprocessorSvc(solrUrlSvc, defaultSolrConfig, queryTemplateSvc, utilsSvc) {
       var self      = this;
       self.prepare  = prepare;
 
       var withoutUnsupported = function (argsToUse, sanitize) {
-        var argsRemoved = angular.copy(argsToUse);
+        var argsRemoved = utilsSvc.deepClone(argsToUse);
         if (sanitize === true) {
           solrUrlSvc.removeUnsupported(argsRemoved);
         }
@@ -66,7 +67,7 @@ angular.module('o19s.splainer-search')
         } else {
           // make sure config params that weren't passed through are set from
           // the default config object.
-          searcher.config = angular.merge({}, defaultSolrConfig, searcher.config);
+          searcher.config = utilsSvc.deepMerge({}, defaultSolrConfig, searcher.config);
         }
 
         searcher.callUrl = buildCallUrl(searcher);

@@ -123,7 +123,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       it('accesses es with mock es params', function () {
         $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-          var esQuery = angular.fromJson(data);
+          var esQuery = JSON.parse(data);
           return (esQuery.query.term.text === mockQueryText);
         }).
         respond(200, mockES7Results);
@@ -317,7 +317,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
     it('asks for explain', function() {
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-        var esQuery = angular.fromJson(data);
+        var esQuery = JSON.parse(data);
         return (esQuery.hasOwnProperty('explain') && esQuery.explain === true);
       }).
       respond(200, mockES7Results);
@@ -327,7 +327,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
 
     it('it populates explain', function() {
-      var mockES7ResultsWithExpl = angular.copy(mockES7Results);
+      var mockES7ResultsWithExpl = structuredClone(mockES7Results);
       mockES7ResultsWithExpl.hits.hits[0]._explanation = sumExplain;
       var called = 0;
       $httpBackend.expectPOST(mockEsUrl).
@@ -346,7 +346,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
 
     it('source has no _explanation', function() {
-      var mockES7ResultsWithExpl = angular.copy(mockES7Results);
+      var mockES7ResultsWithExpl = structuredClone(mockES7Results);
       mockES7ResultsWithExpl.hits.hits[0]._explanation = sumExplain;
       var called = 0;
       $httpBackend.expectPOST(mockEsUrl).
@@ -416,7 +416,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
     it('asks for profile', function() {
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-        var esQuery = angular.fromJson(data);
+        var esQuery = JSON.parse(data);
         return (esQuery.hasOwnProperty('profile') && esQuery.profile === true);
       }).
       respond(200, mockES7Results);
@@ -426,7 +426,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
     });
 
     it('it populates profile', function() {
-      var mockES7ResultsWithProfile = angular.copy(mockES7Results);
+      var mockES7ResultsWithProfile = structuredClone(mockES7Results);
       mockES7ResultsWithProfile.profile= mockProfile;
       var called = 0;
       $httpBackend.expectPOST(mockEsUrl).
@@ -581,7 +581,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
     it('asks for highlighting by default', function() {
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-        var esQuery           = angular.fromJson(data);
+        var esQuery           = JSON.parse(data);
         var expectedHighlight = {
           fields: {
             title:  { },
@@ -589,7 +589,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         };
         return (
           esQuery.hasOwnProperty('highlight') &&
-          angular.equals( esQuery.highlight, expectedHighlight )
+          JSON.stringify(esQuery.highlight) === JSON.stringify(expectedHighlight)
         );
       }).
       respond(200, mockES7Results);
@@ -611,7 +611,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
       );
 
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-        var esQuery           = angular.fromJson(data);
+        var esQuery           = JSON.parse(data);
         var expectedHighlight = {
           fields: {
             title:    { },
@@ -621,7 +621,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         };
         return (
           esQuery.hasOwnProperty('highlight') &&
-          angular.equals( esQuery.highlight, expectedHighlight )
+          JSON.stringify(esQuery.highlight) === JSON.stringify(expectedHighlight)
         );
       }).
       respond(200, mockES7Results);
@@ -637,7 +637,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
           bar: {},
         }
       };
-      var esParamsWithHl = angular.copy(mockEsParams)
+      var esParamsWithHl = structuredClone(mockEsParams)
       esParamsWithHl.highlight = expectedHighlight;
 
       searcher = searchSvc.createSearcher(
@@ -650,10 +650,10 @@ describe('Service: searchSvc: ElasticSearch', function() {
       );
 
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-        var esQuery = angular.fromJson(data);
+        var esQuery = JSON.parse(data);
         return (
           esQuery.hasOwnProperty('highlight') &&
-          angular.equals( esQuery.highlight, expectedHighlight )
+          JSON.stringify(esQuery.highlight) === JSON.stringify(expectedHighlight)
         );
       }).
       respond(200, mockES7Results);
@@ -750,7 +750,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         'es'
       );
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-        var esQuery = angular.fromJson(data);
+        var esQuery = JSON.parse(data);
         return (esQuery.query.term.text === mockQueryText);
       }).
       respond(200, mockES7Results);
@@ -777,7 +777,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         'es'
       );
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-        var esQuery = angular.fromJson(data);
+        var esQuery = JSON.parse(data);
         return (esQuery.query.term.text === 'taco&burrito taco&burrito purina headphone purina');
       }).
       respond(200, mockES7Results);
@@ -804,7 +804,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         'es'
       );
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-        var esQuery = angular.fromJson(data);
+        var esQuery = JSON.parse(data);
         return (esQuery.query.term.text === 'lovely bunnies');
       }).
       respond(200, mockES7Results);
@@ -831,7 +831,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
         'es'
       );
       $httpBackend.expectPOST(mockEsUrl, function verifyDataSent(data) {
-        var esQuery = angular.fromJson(data);
+        var esQuery = JSON.parse(data);
         //console.log(esQuery.query.term.text);
         return (esQuery.query.term.text === 'purina ');
       }).
@@ -1103,7 +1103,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       $httpBackend.expectPOST(url).respond(200, expectedResponse);
 
-      angular.forEach(expectedDocs, function(doc) {
+      expectedDocs.forEach(function(doc) {
         var explainUrl = "http://localhost:9200/statedecoded/";
         explainUrl += '_explain/' + doc._id;
         $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
@@ -1121,7 +1121,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       $httpBackend.expectPOST(url).respond(200, expectedResponse);
 
-      angular.forEach(expectedDocs, function(doc) {
+      expectedDocs.forEach(function(doc) {
         var explainUrl = "http://localhost:9200/statedecoded/";
         explainUrl += '_explain/' + doc._id;
         $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
@@ -1143,7 +1143,7 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
       $httpBackend.expectPOST(url).respond(200, expectedResponse);
 
-      angular.forEach(expectedDocs, function(doc) {
+      expectedDocs.forEach(function(doc) {
         var explainUrl = "http://localhost:9200/statedecoded/";
         explainUrl += '_explain/' + doc._id;
         $httpBackend.expectPOST(explainUrl).respond(200, expectedExplainResponse);
@@ -1246,13 +1246,13 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
     it('returns docs, and removes  _source and highlight query params', function() {
       $httpBackend.expectPOST(mockEsUrl + '/template', function verifyParamsStripped(data) {
-        var esQuery = angular.fromJson(data);
+        var esQuery = JSON.parse(data);
         return (
           (esQuery.id === 'tmdb-title-search-template') &&
-          (angular.isDefined(esQuery.highlight) == false) &&
-          (angular.isDefined(esQuery._source) == false) &&
-          (angular.isDefined(esQuery.from) == false) &&
-          (angular.isDefined(esQuery.size) == false) &&
+          (esQuery.highlight === undefined) &&
+          (esQuery._source === undefined) &&
+          (esQuery.from === undefined) &&
+          (esQuery.size === undefined) &&
           (esQuery.params.from === 0) &&
           (esQuery.params.size === 10)
         );
@@ -1303,13 +1303,13 @@ describe('Service: searchSvc: ElasticSearch', function() {
 
     it('returns docs, and removes  _source and highlight query params', function() {
       $httpBackend.expectPOST('http://myserver/api?url=' + mockEsUrl + '/template', function verifyParamsStripped(data) {
-        var esQuery = angular.fromJson(data);
+        var esQuery = JSON.parse(data);
         return (
           (esQuery.id === 'tmdb-title-search-template') &&
-          (angular.isDefined(esQuery.highlight) == false) &&
-          (angular.isDefined(esQuery._source) == false) &&
-          (angular.isDefined(esQuery.from) == false) &&
-          (angular.isDefined(esQuery.size) == false) &&
+          (esQuery.highlight === undefined) &&
+          (esQuery._source === undefined) &&
+          (esQuery.from === undefined) &&
+          (esQuery.size === undefined) &&
           (esQuery.params.from === 0) &&
           (esQuery.params.size === 10)
         );

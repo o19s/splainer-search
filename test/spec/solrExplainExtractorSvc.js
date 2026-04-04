@@ -96,7 +96,7 @@ describe('Service: Solr Explain Extractor', function () {
       };
 
       var solrDocs = [];
-      angular.forEach(mockSolrResp.response.docs, function(doc){
+      mockSolrResp.response.docs.forEach(function(doc){
         solrDocs.push(new SolrDocFactory(doc, options));
       });
 

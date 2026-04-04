@@ -2,7 +2,7 @@ mockExplain = {'match': true,'value':0.10034258,'description':'product of:','det
 
 var addExplain = function(resp) {
   resp.debug = {explain:{}};
-  angular.forEach(resp.response.docs, function(doc) {
+  resp.response.docs.forEach(function(doc) {
     resp.debug.explain[doc.id] = mockExplain;
   });
 };

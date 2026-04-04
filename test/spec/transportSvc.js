@@ -67,8 +67,8 @@ describe('Service: transportSvc', function() {
     $httpBackend.expectPOST(url, function(body) {
       var lines = body.replace(/\n$/, '').split('\n');
       return lines.length === 2 &&
-        angular.equals(JSON.parse(lines[0]), {}) &&
-        angular.equals(JSON.parse(lines[1]), payload);
+        JSON.stringify(JSON.parse(lines[0])) === JSON.stringify({}) &&
+        JSON.stringify(JSON.parse(lines[1])) === JSON.stringify(payload);
     }).respond(200, { responses: [mockResults] });
     $timeout.flush();
     $httpBackend.flush();

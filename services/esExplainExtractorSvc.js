@@ -3,7 +3,8 @@
 angular.module('o19s.splainer-search')
   .service('esExplainExtractorSvc', [
     'normalDocsSvc',
-    function esExplainExtractorSvc(normalDocsSvc) {
+    'utilsSvc',
+    function esExplainExtractorSvc(normalDocsSvc, utilsSvc) {
       var self = this;
 
       // Functions
@@ -12,7 +13,7 @@ angular.module('o19s.splainer-search')
       function docsWithExplainOther(docs, fieldSpec) {
         var parsedDocs = [];
 
-        angular.forEach(docs, function(doc) {
+        utilsSvc.safeForEach(docs, function(doc) {
           var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc);
           parsedDocs.push(normalDoc);
         });

@@ -141,7 +141,7 @@ describe('Service: docResolverSvc', function () {
         .then(function() {
           expect(resolver.docs.length).toBe(2);
           var ids = [];
-          angular.forEach(resolver.docs, function(doc) {
+          resolver.docs.forEach(function(doc) {
             ids.push(doc.id);
           });
           expect(ids).toContain('doc2');
@@ -165,7 +165,7 @@ describe('Service: docResolverSvc', function () {
         .then(function() {
           expect(resolver.docs.length).toBe(3);
           var ids = [];
-          angular.forEach(resolver.docs, function(doc) {
+          resolver.docs.forEach(function(doc) {
             ids.push(doc.id);
           });
           expect(ids).toContain('doc3');
@@ -293,10 +293,10 @@ describe('Service: docResolverSvc', function () {
         resolver.fetchDocs()
         .then(function onDocsResolved() {
           var ids = [];
-          angular.forEach(resolver.docs, function(doc) {
+          resolver.docs.forEach(function(doc) {
             ids.push(doc.id);
           });
-          angular.forEach(lotsOfDocs, function(docId) {
+          lotsOfDocs.forEach(function(docId) {
             expect(ids).toContain(docId);
           });
         });
@@ -344,7 +344,7 @@ describe('Service: docResolverSvc', function () {
 
       var expectAllDocsPresent = function(resolver) {
         var ids = [];
-        angular.forEach(resolver.docs, function(doc) {
+        resolver.docs.forEach(function(doc) {
           ids.push(doc.id);
         });
         expect(ids).toContain('doc1');
@@ -520,11 +520,11 @@ describe('Service: docResolverSvc', function () {
     it('resolves docs with a terms query on the id field and preserves order', function() {
       var resolver = docResolverSvc.createResolver(['id-1', 'id-2'], mockEsSettings);
       $httpBackend.expectPOST(mockEsUrl, function(body) {
-        var q = angular.fromJson(body);
+        var q = JSON.parse(body);
         if (!q.query || !q.query.terms || q.query.terms.id === undefined) {
           return false;
         }
-        return angular.equals(q.query.terms.id, ['id-1', 'id-2']) && q.size === 2;
+        return JSON.stringify(q.query.terms.id) === JSON.stringify(['id-1', 'id-2']) && q.size === 2;
       }).respond(200, esHitsForIds('id-1', 'id-2'));
 
       var done = false;
@@ -543,15 +543,15 @@ describe('Service: docResolverSvc', function () {
     it('stubs missing Elasticsearch hits as placeholder normal docs', function() {
       var resolver = docResolverSvc.createResolver(['id-1', 'id-2', 'missing'], mockEsSettings);
       $httpBackend.expectPOST(mockEsUrl, function(body) {
-        var q = angular.fromJson(body);
-        return angular.equals(q.query.terms.id, ['id-1', 'id-2', 'missing']) && q.size === 3;
+        var q = JSON.parse(body);
+        return JSON.stringify(q.query.terms.id) === JSON.stringify(['id-1', 'id-2', 'missing']) && q.size === 3;
       }).respond(200, esHitsForIds('id-1', 'id-2'));
 
       var done = false;
       resolver.fetchDocs().then(function() {
         expect(resolver.docs.length).toBe(3);
         var byId = {};
-        angular.forEach(resolver.docs, function(d) {
+        resolver.docs.forEach(function(d) {
           byId[d.id] = d;
         });
         expect(byId['id-1']).toBeDefined();
@@ -566,14 +566,14 @@ describe('Service: docResolverSvc', function () {
     });
 
     it('resolves ids when searchEngine is OpenSearch (os)', function() {
-      var osSettings = angular.extend({}, mockEsSettings, { searchEngine: 'os' });
+      var osSettings = Object.assign({}, mockEsSettings, { searchEngine: 'os' });
       var resolver = docResolverSvc.createResolver(['id-1', 'id-2'], osSettings);
       $httpBackend.expectPOST(mockEsUrl, function(body) {
-        var q = angular.fromJson(body);
+        var q = JSON.parse(body);
         if (!q.query || !q.query.terms || q.query.terms.id === undefined) {
           return false;
         }
-        return angular.equals(q.query.terms.id, ['id-1', 'id-2']) && q.size === 2;
+        return JSON.stringify(q.query.terms.id) === JSON.stringify(['id-1', 'id-2']) && q.size === 2;
       }).respond(200, esHitsForIds('id-1', 'id-2'));
 
       var done = false;
@@ -609,7 +609,7 @@ describe('Service: docResolverSvc', function () {
     it('resolves docs by objectIDs via the multi-get endpoint', function() {
       var resolver = docResolverSvc.createResolver(['obj-a', 'obj-b'], mockAlgoliaSettings);
       $httpBackend.expectPOST('https://index.algolianet.com/1/indexes/*/objects', function(body) {
-        var payload = angular.fromJson(body);
+        var payload = JSON.parse(body);
         if (!payload.requests || payload.requests.length !== 2) {
           return false;
         }
@@ -640,7 +640,7 @@ describe('Service: docResolverSvc', function () {
     it('stubs missing Algolia objects as placeholder docs preserving order', function() {
       var resolver = docResolverSvc.createResolver(['obj-a', 'missing'], mockAlgoliaSettings);
       $httpBackend.expectPOST('https://index.algolianet.com/1/indexes/*/objects', function(body) {
-        var payload = angular.fromJson(body);
+        var payload = JSON.parse(body);
         return payload.requests && payload.requests.length === 2;
       }).respond(200, {
         results: [
@@ -653,7 +653,7 @@ describe('Service: docResolverSvc', function () {
       resolver.fetchDocs().then(function() {
         expect(resolver.docs.length).toBe(2);
         var byId = {};
-        angular.forEach(resolver.docs, function(d) {
+        resolver.docs.forEach(function(d) {
           byId[d.id] = d;
         });
         expect(byId['obj-a'].title).toBe('A');

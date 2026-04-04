@@ -7,7 +7,8 @@ angular.module('o19s.splainer-search')
     'baseExplainSvc',
     'queryExplainSvc',
     'simExplainSvc',
-    function explainSvc(baseExplainSvc, queryExplainSvc, simExplainSvc) {
+    'utilsSvc',
+    function explainSvc(baseExplainSvc, queryExplainSvc, simExplainSvc, utilsSvc) {
 
       var Explain = baseExplainSvc.Explain;
       var ConstantScoreExplain = queryExplainSvc.ConstantScoreExplain;
@@ -168,7 +169,7 @@ angular.module('o19s.splainer-search')
         else if (description.includes('product of')) {
           var coordExpl = null;
           if (details.length === 2) {
-            angular.forEach(details, function(detail) {
+            utilsSvc.safeForEach(details, function(detail) {
               if (detail.description.startsWith('coord(')) {
                 CoordExplain.prototype = base;
                 coordExpl = new CoordExplain(explJson, parseFloat(detail.value));

@@ -79,6 +79,17 @@ describe('Service: utilsSvc (migration shims)', function() {
     });
   });
 
+  describe('copyOnto', function() {
+    it('matches angular.copy(source, destination): replaces destination contents', function() {
+      var dest = {};
+      var src = { nested: { y: 2 }, add: 3 };
+      var out = utilsSvc.copyOnto(dest, src);
+      expect(out).toBe(dest);
+      expect(dest).toEqual({ nested: { y: 2 }, add: 3 });
+      expect(dest.nested).not.toBe(src.nested);
+    });
+  });
+
   describe('deepMerge', function() {
     it('deep-merges nested objects into the target', function() {
       var target = { a: { b: 1 }, top: 0 };

@@ -14,6 +14,7 @@
       'defaultSolrConfig',
       'solrSearcherPreprocessorSvc',
       'esUrlSvc',
+      'utilsSvc',
       SolrSearcherFactory
     ]);
 
@@ -21,7 +22,8 @@
     $q, $log,
     SolrDocFactory, SearcherFactory, transportSvc,
     activeQueries, defaultSolrConfig,
-    solrSearcherPreprocessorSvc, esUrlSvc
+    solrSearcherPreprocessorSvc, esUrlSvc,
+    utilsSvc
   ) {
     var Searcher = function(options) {
       SearcherFactory.call(this, options, solrSearcherPreprocessorSvc);
@@ -45,7 +47,7 @@
       }
 
       var found = null;
-      angular.forEach(self.grouped[groupedBy], function(groupedDocs) {
+      utilsSvc.safeForEach(self.grouped[groupedBy], function(groupedDocs) {
         if (groupedDocs.value === group && !found) {
           found = groupedDocs;
         }
@@ -67,7 +69,7 @@
       var self      = this;
       var start     = 0;
       var rows      = self.config.numberOfRows;
-      var nextArgs  = angular.copy(self.args);
+      var nextArgs  = utilsSvc.deepClone(self.args);
 
       if (Object.hasOwn(nextArgs, 'rows') && nextArgs.rows !== null) {
         rows = parseInt(nextArgs.rows);
@@ -85,7 +87,7 @@
 
       nextArgs.rows       = ['' + rows];
       nextArgs.start      = ['' + start];
-      var pageConfig      = angular.copy(defaultSolrConfig);
+      var pageConfig      = utilsSvc.deepClone(defaultSolrConfig);
       pageConfig.sanitize = false;
       pageConfig.escapeQuery = self.config.escapeQuery;
       pageConfig.apiMethod   = self.config.apiMethod;
@@ -155,7 +157,7 @@
               if (Object.hasOwn(timing.prepare, 'time')) {
                 keys.splice(keys.indexOf('time'), 1);
               }
-              angular.forEach(keys, function(key) {
+              utilsSvc.safeForEach(keys, function(key) {
                 var event = {
                   name: 'prepare_' + key,
                   duration: timing.prepare[key].time
@@ -169,7 +171,7 @@
               if (Object.hasOwn(timing.process, 'time')) {
                 keys.splice(keys.indexOf('time'), 1);
               }
-              angular.forEach(keys, function(key) {
+              utilsSvc.safeForEach(keys, function(key) {
                 var event = {
                   name: 'process_' + key,
                   duration: timing.process[key].time
@@ -199,13 +201,13 @@
           var keysToIgnore = ['track', 'timing', 'explain', 'explainOther'];
           var dbg = solrResp.debug;
           var keys = Object.keys(dbg);
-          angular.forEach(keysToIgnore, function(keyToIgnore) {
+          utilsSvc.safeForEach(keysToIgnore, function(keyToIgnore) {
             if (Object.hasOwn(dbg, keyToIgnore)) {
               keys.splice(keys.indexOf(keyToIgnore), 1);
             }
           });
 
-          angular.forEach(keys, function(key) {
+          utilsSvc.safeForEach(keys, function(key) {
             queryParsingData[key] = dbg[key];
           });
         }
@@ -272,19 +274,19 @@
             };
 
             if (Object.hasOwn(solrResp, 'response') && solrResp.response !== null) {
-              angular.forEach(solrResp.response.docs, function(solrDoc) {
+              utilsSvc.safeForEach(solrResp.response.docs, function(solrDoc) {
                 var doc = parseSolrDoc(solrDoc);
                 thisSearcher.numFound = solrResp.response.numFound;
                 thisSearcher.docs.push(doc);
               });
             } else if (Object.hasOwn(solrResp, 'grouped') && solrResp.grouped !== null) {
-              angular.forEach(solrResp.grouped, function(groupedBy, groupedByName) {
+              utilsSvc.safeForEach(solrResp.grouped, function(groupedBy, groupedByName) {
 
                 thisSearcher.numFound = groupedBy.matches;
                 // add docs for a top level group
                 //console.log(groupedBy.doclist.docs);
                 if (Object.hasOwn(groupedBy, 'doclist') && groupedBy.doclist !== null) {
-                  angular.forEach(groupedBy.doclist.docs, function (solrDoc) {
+                  utilsSvc.safeForEach(groupedBy.doclist.docs, function (solrDoc) {
                     var doc = parseSolrDoc(solrDoc, groupedByName, solrDoc[groupedByName]);
                     thisSearcher.docs.push(doc);
                     thisSearcher.addDocToGroup(groupedByName, solrDoc[groupedByName], doc);
@@ -292,9 +294,9 @@
                 }
 
                 // add docs for Field Collapsing results
-                angular.forEach(groupedBy.groups, function(groupResp) {
+                utilsSvc.safeForEach(groupedBy.groups, function(groupResp) {
                   var groupValue = groupResp.groupValue;
-                  angular.forEach(groupResp.doclist.docs, function(solrDoc) {
+                  utilsSvc.safeForEach(groupResp.doclist.docs, function(solrDoc) {
                     var doc = parseSolrDoc(solrDoc, groupedByName, groupValue);
                     thisSearcher.docs.push(doc);
                     thisSearcher.addDocToGroup(groupedByName, groupValue, doc);
@@ -320,7 +322,7 @@
       var self = this;
 
       var originalArgs = self.args;
-      self.args = angular.copy(self.args);
+      self.args = utilsSvc.deepClone(self.args);
       self.args.explainOther = [otherQuery];
       solrSearcherPreprocessorSvc.prepare(self);
 
@@ -330,11 +332,11 @@
           var start = 0;
           var rows  = self.config.numberOfRows;
 
-          if ( angular.isDefined(self.args.rows) && self.args.rows !== null ) {
+          if ( self.args.rows !== undefined && self.args.rows !== null ) {
             rows = self.args.rows;
           }
 
-          if ( angular.isDefined(self.args.start) && self.args.start !== null ) {
+          if ( self.args.start !== undefined && self.args.start !== null ) {
             start = self.args.start;
           }
           var solrParams = {

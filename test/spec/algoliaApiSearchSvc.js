@@ -26,7 +26,7 @@ describe('Service: searchSvc: Algolia', function () {
     "page": 0,
     "hitsPerPage": 5
   };
-  var expectedParams = angular.copy(mockAlgoliaParams);
+  var expectedParams = structuredClone(mockAlgoliaParams);
   var mockQueryText = 'post';
   var mockFieldSpec = null;
   expectedParams.query = encodeURIComponent(mockQueryText);
@@ -354,7 +354,7 @@ describe('Service: searchSvc: Algolia', function () {
   describe('paging', function() {
 
     function responseForPage(base, pageIndex, nbPages) {
-      var r = angular.copy(base);
+      var r = structuredClone(base);
       r.page = pageIndex;
       if (nbPages !== undefined) {
         r.nbPages = nbPages;
@@ -394,15 +394,15 @@ describe('Service: searchSvc: Algolia', function () {
     });
 
     it('accounts for custom hitsPerPage in args', function() {
-      var params20 = angular.copy(mockAlgoliaParams);
+      var params20 = structuredClone(mockAlgoliaParams);
       params20.hitsPerPage = 20;
-      var expected20 = angular.copy(expectedParams);
+      var expected20 = structuredClone(expectedParams);
       expected20.hitsPerPage = 20;
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
         params20, mockQueryText, { apiMethod: 'POST' }, 'algolia');
 
-      var twoPages = angular.copy(mockAlgoliaResults);
+      var twoPages = structuredClone(mockAlgoliaResults);
       twoPages.hitsPerPage = 20;
       twoPages.nbHits = 35;
       twoPages.nbPages = 2;
@@ -438,9 +438,9 @@ describe('Service: searchSvc: Algolia', function () {
     });
 
     it('advances from a non-zero starting page in args', function() {
-      var paramsFrom2 = angular.copy(mockAlgoliaParams);
+      var paramsFrom2 = structuredClone(mockAlgoliaParams);
       paramsFrom2.page = 2;
-      var expectedFrom2 = angular.copy(expectedParams);
+      var expectedFrom2 = structuredClone(expectedParams);
       expectedFrom2.page = 2;
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
@@ -485,9 +485,9 @@ describe('Service: searchSvc: Algolia', function () {
     });
 
     it('keeps attributesToHighlight on the paged request body (Solr highlights-new-page parity)', function() {
-      var paramsHl = angular.copy(mockAlgoliaParams);
+      var paramsHl = structuredClone(mockAlgoliaParams);
       paramsHl.attributesToHighlight = ['title', 'description'];
-      var expectedHl = angular.copy(expectedPayload);
+      var expectedHl = structuredClone(expectedPayload);
       expectedHl.attributesToHighlight = ['title', 'description'];
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,

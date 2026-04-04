@@ -7,10 +7,11 @@
     .factory('SolrDocFactory', [
       'DocFactory',
       'solrUrlSvc',
+      'utilsSvc',
       SolrDocFactory
     ]);
 
-  function SolrDocFactory(DocFactory, solrUrlSvc) {
+  function SolrDocFactory(DocFactory, solrUrlSvc, utilsSvc) {
     var Doc = function(doc, options) {
       DocFactory.call(this, doc, options);
     };
@@ -99,7 +100,7 @@
     function origin () {
       /*jslint validthis:true*/
       var self = this;
-      return angular.copy(self.doc);
+      return utilsSvc.deepClone(self.doc);
     }
 
     function highlight (docId, fieldName, preText, postText) {
@@ -118,7 +119,7 @@
         prePat  = escapeRegExp(self.options().highlightingPre);
         postPat = escapeRegExp(self.options().highlightingPost);
 
-        angular.forEach(fieldValue, function(value) {
+        utilsSvc.safeForEach(fieldValue, function(value) {
           var esc       = escapeHtml(value);
           var preRegex  = new RegExp(prePat, 'g');
           var hlPre     = esc.replace(preRegex, preText);

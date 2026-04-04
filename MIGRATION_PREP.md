@@ -75,6 +75,7 @@ Single reference for counts and what to swap in. Tier labels: **drop-in** (direc
 - **`test/integration/chunked-resolver-fetch.integration.js`** — `npm run test:integration`.
 - **ESLint + Prettier** — `.eslintrc.cjs`, `Gruntfile.cjs` (default: eslint → karma → concat); `npm run lint`, `format` / `format:check`; JSHint removed from the pipeline.
 - **`stringPatch.js` removed** — `String.prototype.includes` at explain-service call sites (ES2015+).
+- **Factories and services → `utilsSvc` shims** — `angular.forEach` / `angular.copy` / `angular.merge` call sites in `factories/**` and `services/**` now use `safeForEach`, `deepClone`, `copyOnto`, and `deepMerge` ([§5](#5-introduce-shim-layer)); some `angular.isDefined` / `angular.isFunction` replaced with `!== undefined` / `typeof` checks. **`bulkTransportFactory`:** property spelling `defered` → `deferred`.
 
 ---
 
@@ -238,10 +239,9 @@ Six transport factories use `$http`. High risk because:
 
 ### Phase 1: Angular API → table (§1)
 
-Mechanical edits + small PRs (one API or directory); `npm test` per batch. Rough volumes (see §1): drop-ins **~60+**; `forEach` **~124**; `copy` **~92**; `merge` **~13**.
+Mechanical edits + small PRs (one API or directory); `npm test` per batch. Rough volumes (see §1): drop-ins **~60+**; `forEach` **~124**; `copy` **~92**; `merge` **~13**. **`forEach` / `copy` / `merge` in `factories/**` and `services/**`:** done via `utilsSvc` ([§5](#5-introduce-shim-layer), [Recent branch changes](#recent-branch-changes-splainer-rewrite)).
 
-- [ ] Drop-ins: `is*`, `fromJson`, `extend`, `element`, …
-- [ ] `forEach` / `copy` / `merge` → shims
+- [ ] Drop-ins: `is*`, `fromJson`, `extend`, `element`, … (remaining call sites outside the shim sweep)
 
 ### Phase 2: DI → ES modules
 

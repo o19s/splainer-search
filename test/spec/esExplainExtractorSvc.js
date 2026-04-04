@@ -70,7 +70,7 @@ describe('Service: ES Explain Extractor', function () {
       };
 
       var esDocs = [];
-      angular.forEach(expectedDocs, function(doc){
+      expectedDocs.forEach(function(doc){
         esDocs.push(new EsDocFactory(doc, options));
       });
 

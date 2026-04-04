@@ -13,6 +13,7 @@
       'esUrlSvc',
       'SearcherFactory',
       'transportSvc',
+      'utilsSvc',
       AlgoliaSearcherFactory
     ]);
 
@@ -24,7 +25,8 @@
     algoliaSearcherPreprocessorSvc,
     esUrlSvc,
     SearcherFactory,
-    transportSvc
+    transportSvc,
+    utilsSvc
   ) {
 
     var Searcher = function(options) {
@@ -51,7 +53,7 @@
       /*jslint validthis:true*/
       var self = this;
       var page = 0;
-      var nextArgs = angular.copy(self.args);
+      var nextArgs = utilsSvc.deepClone(self.args);
 
       if (Object.hasOwn(nextArgs, 'page') && nextArgs.page >= 0) {
         page = nextArgs.page;
@@ -205,7 +207,7 @@
             mappedDocs.push(docMapper(item));
           });
 
-          angular.forEach(mappedDocs, function(mappedDoc) {
+          utilsSvc.safeForEach(mappedDocs, function(mappedDoc) {
             const doc = parseDoc(mappedDoc);
             self.docs.push(doc);
           });

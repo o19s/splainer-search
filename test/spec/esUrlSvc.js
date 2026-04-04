@@ -157,7 +157,7 @@ describe('Service: esUrlSvc', function () {
     });
     
     it('builds a proper doc URL from the doc info when the _type is _doc', function() {
-      var doc2 = angular.copy(doc);
+      var doc2 = structuredClone(doc);
       doc2._type = '_doc';
       var docUrl = esUrlSvc.buildDocUrl(uri, doc2);
 

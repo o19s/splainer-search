@@ -3,6 +3,7 @@
 angular.module('o19s.splainer-search')
   .service('esUrlSvc', [
     'customHeadersJson',
+    'utilsSvc',
 
     /**
      *
@@ -11,7 +12,7 @@ angular.module('o19s.splainer-search')
      */
 
 
-    function esUrlSvc(customHeadersJson) {
+    function esUrlSvc(customHeadersJson, utilsSvc) {
 
       var self      = this;
 
@@ -142,17 +143,17 @@ angular.module('o19s.splainer-search')
         url = url + uri.pathname;
 
         // Return original URL if no params to append.
-        if ( angular.isUndefined(uri.params) && angular.isUndefined(uri.query) ) {
+        if ( uri.params === undefined && uri.query === undefined ) {
           return url;
         }
 
         var paramsAsStrings = [];
 
-        angular.forEach(uri.params, function(value, key) {
+        utilsSvc.safeForEach(uri.params, function(value, key) {
           paramsAsStrings.push(key + '=' + value);
         });
 
-        if ( angular.isDefined(uri.query) && uri.query !== '' ) {
+        if ( uri.query !== undefined && uri.query !== '' ) {
           paramsAsStrings.push(uri.query);
         }
 
@@ -191,12 +192,12 @@ angular.module('o19s.splainer-search')
           var parsed = customHeadersJson.tryParseObject(customHeaders);
           if (parsed.ok) {
             headers = parsed.headers;
-          } else if ( angular.isDefined(uri.username) && uri.username !== '' &&
-            angular.isDefined(uri.password) && uri.password !== '') {
+          } else if ( uri.username !== undefined && uri.username !== '' &&
+            uri.password !== undefined && uri.password !== '') {
             headers = { 'Authorization': 'Basic ' + btoa(uri.username + ':' + uri.password) };
           }
-        } else if ( angular.isDefined(uri.username) && uri.username !== '' &&
-          angular.isDefined(uri.password) && uri.password !== '') {
+        } else if ( uri.username !== undefined && uri.username !== '' &&
+          uri.password !== undefined && uri.password !== '') {
           var authorization = 'Basic ' + btoa(uri.username + ':' + uri.password);
           headers = { 'Authorization': authorization };
         }

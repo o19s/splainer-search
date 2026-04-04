@@ -125,7 +125,7 @@ describe("Factory: Settings Validator", function () {
           q: ["*:*"],
         };
 
-        var funkyResponse = angular.copy(fullResponse);
+        var funkyResponse = structuredClone(fullResponse);
         funkyResponse.response.docs = funkyDocs;
 
         $httpBackend

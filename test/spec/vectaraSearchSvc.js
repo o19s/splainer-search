@@ -214,7 +214,7 @@ describe('Service: searchSvc: Vectara', function() {
     var mockVectaraParamWithPager;
 
     beforeEach(inject(function () {
-      mockVectaraParamWithPager = angular.copy(mockVectaraParam);
+      mockVectaraParamWithPager = structuredClone(mockVectaraParam);
       mockVectaraParamWithPager.pager = { from: 0, size: 2 };
 
       searcher = searchSvc.createSearcher(
@@ -229,7 +229,7 @@ describe('Service: searchSvc: Vectara', function() {
 
     it('returns a new searcher for the next page', function () {
       // 10 total results so paging should continue
-      var manyDocsResponse = angular.copy(mockVectaraResults);
+      var manyDocsResponse = structuredClone(mockVectaraResults);
       manyDocsResponse.responseSet[0].document = [];
       for (var i = 0; i < 10; i++) {
         manyDocsResponse.responseSet[0].document.push({

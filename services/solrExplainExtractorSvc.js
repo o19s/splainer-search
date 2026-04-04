@@ -3,7 +3,8 @@
 angular.module('o19s.splainer-search')
   .service('solrExplainExtractorSvc', [
     'normalDocsSvc',
-    function solrExplainExtractorSvc(normalDocsSvc) {
+    'utilsSvc',
+    function solrExplainExtractorSvc(normalDocsSvc, utilsSvc) {
       var self = this;
 
       // Functions
@@ -24,7 +25,7 @@ angular.module('o19s.splainer-search')
       function docsWithExplainOther(docs, fieldSpec, explainData) {
         var parsedDocs = [];
 
-        angular.forEach(docs, function(doc) {
+        utilsSvc.safeForEach(docs, function(doc) {
           var overridingExplain = self.getOverridingExplain(doc, fieldSpec, explainData);
           var normalDoc         = normalDocsSvc.createNormalDoc(fieldSpec, doc, overridingExplain);
 

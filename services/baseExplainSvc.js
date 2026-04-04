@@ -5,7 +5,8 @@
 angular.module('o19s.splainer-search')
   .service('baseExplainSvc', [
     'vectorSvc',
-    function explainSvc(vectorSvc) {
+    'utilsSvc',
+    function explainSvc(vectorSvc, utilsSvc) {
 
       this.Explain = function(explJson, explFactory) {
         var datExplain = this;
@@ -17,7 +18,7 @@ angular.module('o19s.splainer-search')
           details = explJson.details;
         }
         this.children = [];
-        angular.forEach(details, function(detail) {
+        utilsSvc.safeForEach(details, function(detail) {
           var expl = explFactory(detail);
           if (expl) {
             datExplain.children.push(expl);
@@ -83,7 +84,7 @@ angular.module('o19s.splainer-search')
         };
         this.matchDetails = function() {
           var rVal = {};
-          angular.forEach(this.children, function(child) {
+          utilsSvc.safeForEach(this.children, function(child) {
             mergeInto(rVal, child.matchDetails());
           });
           return rVal;
@@ -102,7 +103,7 @@ angular.module('o19s.splainer-search')
             var prefix = new Array(2 * depth).join(' ');
             var me = prefix + this.contribution() + ' ' + this.explanation() + '\n';
             var childStrs = [];
-            angular.forEach(this.influencers(), function(child) {
+            utilsSvc.safeForEach(this.influencers(), function(child) {
               childStrs.push(child.toStr(depth+1));
             });
             asStr = me + childStrs.join('\n');

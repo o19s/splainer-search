@@ -13,6 +13,7 @@
       'vectaraUrlSvc',
       'SearcherFactory',
       'transportSvc',
+      'utilsSvc',
       VectaraSearcherFactory
     ]);
 
@@ -23,7 +24,8 @@
     vectaraSearcherPreprocessorSvc,
     vectaraUrlSvc,
     SearcherFactory,
-    transportSvc
+    transportSvc,
+    utilsSvc
   ) {
 
     var Searcher = function(options) {
@@ -47,7 +49,7 @@
       }
 
       var found = null;
-      angular.forEach(self.grouped[groupedBy], function(groupedDocs) {
+      utilsSvc.safeForEach(self.grouped[groupedBy], function(groupedDocs) {
         if (groupedDocs.value === group && !found) {
           found = groupedDocs;
         }
@@ -68,7 +70,7 @@
       /*jslint validthis:true*/
       const self      = this;
       let pagerArgs = {};
-      let nextArgs  = angular.copy(self.args);
+      let nextArgs  = utilsSvc.deepClone(self.args);
 
       if (Object.hasOwn(nextArgs, 'pager') && nextArgs.pager !== undefined) {
         pagerArgs = nextArgs.pager;
@@ -109,7 +111,7 @@
       var url       = self.url;
       var transport = transportSvc.getTransport({apiMethod: apiMethod, proxyUrl: proxyUrl});
 
-      var queryDslWithPagerArgs = angular.copy(self.queryDsl);
+      var queryDslWithPagerArgs = utilsSvc.deepClone(self.queryDsl);
       if (self.pagerArgs) {
         queryDslWithPagerArgs.from = self.pagerArgs.from;
         queryDslWithPagerArgs.size = self.pagerArgs.size;
@@ -140,7 +142,7 @@
             return new VectaraDocFactory(doc, options);
           };
 
-          angular.forEach(documents, function(docFromApi) {
+          utilsSvc.safeForEach(documents, function(docFromApi) {
             const doc = parseDoc(docFromApi);
             self.docs.push(doc);
           });

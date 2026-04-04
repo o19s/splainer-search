@@ -6,7 +6,7 @@ window.parseUrlParams = function(queryString) {
   }
   var queryParams = queryString.split('&');
   var parsedParams = {};
-  angular.forEach(queryParams, function(queryParam) {
+  queryParams.forEach(function(queryParam) {
     var qpSplit = queryParam.split(/=(.*)/);
     var param = qpSplit[0];
     var value = qpSplit[1];
@@ -57,13 +57,8 @@ window.urlHasNoBasicAuth = function() {
 }
 
 window.arrayContains = function(list, value) {
-  var contains = false;
-  angular.forEach(list, function(listValue) {
-    if (listValue === value) {
-      contains = true;
-    }
-  });
-  return contains;
+  if (!list) { return false; }
+  return list.indexOf(value) !== -1;
 };
 
 window.urlContainsParams = function(url, params) {
@@ -75,18 +70,21 @@ window.urlContainsParams = function(url, params) {
       var missingParam = false;
       var urlEncodedArgs = requestedUrl.substr(url.length);
       var parsedParams = parseUrlParams(urlEncodedArgs);
-      angular.forEach(params, function(values, param) {
-        if (values instanceof Array) {
-          angular.forEach(values, function(value) {
-            if (!arrayContains(parsedParams[param], value)) {
-              console.error('Expected param: ' + param + ' missing');
-              missingParam = true;
-            }
-          });
-        } else {
-          missingParam = true;
-        }
-      });
+      if (params) {
+        Object.keys(params).forEach(function(param) {
+          var values = params[param];
+          if (values instanceof Array) {
+            values.forEach(function(value) {
+              if (!arrayContains(parsedParams[param], value)) {
+                console.error('Expected param: ' + param + ' missing');
+                missingParam = true;
+              }
+            });
+          } else {
+            missingParam = true;
+          }
+        });
+      }
       return !missingParam;
     }
   };
@@ -101,16 +99,19 @@ window.urlMissingParams = function(url, params) {
       var found = false;
       var urlEncodedArgs = requestedUrl.substr(url.length);
       var parsedParams = parseUrlParams(urlEncodedArgs);
-      angular.forEach(params, function(values, param) {
-        if (values instanceof Array) {
-          angular.forEach(values, function(value) {
-            if (arrayContains(parsedParams[param], value)) {
-              console.error('Param: ' + param + ' should be missing, but found');
-              found = true;
-            }
-          });
-        }
-      });
+      if (params) {
+        Object.keys(params).forEach(function(param) {
+          var values = params[param];
+          if (values instanceof Array) {
+            values.forEach(function(value) {
+              if (arrayContains(parsedParams[param], value)) {
+                console.error('Param: ' + param + ' should be missing, but found');
+                found = true;
+              }
+            });
+          }
+        });
+      }
       return !found;
     }
   };

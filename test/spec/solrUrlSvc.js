@@ -200,7 +200,8 @@ describe('Service: solrUrlSvc', function () {
     };
 
     var solrArgsEqual = function(args1, args2) {
-      angular.forEach(args1, function(values, key) {
+      Object.keys(args1).forEach(function(key) {
+        var values = args1[key];
         expect(args2.hasOwnProperty(key));
         var values2 = args2[key];
         expect(values).toEqual(values2);

@@ -50,7 +50,7 @@ describe('Service: transport', function() {
     }
     var getTransport = new HttpGetTransportFactory();
     var payloadTemplate = {'test': 0};
-    var payload = angular.copy(payloadTemplate);
+    var payload = structuredClone(payloadTemplate);
     getTransport.query(url, payload, headers);
     $httpBackend.expectGET(url,headersToReceive).respond(200, mockResultsTemplate);
     $timeout.flush();
@@ -64,7 +64,7 @@ describe('Service: transport', function() {
     var options = {option1: true, "option2":"hello"};
     var getTransport = new HttpGetTransportFactory(options);
     var payloadTemplate = {'test': 0};
-    var payload = angular.copy(payloadTemplate);
+    var payload = structuredClone(payloadTemplate);
     getTransport.query(url, payload, headers);
     expect(getTransport.options()).toEqual(options);
     $httpBackend.expectGET(url).respond(200, mockResultsTemplate);
@@ -84,7 +84,7 @@ describe('Service: transport', function() {
     var headers = {'header': 1};
     
     var payloadTemplate = {'test': 0};
-    var payload = angular.copy(payloadTemplate);
+    var payload = structuredClone(payloadTemplate);
     transport.query(url, payload, headers);
     $httpBackend.expectPOST('http://localhost/proxy?url=' + url).respond(200, mockResultsTemplate);
     $timeout.flush();
@@ -103,7 +103,7 @@ describe('Service: transport', function() {
     var headers = {'header': 1};
     
     var payloadTemplate = {'test': 0};
-    var payload = angular.copy(payloadTemplate);
+    var payload = structuredClone(payloadTemplate);
     transport.query(url, payload, headers);
     $httpBackend.expectGET('http://localhost/proxy/' + url).respond(200, mockResultsTemplate);
     $timeout.flush();

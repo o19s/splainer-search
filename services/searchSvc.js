@@ -12,6 +12,7 @@ angular.module('o19s.splainer-search')
     'activeQueries',
     'defaultSolrConfig',
     'customHeadersJson',
+    'utilsSvc',
     function searchSvc(
       SolrSearcherFactory,
       EsSearcherFactory,
@@ -20,7 +21,8 @@ angular.module('o19s.splainer-search')
       SearchApiSearcherFactory,
       activeQueries,
       defaultSolrConfig,
-      customHeadersJson
+      customHeadersJson,
+      utilsSvc
     ) {
       var svc = this;
 
@@ -31,7 +33,7 @@ angular.module('o19s.splainer-search')
       svc.HIGHLIGHTING_POST   = '62362iueaiCRAZY_POST_STRING!_______';
 
       this.configFromDefault = function() {
-        return angular.copy(defaultSolrConfig);
+        return utilsSvc.deepClone(defaultSolrConfig);
       };
 
       this.createSearcher = function (fieldSpec, url, args, queryText, config, searchEngine) {
@@ -56,7 +58,7 @@ angular.module('o19s.splainer-search')
           if (options.config.customHeaders && options.config.customHeaders.length > 0) {
             // already something there, append a new entry
             var parsed = customHeadersJson.tryParseObject(options.config.customHeaders);
-            var head = parsed.ok ? angular.copy(parsed.headers) : {};
+            var head = parsed.ok ? utilsSvc.deepClone(parsed.headers) : {};
             head['Authorization'] = 'Basic ' + encoded;
             options.config.customHeaders = JSON.stringify(head);
           } else {

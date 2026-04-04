@@ -7,7 +7,8 @@
 angular.module('o19s.splainer-search')
   .service('normalDocsSvc', [
     'explainSvc',
-    function normalDocsSvc(explainSvc) {
+    'utilsSvc',
+    function normalDocsSvc(explainSvc, utilsSvc) {
       var entityMap = {
         '&': '&amp;',
         '<': '&lt;',
@@ -88,19 +89,19 @@ angular.module('o19s.splainer-search')
       };
 
       var assignEmbeds = function(normalDoc, doc, fieldSpec) {
-        angular.forEach(fieldSpec.embeds, function (embedField) {
+        utilsSvc.safeForEach(fieldSpec.embeds, function (embedField) {
             normalDoc.embeds[embedField] = doc[embedField];
         });
       };
 
       var assignTranslations = function(normalDoc, doc, fieldSpec) {
-        angular.forEach(fieldSpec.translations, function (translationField) {
+        utilsSvc.safeForEach(fieldSpec.translations, function (translationField) {
             normalDoc.translations[translationField] = doc[translationField];
         });
       };
       
       var assignUnabridgeds = function(normalDoc, doc, fieldSpec) {
-        angular.forEach(fieldSpec.unabridgeds, function (unabridgedField) {
+        utilsSvc.safeForEach(fieldSpec.unabridgeds, function (unabridgedField) {
             normalDoc.unabridgeds[unabridgedField] = doc[unabridgedField];
         });
       };      
@@ -117,7 +118,7 @@ angular.module('o19s.splainer-search')
         };
 
         if (fieldSpec.subs === '*') {
-          angular.forEach(doc, function(value, fieldName) {
+          utilsSvc.safeForEach(doc, function(value, fieldName) {
             if (typeof(value) !== 'function') {
               if (fieldName !== fieldSpec.id && fieldName !== fieldSpec.title &&
                   fieldName !== fieldSpec.thumb && fieldName !== fieldSpec.image) {
@@ -127,7 +128,7 @@ angular.module('o19s.splainer-search')
           });
         }
         else {
-          angular.forEach(fieldSpec.subs, function(subFieldName) {
+          utilsSvc.safeForEach(fieldSpec.subs, function(subFieldName) {
             if ( /\./.test(subFieldName) ) {
               try {
                 var value = pathIndex(doc, subFieldName);
@@ -140,7 +141,7 @@ angular.module('o19s.splainer-search')
               normalDoc.subs[subFieldName] = parseValue(doc[subFieldName]);
             }
           });
-          angular.forEach(fieldSpec.functions, function(functionField) {
+          utilsSvc.safeForEach(fieldSpec.functions, function(functionField) {
             // for foo:$foo, look for foo
             var dispName = fieldDisplayName(functionField);
 
@@ -148,7 +149,7 @@ angular.module('o19s.splainer-search')
               normalDoc.subs[dispName] = parseValue(doc[dispName]);
             }
           });
-          angular.forEach(fieldSpec.highlights, function(hlField) {
+          utilsSvc.safeForEach(fieldSpec.highlights, function(hlField) {
             if (fieldSpec.title !== hlField) {
               normalDoc.subs[hlField] = parseValue(doc[hlField]);
             }
@@ -192,7 +193,7 @@ angular.module('o19s.splainer-search')
         }
         this.subsList = [];
         var thisNormalDoc = this;
-        angular.forEach(this.subs, function(subValue, subField) {
+        utilsSvc.safeForEach(this.subs, function(subValue, subField) {
           var expanded = {field: subField, value: subValue};
           thisNormalDoc.subsList.push(expanded);
         });
@@ -240,9 +241,9 @@ angular.module('o19s.splainer-search')
 
         doc.subSnippets = function(hlPre, hlPost) {
           if (lastHlPre !== hlPre || lastHlPost !== hlPost) {
-            var displayFields = angular.copy(doc.subs);
+            var displayFields = utilsSvc.deepClone(doc.subs);
 
-            angular.forEach(displayFields, function(subFieldValue, subFieldName) {
+            utilsSvc.safeForEach(displayFields, function(subFieldValue, subFieldName) {
               if ( typeof subFieldValue === 'object' && !(subFieldValue instanceof Array) ) {
                 lastSubSnips[subFieldName] = subFieldValue;
               } else {
@@ -296,7 +297,7 @@ angular.module('o19s.splainer-search')
           }
           lastMaxScore = maxScore;
           if (hotOutOf.length === 0) {
-            angular.forEach(hotMatches.vecObj, function(value, key) {
+            utilsSvc.safeForEach(hotMatches.vecObj, function(value, key) {
               var percentage = ((0.0 + value) / maxScore) * 100.0;
               hotOutOf.push({description: key, metadata: matchDetails[key], percentage: percentage});
             });

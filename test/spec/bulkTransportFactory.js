@@ -37,7 +37,7 @@ describe('Service: transport: es bulk transport', function() {
     var i = 0;
     var results = {'responses': []};
     for (i = 0; i < howMany; i++) {
-      var mockResults = angular.copy(mockResultsTemplate);
+      var mockResults = structuredClone(mockResultsTemplate);
       mockResults.hits.total = i;
       results.responses[i] = mockResults;
     }
@@ -59,7 +59,7 @@ describe('Service: transport: es bulk transport', function() {
           var i = 0;
           for (i = 0; i < sentObjs.length; i++) {
             var ithObj = JSON.parse(sentObjs[i]);
-            if (!angular.equals(expectedObjects[i], ithObj)) {
+            if (JSON.stringify(expectedObjects[i]) !== JSON.stringify(ithObj)) {
               return false;
             }
           }
@@ -73,7 +73,8 @@ describe('Service: transport: es bulk transport', function() {
   var containsExpectedHeaders = function(expectedHeaders) {
     return function(headerSent) {
         var match = true;
-        angular.forEach(expectedHeaders, function(headerValue, headerKey) {
+        Object.keys(expectedHeaders).forEach(function(headerKey) {
+          var headerValue = expectedHeaders[headerKey];
           if (!headerSent.hasOwnProperty(headerKey)) {
             match = false;
           } else if (headerSent[headerKey] !== headerValue) {
@@ -95,7 +96,7 @@ describe('Service: transport: es bulk transport', function() {
     var i = 0;
     var numToQuery = 10;
     for (i = 0; i < numToQuery; i++) {
-      var payload = angular.copy(payloadTemplate);
+      var payload = structuredClone(payloadTemplate);
       payload.test = i;
       bulkTransport.query(url, payload, headers);
       expectedObjects.push({});
@@ -133,7 +134,7 @@ describe('Service: transport: es bulk transport', function() {
     };
 
     for (i = 0; i < numToQuery; i++) {
-      var payload = angular.copy(payloadTemplate);
+      var payload = structuredClone(payloadTemplate);
       payload.test = i;
       bulkTransport.query(url, payload, headers).then(indivSuccessCheck(i));
       expectedObjects.push({});
@@ -163,8 +164,8 @@ describe('Service: transport: es bulk transport', function() {
     var promisesResolved = 0;
     var promisesRejected = 0;
     var mockResults = buildMockResults(numToQuery);
-    mockResults.responses[2] = angular.copy(mockResultsErrorTemplate);
-    mockResults.responses[4] = angular.copy(mockResultsErrorTemplate);
+    mockResults.responses[2] = structuredClone(mockResultsErrorTemplate);
+    mockResults.responses[4] = structuredClone(mockResultsErrorTemplate);
 
     var indivSuccessCheck = function(requestIdx) {
       return function(results) {
@@ -181,7 +182,7 @@ describe('Service: transport: es bulk transport', function() {
     };
 
     for (i = 0; i < numToQuery; i++) {
-      var payload = angular.copy(payloadTemplate);
+      var payload = structuredClone(payloadTemplate);
       payload.test = i;
       bulkTransport.query(url, payload, headers).then(indivSuccessCheck(i), indivErrorCheck(i));
       expectedObjects.push({});
@@ -213,7 +214,7 @@ describe('Service: transport: es bulk transport', function() {
 
     var indivSuccessCheck = function(requestIdx) {
       return function(results) {
-        expect(results.date).toEqual(mockResults.responses[requestIdx]);
+        expect(results.data).toEqual(mockResults.responses[requestIdx]);
         promisesResolved++;
       };
     };
@@ -225,7 +226,7 @@ describe('Service: transport: es bulk transport', function() {
     };
 
     for (var i = 0; i < numToQuery; i++) {
-      var payload = angular.copy(payloadTemplate);
+      var payload = structuredClone(payloadTemplate);
       payload.test = i;
       bulkTransport.query(url, payload, headers).then(indivSuccessCheck(i), indivErrorCheck(i));
       expectedObjects.push({});
@@ -265,7 +266,7 @@ describe('Service: transport: es bulk transport', function() {
 
     var payload = {};
     for (i = 0; i < numToQuery; i++) {
-      payload = angular.copy(payloadTemplate);
+      payload = structuredClone(payloadTemplate);
       payload.test = i;
       bulkTransport.query(url, payload, headers).then(indivSuccessCheck(i));
       expectedObjects.push({});
@@ -282,7 +283,7 @@ describe('Service: transport: es bulk transport', function() {
     // append further to the queue in addition to some that are in flight,
     // only
     for (i = 0; i < numToQuery; i++) {
-      payload = angular.copy(payloadTemplate);
+      payload = structuredClone(payloadTemplate);
       payload.test = numToQuery + i;
       bulkTransport.query(url, payload, headers).then(indivSuccessCheck(i));
       expectedObjectsBatch2.push({});
@@ -309,7 +310,7 @@ describe('Service: transport: es bulk transport', function() {
     var headers = {'header': 1};
     var bulkTransport = new BulkTransportFactory();
     var payloadTemplate = {'test': 0};
-    var payload = angular.copy(payloadTemplate);
+    var payload = structuredClone(payloadTemplate);
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
     $httpBackend.expectPOST(url).respond(200, mockResults);
@@ -332,7 +333,7 @@ describe('Service: transport: es bulk transport', function() {
     var headers = {'header': 1};
     var bulkTransport = new BulkTransportFactory();
     var payloadTemplate = {'test': 0};
-    var payload = angular.copy(payloadTemplate);
+    var payload = structuredClone(payloadTemplate);
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
     $httpBackend.expectPOST(url, trailingEndlineTest).respond(200, mockResults);
@@ -347,7 +348,7 @@ describe('Service: transport: es bulk transport', function() {
     var headers = {'header': 1};
     var bulkTransport = new BulkTransportFactory();
     var payloadTemplate = {'test': 0};
-    var payload = angular.copy(payloadTemplate);
+    var payload = structuredClone(payloadTemplate);
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
     $httpBackend.expectPOST(url).respond(200, mockResults);

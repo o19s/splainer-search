@@ -6,16 +6,17 @@
   angular.module('o19s.splainer-search')
     .factory('AlgoliaDocFactory', [
       'DocFactory',
+      'utilsSvc',
       AlgoliaDocFactory
     ]);
 
-  function AlgoliaDocFactory(DocFactory) {
+  function AlgoliaDocFactory(DocFactory, utilsSvc) {
     const Doc = function(doc, options) {
       DocFactory.call(this, doc, options);
 
       const self = this;
 
-      angular.forEach(self.fieldsProperty(), function(fieldValue, fieldName) {
+      utilsSvc.safeForEach(self.fieldsProperty(), function(fieldValue, fieldName) {
         if ( fieldValue !== null && fieldValue !== undefined && fieldValue.constructor === Array && fieldValue.length === 1 ) {
           self[fieldName] = fieldValue[0];
         } else {
@@ -43,8 +44,8 @@
       var self = this;
 
       var src = {};
-      angular.forEach(self, function(value, field) {
-        if (!angular.isFunction(value)) {
+      utilsSvc.safeForEach(self, function(value, field) {
+        if (typeof value !== 'function') {
           src[field] = value;
         }
       });

@@ -2,7 +2,8 @@
 
 angular.module('o19s.splainer-search')
   .service('fieldSpecSvc', [
-    function fieldSpecSvc() {
+    'utilsSvc',
+    function fieldSpecSvc(utilsSvc) {
       var addFieldOfType = function(fieldSpec, fieldType, fieldName, fieldOptions) {
         if (['f', 'func', 'function'].includes(fieldType)) {
           if (!Object.hasOwn(fieldSpec, 'functions')) {
@@ -81,7 +82,7 @@ angular.module('o19s.splainer-search')
 
         }
 
-        angular.forEach(fieldSpecs, function(aField) {
+        utilsSvc.safeForEach(fieldSpecs, function(aField) {
 
           var fieldTypes = null;
           var fieldName = null;
@@ -113,7 +114,7 @@ angular.module('o19s.splainer-search')
           }
 
           if (fieldTypes && fieldName) {
-            angular.forEach(fieldTypes, function(fieldType) {
+            utilsSvc.safeForEach(fieldTypes, function(fieldType) {
               addFieldOfType(fieldSpec, fieldType, fieldName, fieldOptions);
             });
           }
@@ -160,22 +161,22 @@ angular.module('o19s.splainer-search')
           if (Object.hasOwn(this, 'image')) {
             innerBody(this.image);
           }
-          angular.forEach(this.embeds, function(embed) {
+          utilsSvc.safeForEach(this.embeds, function(embed) {
             innerBody(embed);
           });
-          angular.forEach(this.translations, function(translate) {
+          utilsSvc.safeForEach(this.translations, function(translate) {
             innerBody(translate);
           });
-          angular.forEach(this.unabridgeds, function(unabridged) {
+          utilsSvc.safeForEach(this.unabridgeds, function(unabridged) {
             innerBody(unabridged);
           });          
-          angular.forEach(this.highlights, function(hl) {
+          utilsSvc.safeForEach(this.highlights, function(hl) {
             innerBody(hl);
           });
-          angular.forEach(this.subs, function(sub) {
+          utilsSvc.safeForEach(this.subs, function(sub) {
             innerBody(sub);
           });
-          angular.forEach(this.functions, function(func) {
+          utilsSvc.safeForEach(this.functions, function(func) {
             innerBody(func);
           });
         };

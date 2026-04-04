@@ -4,7 +4,8 @@ angular.module('o19s.splainer-search')
     .service('vectaraSearcherPreprocessorSvc', [
         'queryTemplateSvc',
         'defaultVectaraConfig',
-        function vectaraSearcherPreprocessorSvc(queryTemplateSvc, defaultVectaraConfig) {
+        'utilsSvc',
+        function vectaraSearcherPreprocessorSvc(queryTemplateSvc, defaultVectaraConfig, utilsSvc) {
             const self = this;
 
             // Functions
@@ -15,14 +16,14 @@ angular.module('o19s.splainer-search')
             };
 
             var preparePostRequest = function (searcher) {
-                var pagerArgs = angular.copy(searcher.args.pager);
-                if ( angular.isUndefined(pagerArgs) || pagerArgs === null ) {
+                var pagerArgs = utilsSvc.deepClone(searcher.args.pager);
+                if ( pagerArgs === undefined || pagerArgs === null ) {
                     pagerArgs = {};
                 }
 
                 var defaultPagerArgs = {};
 
-                searcher.pagerArgs  = angular.merge({}, defaultPagerArgs, pagerArgs);
+                searcher.pagerArgs  = utilsSvc.deepMerge({}, defaultPagerArgs, pagerArgs);
                 delete searcher.args.pager;
 
                 var queryDsl    = replaceQuery(searcher.config.qOption, searcher.args, searcher.queryText);
@@ -36,7 +37,7 @@ angular.module('o19s.splainer-search')
                 } else {
                     // make sure config params that weren't passed through are set from
                     // the default config object.
-                    searcher.config = angular.merge({}, defaultVectaraConfig, searcher.config);
+                    searcher.config = utilsSvc.deepMerge({}, defaultVectaraConfig, searcher.config);
                 }
 
                 preparePostRequest(searcher);

@@ -12,7 +12,8 @@
       'searchApiSearcherPreprocessorSvc',
       'esUrlSvc',
       'SearcherFactory',
-      'transportSvc',      
+      'transportSvc',
+      'utilsSvc',
       SearchApiSearcherFactory
     ]);
 
@@ -24,7 +25,8 @@
     searchApiSearcherPreprocessorSvc,
     esUrlSvc,
     SearcherFactory,
-    transportSvc
+    transportSvc,
+    utilsSvc
   ) {
 
     var Searcher = function(options) {
@@ -129,7 +131,7 @@
             mappedDocs = mappedDocs.slice(0, self.config.numberOfRows);
           }
           
-          angular.forEach(mappedDocs, function(mappedDoc) {
+          utilsSvc.safeForEach(mappedDocs, function(mappedDoc) {
             const doc = parseDoc(mappedDoc);
             self.docs.push(doc);
           });

@@ -6,7 +6,8 @@
  * */
 angular.module('o19s.splainer-search')
   .service('vectorSvc', [
-    function vectorSvc() {
+    'utilsSvc',
+    function vectorSvc(utilsSvc) {
 
       var SparseVector = function() {
         this.vecObj = {};
@@ -43,11 +44,11 @@ angular.module('o19s.splainer-search')
           if (asStr === '') {
             // sort
             var sortedL = [];
-            angular.forEach(this.vecObj, function(value, key) {
+            utilsSvc.safeForEach(this.vecObj, function(value, key) {
               sortedL.push([key, value]);
             });
             sortedL.sort(function(lhs, rhs) {return rhs[1] - lhs[1];});
-            angular.forEach(sortedL, function(keyVal) {
+            utilsSvc.safeForEach(sortedL, function(keyVal) {
               asStr += (keyVal[1] + ' ' + keyVal[0] + '\n');
             });
           }
@@ -62,10 +63,10 @@ angular.module('o19s.splainer-search')
 
       this.add = function(lhs, rhs) {
         var rVal = this.create();
-        angular.forEach(lhs.vecObj, function(value, key) {
+        utilsSvc.safeForEach(lhs.vecObj, function(value, key) {
           rVal.set(key, value);
         });
-        angular.forEach(rhs.vecObj, function(value, key) {
+        utilsSvc.safeForEach(rhs.vecObj, function(value, key) {
           rVal.set(key, value);
         });
         return rVal;
@@ -73,10 +74,10 @@ angular.module('o19s.splainer-search')
 
       this.sumOf = function(lhs, rhs) {
         var rVal = this.create();
-        angular.forEach(lhs.vecObj, function(value, key) {
+        utilsSvc.safeForEach(lhs.vecObj, function(value, key) {
           rVal.add(key, value);
         });
-        angular.forEach(rhs.vecObj, function(value, key) {
+        utilsSvc.safeForEach(rhs.vecObj, function(value, key) {
           rVal.add(key, value);
         });
         return rVal;
@@ -85,7 +86,7 @@ angular.module('o19s.splainer-search')
 
       this.scale = function(lhs, scalar) {
         var rVal = this.create();
-        angular.forEach(lhs.vecObj, function(value, key) {
+        utilsSvc.safeForEach(lhs.vecObj, function(value, key) {
           rVal.set(key, value * scalar);
         });
         return rVal;

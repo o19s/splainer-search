@@ -4,7 +4,8 @@ angular.module('o19s.splainer-search')
   .service('esSearcherPreprocessorSvc', [
     'queryTemplateSvc',
     'defaultESConfig',
-    function esSearcherPreprocessorSvc(queryTemplateSvc, defaultESConfig) {
+    'utilsSvc',
+    function esSearcherPreprocessorSvc(queryTemplateSvc, defaultESConfig, utilsSvc) {
       var self = this;
 
       // Attributes
@@ -32,7 +33,7 @@ angular.module('o19s.splainer-search')
       };
 
       var prepareHighlighting = function (args, fields) {
-        if ( angular.isDefined(fields) && fields !== null ) {
+        if ( fields !== undefined && fields !== null ) {
           if ( Object.hasOwn(fields, 'fields') ) {
             fields = fields.fields;
           }
@@ -40,7 +41,7 @@ angular.module('o19s.splainer-search')
           if ( fields.length > 0 ) {
             var hl = { fields: {} };
 
-            angular.forEach(fields, function(fieldName) {
+            utilsSvc.safeForEach(fields, function(fieldName) {
               /*
                * ES doesn't like highlighting on _id if the query has been filtered on _id using a terms query.
                */
@@ -63,8 +64,8 @@ angular.module('o19s.splainer-search')
       };
 
       var preparePostRequest = function (searcher) {
-        var pagerArgs = angular.copy(searcher.args.pager);
-        if ( angular.isUndefined(pagerArgs) || pagerArgs === null ) {
+        var pagerArgs = utilsSvc.deepClone(searcher.args.pager);
+        if ( pagerArgs === undefined || pagerArgs === null ) {
           pagerArgs = {};
         }
 
@@ -73,15 +74,15 @@ angular.module('o19s.splainer-search')
           size: searcher.config.numberOfRows,
         };
 
-        searcher.pagerArgs  = angular.merge({}, defaultPagerArgs, pagerArgs);
+        searcher.pagerArgs  = utilsSvc.deepMerge({}, defaultPagerArgs, pagerArgs);
         delete searcher.args.pager;
 
         var queryDsl        = replaceQuery(searcher.config.qOption, searcher.args, searcher.queryText);
         queryDsl.explain    = true;
         queryDsl.profile    = true;
 
-        if ( angular.isDefined(searcher.fieldList) && searcher.fieldList !== null ) {
-          angular.forEach(self.fieldsParamNames, function(name) {
+        if ( searcher.fieldList !== undefined && searcher.fieldList !== null ) {
+          utilsSvc.safeForEach(self.fieldsParamNames, function(name) {
             queryDsl[name] = searcher.fieldList;
           });
         }
@@ -96,10 +97,10 @@ angular.module('o19s.splainer-search')
       var prepareGetRequest = function (searcher) {
         searcher.url = searcher.url + '?q=' + encodeURIComponent(searcher.queryText);
 
-        var pagerArgs = angular.copy(searcher.args.pager);
+        var pagerArgs = utilsSvc.deepClone(searcher.args.pager);
         delete searcher.args.pager;
 
-        if ( angular.isDefined(pagerArgs) && pagerArgs !== null ) {
+        if ( pagerArgs !== undefined && pagerArgs !== null ) {
           searcher.url += '&from=' + pagerArgs.from;
           searcher.url += '&size=' + pagerArgs.size;
         } else {
@@ -113,7 +114,7 @@ angular.module('o19s.splainer-search')
         } else {
           // make sure config params that weren't passed through are set from
           // the default config object.
-          searcher.config = angular.merge({}, defaultESConfig, searcher.config);
+          searcher.config = utilsSvc.deepMerge({}, defaultESConfig, searcher.config);
         }
 
         if ( searcher.config.apiMethod === 'POST') {
