@@ -3,7 +3,6 @@
 /**
  * Tests for transportSvc.getTransport: maps apiMethod and optional proxy wrapping.
  */
-/*global describe,beforeEach,module,inject,it,expect*/
 describe('Service: transportSvc', function() {
   beforeEach(module('o19s.splainer-search'));
 
@@ -59,19 +58,24 @@ describe('Service: transportSvc', function() {
     $httpBackend.verifyNoOutstandingExpectation();
   });
 
-  it('routes BULK apiMethod through the bulk transport (batched POST to _msearch)', function() {
-    var url = 'http://es.example.com/_msearch';
-    var transport = transportSvc.getTransport({ apiMethod: 'BULK' });
-    var payload = { query: { match_all: {} } };
-    transport.query(url, payload, { 'Content-Type': 'application/x-ndjson' });
-    $httpBackend.expectPOST(url, function(body) {
-      var lines = body.replace(/\n$/, '').split('\n');
-      return lines.length === 2 &&
-        JSON.stringify(JSON.parse(lines[0])) === JSON.stringify({}) &&
-        JSON.stringify(JSON.parse(lines[1])) === JSON.stringify(payload);
-    }).respond(200, { responses: [mockResults] });
-    $timeout.flush();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+  describe('BULK transport (uses setTimeout)', function() {
+    beforeEach(function() { jasmine.clock().install(); });
+    afterEach(function() { jasmine.clock().uninstall(); });
+
+    it('routes BULK apiMethod through the bulk transport (batched POST to _msearch)', function() {
+      var url = 'http://es.example.com/_msearch';
+      var transport = transportSvc.getTransport({ apiMethod: 'BULK' });
+      var payload = { query: { match_all: {} } };
+      transport.query(url, payload, { 'Content-Type': 'application/x-ndjson' });
+      $httpBackend.expectPOST(url, function(body) {
+        var lines = body.replace(/\n$/, '').split('\n');
+        return lines.length === 2 &&
+          JSON.stringify(JSON.parse(lines[0])) === JSON.stringify({}) &&
+          JSON.stringify(JSON.parse(lines[1])) === JSON.stringify(payload);
+      }).respond(200, { responses: [mockResults] });
+      jasmine.clock().tick(100);
+      $httpBackend.flush();
+      $httpBackend.verifyNoOutstandingExpectation();
+    });
   });
 });

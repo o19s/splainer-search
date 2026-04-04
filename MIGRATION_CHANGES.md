@@ -141,3 +141,50 @@ In each file:
 | Branches | 84.56% | 84.56% | Identical |
 | Functions | 95.39% | 95.39% | Identical |
 | Lines | 95.75% | 95.75% | Identical |
+
+---
+
+## Phase 3b — `$timeout` → `setTimeout`/`clearTimeout`
+
+**Behavioral changes: None.**
+
+Angular's `$timeout` wraps `setTimeout` and adds a digest cycle trigger after
+the callback runs. In this codebase, `$timeout` was only used in
+`BulkTransportFactory` to batch Elasticsearch `_msearch` requests on a 100ms
+timer. The digest integration is unnecessary because `$httpBackend.flush()` (in
+tests) and Angular's `$http` (in production) already trigger digests when
+promises resolve.
+
+### Source file changed (1)
+
+| File | Change |
+|------|--------|
+| `factories/bulkTransportFactory.js` | `$timeout(fn, 100)` → `setTimeout(fn, 100)`; `$timeout.cancel(promise)` → `clearTimeout(id)`; variable renamed `timerPromise` → `timerId`; `$timeout` removed from function params and DI array |
+
+### Test files changed (3)
+
+| File | Change |
+|------|--------|
+| `test/spec/bulkTransportFactory.js` | Replaced `$timeout.flush()` with `jasmine.clock().tick(100)` (8 tests); added `jasmine.clock().install()`/`uninstall()` in before/afterEach; removed `$timeout` injection |
+| `test/spec/transportSvc.js` | BULK transport test: wrapped with `jasmine.clock().install()`/`uninstall()`; `$timeout.flush()` → `jasmine.clock().tick(100)` (1 test) |
+| `test/spec/migrationSafetyTests.js` | Updated 2 tests: `BulkTransportFactory queue forEach` and `$timeout scheduling` → uses `jasmine.clock()` instead of `$timeout.flush()`; updated section header and comment |
+
+### What did NOT change
+
+- **No batching behavior changed.** The same 100ms timer drives the same
+  `sendMultiSearch()` → `$http.post()` flow. Only the scheduling mechanism
+  changed from Angular's `$timeout` to native `setTimeout`.
+- **Non-BULK transport tests unchanged.** Tests for `HttpPostTransportFactory`,
+  `HttpGetTransportFactory`, `HttpJsonpTransportFactory`, and `ProxyTransport`
+  still call `$timeout.flush()` for Angular-internal deferred tasks — unaffected.
+- **No other factories use `$timeout`.** Despite the migration plan estimating
+  ~49 uses, all `$timeout` usage was confined to `bulkTransportFactory.js`.
+
+### Coverage comparison
+
+| Metric | After Phase 3a | After Phase 3b | Note |
+|--------|----------------|----------------|------|
+| Statements | 95.72% | 95.72% | Identical |
+| Branches | 84.56% | 84.56% | Identical |
+| Functions | 95.39% | 95.39% | Identical |
+| Lines | 95.75% | 95.75% | Identical |

@@ -2,7 +2,7 @@
 
 /*jslint latedef:false*/
 
-export function BulkTransportFactory(TransportFactory, $http, $q, $timeout, utilsSvc) {
+export function BulkTransportFactory(TransportFactory, $http, $q, utilsSvc) {
   var Transport = function (options) {
     TransportFactory.call(this, options);
     this.batchSender = null;
@@ -112,27 +112,27 @@ export function BulkTransportFactory(TransportFactory, $http, $q, $timeout, util
       return deferred.promise;
     }
 
-    var timerPromise = null;
+    var timerId = null;
 
     function timerTick() {
       sendMultiSearch();
       if (queue.length > 0) {
-        timerPromise = $timeout(timerTick, 100);
+        timerId = setTimeout(timerTick, 100);
       } else {
-        timerPromise = null;
+        timerId = null;
       }
     }
 
     function ensureTimer() {
-      if (!timerPromise) {
-        timerPromise = $timeout(timerTick, 100);
+      if (timerId === null) {
+        timerId = setTimeout(timerTick, 100);
       }
     }
 
     function cancel() {
-      if (timerPromise) {
-        $timeout.cancel(timerPromise);
-        timerPromise = null;
+      if (timerId !== null) {
+        clearTimeout(timerId);
+        timerId = null;
       }
     }
 
@@ -165,7 +165,6 @@ if (typeof angular !== 'undefined') {
       'TransportFactory',
       '$http',
       '$q',
-      '$timeout',
       'utilsSvc',
       BulkTransportFactory,
     ]);

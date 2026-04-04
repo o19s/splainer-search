@@ -1,13 +1,19 @@
 'use strict';
 
-/*global describe,beforeEach,inject,it,expect*/
 describe('Service: transport: es bulk transport', function() {
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
   var $httpBackend;
-  var $timeout;
   var BulkTransportFactory;
+
+  beforeEach(function() {
+    jasmine.clock().install();
+  });
+
+  afterEach(function() {
+    jasmine.clock().uninstall();
+  });
 
   beforeEach(inject(function (_BulkTransportFactory_) {
     BulkTransportFactory = _BulkTransportFactory_;
@@ -15,7 +21,6 @@ describe('Service: transport: es bulk transport', function() {
 
   beforeEach(inject(function($injector) {
     $httpBackend = $injector.get('$httpBackend');
-    $timeout = $injector.get('$timeout');
   }));
 
   var mockResultsTemplate = {
@@ -75,7 +80,7 @@ describe('Service: transport: es bulk transport', function() {
         var match = true;
         Object.keys(expectedHeaders).forEach(function(headerKey) {
           var headerValue = expectedHeaders[headerKey];
-          if (!headerSent.hasOwnProperty(headerKey)) {
+          if (!Object.prototype.hasOwnProperty.call(headerSent, headerKey)) {
             match = false;
           } else if (headerSent[headerKey] !== headerValue) {
             match = false;
@@ -108,7 +113,7 @@ describe('Service: transport: es bulk transport', function() {
     $httpBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
     .respond(200, mockResults);
-    $timeout.flush();
+    jasmine.clock().tick(100);
     $httpBackend.verifyNoOutstandingExpectation();
   });
 
@@ -145,7 +150,7 @@ describe('Service: transport: es bulk transport', function() {
     $httpBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
     .respond(200, mockResults);
-    $timeout.flush();
+    jasmine.clock().tick(100);
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(numToQuery);
@@ -193,7 +198,7 @@ describe('Service: transport: es bulk transport', function() {
     $httpBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
     .respond(200, mockResults);
-    $timeout.flush();
+    jasmine.clock().tick(100);
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(8);
@@ -236,7 +241,7 @@ describe('Service: transport: es bulk transport', function() {
     $httpBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
     .respond(400, {});
-    $timeout.flush();
+    jasmine.clock().tick(100);
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(0);
@@ -277,7 +282,7 @@ describe('Service: transport: es bulk transport', function() {
     $httpBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
     .respond(200, mockResults);
-    $timeout.flush();
+    jasmine.clock().tick(100);
 
     var expectedObjectsBatch2 = [];
     // append further to the queue in addition to some that are in flight,
@@ -299,7 +304,7 @@ describe('Service: transport: es bulk transport', function() {
     $httpBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjectsBatch2), containsExpectedHeaders(headers))
     .respond(200, mockResults);
-    $timeout.flush();
+    jasmine.clock().tick(100);
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(numToQuery * 2);
@@ -314,10 +319,10 @@ describe('Service: transport: es bulk transport', function() {
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
     $httpBackend.expectPOST(url).respond(200, mockResults);
-    $timeout.flush();
+    jasmine.clock().tick(100);
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
-    $timeout.flush();
+    jasmine.clock().tick(100);
     $httpBackend.verifyNoOutstandingExpectation();
   });
 
@@ -337,7 +342,7 @@ describe('Service: transport: es bulk transport', function() {
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
     $httpBackend.expectPOST(url, trailingEndlineTest).respond(200, mockResults);
-    $timeout.flush();
+    jasmine.clock().tick(100);
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
   });
@@ -352,14 +357,14 @@ describe('Service: transport: es bulk transport', function() {
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
     $httpBackend.expectPOST(url).respond(200, mockResults);
-    $timeout.flush();
+    jasmine.clock().tick(100);
     $httpBackend.flush();
     $httpBackend.verifyNoOutstandingExpectation();
 
     var url2 = 'http://es2.splainer-search.com/foods/tacos/_msearch';
     bulkTransport.query(url2, payload, headers);
     $httpBackend.expectPOST(url2).respond(200, mockResults);
-    $timeout.flush();
+    jasmine.clock().tick(100);
     $httpBackend.flush();
   });
 });

@@ -63,7 +63,7 @@ Only `angular.forEach`, `angular.copy`, `angular.merge` remain — inside `utils
 | `$http` | 6 transport factories | Phase 3 (`fetch` wrapper) |
 | `$q` | ~37 uses across factories | Phase 3 (native `Promise`) |
 | ~~`$log`~~ | ~~7 factories~~ | ~~Phase 3~~ — **done** (`console`) |
-| `$timeout` | ~49 uses | Phase 3 (`setTimeout`) |
+| ~~`$timeout`~~ | ~~1 factory (`bulkTransportFactory`)~~ | ~~Phase 3~~ — **done** (`setTimeout`/`clearTimeout`) |
 | `$sce` | ~9 uses | Phase 3 (remove — JSONP trusted URLs only) |
 
 ---
@@ -146,7 +146,8 @@ Six transport factories use `$http`. High risk because:
 - [ ] `fetch` wrapper (same success/error shapes as `$http`)
 - [ ] `$q` → native `Promise`
 - [x] `$log` → `console` (7 factories, 0 behavioral change)
-- [ ] `$timeout` → `setTimeout`; drop `$sce` for JSONP as planned
+- [x] `$timeout` → `setTimeout`/`clearTimeout` (1 factory, tests updated to `jasmine.clock()`)
+- [ ] Drop `$sce` for JSONP as planned
 - [ ] Swap `utilsSvc` internals from `angular.*` to native implementations
 
 ### Phase 4: Remove Angular

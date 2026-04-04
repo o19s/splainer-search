@@ -12,7 +12,7 @@
  * 5. Preprocessor output contracts (what searchers expect from preprocessors)
  * 6. angular.merge edge cases (null leaves, array merge-by-index vs whole-array replace)
  * 7. $http response shape (.data, .status, .headers()) for fetch wrappers
- * 8. BulkTransportFactory $timeout-driven batching (vs setTimeout + digest)
+ * 8. BulkTransportFactory setTimeout-driven batching
  * 9. Registered injectables as the public API surface for DI / ES-module export parity
  *
  * ResolverFactory with chunkSize <= 0 is covered in test/spec/docResolverSvc.js (sliceIds undefined).
@@ -1040,12 +1040,13 @@ describe('Migration Safety: angular.forEach on undefined collections (source pat
   describe('BulkTransportFactory queue forEach (replaces legacy requestBatches map)', function() {
     var BulkTransportFactory;
     var $httpBackend;
-    var $timeout;
+
+    beforeEach(function() { jasmine.clock().install(); });
+    afterEach(function() { jasmine.clock().uninstall(); });
 
     beforeEach(inject(function(_BulkTransportFactory_, $injector) {
       BulkTransportFactory = _BulkTransportFactory_;
       $httpBackend = $injector.get('$httpBackend');
-      $timeout = $injector.get('$timeout');
     }));
 
     it('multiSearchFailed still runs angular.forEach(queue, ...) when queue is non-empty', function() {
@@ -1055,7 +1056,7 @@ describe('Migration Safety: angular.forEach on undefined collections (source pat
       var rejected = false;
       p.catch(function() { rejected = true; });
       $httpBackend.expectPOST(url).respond(500, { error: 'fail' });
-      $timeout.flush();
+      jasmine.clock().tick(100);
       $httpBackend.flush();
       expect(rejected).toBe(true);
     });
@@ -1211,14 +1212,16 @@ describe('Migration Safety: $http response shape for transport success handlers'
 });
 
 // =============================================================================
-// E. $timeout batching in BulkTransportFactory (vs raw setTimeout + digest)
+// E. setTimeout batching in BulkTransportFactory
 // =============================================================================
-describe('Migration Safety: BulkTransportFactory $timeout scheduling', function() {
+describe('Migration Safety: BulkTransportFactory setTimeout scheduling', function() {
 
   beforeEach(module('o19s.splainer-search'));
+  beforeEach(function() { jasmine.clock().install(); });
+  afterEach(function() { jasmine.clock().uninstall(); });
 
-  it('does not POST until $timeout is flushed (batching uses $timeout, not immediate send)', inject(
-    function(BulkTransportFactory, $httpBackend, $timeout) {
+  it('does not POST until the timer fires (batching uses setTimeout, not immediate send)', inject(
+    function(BulkTransportFactory, $httpBackend) {
       var bulk = new BulkTransportFactory();
       var url = 'http://es.example.com/i/_msearch';
       bulk.query(url, { q: 1 }, {});
@@ -1226,7 +1229,7 @@ describe('Migration Safety: BulkTransportFactory $timeout scheduling', function(
       expect(function() {
         $httpBackend.flush();
       }).toThrow();
-      $timeout.flush();
+      jasmine.clock().tick(100);
       $httpBackend.flush();
     }
   ));
