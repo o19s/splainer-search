@@ -1,17 +1,32 @@
 'use strict';
 
+/*global createFetchClient, MockHttpBackend*/
+
 // Yield to the microtask queue so native Promise .then() callbacks settle.
-function flushMicrotasks() {
-  return Promise.resolve().then(function () {
-    return Promise.resolve();
-  });
+// The chain through createFetchClient is ~6 levels deep (fetch → text() →
+// parse → httpClient result → multiSearchSuccess → individual resolve), so
+// we need enough iterations for the full chain to settle.
+async function flushMicrotasks() {
+  for (var i = 0; i < 10; i++) {
+    await Promise.resolve();
+  }
 }
 
 describe('Service: transport: es bulk transport', function() {
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
-  var $httpBackend;
+  var mockBackend;
+  beforeEach(module(function ($provide) {
+    mockBackend = new MockHttpBackend();
+    $provide.factory('httpClient', function () {
+      return createFetchClient({
+        fetch: mockBackend.fetch,
+        jsonpRequest: mockBackend.jsonpRequest,
+      });
+    });
+  }));
+
   var BulkTransportFactory;
 
   beforeEach(function() {
@@ -24,10 +39,6 @@ describe('Service: transport: es bulk transport', function() {
 
   beforeEach(inject(function (_BulkTransportFactory_) {
     BulkTransportFactory = _BulkTransportFactory_;
-  }));
-
-  beforeEach(inject(function($injector) {
-    $httpBackend = $injector.get('$httpBackend');
   }));
 
   var mockResultsTemplate = {
@@ -97,7 +108,7 @@ describe('Service: transport: es bulk transport', function() {
       };
   };
 
-  it('sends whats in queue after timeout', function () {
+  it('sends whats in queue after timeout', async function () {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
     var payloadTemplate = {'test': 0};
@@ -117,11 +128,12 @@ describe('Service: transport: es bulk transport', function() {
 
     var mockResults = buildMockResults(numToQuery);
 
-    $httpBackend.expectPOST(url,
+    mockBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
     .respond(200, mockResults);
     jasmine.clock().tick(100);
-    $httpBackend.verifyNoOutstandingExpectation();
+    await flushMicrotasks();
+    mockBackend.verifyNoOutstandingExpectation();
   });
 
 
@@ -154,13 +166,12 @@ describe('Service: transport: es bulk transport', function() {
     }
 
 
-    $httpBackend.expectPOST(url,
+    mockBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
     .respond(200, mockResults);
     jasmine.clock().tick(100);
-    $httpBackend.flush();
     await flushMicrotasks();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(numToQuery);
   });
 
@@ -203,13 +214,12 @@ describe('Service: transport: es bulk transport', function() {
     }
 
 
-    $httpBackend.expectPOST(url,
+    mockBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
     .respond(200, mockResults);
     jasmine.clock().tick(100);
-    $httpBackend.flush();
     await flushMicrotasks();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(8);
     expect(promisesRejected).toBe(2);
   });
@@ -247,13 +257,12 @@ describe('Service: transport: es bulk transport', function() {
       expectedObjects.push(payload);
     }
 
-    $httpBackend.expectPOST(url,
-                            hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
+    mockBackend.expectPOST(url,
+                            hasExpectedJsonList(expectedObjects))
     .respond(400, {});
     jasmine.clock().tick(100);
-    $httpBackend.flush();
     await flushMicrotasks();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(0);
     expect(promisesRejected).toBe(numToQuery);
 
@@ -289,7 +298,7 @@ describe('Service: transport: es bulk transport', function() {
     }
 
 
-    $httpBackend.expectPOST(url,
+    mockBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
     .respond(200, mockResults);
     jasmine.clock().tick(100);
@@ -305,24 +314,22 @@ describe('Service: transport: es bulk transport', function() {
       expectedObjectsBatch2.push(payload);
     }
 
-    $httpBackend.flush();
     await flushMicrotasks();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(numToQuery);
 
     // put the second batch in flight,
     // verify they came back
-    $httpBackend.expectPOST(url,
+    mockBackend.expectPOST(url,
                             hasExpectedJsonList(expectedObjectsBatch2), containsExpectedHeaders(headers))
     .respond(200, mockResults);
     jasmine.clock().tick(100);
-    $httpBackend.flush();
     await flushMicrotasks();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(numToQuery * 2);
   });
 
-  it('doesnt issue http if nothing to send', function () {
+  it('doesnt issue http if nothing to send', async function () {
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
     var headers = {'header': 1};
     var bulkTransport = new BulkTransportFactory();
@@ -330,15 +337,15 @@ describe('Service: transport: es bulk transport', function() {
     var payload = structuredClone(payloadTemplate);
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
-    $httpBackend.expectPOST(url).respond(200, mockResults);
+    mockBackend.expectPOST(url).respond(200, mockResults);
     jasmine.clock().tick(100);
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    await flushMicrotasks();
+    mockBackend.verifyNoOutstandingExpectation();
     jasmine.clock().tick(100);
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.verifyNoOutstandingExpectation();
   });
 
-  it('adds a trailing \n', function () {
+  it('adds a trailing \n', async function () {
 
     var trailingEndlineTest = {
       test: function(data) {
@@ -353,14 +360,14 @@ describe('Service: transport: es bulk transport', function() {
     var payload = structuredClone(payloadTemplate);
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
-    $httpBackend.expectPOST(url, trailingEndlineTest).respond(200, mockResults);
+    mockBackend.expectPOST(url, trailingEndlineTest).respond(200, mockResults);
     jasmine.clock().tick(100);
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    await flushMicrotasks();
+    mockBackend.verifyNoOutstandingExpectation();
   });
 
 
-  it('changes URLs', function () {
+  it('changes URLs', async function () {
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
     var headers = {'header': 1};
     var bulkTransport = new BulkTransportFactory();
@@ -368,15 +375,15 @@ describe('Service: transport: es bulk transport', function() {
     var payload = structuredClone(payloadTemplate);
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
-    $httpBackend.expectPOST(url).respond(200, mockResults);
+    mockBackend.expectPOST(url).respond(200, mockResults);
     jasmine.clock().tick(100);
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    await flushMicrotasks();
+    mockBackend.verifyNoOutstandingExpectation();
 
     var url2 = 'http://es2.splainer-search.com/foods/tacos/_msearch';
     bulkTransport.query(url2, payload, headers);
-    $httpBackend.expectPOST(url2).respond(200, mockResults);
+    mockBackend.expectPOST(url2).respond(200, mockResults);
     jasmine.clock().tick(100);
-    $httpBackend.flush();
+    await flushMicrotasks();
   });
 });

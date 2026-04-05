@@ -3,7 +3,6 @@
 /*jslint latedef:false*/
 
 export function VectaraSearcherFactory(
-  $q,
   VectaraDocFactory,
   activeQueries,
   vectaraSearcherPreprocessorSvc,
@@ -137,12 +136,12 @@ export function VectaraSearcherFactory(
           activeQueries.count--;
           self.inError = true;
           msg.searchError = 'Error with Vectara query or server. Review request manually.';
-          return $q.reject(msg);
+          throw msg;
         },
       )
       .catch(function (response) {
         console.debug('Failed to execute search');
-        return $q.reject(response);
+        throw response;
       });
   } // end of search()
 
@@ -155,7 +154,6 @@ if (typeof angular !== 'undefined') {
   angular
     .module('o19s.splainer-search')
     .factory('VectaraSearcherFactory', [
-      '$q',
       'VectaraDocFactory',
       'activeQueries',
       'vectaraSearcherPreprocessorSvc',

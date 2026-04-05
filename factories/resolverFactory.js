@@ -2,7 +2,7 @@
 
 /*jslint latedef:false*/
 
-export function ResolverFactory($q, searchSvc, solrUrlSvc, normalDocsSvc, utilsSvc) {
+export function ResolverFactory(searchSvc, solrUrlSvc, normalDocsSvc, utilsSvc) {
   var Resolver = function (ids, settings, chunkSize) {
     var self = this;
 
@@ -114,7 +114,7 @@ export function ResolverFactory($q, searchSvc, solrUrlSvc, normalDocsSvc, utilsS
           .catch(function (response) {
             console.debug('Failed to fetch docs');
             // Reject so chunked Promise.all (and callers) observe failure; returning response would fulfill.
-            return $q.reject(response);
+            throw response;
           });
       } else {
         var sliceIds = function (ids, chunkSize) {
@@ -156,7 +156,6 @@ if (typeof angular !== 'undefined') {
   angular
     .module('o19s.splainer-search')
     .factory('ResolverFactory', [
-      '$q',
       'searchSvc',
       'solrUrlSvc',
       'normalDocsSvc',

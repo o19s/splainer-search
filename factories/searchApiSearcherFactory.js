@@ -3,7 +3,6 @@
 /*jslint latedef:false*/
 
 export function SearchApiSearcherFactory(
-  $q,
   SearchApiDocFactory,
   activeQueries,
   searchApiSearcherPreprocessorSvc,
@@ -122,12 +121,12 @@ export function SearchApiSearcherFactory(
           activeQueries.count--;
           self.inError = true;
           msg.searchError = 'Error with Search API query or server. Review request manually.';
-          return $q.reject(msg);
+          throw msg;
         },
       )
       .catch(function (response) {
         console.debug('Failed to execute search: ' + response.type + ':' + response.message);
-        return $q.reject(response);
+        throw response;
       });
   } // end of search()
 
@@ -140,7 +139,6 @@ if (typeof angular !== 'undefined') {
   angular
     .module('o19s.splainer-search')
     .factory('SearchApiSearcherFactory', [
-      '$q',
       'SearchApiDocFactory',
       'activeQueries',
       'searchApiSearcherPreprocessorSvc',

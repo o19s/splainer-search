@@ -1,14 +1,23 @@
 'use strict';
 
-/*global describe,beforeEach,inject,it,expect*/
+/*global describe,beforeEach,inject,it,expect,createFetchClient,MockHttpBackend*/
 describe('Service: transport', function() {
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
-  var $httpBackend;
-  var $timeout;
+  var mockBackend;
+  beforeEach(module(function ($provide) {
+    mockBackend = new MockHttpBackend();
+    $provide.factory('httpClient', function () {
+      return createFetchClient({
+        fetch: mockBackend.fetch,
+        jsonpRequest: mockBackend.jsonpRequest,
+      });
+    });
+  }));
+
   var HttpGetTransportFactory;
-  
+
   // instantiate service
   var transportSvc;
 
@@ -16,18 +25,9 @@ describe('Service: transport', function() {
     HttpGetTransportFactory = _HttpGetTransportFactory_;
   }));
 
-  beforeEach(inject(function($injector) {
-    $httpBackend = $injector.get('$httpBackend');
-    $timeout = $injector.get('$timeout');
-  }));
-  
   beforeEach(inject(function (_transportSvc_) {
     transportSvc     = _transportSvc_;
-
   }));
-
-  
-  
 
   var mockResultsTemplate = {
     hits: {
@@ -41,75 +41,63 @@ describe('Service: transport', function() {
   };
 
 
-  it('ignores when a payload provided', function () {
+  it('ignores when a payload provided', async function () {
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
     var headers = {'header': 1};
-    var headersToReceive = {
-      "header":1,
-      "Accept":"application/json, text/plain, */*"
-    }
     var getTransport = new HttpGetTransportFactory();
     var payloadTemplate = {'test': 0};
     var payload = structuredClone(payloadTemplate);
-    getTransport.query(url, payload, headers);
-    $httpBackend.expectGET(url,headersToReceive).respond(200, mockResultsTemplate);
-    $timeout.flush();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.expectGET(url, {'header': 1}).respond(200, mockResultsTemplate);
+    await getTransport.query(url, payload, headers);
+    mockBackend.verifyNoOutstandingExpectation();
   });
-  
-  it('can take options', function () {
+
+  it('can take options', async function () {
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
     var headers = {'header': 1};
     var options = {option1: true, "option2":"hello"};
     var getTransport = new HttpGetTransportFactory(options);
     var payloadTemplate = {'test': 0};
     var payload = structuredClone(payloadTemplate);
-    getTransport.query(url, payload, headers);
     expect(getTransport.options()).toEqual(options);
-    $httpBackend.expectGET(url).respond(200, mockResultsTemplate);
-    $timeout.flush();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
-  });  
-  
-  it('A POST can be wrapped in a proxy', function () {
+    mockBackend.expectGET(url).respond(200, mockResultsTemplate);
+    await getTransport.query(url, payload, headers);
+    mockBackend.verifyNoOutstandingExpectation();
+  });
+
+  it('A POST can be wrapped in a proxy', async function () {
     var url = 'http://es.splainer-search.com/foods/tacos/_search';
     var options = {
       apiMethod: 'POST',
       proxyUrl: 'http://localhost/proxy?url='
     };
     var transport = transportSvc.getTransport(options);
-    
+
     var headers = {'header': 1};
-    
+
     var payloadTemplate = {'test': 0};
     var payload = structuredClone(payloadTemplate);
-    transport.query(url, payload, headers);
-    $httpBackend.expectPOST('http://localhost/proxy?url=' + url).respond(200, mockResultsTemplate);
-    $timeout.flush();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.expectPOST('http://localhost/proxy?url=' + url).respond(200, mockResultsTemplate);
+    await transport.query(url, payload, headers);
+    mockBackend.verifyNoOutstandingExpectation();
   });
-  
-  it('A GET can be wrapped in a proxy', function () {
+
+  it('A GET can be wrapped in a proxy', async function () {
     var url = 'http://es.splainer-search.com/foods/tacos/_search';
     var options = {
       apiMethod: 'GET',
       proxyUrl: 'http://localhost/proxy/'
     };
     var transport = transportSvc.getTransport(options);
-    
+
     var headers = {'header': 1};
-    
+
     var payloadTemplate = {'test': 0};
     var payload = structuredClone(payloadTemplate);
-    transport.query(url, payload, headers);
-    $httpBackend.expectGET('http://localhost/proxy/' + url).respond(200, mockResultsTemplate);
-    $timeout.flush();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
-  });  
+    mockBackend.expectGET('http://localhost/proxy/' + url).respond(200, mockResultsTemplate);
+    await transport.query(url, payload, headers);
+    mockBackend.verifyNoOutstandingExpectation();
+  });
 
 
 });

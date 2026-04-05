@@ -1,5 +1,7 @@
 'use strict';
 
+/*global createFetchClient, MockHttpBackend*/
+
 /*
  * Migration Safety Tests
  * ========================
@@ -980,15 +982,24 @@ describe('Migration Safety: angular.forEach on undefined collections (source pat
   describe('SolrSearcherFactory.search with malformed response.docs', function() {
     var searchSvc;
     var fieldSpecSvc;
-    var $httpBackend;
+    var mockBackend;
 
-    beforeEach(inject(function(_searchSvc_, _fieldSpecSvc_, $injector) {
-      searchSvc = _searchSvc_;
-      fieldSpecSvc = _fieldSpecSvc_;
-      $httpBackend = $injector.get('$httpBackend');
+    beforeEach(module(function($provide) {
+      mockBackend = new MockHttpBackend();
+      $provide.factory('httpClient', function() {
+        return createFetchClient({
+          fetch: mockBackend.fetch,
+          jsonpRequest: mockBackend.jsonpRequest,
+        });
+      });
     }));
 
-    it('does not throw when response exists but docs is missing (angular.forEach(undefined) no-op)', function() {
+    beforeEach(inject(function(_searchSvc_, _fieldSpecSvc_) {
+      searchSvc = _searchSvc_;
+      fieldSpecSvc = _fieldSpecSvc_;
+    }));
+
+    it('does not throw when response exists but docs is missing (angular.forEach(undefined) no-op)', async function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id field');
       var searcher = searchSvc.createSearcher(
         fieldSpec,
@@ -999,14 +1010,9 @@ describe('Migration Safety: angular.forEach on undefined collections (source pat
         'solr'
       );
       var body = { response: { numFound: 0 } };
-      $httpBackend.expectGET(/.*/).respond(200, body);
-      var settled = false;
-      searcher.search().then(function() {
-        settled = true;
-        expect(searcher.docs.length).toBe(0);
-      });
-      $httpBackend.flush();
-      expect(settled).toBe(true);
+      mockBackend.expectGET(/.*/).respond(200, body);
+      await searcher.search();
+      expect(searcher.docs.length).toBe(0);
     });
   });
 
@@ -1039,26 +1045,36 @@ describe('Migration Safety: angular.forEach on undefined collections (source pat
 
   describe('BulkTransportFactory queue forEach (replaces legacy requestBatches map)', function() {
     var BulkTransportFactory;
-    var $httpBackend;
+    var mockBackend;
+
+    beforeEach(module(function($provide) {
+      mockBackend = new MockHttpBackend();
+      $provide.factory('httpClient', function() {
+        return createFetchClient({
+          fetch: mockBackend.fetch,
+          jsonpRequest: mockBackend.jsonpRequest,
+        });
+      });
+    }));
 
     beforeEach(function() { jasmine.clock().install(); });
     afterEach(function() { jasmine.clock().uninstall(); });
 
-    beforeEach(inject(function(_BulkTransportFactory_, $injector) {
+    beforeEach(inject(function(_BulkTransportFactory_) {
       BulkTransportFactory = _BulkTransportFactory_;
-      $httpBackend = $injector.get('$httpBackend');
     }));
 
     it('multiSearchFailed still runs angular.forEach(queue, ...) when queue is non-empty', async function() {
       var bulk = new BulkTransportFactory();
       var url = 'http://es.example.com/i/_msearch';
-      var p = bulk.query(url, { query: 1 }, {});
+      mockBackend.expectPOST(url).respond(500, { error: 'fail' });
       var rejected = false;
-      p.catch(function() { rejected = true; });
-      $httpBackend.expectPOST(url).respond(500, { error: 'fail' });
+      bulk.query(url, { query: 1 }, {}).catch(function() { rejected = true; });
       jasmine.clock().tick(100);
-      $httpBackend.flush();
-      await Promise.resolve().then(function () { return Promise.resolve(); });
+      // Flush microtask queue to let fetch → then → catch chain settle
+      await Promise.resolve().then(function() { return Promise.resolve(); });
+      await Promise.resolve().then(function() { return Promise.resolve(); });
+      await Promise.resolve().then(function() { return Promise.resolve(); });
       expect(rejected).toBe(true);
     });
   });
@@ -1193,23 +1209,32 @@ describe('Migration Safety: $http response shape for transport success handlers'
 
   beforeEach(module('o19s.splainer-search'));
 
-  it('HttpPostTransportFactory passes $http response with data, status, headers()', inject(
-    function(HttpPostTransportFactory, $httpBackend) {
-      var Transport = HttpPostTransportFactory;
-      var t = new Transport({});
-      var url = 'http://example.com/post';
-      $httpBackend.expectPOST(url).respond(201, { ok: true }, { 'X-Test': '1' });
-      var seen = null;
-      t.query(url, { a: 1 }, {}).then(function(resp) {
-        seen = resp;
+  var mockBackend;
+  beforeEach(module(function($provide) {
+    mockBackend = new MockHttpBackend();
+    $provide.factory('httpClient', function() {
+      return createFetchClient({
+        fetch: mockBackend.fetch,
+        jsonpRequest: mockBackend.jsonpRequest,
       });
-      $httpBackend.flush();
-      expect(seen.data).toEqual({ ok: true });
-      expect(seen.status).toBe(201);
-      expect(typeof seen.headers).toBe('function');
-      expect(seen.headers('X-Test')).toBe('1');
-    }
-  ));
+    });
+  }));
+
+  var HttpPostTransportFactory;
+  beforeEach(inject(function(_HttpPostTransportFactory_) {
+    HttpPostTransportFactory = _HttpPostTransportFactory_;
+  }));
+
+  it('HttpPostTransportFactory passes response with data, status, and statusText', async function() {
+    var Transport = HttpPostTransportFactory;
+    var t = new Transport({});
+    var url = 'http://example.com/post';
+    mockBackend.expectPOST(url).respond(201, { ok: true });
+    var resp = await t.query(url, { a: 1 }, {});
+    expect(resp.data).toEqual({ ok: true });
+    expect(resp.status).toBe(201);
+    expect(resp.statusText).toBe('OK');
+  });
 });
 
 // =============================================================================
@@ -1218,22 +1243,44 @@ describe('Migration Safety: $http response shape for transport success handlers'
 describe('Migration Safety: BulkTransportFactory setTimeout scheduling', function() {
 
   beforeEach(module('o19s.splainer-search'));
+
+  var mockBackend;
+  beforeEach(module(function($provide) {
+    mockBackend = new MockHttpBackend();
+    $provide.factory('httpClient', function() {
+      return createFetchClient({
+        fetch: mockBackend.fetch,
+        jsonpRequest: mockBackend.jsonpRequest,
+      });
+    });
+  }));
+
+  var BulkTransportFactory;
+
   beforeEach(function() { jasmine.clock().install(); });
   afterEach(function() { jasmine.clock().uninstall(); });
 
-  it('does not POST until the timer fires (batching uses setTimeout, not immediate send)', inject(
-    function(BulkTransportFactory, $httpBackend) {
-      var bulk = new BulkTransportFactory();
-      var url = 'http://es.example.com/i/_msearch';
-      bulk.query(url, { q: 1 }, {});
-      $httpBackend.expectPOST(url).respond(200, { responses: [{ hits: { total: 0, hits: [] } }] });
-      expect(function() {
-        $httpBackend.flush();
-      }).toThrow();
-      jasmine.clock().tick(100);
-      $httpBackend.flush();
+  beforeEach(inject(function(_BulkTransportFactory_) {
+    BulkTransportFactory = _BulkTransportFactory_;
+  }));
+
+  it('does not POST until the timer fires (batching uses setTimeout, not immediate send)', async function() {
+    var bulk = new BulkTransportFactory();
+    var url = 'http://es.example.com/i/_msearch';
+    mockBackend.expectPOST(url).respond(200, { responses: [{ hits: { total: 0, hits: [] } }] });
+    bulk.query(url, { q: 1 }, {});
+    // Before timer fires, the POST has not been sent — expectation is still outstanding
+    expect(function() {
+      mockBackend.verifyNoOutstandingExpectation();
+    }).toThrow();
+    jasmine.clock().tick(100);
+    // Multiple microtask flushes to let fetch chain settle
+    for (var i = 0; i < 5; i++) {
+      await Promise.resolve();
     }
-  ));
+    // After timer fires + microtask flush, the POST has been sent
+    mockBackend.verifyNoOutstandingExpectation();
+  });
 });
 
 // =============================================================================

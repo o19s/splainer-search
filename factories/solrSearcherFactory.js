@@ -3,7 +3,6 @@
 /*jslint latedef:false*/
 
 export function SolrSearcherFactory(
-  $q,
   SolrDocFactory,
   SearcherFactory,
   transportSvc,
@@ -368,7 +367,7 @@ export function SolrSearcherFactory(
       .catch(function (response) {
         self.args = originalArgs;
         console.debug('Failed to run explainOther');
-        return $q.reject(response);
+        throw response;
       });
   }
 
@@ -381,7 +380,6 @@ if (typeof angular !== 'undefined') {
   angular
     .module('o19s.splainer-search')
     .factory('SolrSearcherFactory', [
-      '$q',
       'SolrDocFactory',
       'SearcherFactory',
       'transportSvc',

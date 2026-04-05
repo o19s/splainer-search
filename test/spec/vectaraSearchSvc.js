@@ -1,15 +1,25 @@
 'use strict';
 
-/*global describe,beforeEach,inject,it,expect*/
+/*global createFetchClient, MockHttpBackend*/
 describe('Service: searchSvc: Vectara', function() {
 
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
+  var mockBackend;
+  beforeEach(module(function ($provide) {
+    mockBackend = new MockHttpBackend();
+    $provide.factory('httpClient', function () {
+      return createFetchClient({
+        fetch: mockBackend.fetch,
+        jsonpRequest: mockBackend.jsonpRequest,
+      });
+    });
+  }));
+
   let searcher;
   let searchSvc;
   let vectaraUrlSvc;
-  let $httpBackend;
   let fieldSpecSvc  = null;
   let mockVectaraUrl     = 'https://api.vectara.io:443/v1/query';
   let mockFieldSpec = null;
@@ -23,10 +33,6 @@ describe('Service: searchSvc: Vectara', function() {
         }]
       }
     ]};
-
-  beforeEach(inject(function($injector) {
-    $httpBackend = $injector.get('$httpBackend');
-  }));
 
   beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_, _vectaraUrlSvc_) {
     searchSvc     = _searchSvc_;
@@ -89,12 +95,12 @@ describe('Service: searchSvc: Vectara', function() {
       );
     }));
 
-    it('returns docs', function () {
-      $httpBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
+    it('returns docs', async function () {
+      mockBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
 
       var called = 0;
 
-      searcher.search()
+      await searcher.search()
           .then(function () {
             var docs = searcher.docs;
             expect(docs.length).toEqual(2);
@@ -106,69 +112,65 @@ describe('Service: searchSvc: Vectara', function() {
             called++;
           });
 
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(called).toEqual(1);
     });
 
-    it('sets numFound from documents array length', function () {
-      $httpBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
+    it('sets numFound from documents array length', async function () {
+      mockBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
 
       var called = 0;
-      searcher.search()
+      await searcher.search()
         .then(function () {
           expect(searcher.numFound).toEqual(2);
           called++;
         });
 
-      $httpBackend.flush();
       expect(called).toEqual(1);
     });
 
-    it('handles empty responseSet', function () {
+    it('handles empty responseSet', async function () {
       var emptyResponse = {
         responseSet: [],
         status: [],
         metrics: null
       };
-      $httpBackend.expectPOST(mockVectaraUrl).respond(200, emptyResponse);
+      mockBackend.expectPOST(mockVectaraUrl).respond(200, emptyResponse);
 
       var called = 0;
-      searcher.search()
+      await searcher.search()
         .then(function () {
           expect(searcher.docs.length).toEqual(0);
           expect(searcher.numFound).toEqual(0);
           called++;
         });
 
-      $httpBackend.flush();
       expect(called).toEqual(1);
     });
 
-    it('handles missing responseSet', function () {
+    it('handles missing responseSet', async function () {
       var noResponseSet = {
         status: [],
         metrics: null
       };
-      $httpBackend.expectPOST(mockVectaraUrl).respond(200, noResponseSet);
+      mockBackend.expectPOST(mockVectaraUrl).respond(200, noResponseSet);
 
       var called = 0;
-      searcher.search()
+      await searcher.search()
         .then(function () {
           expect(searcher.docs.length).toEqual(0);
           expect(searcher.numFound).toEqual(0);
           called++;
         });
 
-      $httpBackend.flush();
       expect(called).toEqual(1);
     });
 
-    it('rejects on HTTP error', function () {
-      $httpBackend.expectPOST(mockVectaraUrl).respond(500, {error: 'Internal Server Error'});
+    it('rejects on HTTP error', async function () {
+      mockBackend.expectPOST(mockVectaraUrl).respond(500, {error: 'Internal Server Error'});
 
       var errorCalled = 0;
-      searcher.search()
+      await searcher.search()
         .then(function () {
           errorCalled--;
         }, function (msg) {
@@ -177,11 +179,10 @@ describe('Service: searchSvc: Vectara', function() {
           errorCalled++;
         });
 
-      $httpBackend.flush();
       expect(errorCalled).toEqual(1);
     });
 
-    it('merges customHeaders from config through vectaraUrlSvc onto the outbound request', function () {
+    it('merges customHeaders from config through vectaraUrlSvc onto the outbound request', async function () {
       spyOn(vectaraUrlSvc, 'getHeaders').and.callThrough();
       var custom = JSON.stringify({ 'X-Custom-Header': 'integration-test' });
       var configuredSearcher = searchSvc.createSearcher(
@@ -193,17 +194,16 @@ describe('Service: searchSvc: Vectara', function() {
         'vectara'
       );
 
-      $httpBackend.expectPOST(mockVectaraUrl, undefined, function (headers) {
+      mockBackend.expectPOST(mockVectaraUrl, undefined, function (headers) {
         return headers['X-Custom-Header'] === 'integration-test' ||
           headers['x-custom-header'] === 'integration-test';
       }).respond(200, mockVectaraResults);
 
       var called = 0;
-      configuredSearcher.search().then(function () {
+      await configuredSearcher.search().then(function () {
         expect(configuredSearcher.docs.length).toBe(2);
         called++;
       });
-      $httpBackend.flush();
       expect(called).toBe(1);
       expect(vectaraUrlSvc.getHeaders).toHaveBeenCalledWith(custom);
     });
@@ -227,7 +227,7 @@ describe('Service: searchSvc: Vectara', function() {
       );
     }));
 
-    it('returns a new searcher for the next page', function () {
+    it('returns a new searcher for the next page', async function () {
       // 10 total results so paging should continue
       var manyDocsResponse = structuredClone(mockVectaraResults);
       manyDocsResponse.responseSet[0].document = [];
@@ -238,10 +238,10 @@ describe('Service: searchSvc: Vectara', function() {
         });
       }
 
-      $httpBackend.expectPOST(mockVectaraUrl).respond(200, manyDocsResponse);
+      mockBackend.expectPOST(mockVectaraUrl).respond(200, manyDocsResponse);
 
       var called = 0;
-      searcher.search()
+      await searcher.search()
         .then(function () {
           var pagerSearcher = searcher.pager();
           expect(pagerSearcher).not.toBeNull();
@@ -249,23 +249,21 @@ describe('Service: searchSvc: Vectara', function() {
           called++;
         });
 
-      $httpBackend.flush();
       expect(called).toEqual(1);
     });
 
-    it('returns null when all results exhausted', function () {
+    it('returns null when all results exhausted', async function () {
       // Only 2 results with page size 2 — no next page
-      $httpBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
+      mockBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
 
       var called = 0;
-      searcher.search()
+      await searcher.search()
         .then(function () {
           var pagerSearcher = searcher.pager();
           expect(pagerSearcher).toBeNull();
           called++;
         });
 
-      $httpBackend.flush();
       expect(called).toEqual(1);
     });
   });

@@ -4,7 +4,6 @@
 
 export function EsSearcherFactory(
   httpClient,
-  $q,
   EsDocFactory,
   activeQueries,
   esSearcherPreprocessorSvc,
@@ -244,18 +243,18 @@ export function EsSearcherFactory(
           });
 
           if (data._shards !== undefined && data._shards.failed > 0) {
-            return $q.reject(formatError(httpConfig));
+            throw formatError(httpConfig);
           }
         },
         function error(msg) {
           activeQueries.count--;
           self.inError = true;
-          return $q.reject(formatError(msg));
+          throw formatError(msg);
         },
       )
       .catch(function (response) {
         console.debug('Failed to execute search');
-        return $q.reject(response);
+        throw response;
       });
   } // end of search()
 
@@ -305,7 +304,7 @@ export function EsSearcherFactory(
       })
       .catch(function (response) {
         console.debug('Failed to run explainOther');
-        return $q.reject(response);
+        throw response;
       });
   } // end of explainOther()
 
@@ -331,7 +330,7 @@ export function EsSearcherFactory(
       })
       .catch(function (response) {
         console.debug('Failed to run explain');
-        return $q.reject(response);
+        throw response;
       });
   } // end of explain()
 
@@ -453,12 +452,12 @@ export function EsSearcherFactory(
         function error(msg) {
           activeQueries.count--;
           self.inError = true;
-          return $q.reject(formatError(msg));
+          throw formatError(msg);
         },
       )
       .catch(function (response) {
         console.debug('Failed to render template');
-        return $q.reject(response);
+        throw response;
       });
   }
 
@@ -472,7 +471,6 @@ if (typeof angular !== 'undefined') {
     .module('o19s.splainer-search')
     .factory('EsSearcherFactory', [
       'httpClient',
-      '$q',
       'EsDocFactory',
       'activeQueries',
       'esSearcherPreprocessorSvc',

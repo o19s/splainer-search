@@ -88,6 +88,11 @@ export function createFetchClient(options) {
    * Matches Angular's $http.jsonp() behavior and response shape.
    */
   function jsonp(url, config) {
+    // Angular's $sce.trustAsResourceUrl wraps the URL in an object; unwrap it.
+    if (url && typeof url !== 'string' && typeof url.toString === 'function') {
+      url = url.toString();
+    }
+
     if (_jsonpRequest) {
       return _jsonpRequest(url, config);
     }
@@ -143,15 +148,12 @@ export function createFetchClient(options) {
 }
 
 // Angular DI registration (removed in Phase 4)
-// Currently returns $http so existing $httpBackend-based tests keep working.
-// Swapped to createFetchClient() once all callers are migrated off $httpBackend.
 if (typeof angular !== 'undefined') {
   angular
     .module('o19s.splainer-search')
     .factory('httpClient', [
-      '$http',
-      function ($http) {
-        return $http;
+      function () {
+        return createFetchClient();
       },
     ]);
 }

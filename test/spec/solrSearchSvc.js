@@ -1,16 +1,24 @@
 'use strict';
-/* global urlContainsParams, urlMissingParams, mockExplainOther*/
-/*global describe,beforeEach,inject,it,expect*/
+/* global urlContainsParams, urlMissingParams, mockExplainOther, createFetchClient, MockHttpBackend, urlHasBasicAuth, urlHasNoBasicAuth */
 describe('Service: searchSvc: Solr', function () {
 
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
+  var mockBackend;
+  beforeEach(module(function ($provide) {
+    mockBackend = new MockHttpBackend();
+    $provide.factory('httpClient', function () {
+      return createFetchClient({
+        fetch: mockBackend.fetch,
+        jsonpRequest: mockBackend.jsonpRequest,
+      });
+    });
+  }));
+
   // instantiate service
   var searchSvc;
   var activeQueries;
-  var solrUrlSvc;
-  var $httpBackend = null;
   var fieldSpecSvc = null;
   var mockSolrUrl = 'http://example.com:1234/solr/select';
   var mockSolrParams = {
@@ -31,43 +39,36 @@ describe('Service: searchSvc: Solr', function () {
     }
   };
 
-  beforeEach(inject(function($injector) {
-    $httpBackend = $injector.get('$httpBackend');
-  }));
-
-  beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_, _activeQueries_, _solrUrlSvc_) {
+  beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_, _activeQueries_) {
     searchSvc     = _searchSvc_;
     fieldSpecSvc  = _fieldSpecSvc_;
     activeQueries = _activeQueries_;
-    solrUrlSvc    = _solrUrlSvc_;
     mockFieldSpec = fieldSpecSvc.createFieldSpec('field field1 hl:field2');
 
     activeQueries.count = 0;
   }));
 
-  it('access solr with mock solr params using JSONP', function() {
+  it('access solr with mock solr params using JSONP', async function() {
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
-    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+    mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                             .respond(200, mockResults);
-    searcher.search();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    await searcher.search();
+    mockBackend.verifyNoOutstandingExpectation();
   });
 
-  it('access solr with mock solr params using GET', function() {
+  it('access solr with mock solr params using GET', async function() {
     // By default we talk to Solr with JSONP because Solr doesn't support cors.  However, if you
     // want your Search API to look like Solr to Quepid, well, you don't need clunky JSONP.
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                 mockSolrParams, mockQueryText, { apiMethod: 'GET' });
-    $httpBackend.expectGET(urlContainsParams(mockSolrUrl, expectedParams))
+    mockBackend.expectGET(urlContainsParams(mockSolrUrl, expectedParams))
                             .respond(200, mockResults);
-    searcher.search();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    await searcher.search();
+    mockBackend.verifyNoOutstandingExpectation();
   });
   
-  it('strips out username and password from url and converts to header property', function() {
+  it('strips out username and password from url and converts to header property', async function() {
     var authSolrUrl = 'http://username:password@example.com:1234/solr/select';
     var searcher = searchSvc.createSearcher(
       mockFieldSpec,
@@ -79,18 +80,16 @@ describe('Service: searchSvc: Solr', function () {
     );
 
     var expectedHeaders = {
-      'Accept': 'application/json, text/plain, */*',
       'Authorization': 'Basic ' + btoa('username:password')
     };
 
-    $httpBackend.expectGET(urlHasNoBasicAuth(), expectedHeaders).respond(200, mockResults);
-    searcher.search();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
-    expect(searchSvc.activeQueries()).toEqual(0);    
+    mockBackend.expectGET(urlHasNoBasicAuth(), expectedHeaders).respond(200, mockResults);
+    await searcher.search();
+    mockBackend.verifyNoOutstandingExpectation();
+    expect(searchSvc.activeQueries()).toEqual(0);
   });
-  
-  it('With JSONP, it preserves the username and password in the URL and does NOT add it to header property', function() {
+
+  it('With JSONP, it preserves the username and password in the URL and does NOT add it to header property', async function() {
     var authSolrUrl = 'http://username:password@example.com:1234/solr/select';
     var searcher = searchSvc.createSearcher(
       mockFieldSpec,
@@ -101,14 +100,13 @@ describe('Service: searchSvc: Solr', function () {
       'solr'
     );
 
-    $httpBackend.expectJSONP(urlHasBasicAuth()).respond(200, mockResults);
-    searcher.search();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.expectJSONP(urlHasBasicAuth()).respond(200, mockResults);
+    await searcher.search();
+    mockBackend.verifyNoOutstandingExpectation();
     expect(searchSvc.activeQueries()).toEqual(0);    
   });  
   
-  it('Pass basic auth through the headers', function() {
+  it('Pass basic auth through the headers', async function() {
     var searcher = searchSvc.createSearcher(
       mockFieldSpec,
       mockSolrUrl,
@@ -119,29 +117,27 @@ describe('Service: searchSvc: Solr', function () {
     );
 
     var expectedHeaders = {
-      'Accept': 'application/json, text/plain, */*',
       'Authorization': 'Basic ' + btoa('username:password')
     };
 
-    $httpBackend.expectGET(urlHasNoBasicAuth(), expectedHeaders).respond(200, mockResults);
-    searcher.search();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
-    expect(searchSvc.activeQueries()).toEqual(0);    
-  });  
+    mockBackend.expectGET(urlHasNoBasicAuth(), expectedHeaders).respond(200, mockResults);
+    await searcher.search();
+    mockBackend.verifyNoOutstandingExpectation();
+    expect(searchSvc.activeQueries()).toEqual(0);
+  });
 
 
 
-  it('tracks active queries', function() {
+  it('tracks active queries', async function() {
     expect(searchSvc.activeQueries()).toEqual(0);
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                 mockSolrParams, mockQueryText);
-    $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+    mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                             .respond(200, mockResults);
-    searcher.search();
+    var p = searcher.search();
     expect(searchSvc.activeQueries()).toEqual(1);
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    await p;
+    mockBackend.verifyNoOutstandingExpectation();
     expect(searchSvc.activeQueries()).toEqual(0);
   });
 
@@ -215,31 +211,30 @@ describe('Service: searchSvc: Solr', function () {
                           'hl.fl': ['path content']};
     });
 
-    it('asks for highlights', function() {
+    it('asks for highlights', async function() {
       createSearcherHlOn();
       var copiedResp = structuredClone(fullSolrResp);
       copiedResp.highlighting = highlighting;
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedHlParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedHlParams))
                               .respond(200, copiedResp);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
 
     });
 
-    it('gets highlight snippet field values if returned', function() {
+    it('gets highlight snippet field values if returned', async function() {
       createSearcherHlOn();
       var copiedResp = structuredClone(fullSolrResp);
       copiedResp.highlighting = highlighting;
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         var solrDocs = searcher.docs;
         var docId = fullSolrResp.response.docs[0].path;
@@ -254,19 +249,18 @@ describe('Service: searchSvc: Solr', function () {
         expect(solrDocs[1].snippet(docId, 'content')).toEqual(expectedSnip);
         expect(solrDocs[1].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
     });
 
-    it('gets null if no highlights for field', function() {
+    it('gets null if no highlights for field', async function() {
       createSearcherHlOn();
       var copiedResp = structuredClone(fullSolrResp);
       copiedResp.highlighting = highlighting;
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         var solrDocs = searcher.docs;
         var docId = fullSolrResp.response.docs[0].path;
@@ -280,18 +274,17 @@ describe('Service: searchSvc: Solr', function () {
         expect(solrDocs[1].snippet(docId, 'yet_another_field')).toEqual(expectedSnip);
         expect(solrDocs[1].highlight(docId, 'yet_another_field', '<b>', '</b>')).toEqual(expectedHl);
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
     });
 
-    it('gets null if no highlights', function() {
+    it('gets null if no highlights', async function() {
       createSearcherHlOn();
       var copiedResp = structuredClone(fullSolrResp);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         var solrDocs = searcher.docs;
         var docId = fullSolrResp.response.docs[0].path;
@@ -305,18 +298,17 @@ describe('Service: searchSvc: Solr', function () {
         expect(solrDocs[1].snippet(docId, 'content')).toEqual(expectedSnip);
         expect(solrDocs[1].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
     });
 
-    it('doesnt request hls if hls off', function() {
+    it('doesnt request hls if hls off', async function() {
       createSearcherHlOff();
       var copiedResp = structuredClone(fullSolrResp);
-      $httpBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedHlParams))
+      mockBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedHlParams))
                               .respond(200, copiedResp);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         var solrDocs = searcher.docs;
         var docId = fullSolrResp.response.docs[0].path;
@@ -330,8 +322,7 @@ describe('Service: searchSvc: Solr', function () {
         expect(solrDocs[1].snippet(docId, 'content')).toEqual(expectedSnip);
         expect(solrDocs[0].highlight(docId, 'content', '<b>', '</b>')).toEqual(expectedHl);
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
     });
   });
@@ -460,44 +451,42 @@ describe('Service: searchSvc: Solr', function () {
 
     var mockQuerqyDecorations = ["REDIRECT https://www.example.org/"];
 
-    it('populates explain()', function() {
+    it('populates explain()', async function() {
       createSearcherWithDebug();
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, fullSolrResp);
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         var solrDocs = searcher.docs;
         expect(solrDocs[0].explain('http://larkin.com/index/')).toEqual('\n1.0 = (MATCH) MatchAllDocsQuery, product of:\n  1.0 = queryNorm\n');
         expect(solrDocs[1].explain('http://www.rogahnbins.com/main.html')).toEqual('\n1.0 = (MATCH) MatchAllDucksQuery, product of:\n  1.0 = queryNorm\n');
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('populates others explained', function() {
+    it('populates others explained', async function() {
       createSearcherWithDebug();
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, fullSolrResp);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         var othersExplained = searcher.othersExplained;
         expect(Object.keys(othersExplained).length).toBe(2);
-        expect(othersExplained.hasOwnProperty('http://snarkin.com/index/')).toBeTruthy();
+        expect(Object.hasOwn(othersExplained, 'http://snarkin.com/index/')).toBe(true);
         expect(othersExplained['http://snarkin.com/index/']).toEqual(mockExplainOther.l514);
-        expect(othersExplained.hasOwnProperty('http://ploppers.com/main.html')).toBeTruthy();
+        expect(Object.hasOwn(othersExplained, 'http://ploppers.com/main.html')).toBe(true);
         expect(othersExplained['http://ploppers.com/main.html']).toEqual(mockExplainOther.l71);
       });
-      $httpBackend.flush();
       expect(called).toBe(1);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('populates parsed query details', function() {
+    it('populates parsed query details', async function() {
       createSearcherWithDebug();
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, fullSolrResp);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         var parsedQueryDetails = searcher.parsedQueryDetails;
         expect(Object.keys(parsedQueryDetails).length).toBe(5);
@@ -507,76 +496,72 @@ describe('Service: searchSvc: Solr', function () {
         expect(parsedQueryDetails['parsedquery_toString']).toEqual('*:*');
         expect(parsedQueryDetails['QParser']).toEqual('LuceneQParser');
       });
-      $httpBackend.flush();
       expect(called).toBe(1);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('identifies querqy.infoLogging presence and adds to parsedQueryDetails', function() {
+    it('identifies querqy.infoLogging presence and adds to parsedQueryDetails', async function() {
       createSearcherWithDebug();
 
       var mockSolrResultsWithQuerqyInfolog = structuredClone(fullSolrResp);
       mockSolrResultsWithQuerqyInfolog['querqy.infoLog']= mockQuerqyInfolog;
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, mockSolrResultsWithQuerqyInfolog);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         var parsedQueryDetails = searcher.parsedQueryDetails;
         expect(Object.keys(parsedQueryDetails).length).toBe(6);
         expect(parsedQueryDetails['rawquerystring']).toEqual('*:*');
         expect(parsedQueryDetails['querqy.infoLog']).toEqual(mockQuerqyInfolog);
       });
-      $httpBackend.flush();
       expect(called).toBe(1);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('identifies querqy_decorations presence and adds to parsedQueryDetails', function() {
+    it('identifies querqy_decorations presence and adds to parsedQueryDetails', async function() {
       createSearcherWithDebug();
 
       var mockSolrResultsWithQuerqyDecorations = structuredClone(fullSolrResp);
       mockSolrResultsWithQuerqyDecorations['querqy_decorations']= mockQuerqyDecorations;
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, mockSolrResultsWithQuerqyDecorations);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         var parsedQueryDetails = searcher.parsedQueryDetails;
         expect(Object.keys(parsedQueryDetails).length).toBe(6);
         expect(parsedQueryDetails['rawquerystring']).toEqual('*:*');
         expect(parsedQueryDetails['querqy_decorations']).toEqual(mockQuerqyDecorations);
       });
-      $httpBackend.flush();
       expect(called).toBe(1);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('populates raw query details', function() {
+    it('populates raw query details', async function() {
       createSearcherWithDebug();
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, fullSolrResp);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         var queryDetails = searcher.queryDetails;
         expect(Object.keys(queryDetails).length).toBe(8);
         expect(queryDetails['df']).toEqual('content');
         expect(queryDetails['indent']).toEqual(['true','true']);
       });
-      $httpBackend.flush();
       expect(called).toBe(1);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('populates query timing details', function() {
+    it('populates query timing details', async function() {
       createSearcherWithDebug();
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, fullSolrResp);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         var timingDetails = searcher.timingDetails;
 
@@ -584,72 +569,67 @@ describe('Service: searchSvc: Solr', function () {
         expect(timingDetails.events[6].name).toEqual('process_query');
         expect(timingDetails.events[6].duration).toEqual(3);
       });
-      $httpBackend.flush();
       expect(called).toBe(1);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('returns empty hash on no params', function() {
+    it('returns empty hash on no params', async function() {
       createSearcherWithDebug();
       var copiedResp = structuredClone(fullSolrResp);
       delete copiedResp.responseHeader;
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, copiedResp);
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
         expect(searcher.queryDetails).toEqual({});
 
       });
-      $httpBackend.flush();
       expect(called).toBe(1);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('returns null on no explain', function() {
+    it('returns null on no explain', async function() {
       createSearcherWithDebug();
       var copiedResp = structuredClone(fullSolrResp);
       delete copiedResp.debug;
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         var solrDocs = searcher.docs;
         expect(solrDocs[0].explain('http://larkin.com/index/')).toBe(null);
         expect(solrDocs[1].explain('http://www.rogahnbins.com/main.html')).toBe(null);
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
 
-    it('doesnt request debug info when configured not to', function() {
+    it('doesnt request debug info when configured not to', async function() {
       createSearcherDebugOff();
       var copiedResp = structuredClone(fullSolrResp);
       delete copiedResp.debug;
-      $httpBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedDebugParams))
+      mockBackend.expectJSONP(urlMissingParams(mockSolrUrl, expectedDebugParams))
                               .respond(200, copiedResp);
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         var solrDocs = searcher.docs;
         expect(solrDocs[0].explain('http://larkin.com/index/')).toBe(null);
         expect(solrDocs[1].explain('http://www.rogahnbins.com/main.html')).toBe(null);
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('handles parsing the debug json when debug is set to null versus empty array', function() {
+    it('handles parsing the debug json when debug is set to null versus empty array', async function() {
       createSearcherWithDebug();
       var copiedResp = structuredClone(fullSolrResp);
       copiedResp.debug = null;
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, copiedResp);
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         var solrDocs = searcher.docs;
         expect(solrDocs[0].explain('http://larkin.com/index/')).toBe(null);
         expect(solrDocs[1].explain('http://www.rogahnbins.com/main.html')).toBe(null);
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
   });
 
@@ -672,10 +652,10 @@ describe('Service: searchSvc: Solr', function () {
                                                   mockSolrParams, mockQueryText);
     });
 
-    it('works with an alternate id field', function() {
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+    it('works with an alternate id field', async function() {
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResultsAltId);
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         var numDocs = searcher.numFound;
         var solrDocs = searcher.docs;
         expect(solrDocs.length).toEqual(2);
@@ -685,14 +665,13 @@ describe('Service: searchSvc: Solr', function () {
           expect(['alt_doc1', 'alt_doc2']).toContain(queryDoc.altId);
         });
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('creates docs that can construct tokens URL', function() {
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+    it('creates docs that can construct tokens URL', async function() {
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResultsAltId);
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         var numDocs = searcher.numFound;
         var solrDocs = searcher.docs;
         expect(solrDocs.length).toEqual(2);
@@ -703,12 +682,11 @@ describe('Service: searchSvc: Solr', function () {
           expect(generatedUrl.indexOf('q=altId:' + queryDoc.altId)).not.toBe(-1);
         });
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
 
     });
 
-    it('escapes percents in the query', function() {
+    it('escapes percents in the query', async function() {
       var mockSolrParamsWithMm = structuredClone(mockSolrParams);
       mockSolrParamsWithMm.mm = ['100%'];
       var expectedParamsMm = structuredClone(expectedParams);
@@ -716,12 +694,12 @@ describe('Service: searchSvc: Solr', function () {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:altId');
       var searcher = searchSvc.createSearcher(fieldSpec, mockSolrUrl,
                                                   mockSolrParamsWithMm, mockQueryText);
-      $httpBackend.expectJSONP(
+      mockBackend.expectJSONP(
         urlContainsParams(mockSolrUrl, expectedParamsMm)
       ).respond(200, mockResultsAltId);
 
-      searcher.search();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
 
     });
   });
@@ -735,7 +713,7 @@ describe('Service: searchSvc: Solr', function () {
   });
 
   describe('search' ,function() {
-    it('passes the rows param and sets it to 10 by default', function() {
+    it('passes the rows param and sets it to 10 by default', async function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,
@@ -746,19 +724,18 @@ describe('Service: searchSvc: Solr', function () {
       var expectedSearchParams = structuredClone(expectedParams);
       expectedSearchParams.rows = ['10'];
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedSearchParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedSearchParams))
         .respond(200, mockResults);
 
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
     });
 
-    it('passes the rows param and sets it to what is passed in the config', function() {
+    it('passes the rows param and sets it to what is passed in the config', async function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,
@@ -770,19 +747,18 @@ describe('Service: searchSvc: Solr', function () {
       var expectedSearchParams = structuredClone(expectedParams);
       expectedSearchParams.rows = ['30'];
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedSearchParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedSearchParams))
         .respond(200, mockResults);
 
       var called = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         called++;
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(called).toBe(1);
     });
 
-    it('makes querydocs with document url with NO facet', function() {
+    it('makes querydocs with document url with NO facet', async function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,
@@ -790,11 +766,11 @@ describe('Service: searchSvc: Solr', function () {
         mockQueryText
       );
 
-      $httpBackend.expectJSONP(
+      mockBackend.expectJSONP(
         urlContainsParams(mockSolrUrl, expectedParams)
        ).respond(200, mockResults);
 
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         var solrDocs = searcher.docs;
 
         // To confirm that we no longer construct a _url with facet parameters.
@@ -807,28 +783,25 @@ describe('Service: searchSvc: Solr', function () {
           expect(doc._url('id', '12').indexOf('wt=json')).not.toBe(-1);
         });
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('escapes ids passed into url', function() {      
-      console.warn('SUSS_USE_OF_ESCAPING. Skipping this test');
-      return;
+    // SUSS_USE_OF_ESCAPING — pending product decision; un-xit to run body.
+    xit('escapes ids passed into url', async function () {
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
-                                                  mockSolrParams, mockQueryText);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
-                              .respond(200, mockResults);
-      searcher.search().then(function() {
+        mockSolrParams, mockQueryText);
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+        .respond(200, mockResults);
+      await searcher.search().then(function () {
         var solrDocs = searcher.docs;
-        solrDocs.forEach(function(doc) {
+        solrDocs.forEach(function (doc) {
           var tokenUrl = doc._url('id', 'http://12');
           expect(tokenUrl.indexOf('http://12')).toBe(-1);
           var encId = encodeURIComponent('http\\://12');
           expect(tokenUrl.indexOf(encId)).not.toBe(-1);
         });
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
 
@@ -851,7 +824,7 @@ describe('Service: searchSvc: Solr', function () {
       expect(searcher.linkUrl.indexOf('wt=json')).not.toBe(-1);
     });
 
-    it('sanitizes solr arguments', function() {
+    it('sanitizes solr arguments', async function() {
       var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
       var mockUncleanSolrParams = structuredClone(mockSolrParams);
       // make it filthy with these params we need to strip out!
@@ -864,14 +837,13 @@ describe('Service: searchSvc: Solr', function () {
         mockUncleanSolrParams,
         mockQueryText
       );
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('doesnt sanitize solr arguments when told not to', function() {
+    it('doesnt sanitize solr arguments when told not to', async function() {
       var fieldSpecWithScore = fieldSpecSvc.createFieldSpec('field field1 score');
       var mockUncleanSolrParams = {};
       // make it filthy with these params we need to strip out!
@@ -883,29 +855,27 @@ describe('Service: searchSvc: Solr', function () {
         mockQueryText,
         { sanitize: false }
       );
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, mockUncleanSolrParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, mockUncleanSolrParams))
                               .respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('searches with fl == *', function() {
+    it('searches with fl == *', async function() {
       var fieldSpec = fieldSpecSvc.createFieldSpec('*');
       var searcher = searchSvc.createSearcher(fieldSpec, mockSolrUrl,
                                                   {'q': ['*:*']}, mockQueryText);
       var testSolrParams = {'fl': ['*']};
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, testSolrParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, testSolrParams))
                               .respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('escape special chars in queryText', function() {
+    it('escape special chars in queryText', async function() {
       var thisExpectedParams    = structuredClone(expectedParams);
       var queryWithSpecialChars = '+-!(){}[]^"~*?:\\';
-      var escapedQuery          = '\\+\\-\\!\\(\\)\\{\\}\\[\\]\\^\\\"\\~\\*\\?\\:\\\\';
+      var escapedQuery          = '\\+\\-\\!\\(\\)\\{\\}\\[\\]\\^\\"\\~\\*\\?\\:\\\\';
       thisExpectedParams.q[0]   = encodeURIComponent(escapedQuery);
       thisExpectedParams.fq[2]  = 'field2:' + encodeURIComponent(escapedQuery);
 
@@ -919,13 +889,12 @@ describe('Service: searchSvc: Solr', function () {
         }
       );
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, thisExpectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, thisExpectedParams))
         .respond(200, mockResults);
 
-      searcher.search();
+      await searcher.search();
 
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
   });
 
@@ -1140,28 +1109,27 @@ describe('Service: searchSvc: Solr', function () {
     });
 
 
-    it('parses an simple grouped response', function() {
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+    it('parses an simple grouped response', async function() {
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, simpleGroupedSolrResponse);
-      var called = 0;
-      var q = searcher.search().then(function () {
-          expect(searcher.docs.length).toEqual(6);
-          expect(searcher.grouped.hasOwnProperty('BUS_LISTING_ID')).toBeTruthy();
-          var gpd = searcher.grouped;
-          expect(gpd['BUS_LISTING_ID'][0].value).toEqual('1');
-        });
-      $httpBackend.flush();
+      await searcher.search().then(function () {
+        expect(searcher.docs.length).toEqual(6);
+        expect(Object.hasOwn(searcher.grouped, 'BUS_LISTING_ID')).toBe(true);
+        var gpd = searcher.grouped;
+        expect(gpd['BUS_LISTING_ID'][0].value).toEqual('1');
+      });
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('parses a grouped response', function() {
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+    it('parses a grouped response', async function() {
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, groupedSolrResp);
       var called = 0;
-      searcher.search()
+      await searcher.search()
       .then(function() {
         expect(searcher.docs.length).toEqual(7);
-        expect(searcher.grouped.hasOwnProperty('text')).toBeTruthy();
-        expect(searcher.grouped.hasOwnProperty('catch_line')).toBeTruthy();
+        expect(Object.hasOwn(searcher.grouped, 'text')).toBe(true);
+        expect(Object.hasOwn(searcher.grouped, 'catch_line')).toBe(true);
         var gpd = searcher.grouped;
         expect(gpd.text[0].value).toEqual('would');
         expect(gpd.text[0].docs.length).toEqual(3);
@@ -1193,13 +1161,12 @@ describe('Service: searchSvc: Solr', function () {
         });
         called++;
       });
-      $httpBackend.flush();
       expect(called).toBe(1);
     });
   });
 
   describe('vars', function() {
-    it('does full replacement', function() {
+    it('does full replacement', async function() {
       var mockQueryText = 'burrito taco';
       var mockSolrParams = {
         q: ['#$query##'],
@@ -1209,14 +1176,13 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('does keyword replacement', function() {
+    it('does keyword replacement', async function() {
       var mockQueryText = 'burrito taco';
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2##'],
@@ -1226,14 +1192,13 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('extra keyword replacements turns to empty string', function() {
+    it('extra keyword replacements turns to empty string', async function() {
       var mockQueryText = 'burrito taco';
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
@@ -1243,14 +1208,13 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('custom defaults', function() {
+    it('custom defaults', async function() {
       var mockQueryText = 'burrito taco';
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3|someDefault##'],
@@ -1260,14 +1224,13 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('many custom defaults', function() {
+    it('many custom defaults', async function() {
       var mockQueryText = 'burrito taco';
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3|someDefault## #$keyword3|otherDefaults## #$keyword2##'],
@@ -1277,14 +1240,13 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('many custom defaults, others not customized', function() {
+    it('many custom defaults, others not customized', async function() {
       var mockQueryText = 'burrito taco';
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3|someDefault## #$keyword3|otherDefaults## #$keyword3## #$keyword2##'],
@@ -1294,14 +1256,13 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('super long query', function() {
+    it('super long query', async function() {
       var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciousness taco bell cannot run away from me crazy muhahahaa peanut';
       var mockSolrParams = {
         q: ['#$keyword1## query #$keyword2## nothing #$keyword3##'],
@@ -1311,14 +1272,13 @@ describe('Service: searchSvc: Solr', function () {
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockSolrUrl,
                                                   mockSolrParams, mockQueryText);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, mockResults);
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('handles all types of vars', function() {
+    it('handles all types of vars', async function() {
       // Start off with a simple phrase and make sure the replacement
       // gets handled correctly here
       var mockQueryText = 'burrito taco nacho bbq turkey donkey michelin stream of consciousness taco bell cannot run away from me crazy muhahahaa peanut';
@@ -1340,15 +1300,14 @@ describe('Service: searchSvc: Solr', function () {
         mockQueryText
       );
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockResults);
 
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
 
       // Add more params
-      var mockSolrParams = {
+      mockSolrParams = {
         phrase: [
           'bowl:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
         ],
@@ -1365,28 +1324,27 @@ describe('Service: searchSvc: Solr', function () {
           '{!edismax qf="bowl sofritas"}#$query##'
         ],
       };
-      var expectedParams = structuredClone(mockSolrParams);
+      expectedParams = structuredClone(mockSolrParams);
       expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
       expectedParams.keywords[0] = '{!edismax qf="bowl^10 sofritas" tie=1.0}' + encodeURIComponent(mockQueryText);
       expectedParams.fq[0] = '{!edismax qf="bowl sofritas"}' + encodeURIComponent(mockQueryText);
 
-      var searcher = searchSvc.createSearcher(
+      searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,
         mockSolrParams,
         mockQueryText
       );
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockResults);
 
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
 
 
       // Add the rest of the params
-      var mockSolrParams = {
+      mockSolrParams = {
         phrase: [
           'bowl:("#$keyword1## #$keyword2##" OR "#$keyword2## #$keyword3##")'
         ],
@@ -1406,24 +1364,23 @@ describe('Service: searchSvc: Solr', function () {
           '{!edismax qf="bowl sofritas"}#$query##'
         ],
       };
-      var expectedParams = structuredClone(mockSolrParams);
+      expectedParams = structuredClone(mockSolrParams);
       expectedParams.phrase[0] = 'bowl:("burrito taco" OR "taco nacho")';
       expectedParams.keywords[0] = '{!edismax qf="bowl^10 sofritas" tie=1.0}' + encodeURIComponent(mockQueryText);
       expectedParams.fq[0] = '{!edismax qf="bowl sofritas"}' + encodeURIComponent(mockQueryText);
 
-      var searcher = searchSvc.createSearcher(
+      searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,
         mockSolrParams,
         mockQueryText
       );
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockResults);
 
-      searcher.search();
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
     });
   });
 
@@ -1437,18 +1394,17 @@ describe('Service: searchSvc: Solr', function () {
                                                   mockSolrParams, mockQueryText);
     });
 
-    it('adds searchError text', function() {
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+    it('adds searchError text', async function() {
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(-1);
       var errorCnt = 0;
-      searcher.search().then(function() {
+      await searcher.search().then(function() {
         errorCnt--;
       },
       function error(msg) {
         errorCnt++;
         expect(msg.searchError.length).toBeGreaterThan(1);
       });
-      $httpBackend.flush();
       expect(errorCnt).toBe(1);
     });
   });
@@ -1506,37 +1462,34 @@ describe('Service: searchSvc: Solr', function () {
       expect(nextSearcher.config.escapeQuery).toBeFalse();
     });
 
-    it('pages on page', function() {
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+    it('pages on page', async function() {
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                               .respond(200, fullSolrResp);
-      searcher.search();
-      $httpBackend.flush();
+      await searcher.search();
 
       // get page 2
       var nextSearcher = searcher.pager();
       var expectedPageParams = structuredClone(expectedParams);
       expectedPageParams.rows = ['10'];
       expectedPageParams.start = ['10'];
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
                               .respond(200, fullSolrResp);
-      nextSearcher.search();
-      $httpBackend.flush();
+      await nextSearcher.search();
 
       // get page 3
       nextSearcher = nextSearcher.pager();
       expectedPageParams.rows = ['10'];
       expectedPageParams.start =['20'];
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
                               .respond(200, fullSolrResp);
-      nextSearcher.search();
-      $httpBackend.flush();
+      await nextSearcher.search();
 
       // done
       nextSearcher = nextSearcher.pager();
       expect(nextSearcher).toBe(null);
     });
 
-    it('accounts for custom rows count', function() {
+    it('accounts for custom rows count', async function() {
       var solrRespCustRows = structuredClone(fullSolrResp)
       solrRespCustRows.response.numFound = 61;
 
@@ -1551,45 +1504,41 @@ describe('Service: searchSvc: Solr', function () {
       var expectedPageParams = structuredClone(expectedParams);
       expectedPageParams.rows = ['30'];
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
         .respond(200, solrRespCustRows);
 
-      searcher.search();
-      $httpBackend.flush();
+      await searcher.search();
 
       // get page 2
       var nextSearcher = searcher.pager();
-      var expectedPageParams = structuredClone(expectedParams);
+      expectedPageParams = structuredClone(expectedParams);
       expectedPageParams.rows = ['30'];
       expectedPageParams.start = ['30'];
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
         .respond(200, solrRespCustRows);
 
-      nextSearcher.search();
-      $httpBackend.flush();
+      await nextSearcher.search();
 
       // get page 3
       nextSearcher = nextSearcher.pager();
       expectedPageParams.rows = ['30'];
       expectedPageParams.start =['60'];
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
         .respond(200, solrRespCustRows);
 
-      nextSearcher.search();
-      $httpBackend.flush();
+      await nextSearcher.search();
 
       // done
       nextSearcher = nextSearcher.pager();
       expect(nextSearcher).toBe(null);
     });
 
-    it('highlights new page', function() {
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+    it('highlights new page', async function() {
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
                   .respond(200, fullSolrResp);
-      searcher.search();
-      $httpBackend.flush();
+      await searcher.search();
 
       // get page 2
       var nextSearcher        = searcher.pager();
@@ -1603,12 +1552,11 @@ describe('Service: searchSvc: Solr', function () {
         post: [searchSvc.HIGHLIGHTING_POST],
       };
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedPageParams))
                               .respond(200, fullSolrResp);
-      nextSearcher.search();
+      await nextSearcher.search();
 
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
   });
 
@@ -1682,7 +1630,7 @@ describe('Service: searchSvc: Solr', function () {
       }
     };
 
-    it('passes two solr queries one explains the other', function() {
+    it('passes two solr queries one explains the other', async function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,
@@ -1698,20 +1646,19 @@ describe('Service: searchSvc: Solr', function () {
         explainOther: ['title:doc1']
       };
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
         .respond(200, mockSolrExplOtherResp);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockSolrResp);
 
-      searcher.explainOther('title:doc1', mockFieldSpec);
+      await searcher.explainOther('title:doc1', mockFieldSpec);
 
-      $httpBackend.flush();
 
       expect(searcher.docs.length).toBe(2);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('highlights explain other', function() {
+    it('highlights explain other', async function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,
@@ -1730,20 +1677,19 @@ describe('Service: searchSvc: Solr', function () {
         explainOther: ['title:doc1']
       };
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
         .respond(200, mockSolrExplOtherResp);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockSolrResp);
 
-      searcher.explainOther('title:doc1', mockFieldSpec);
+      await searcher.explainOther('title:doc1', mockFieldSpec);
 
-      $httpBackend.flush();
 
       expect(searcher.docs.length).toBe(2);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('does not throw an error if both queries are empty', function () {
+    it('does not throw an error if both queries are empty', async function () {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,
@@ -1751,19 +1697,18 @@ describe('Service: searchSvc: Solr', function () {
         ''
       );
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl))
         .respond(200, mockSolrExplOtherResp);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl))
         .respond(200, mockSolrResp);
 
-      searcher.explainOther('', mockFieldSpec);
+      await searcher.explainOther('', mockFieldSpec);
 
-      $httpBackend.flush();
       expect(searcher.docs.length).toBe(2);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('paginates for explain other searches', function() {
+    it('paginates for explain other searches', async function() {
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,
@@ -1784,17 +1729,16 @@ describe('Service: searchSvc: Solr', function () {
         explainOther: ['title:doc1']
       };
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedExplOtherParams))
         .respond(200, mockSolrExplOtherResp);
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedParams))
         .respond(200, mockSolrResp);
 
-      searcher.explainOther('title:doc1', mockFieldSpec);
+      await searcher.explainOther('title:doc1', mockFieldSpec);
 
-      $httpBackend.flush();
 
       expect(searcher.docs.length).toBe(2);
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
   });
 });

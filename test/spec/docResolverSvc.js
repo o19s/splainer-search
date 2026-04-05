@@ -5,32 +5,29 @@
  * Elasticsearch/OpenSearch POST terms query), Algolia multi-get, chunking, placeholders for missing
  * hits, and optional settings merged into searcher config.
  */
-/*global urlContainsParams*/
-// Alternate between native Promise microtask flushing and Angular digest
-// cycles. Promise.all wrapping $q promises creates a ping-pong: microtasks
-// schedule $q $evalAsync callbacks (need digest) and digests fire native
-// Promise resolve (need microtask).
-async function flushAll($rootScope) {
-  for (var i = 0; i < 10; i++) {
-    await Promise.resolve();
-    try { $rootScope.$apply(); } catch (_e) { /* no-op if nothing to apply */ }
-  }
-}
-
+/*global urlContainsParams, createFetchClient, MockHttpBackend*/
 describe('Service: docResolverSvc', function () {
 
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
+  var mockBackend;
+  beforeEach(module(function ($provide) {
+    mockBackend = new MockHttpBackend();
+    $provide.factory('httpClient', function () {
+      return createFetchClient({
+        fetch: mockBackend.fetch,
+        jsonpRequest: mockBackend.jsonpRequest,
+      });
+    });
+  }));
+
   var docResolverSvc;
-  var $httpBackend, $rootScope;
 
   var mockFieldSpec = null;
 
-  beforeEach(inject(function ($injector, _$rootScope_, _docResolverSvc_, _fieldSpecSvc_) {
+  beforeEach(inject(function (_docResolverSvc_, _fieldSpecSvc_) {
     docResolverSvc  = _docResolverSvc_;
-    $httpBackend    = $injector.get('$httpBackend');
-    $rootScope      = _$rootScope_;
 
     mockFieldSpec = _fieldSpecSvc_.createFieldSpec('field field1');
   }));
@@ -95,16 +92,16 @@ describe('Service: docResolverSvc', function () {
       };
     }));
 
-    it('resolves docs by querying solr with ids', function () {
+    it('resolves docs by querying solr with ids', async function () {
       // its silly we need queries to do this
       var resolver = docResolverSvc.createResolver(['doc1', 'doc2'], mockSettings);
       var expectedUrlParams = {
         q:[encodeURIComponent('id:(doc1 OR doc2)')]
       };
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
         .respond(200, mockSolrResp);
 
-      resolver.fetchDocs()
+      await resolver.fetchDocs()
         .then(function() {
           expect(resolver.docs.length).toBe(2);
           var ids = [];
@@ -115,20 +112,19 @@ describe('Service: docResolverSvc', function () {
           expect(ids).toContain('doc1');
         });
 
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('stubs out missing docs', function() {
+    it('stubs out missing docs', async function() {
       var resolver = docResolverSvc.createResolver(['doc1', 'doc2', 'doc3'], mockSettings);
       var expectedUrlParams = {
         q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3)')]
       };
 
-      $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
+      mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
         .respond(200, mockSolrRespMissingDoc2);
 
-      resolver.fetchDocs()
+      await resolver.fetchDocs()
         .then(function() {
           expect(resolver.docs.length).toBe(3);
           var ids = [];
@@ -140,8 +136,7 @@ describe('Service: docResolverSvc', function () {
           expect(ids).toContain('doc1');
         });
 
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
     describe('escape solr chars testing', function() {
@@ -162,15 +157,14 @@ describe('Service: docResolverSvc', function () {
       });
 
       // Escaping behavior disabled pending SUSS_USE_OF_ESCAPING product decision.
-      xit('solr escapes before sending', function() {
+      xit('solr escapes before sending', async function() {
         var expectedUrlParams = {
           q:[encodeURIComponent('id:(http\\://doc1 OR http\\://doc2)')]
         };
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
                     .respond(200, mockSolrEscResp);
-        resolver.fetchDocs();
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
+        await resolver.fetchDocs();
+        mockBackend.verifyNoOutstandingExpectation();
       });
     });
 
@@ -215,49 +209,46 @@ describe('Service: docResolverSvc', function () {
         resolver = docResolverSvc.createResolver(lotsOfDocs, mockSettings);
       });
 
-      it('puts all 20 docs in q', function() {
+      it('puts all 20 docs in q', async function() {
         var expectedUrlParams = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4 OR doc5 OR doc6 OR doc7 OR doc8 OR doc9 OR doc10 OR doc11 OR doc12 OR doc13 OR doc14 OR doc15 OR doc16 OR doc17 OR doc18 OR doc19 OR doc20)')]
         };
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
                     .respond(200, mockSolrBigResp);
-        resolver.fetchDocs();
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
+        await resolver.fetchDocs();
+        mockBackend.verifyNoOutstandingExpectation();
       });
 
-      it('sets rows=docs.length', function() {
+      it('sets rows=docs.length', async function() {
         var expectedUrlParams = {
           rows: [encodeURIComponent('' + lotsOfDocs.length)],
         };
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
                     .respond(200, mockSolrBigResp);
-        resolver.fetchDocs();
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
+        await resolver.fetchDocs();
+        mockBackend.verifyNoOutstandingExpectation();
       });
 
-      it('gets all docs.length docs', function() {
+      it('gets all docs.length docs', async function() {
         var expectedUrlParams = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4 OR doc5 OR doc6 OR doc7 OR doc8 OR doc9 OR doc10 OR doc11 OR doc12 OR doc13 OR doc14 OR doc15 OR doc16 OR doc17 OR doc18 OR doc19 OR doc20)')]
         };
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
                     .respond(200, mockSolrBigResp);
-        resolver.fetchDocs()
+        await resolver.fetchDocs()
         .then(function onDocsResolved() {
           expect(resolver.docs.length).toBe(lotsOfDocs.length);
         });
-        $httpBackend.flush();
-        $httpBackend.verifyNoOutstandingExpectation();
+        mockBackend.verifyNoOutstandingExpectation();
       });
 
-      it('gets all docs.length docs & values', function() {
+      it('gets all docs.length docs & values', async function() {
         var expectedUrlParams = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4 OR doc5 OR doc6 OR doc7 OR doc8 OR doc9 OR doc10 OR doc11 OR doc12 OR doc13 OR doc14 OR doc15 OR doc16 OR doc17 OR doc18 OR doc19 OR doc20)')]
         };
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParams))
                     .respond(200, mockSolrBigResp);
-        resolver.fetchDocs()
+        await resolver.fetchDocs()
         .then(function onDocsResolved() {
           var ids = [];
           resolver.docs.forEach(function(doc) {
@@ -336,25 +327,23 @@ describe('Service: docResolverSvc', function () {
           q:[encodeURIComponent('id:(doc4)')]
         };
 
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
                     .respond(200, mockChunk1_4);
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk2))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk2))
                     .respond(200, mockChunk2_4);
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk3))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk3))
                     .respond(200, mockChunk3_4);
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk4))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk4))
                     .respond(200, mockChunk4_4);
         var called = 0;
 
-        resolver.fetchDocs()
+        await resolver.fetchDocs()
           .then(function() {
             called++;
             expectAllDocsPresent(resolver);
           });
 
-        $httpBackend.flush();
-        await flushAll($rootScope);
-        $httpBackend.verifyNoOutstandingExpectation();
+        mockBackend.verifyNoOutstandingExpectation();
         expect(called).toBe(1);
       });
 
@@ -366,19 +355,17 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParamsChunk2 = {
           q:[encodeURIComponent('id:(doc3 OR doc4)')]
         };
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
                     .respond(200, mockChunk1_2);
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk2))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk2))
                     .respond(200, mockChunk2_2);
         var called = 0;
-        resolver.fetchDocs()
+        await resolver.fetchDocs()
         .then(function() {
           called++;
           expectAllDocsPresent(resolver);
         });
-        $httpBackend.flush();
-        await flushAll($rootScope);
-        $httpBackend.verifyNoOutstandingExpectation();
+        mockBackend.verifyNoOutstandingExpectation();
         expect(called).toBe(1);
       });
 
@@ -389,14 +376,13 @@ describe('Service: docResolverSvc', function () {
       it('with chunkSize 0 performs no requests and yields empty docs', async function() {
         resolver = docResolverSvc.createResolver(docIds, mockSettings, 0);
         var called = 0;
-        resolver.fetchDocs()
+        await resolver.fetchDocs()
           .then(function() {
             called++;
             expect(resolver.docs.length).toBe(0);
           });
-        await flushAll($rootScope);
         expect(called).toBe(1);
-        $httpBackend.verifyNoOutstandingExpectation();
+        mockBackend.verifyNoOutstandingExpectation();
       });
 
       it('resolves in an exact chunk', async function() {
@@ -404,17 +390,15 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParamsChunk1 = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4)')]
         };
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
                     .respond(200, mockChunk1_1);
         var called = 0;
-        resolver.fetchDocs()
+        await resolver.fetchDocs()
         .then(function() {
           called++;
           expectAllDocsPresent(resolver);
         });
-        $httpBackend.flush();
-        await flushAll($rootScope);
-        $httpBackend.verifyNoOutstandingExpectation();
+        mockBackend.verifyNoOutstandingExpectation();
         expect(called).toBe(1);
       });
 
@@ -423,17 +407,15 @@ describe('Service: docResolverSvc', function () {
         var expectedUrlParamsChunk1 = {
           q:[encodeURIComponent('id:(doc1 OR doc2 OR doc3 OR doc4)')]
         };
-        $httpBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
+        mockBackend.expectJSONP(urlContainsParams(mockSolrUrl, expectedUrlParamsChunk1))
                     .respond(200, mockChunk1_1);
         var called = 0;
-        resolver.fetchDocs()
+        await resolver.fetchDocs()
         .then(function() {
           called++;
           expectAllDocsPresent(resolver);
         });
-        $httpBackend.flush();
-        await flushAll($rootScope);
-        $httpBackend.verifyNoOutstandingExpectation();
+        mockBackend.verifyNoOutstandingExpectation();
         expect(called).toBe(1);
       });
     });
@@ -484,9 +466,9 @@ describe('Service: docResolverSvc', function () {
       };
     }));
 
-    it('resolves docs with a terms query on the id field and preserves order', function() {
+    it('resolves docs with a terms query on the id field and preserves order', async function() {
       var resolver = docResolverSvc.createResolver(['id-1', 'id-2'], mockEsSettings);
-      $httpBackend.expectPOST(mockEsUrl, function(body) {
+      mockBackend.expectPOST(mockEsUrl, function(body) {
         var q = JSON.parse(body);
         if (!q.query || !q.query.terms || q.query.terms.id === undefined) {
           return false;
@@ -495,27 +477,25 @@ describe('Service: docResolverSvc', function () {
       }).respond(200, esHitsForIds('id-1', 'id-2'));
 
       var done = false;
-      resolver.fetchDocs().then(function() {
+      await resolver.fetchDocs().then(function() {
         expect(resolver.docs.length).toBe(2);
         expect(resolver.docs[0].id).toBe('id-1');
         expect(resolver.docs[1].id).toBe('id-2');
         done = true;
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      $rootScope.$apply();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(done).toBe(true);
     });
 
-    it('stubs missing Elasticsearch hits as placeholder normal docs', function() {
+    it('stubs missing Elasticsearch hits as placeholder normal docs', async function() {
       var resolver = docResolverSvc.createResolver(['id-1', 'id-2', 'missing'], mockEsSettings);
-      $httpBackend.expectPOST(mockEsUrl, function(body) {
+      mockBackend.expectPOST(mockEsUrl, function(body) {
         var q = JSON.parse(body);
         return JSON.stringify(q.query.terms.id) === JSON.stringify(['id-1', 'id-2', 'missing']) && q.size === 3;
       }).respond(200, esHitsForIds('id-1', 'id-2'));
 
       var done = false;
-      resolver.fetchDocs().then(function() {
+      await resolver.fetchDocs().then(function() {
         expect(resolver.docs.length).toBe(3);
         var byId = {};
         resolver.docs.forEach(function(d) {
@@ -526,16 +506,14 @@ describe('Service: docResolverSvc', function () {
         expect(byId.missing.title.indexOf('Missing Doc')).toBe(0);
         done = true;
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      $rootScope.$apply();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(done).toBe(true);
     });
 
-    it('resolves ids when searchEngine is OpenSearch (os)', function() {
+    it('resolves ids when searchEngine is OpenSearch (os)', async function() {
       var osSettings = Object.assign({}, mockEsSettings, { searchEngine: 'os' });
       var resolver = docResolverSvc.createResolver(['id-1', 'id-2'], osSettings);
-      $httpBackend.expectPOST(mockEsUrl, function(body) {
+      mockBackend.expectPOST(mockEsUrl, function(body) {
         var q = JSON.parse(body);
         if (!q.query || !q.query.terms || q.query.terms.id === undefined) {
           return false;
@@ -544,14 +522,12 @@ describe('Service: docResolverSvc', function () {
       }).respond(200, esHitsForIds('id-1', 'id-2'));
 
       var done = false;
-      resolver.fetchDocs().then(function() {
+      await resolver.fetchDocs().then(function() {
         expect(resolver.docs.length).toBe(2);
         expect(resolver.docs[0].id).toBe('id-1');
         done = true;
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      $rootScope.$apply();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(done).toBe(true);
     });
   });
@@ -573,9 +549,9 @@ describe('Service: docResolverSvc', function () {
       };
     }));
 
-    it('resolves docs by objectIDs via the multi-get endpoint', function() {
+    it('resolves docs by objectIDs via the multi-get endpoint', async function() {
       var resolver = docResolverSvc.createResolver(['obj-a', 'obj-b'], mockAlgoliaSettings);
-      $httpBackend.expectPOST('https://index.algolianet.com/1/indexes/*/objects', function(body) {
+      mockBackend.expectPOST('https://index.algolianet.com/1/indexes/*/objects', function(body) {
         var payload = JSON.parse(body);
         if (!payload.requests || payload.requests.length !== 2) {
           return false;
@@ -592,21 +568,19 @@ describe('Service: docResolverSvc', function () {
       });
 
       var done = false;
-      resolver.fetchDocs().then(function() {
+      await resolver.fetchDocs().then(function() {
         expect(resolver.docs.length).toBe(2);
         expect(resolver.docs[0].id).toBe('obj-a');
         expect(resolver.docs[1].id).toBe('obj-b');
         done = true;
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      $rootScope.$apply();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(done).toBe(true);
     });
 
-    it('stubs missing Algolia objects as placeholder docs preserving order', function() {
+    it('stubs missing Algolia objects as placeholder docs preserving order', async function() {
       var resolver = docResolverSvc.createResolver(['obj-a', 'missing'], mockAlgoliaSettings);
-      $httpBackend.expectPOST('https://index.algolianet.com/1/indexes/*/objects', function(body) {
+      mockBackend.expectPOST('https://index.algolianet.com/1/indexes/*/objects', function(body) {
         var payload = JSON.parse(body);
         return payload.requests && payload.requests.length === 2;
       }).respond(200, {
@@ -617,7 +591,7 @@ describe('Service: docResolverSvc', function () {
       });
 
       var done = false;
-      resolver.fetchDocs().then(function() {
+      await resolver.fetchDocs().then(function() {
         expect(resolver.docs.length).toBe(2);
         var byId = {};
         resolver.docs.forEach(function(d) {
@@ -627,9 +601,7 @@ describe('Service: docResolverSvc', function () {
         expect(byId.missing.title.indexOf('Missing Doc')).toBe(0);
         done = true;
       });
-      $httpBackend.flush();
-      $httpBackend.verifyNoOutstandingExpectation();
-      $rootScope.$apply();
+      mockBackend.verifyNoOutstandingExpectation();
       expect(done).toBe(true);
     });
   });
@@ -680,12 +652,6 @@ describe('Service: docResolverSvc', function () {
   });
 
   describe('Chunked fetch error handling', function() {
-    // NOTE: Testing that $q.all rejects when a chunk HTTP request fails is
-    // unreliable with $httpBackend + the library's internal promise chains.
-    // The rejection must propagate through: $http → searcher.search() → $q.all → deferred.reject
-    // which requires multiple digest cycles that are difficult to orchestrate in a sync test.
-    // This is documented as a known testing limitation, not a code defect.
-    // The vanilla JS migration should include integration tests for this path.
     it('creates resolver with chunk size', function() {
       var mockEsUrl = 'http://localhost:9200/index/_search';
       var mockEsSettings;

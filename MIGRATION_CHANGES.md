@@ -13,7 +13,7 @@ describes the plan; this file records what actually shipped.
 All `angular.isDefined`, `angular.isUndefined`, `angular.isObject`,
 `angular.isString`, `angular.fromJson`, `angular.extend`, and `angular.element`
 calls in source files were replaced with native JS equivalents. These are
-documented drop-in replacements (see `MIGRATION_PREP.md` §4) with identical
+documented drop-in replacements (summarized in this Phase 1 section) with identical
 semantics for the data types used in this codebase.
 
 `angular.forEach`, `angular.copy`, and `angular.merge` were routed through
@@ -249,5 +249,62 @@ Structural / preparatory changes:
 |--------|------------------|
 | Karma (`npm test`) | ~620 tests |
 | Vitest (`npm run test:vitest`) | 70 tests in 8 files under `test/vitest/` |
+
+---
+
+## Phase 3e — Step 1 (finish): `createFetchClient()` as Angular default + `$httpBackend` removal
+
+### Summary
+
+Switched the Angular `httpClient` factory from returning `$http` to `createFetchClient()`. All HTTP traffic now flows through native `fetch` (GET/POST) or `<script>` tag injection (JSONP). Migrated all 11 `$httpBackend`-based Karma test files to a new `MockHttpBackend` helper.
+
+### Source changes
+
+| File | Change |
+|------|--------|
+| `services/httpClient.js` | Angular factory returns `createFetchClient()` instead of `$http`; removed `$http` from DI array; added `$sce` URL unwrapping in `jsonp()` |
+
+## Phase 3f — Steps 4 & 5: Remove `$q.reject()` and `$q` from all factories
+
+### Summary
+
+Replaced all remaining `$q.reject(x)` calls with `throw x` inside `.then()` / `.catch()` handlers. Removed `$q` from function signatures and Angular DI arrays in all 7 affected factories. `$q` is no longer referenced anywhere in source code.
+
+### Source changes
+
+| File | Change |
+|------|--------|
+| `factories/algoliaSearchFactory.js` | `$q.reject()` → `throw`; removed `$q` from signature and DI array |
+| `factories/vectaraSearcherFactory.js` | Same pattern |
+| `factories/searchApiSearcherFactory.js` | Same pattern |
+| `factories/solrSearcherFactory.js` | Same pattern |
+| `factories/esSearcherFactory.js` | Same pattern |
+| `factories/resolverFactory.js` | Same pattern |
+| `factories/bulkTransportFactory.js` | Same pattern |
+
+### Test changes
+
+| File | Change |
+|------|--------|
+| `test/mock/mockHttpBackend.js` | **New file.** `MockHttpBackend` helper providing `expectGET/POST/JSONP` → `.respond()` API with `fetch` and `jsonpRequest` mock functions for `createFetchClient`. Supports string, RegExp, and `.test()` URL matchers. |
+| `test/spec/transportSvc.js` | Replaced `$httpBackend` + `$timeout` with `MockHttpBackend`; tests async |
+| `test/spec/proxyTransport.js` | Same pattern |
+| `test/spec/bulkTransportFactory.js` | Same pattern; `flushMicrotasks` increased to 10 iterations for deeper fetch chain |
+| `test/spec/solrSearchSvc.js` | Same pattern; ~55 `$httpBackend.flush()` calls removed |
+| `test/spec/esSearchSvc.js` | Same pattern; `flushAll` / `$rootScope.$apply()` removed |
+| `test/spec/docResolverSvc.js` | Same pattern; `flushAll` / `$rootScope.$apply()` removed |
+| `test/spec/algoliaApiSearchSvc.js` | Same pattern |
+| `test/spec/searchApiSearchSvc.js` | Same pattern |
+| `test/spec/vectaraSearchSvc.js` | Same pattern |
+| `test/spec/settingsValidatorFactory.js` | Same pattern |
+| `test/spec/migrationSafetyTests.js` | `$httpBackend` blocks migrated; non-HTTP blocks untouched |
+
+### Dual runner counts (post Phase 3e–f)
+
+| Runner | Count (approx.) |
+|--------|------------------|
+| Karma (`npm test`) | 620 tests (0 failures) |
+| Vitest (`npm run test:vitest`) | 70 tests in 8 files |
+| Integration (`npm run test:integration`) | Chunked resolver fetch OK |
 
 ---

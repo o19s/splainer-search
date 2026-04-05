@@ -1,15 +1,24 @@
 'use strict';
-/* global urlContainsParams, urlMissingParams, mockExplainOther*/
-/*global describe,beforeEach,inject,it,expect*/
+/* global createFetchClient, MockHttpBackend */
 describe('Service: searchSvc: Algolia', function () {
 
   // load the service's module
   beforeEach(module('o19s.splainer-search'));
 
+  var mockBackend;
+  beforeEach(module(function ($provide) {
+    mockBackend = new MockHttpBackend();
+    $provide.factory('httpClient', function () {
+      return createFetchClient({
+        fetch: mockBackend.fetch,
+        jsonpRequest: mockBackend.jsonpRequest,
+      });
+    });
+  }));
+
   // instantiate service
   var searchSvc;
   var activeQueries;
-  var $httpBackend = null;
   var fieldSpecSvc = null;
   var mockAlgoliaUrl = 'https://index.algolianet.com/1/indexes/ecommerce-index/query';
   var mockAlgoliaParams = {
@@ -227,10 +236,6 @@ describe('Service: searchSvc: Algolia', function () {
     ]
   }
 
-  beforeEach(inject(function($injector) {
-    $httpBackend = $injector.get('$httpBackend');
-  }));
-
   beforeEach(inject(function (_searchSvc_, _fieldSpecSvc_, _activeQueries_) {
     searchSvc     = _searchSvc_;
     fieldSpecSvc  = _fieldSpecSvc_;
@@ -248,44 +253,42 @@ describe('Service: searchSvc: Algolia', function () {
     }).toThrowError('GET is not supported by Algolia');
   });
 
-  it('access Algolia using POST', function() {
+  it('access Algolia using POST', async function() {
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
                                                 mockAlgoliaParams, mockQueryText, { apiMethod: 'POST' }, 'algolia');
 
-    $httpBackend.expectPOST("https://index.algolianet.com/1/indexes/ecommerce-index/query", expectedPayload).respond(200, mockAlgoliaResults);
-    searcher.search();
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.expectPOST("https://index.algolianet.com/1/indexes/ecommerce-index/query", expectedPayload).respond(200, mockAlgoliaResults);
+    await searcher.search();
+    mockBackend.verifyNoOutstandingExpectation();
   });
 
-  it('returns number found', function () {
+  it('returns number found', async function () {
 
     var options = { apiMethod: 'POST' };
 
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
                                                 mockAlgoliaParams, mockQueryText, options, 'algolia');
 
-    $httpBackend.expectPOST("https://index.algolianet.com/1/indexes/ecommerce-index/query").respond(200, mockAlgoliaResults);
+    mockBackend.expectPOST("https://index.algolianet.com/1/indexes/ecommerce-index/query").respond(200, mockAlgoliaResults);
 
-    searcher.search();
+    await searcher.search();
 
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.verifyNoOutstandingExpectation();
     expect(searcher.numFound).toEqual(10);
   });
 
-  it('returns docs', function () {
+  it('returns docs', async function () {
 
     var options = { apiMethod: 'POST' };
 
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
                                                 mockAlgoliaParams, mockQueryText, options, 'algolia');
 
-    $httpBackend.expectPOST("https://index.algolianet.com/1/indexes/ecommerce-index/query").respond(200, mockAlgoliaResults);
+    mockBackend.expectPOST("https://index.algolianet.com/1/indexes/ecommerce-index/query").respond(200, mockAlgoliaResults);
 
     var called = 0;
 
-    searcher.search()
+    await searcher.search()
         .then(function () {
 
           var docs = searcher.docs;
@@ -299,13 +302,12 @@ describe('Service: searchSvc: Algolia', function () {
           called++;
         });
 
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.verifyNoOutstandingExpectation();
 
     expect(called).toEqual(1);
   });
 
-  it('queries docs by id', function () {
+  it('queries docs by id', async function () {
     var options = {
       apiMethod: 'POST',
     };
@@ -318,11 +320,11 @@ describe('Service: searchSvc: Algolia', function () {
         retrieveObjects: true
       }, mockQueryText, options, 'algolia');
 
-    $httpBackend.expectPOST("https://index.algolianet.com/1/indexes/*/objects", expectedGetObjectsPayload).respond(200, mockGetObjectsResponse);
+    mockBackend.expectPOST("https://index.algolianet.com/1/indexes/*/objects", expectedGetObjectsPayload).respond(200, mockGetObjectsResponse);
 
     var called = 0;
 
-    searcher.search()
+    await searcher.search()
       .then(function () {
 
         var docs = searcher.docs;
@@ -338,8 +340,7 @@ describe('Service: searchSvc: Algolia', function () {
         called++;
       });
 
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.verifyNoOutstandingExpectation();
 
     expect(called).toEqual(1);
     expect(searcher.pager()).toBeNull();
@@ -362,38 +363,35 @@ describe('Service: searchSvc: Algolia', function () {
       return r;
     }
 
-    it('pages on page', function() {
+    it('pages on page', async function() {
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
         mockAlgoliaParams, mockQueryText, { apiMethod: 'POST' }, 'algolia');
 
       var threePages = responseForPage(mockAlgoliaResults, 0, 3);
       threePages.nbHits = 12;
 
-      $httpBackend.expectPOST(mockAlgoliaUrl, expectedParams).respond(200, threePages);
-      searcher.search();
-      $httpBackend.flush();
+      mockBackend.expectPOST(mockAlgoliaUrl, expectedParams).respond(200, threePages);
+      await searcher.search();
 
       var nextSearcher = searcher.pager();
 
-      $httpBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expectedParams, { page: 1 }))
+      mockBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expectedParams, { page: 1 }))
         .respond(200, responseForPage(threePages, 1));
 
-      nextSearcher.search();
-      $httpBackend.flush();
+      await nextSearcher.search();
 
       nextSearcher = nextSearcher.pager();
 
-      $httpBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expectedParams, { page: 2 }))
+      mockBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expectedParams, { page: 2 }))
         .respond(200, responseForPage(threePages, 2));
 
-      nextSearcher.search();
-      $httpBackend.flush();
+      await nextSearcher.search();
 
       nextSearcher = nextSearcher.pager();
       expect(nextSearcher).toBe(null);
     });
 
-    it('accounts for custom hitsPerPage in args', function() {
+    it('accounts for custom hitsPerPage in args', async function() {
       var params20 = structuredClone(mockAlgoliaParams);
       params20.hitsPerPage = 20;
       var expected20 = structuredClone(expectedParams);
@@ -408,36 +406,33 @@ describe('Service: searchSvc: Algolia', function () {
       twoPages.nbPages = 2;
       twoPages.page = 0;
 
-      $httpBackend.expectPOST(mockAlgoliaUrl, expected20).respond(200, twoPages);
-      searcher.search();
-      $httpBackend.flush();
+      mockBackend.expectPOST(mockAlgoliaUrl, expected20).respond(200, twoPages);
+      await searcher.search();
 
       var nextSearcher = searcher.pager();
-      $httpBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expected20, { page: 1 }))
+      mockBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expected20, { page: 1 }))
         .respond(200, Object.assign({}, twoPages, { page: 1 }));
 
-      nextSearcher.search();
-      $httpBackend.flush();
+      await nextSearcher.search();
 
       nextSearcher = nextSearcher.pager();
       expect(nextSearcher).toBe(null);
     });
 
-    it('returns null when the first response is already the only page', function() {
+    it('returns null when the first response is already the only page', async function() {
       var onePage = responseForPage(mockAlgoliaResults, 0, 1);
       onePage.nbHits = 3;
 
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
         mockAlgoliaParams, mockQueryText, { apiMethod: 'POST' }, 'algolia');
 
-      $httpBackend.expectPOST(mockAlgoliaUrl, expectedParams).respond(200, onePage);
-      searcher.search();
-      $httpBackend.flush();
+      mockBackend.expectPOST(mockAlgoliaUrl, expectedParams).respond(200, onePage);
+      await searcher.search();
 
       expect(searcher.pager()).toBe(null);
     });
 
-    it('advances from a non-zero starting page in args', function() {
+    it('advances from a non-zero starting page in args', async function() {
       var paramsFrom2 = structuredClone(mockAlgoliaParams);
       paramsFrom2.page = 2;
       var expectedFrom2 = structuredClone(expectedParams);
@@ -449,27 +444,24 @@ describe('Service: searchSvc: Algolia', function () {
       var first = responseForPage(mockAlgoliaResults, 2, 5);
       first.nbHits = 80;
 
-      $httpBackend.expectPOST(mockAlgoliaUrl, expectedFrom2).respond(200, first);
-      searcher.search();
-      $httpBackend.flush();
+      mockBackend.expectPOST(mockAlgoliaUrl, expectedFrom2).respond(200, first);
+      await searcher.search();
 
       var nextSearcher = searcher.pager();
       expect(nextSearcher).not.toBe(null);
 
-      $httpBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expectedFrom2, { page: 3 }))
+      mockBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expectedFrom2, { page: 3 }))
         .respond(200, responseForPage(first, 3, 5));
 
-      nextSearcher.search();
-      $httpBackend.flush();
+      await nextSearcher.search();
 
       nextSearcher = nextSearcher.pager();
       expect(nextSearcher).not.toBe(null);
 
-      $httpBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expectedFrom2, { page: 4 }))
+      mockBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expectedFrom2, { page: 4 }))
         .respond(200, responseForPage(first, 4, 5));
 
-      nextSearcher.search();
-      $httpBackend.flush();
+      await nextSearcher.search();
 
       expect(nextSearcher.pager()).toBe(null);
     });
@@ -484,7 +476,7 @@ describe('Service: searchSvc: Algolia', function () {
       expect(nextSearcher.config.apiMethod).toBe('POST');
     });
 
-    it('keeps attributesToHighlight on the paged request body (Solr highlights-new-page parity)', function() {
+    it('keeps attributesToHighlight on the paged request body (Solr highlights-new-page parity)', async function() {
       var paramsHl = structuredClone(mockAlgoliaParams);
       paramsHl.attributesToHighlight = ['title', 'description'];
       var expectedHl = structuredClone(expectedPayload);
@@ -496,52 +488,48 @@ describe('Service: searchSvc: Algolia', function () {
       var twoPages = responseForPage(mockAlgoliaResults, 0, 2);
       twoPages.nbHits = 8;
 
-      $httpBackend.expectPOST(mockAlgoliaUrl, expectedHl).respond(200, twoPages);
-      searcher.search();
-      $httpBackend.flush();
+      mockBackend.expectPOST(mockAlgoliaUrl, expectedHl).respond(200, twoPages);
+      await searcher.search();
 
       var nextSearcher = searcher.pager();
       var expectedPage1 = Object.assign({}, expectedHl, { page: 1 });
-      $httpBackend.expectPOST(mockAlgoliaUrl, expectedPage1).respond(200, responseForPage(twoPages, 1));
+      mockBackend.expectPOST(mockAlgoliaUrl, expectedPage1).respond(200, responseForPage(twoPages, 1));
 
-      nextSearcher.search();
-      $httpBackend.flush();
+      await nextSearcher.search();
 
       expect(nextSearcher.pager()).toBe(null);
     });
 
-    it('rejects and sets inError when a paged search HTTP call fails', function() {
+    it('rejects and sets inError when a paged search HTTP call fails', async function() {
       var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
         mockAlgoliaParams, mockQueryText, { apiMethod: 'POST' }, 'algolia');
 
       var twoPages = responseForPage(mockAlgoliaResults, 0, 2);
-      $httpBackend.expectPOST(mockAlgoliaUrl, expectedParams).respond(200, twoPages);
-      searcher.search();
-      $httpBackend.flush();
+      mockBackend.expectPOST(mockAlgoliaUrl, expectedParams).respond(200, twoPages);
+      await searcher.search();
 
       var nextSearcher = searcher.pager();
-      $httpBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expectedParams, { page: 1 }))
+      mockBackend.expectPOST(mockAlgoliaUrl, Object.assign({}, expectedParams, { page: 1 }))
         .respond(500, { error: 'page2 fail' });
 
       var failed = 0;
-      nextSearcher.search().then(null, function(msg) {
+      await nextSearcher.search().then(null, function(msg) {
         expect(msg.searchError).toContain('Error with Algolia');
         expect(nextSearcher.inError).toBe(true);
         failed++;
       });
-      $httpBackend.flush();
       expect(failed).toBe(1);
     });
   });
 
-  it('rejects on HTTP error and sets inError', function() {
+  it('rejects on HTTP error and sets inError', async function() {
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
       mockAlgoliaParams, mockQueryText, { apiMethod: 'POST' }, 'algolia');
 
-    $httpBackend.expectPOST(mockAlgoliaUrl).respond(500, { error: 'Internal Server Error' });
+    mockBackend.expectPOST(mockAlgoliaUrl).respond(500, { error: 'Internal Server Error' });
 
     var errorCalled = 0;
-    searcher.search()
+    await searcher.search()
       .then(function() {
         errorCalled--;
       }, function(msg) {
@@ -550,49 +538,45 @@ describe('Service: searchSvc: Algolia', function () {
         errorCalled++;
       });
 
-    $httpBackend.flush();
-    $httpBackend.verifyNoOutstandingExpectation();
+    mockBackend.verifyNoOutstandingExpectation();
     expect(errorCalled).toEqual(1);
   });
 
-  it('decrements activeQueries on error', function() {
+  it('decrements activeQueries on error', async function() {
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
       mockAlgoliaParams, mockQueryText, { apiMethod: 'POST' }, 'algolia');
 
     var initialCount = activeQueries.count;
-    $httpBackend.expectPOST(mockAlgoliaUrl).respond(500, {});
+    mockBackend.expectPOST(mockAlgoliaUrl).respond(500, {});
 
-    searcher.search().then(null, function() {});
-    $httpBackend.flush();
+    await searcher.search().then(null, function() {});
     expect(activeQueries.count).toEqual(initialCount);
   });
 
-  it('increments and decrements activeQueries on success', function() {
+  it('increments and decrements activeQueries on success', async function() {
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
       mockAlgoliaParams, mockQueryText, { apiMethod: 'POST' }, 'algolia');
 
     var initialCount = activeQueries.count;
-    $httpBackend.expectPOST(mockAlgoliaUrl).respond(200, mockAlgoliaResults);
+    mockBackend.expectPOST(mockAlgoliaUrl).respond(200, mockAlgoliaResults);
 
-    searcher.search();
-    $httpBackend.flush();
+    await searcher.search();
     expect(activeQueries.count).toEqual(initialCount);
   });
 
-  it('stores lastResponse on success', function() {
+  it('stores lastResponse on success', async function() {
     var searcher = searchSvc.createSearcher(mockFieldSpec, mockAlgoliaUrl,
       mockAlgoliaParams, mockQueryText, { apiMethod: 'POST' }, 'algolia');
 
-    $httpBackend.expectPOST(mockAlgoliaUrl).respond(200, mockAlgoliaResults);
+    mockBackend.expectPOST(mockAlgoliaUrl).respond(200, mockAlgoliaResults);
 
     var called = 0;
-    searcher.search().then(function() {
+    await searcher.search().then(function() {
       expect(searcher.lastResponse).toBeDefined();
       expect(searcher.lastResponse.nbHits).toEqual(10);
       called++;
     });
 
-    $httpBackend.flush();
     expect(called).toEqual(1);
   });
 
