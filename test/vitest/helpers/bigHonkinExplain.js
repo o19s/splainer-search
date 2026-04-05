@@ -1,4 +1,5 @@
-bigHonkinExplain = {
+export var bigHonkinExplain =
+{
     "match": true,
     "value": 63.28156,
     "description": "sum of:",

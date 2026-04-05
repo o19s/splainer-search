@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getExplainSvc } from './helpers/serviceFactory.js';
-import { mockExplain, bigHonkinExplain } from './helpers/mockData.js';
+import { mockExplain } from './helpers/mockData.js';
+import { bigHonkinExplain } from './helpers/bigHonkinExplain.js';
 
 var explainSvc = getExplainSvc();
 

@@ -1,27 +1,46 @@
 /**
- * Load mock data files that are defined as globals in Karma.
- * We use dynamic evaluation to avoid modifying the original files.
+ * Mock explain data for tests — converted from Karma globals to ESM exports.
  */
-import { readFileSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
 
-var __dirname = dirname(fileURLToPath(import.meta.url));
-var mockDir = resolve(__dirname, '../../mock');
+export var mockExplain = {'match': true,'value':0.10034258,'description':'product of:','details':[{'match':true,'value':0.20068516,'description':'sum of:','details':[{'match':true,'value':0.20068516,'description':'weight(text:law in 8543) [DefaultSimilarity], result of:','details':[{'match':true,'value':0.20068516,'description':'score(doc=8543,freq=1.0 = termFreq=1.0\n), product of:','details':[{'match':true,'value':0.21876995,'description':'queryWeight, product of:','details':[{'match':true,'value':2.4462245,'description':'idf(docFreq=4743, maxDocs=20148)'},{'match':true,'value':0.08943167,'description':'queryNorm'}]},{'match':true,'value':0.9173342,'description':'fieldWeight in 8543, product of:','details':[{'match':true,'value':1,'description':'tf(freq=1.0), with freq of:','details':[{'match':true,'value':1,'description':'termFreq=1.0'}]},{'match':true,'value':2.4462245,'description':'idf(docFreq=4743, maxDocs=20148)'},{'match':true,'value':0.375,'description':'fieldNorm(doc=8543)'}]}]}]}]},{'match':true,'value':0.5,'description':'coord(1/2)'}]};
 
-// mockExplain.js sets: mockExplain = {...}
-var mockExplainCode = readFileSync(resolve(mockDir, 'mockExplain.js'), 'utf-8');
-var mockExplainFn = new Function('var mockExplain; var addExplain;\n' + mockExplainCode + '\nreturn { mockExplain: mockExplain, addExplain: addExplain };');
-var _mockExplainResult = mockExplainFn();
-export var mockExplain = _mockExplainResult.mockExplain;
-export var addExplain = _mockExplainResult.addExplain;
+export var addExplain = function(resp) {
+  resp.debug = {explain:{}};
+  resp.response.docs.forEach(function(doc) {
+    resp.debug.explain[doc.id] = mockExplain;
+  });
+};
 
-// bigHonkinExplain.js sets: bigHonkinExplain = {...}
-var bigHonkinCode = readFileSync(resolve(mockDir, 'bigHonkinExplain.js'), 'utf-8');
-var bigHonkinFn = new Function('var bigHonkinExplain;\n' + bigHonkinCode + '\nreturn bigHonkinExplain;');
-export var bigHonkinExplain = bigHonkinFn();
-
-// mockExplainOther.js sets: mockExplainOther = {...}
-var mockExplainOtherCode = readFileSync(resolve(mockDir, 'mockExplainOther.js'), 'utf-8');
-var mockExplainOtherFn = new Function('var mockExplainOther;\n' + mockExplainOtherCode + '\nreturn mockExplainOther;');
-export var mockExplainOther = mockExplainOtherFn();
+export var mockExplainOther = {
+  'l514':{
+    match:false,
+    value:0.0,
+    description:'no matching term'},
+  'l71': {
+    match: false,
+    value: 0.0,
+    description: 'no matching term'},
+  'l19254':{
+    match: true,
+    value: 3.3733945,
+    description:'weight(catch_line:law in 4487) [DefaultSimilarity], result of:',
+    details: [{
+        match: true,
+        value:3.3733945,
+        description: 'fieldWeight in 4487, product of:',
+        details :[{
+            match: true,
+            value: 1.0,
+            description: 'tf(freq=1.0), with freq of:',
+            details:[{
+                match: true,
+                value: 1.0,
+                description:'termFreq=1.0'}]},
+          {
+            match: true,
+            value: 5.3974314,
+            description: 'idf(docFreq=247, maxDocs=20148)'},
+          {
+            match: true,
+            value: 0.625,
+            description: 'fieldNorm(doc=4487)'}]}]}};

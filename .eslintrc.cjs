@@ -1,10 +1,9 @@
 /**
- * ESLint for library sources (same globs as `npm run lint` / Grunt `eslint`).
+ * ESLint for library sources (same globs as `npm run lint`).
  *
- * - `eslint:recommended` — bug-prone patterns; no JSHint-era style rules.
+ * - `eslint:recommended` — bug-prone patterns.
  * - `eslint-config-prettier` — turn off stylistic rules that conflict with Prettier.
- * - Assumes modern runtimes (ES2023+). `angular` / `inject` are limited to the
- *   Karma/Jasmine override (`test/spec`, `test/mock`), not library sources.
+ * - Package is "type": "module" — all .js files are ESM by default.
  */
 /* eslint-env node */
 module.exports = {
@@ -16,14 +15,12 @@ module.exports = {
   extends: ['eslint:recommended', 'prettier'],
   parserOptions: {
     ecmaVersion: 'latest',
-    sourceType: 'script',
+    sourceType: 'module',
   },
   globals: {
     Promise: 'readonly',
-    URI: 'readonly',
   },
   rules: {
-    // Stricter than `eslint:recommended` defaults: allow intentional unused args/catches via `_` prefix.
     'no-unused-vars': [
       'error',
       {
@@ -38,69 +35,37 @@ module.exports = {
   },
   overrides: [
     {
-      // Source files migrated to ES modules (Phase 2+)
-      files: ['values/**/*.js', 'services/**/*.js', 'factories/**/*.js'],
+      files: ['.eslintrc.cjs'],
+      env: {
+        node: true,
+      },
       parserOptions: {
-        sourceType: 'module',
+        sourceType: 'script',
       },
     },
     {
-      files: ['Gruntfile.cjs', 'scripts/**/*.cjs'],
-      env: {
-        node: true,
-      },
-    },
-    {
-      files: ['karma.coverage.conf.cjs', 'karma.conf.js', 'karma.debug.conf.js'],
-      env: {
-        node: true,
-      },
-    },
-    {
-      // Vitest config is ESM (import/export); default project parser is script.
       files: ['vitest.config.js'],
       env: {
         node: true,
       },
-      parserOptions: {
-        sourceType: 'module',
-      },
-    },
-    {
-      files: ['test/spec/**/*.js', 'test/mock/**/*.js'],
-      env: {
-        jasmine: true,
-      },
-      globals: {
-        angular: 'readonly',
-        inject: 'readonly',
-        module: 'readonly',
-      },
     },
     {
       files: ['test/vitest/**/*.js'],
-      parserOptions: {
-        sourceType: 'module',
-      },
       env: {
         es2023: true,
       },
     },
     {
-      // Node-driven integration scripts (CommonJS require, __dirname, process).
-      files: ['test/integration/**/*.js'],
+      // Node-driven integration scripts.
+      files: ['test/integration/**/*.js', 'test/integration/**/*.mjs'],
       env: {
         node: true,
       },
     },
     {
-      // ESM integration scripts.
-      files: ['test/integration/**/*.mjs'],
+      files: ['build.js'],
       env: {
         node: true,
-      },
-      parserOptions: {
-        sourceType: 'module',
       },
     },
   ],

@@ -1,5 +1,7 @@
 'use strict';
 
+import URI from 'urijs';
+
 export function esUrlSvcConstructor(customHeadersJson, utilsSvc) {
   var self = this;
 

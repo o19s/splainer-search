@@ -75,6 +75,16 @@ describe('HttpGetTransportFactory', function () {
 
     expect(transport.options()).toEqual({ apiMethod: 'GET', custom: true });
   });
+
+  it('inherits from TransportFactory (has options method)', function () {
+    var fetchFn = mockFetch(200, {});
+    var client = createFetchClient({ fetch: fetchFn });
+    var Transport = buildTransport(HttpGetTransportFactory, client);
+    var transport = new Transport({ test: 1 });
+
+    expect(typeof transport.options).toBe('function');
+    expect(transport.options()).toEqual({ test: 1 });
+  });
 });
 
 describe('HttpPostTransportFactory', function () {
@@ -112,6 +122,24 @@ describe('HttpPostTransportFactory', function () {
 
     await expect(transport.query('http://example.com/search', {}, {}))
       .rejects.toEqual({ data: { error: 'forbidden' }, status: 403, statusText: 'Error' });
+  });
+
+  it('stores options passed to constructor', function () {
+    var fetchFn = mockFetch(200, {});
+    var client = createFetchClient({ fetch: fetchFn });
+    var Transport = buildTransport(HttpPostTransportFactory, client);
+    var transport = new Transport({ apiMethod: 'POST', timeout: 5000 });
+
+    expect(transport.options()).toEqual({ apiMethod: 'POST', timeout: 5000 });
+  });
+
+  it('inherits from TransportFactory (has options method)', function () {
+    var fetchFn = mockFetch(200, {});
+    var client = createFetchClient({ fetch: fetchFn });
+    var Transport = buildTransport(HttpPostTransportFactory, client);
+    var transport = new Transport({});
+
+    expect(typeof transport.options).toBe('function');
   });
 });
 

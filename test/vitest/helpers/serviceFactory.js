@@ -4,11 +4,7 @@
  * Each create* function instantiates a service/factory with its full
  * dependency chain, returning the same object Angular would inject.
  */
-import URI from 'urijs';
-// esUrlSvc uses URI as a global (loaded via script tag in Karma)
-if (typeof globalThis.URI === 'undefined') {
-  globalThis.URI = URI;
-}
+// URI is now imported directly by esUrlSvc.js (no global patching needed).
 
 import { utilsSvcFactory } from '../../../services/utilsSvc.js';
 import { tryParseObject } from '../../../services/customHeadersJson.js';
