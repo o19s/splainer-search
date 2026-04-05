@@ -1,9 +1,9 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "_comment": "Mutation-test library sources with the same Karma + Jasmine stack as npm test. Run: npm run stryker. ignoreStatic skips load-time-only mutants (full reload + all tests each time). Concurrency is capped to avoid parallel ChromeHeadless starving (Karma browserNoActivityTimeout disconnects).",
+  "_comment": "Mutation-test library sources with Vitest (same stack as npm run test:vitest). Run: npm run stryker. ignoreStatic skips load-time-only mutants. Uses @stryker-mutator/vitest-runner (Karma + Angular DI were removed from the library).",
   "packageManager": "npm",
-  "testRunner": "karma",
-  "concurrency": 2,
+  "testRunner": "vitest",
+  "concurrency": 4,
   "maxTestRunnerReuse": 40,
   "coverageAnalysis": "perTest",
   "ignoreStatic": true,
@@ -16,12 +16,10 @@
     "html",
     "json"
   ],
-  "karma": {
-    "projectType": "custom",
-    "configFile": "karma.conf.js"
+  "vitest": {
+    "configFile": "vitest.config.js"
   },
   "mutate": [
-    "module.js",
     "services/**/*.js",
     "factories/**/*.js",
     "values/**/*.js"

@@ -69,9 +69,3 @@ export function SearchApiDocFactory(DocFactory, utilsSvc) {
   return Doc;
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .factory('SearchApiDocFactory', ['DocFactory', 'utilsSvc', SearchApiDocFactory]);
-}

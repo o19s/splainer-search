@@ -465,19 +465,3 @@ export function EsSearcherFactory(
   return Searcher;
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .factory('EsSearcherFactory', [
-      'httpClient',
-      'EsDocFactory',
-      'activeQueries',
-      'esSearcherPreprocessorSvc',
-      'esUrlSvc',
-      'SearcherFactory',
-      'transportSvc',
-      'utilsSvc',
-      EsSearcherFactory,
-    ]);
-}

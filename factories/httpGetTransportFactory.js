@@ -20,9 +20,3 @@ export function HttpGetTransportFactory(TransportFactory, httpClient) {
   return Transport;
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .factory('HttpGetTransportFactory', ['TransportFactory', 'httpClient', HttpGetTransportFactory]);
-}

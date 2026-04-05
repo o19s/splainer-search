@@ -6,7 +6,7 @@
     "Doug Turnbull <dturnbull@opensourceconnections.com>",
     "Youssef Chaker <ychaker@opensourceconnections.com>"
   ],
-  "description": "Angular JS Solr and Elasticsearch and OpenSearch Diagnostic Search Services",
+  "description": "Solr, Elasticsearch, and OpenSearch Diagnostic Search Services",
   "homepage": "https://github.com/o19s/splainer-search",
   "bugs": {
     "url": "https://github.com/o19s/splainer-search/issues"
@@ -34,8 +34,7 @@
     "index.js",
     "index.html",
     "karma.conf.js",
-    "karma.debug.conf.js",
-    "module.js"
+    "karma.debug.conf.js"
   ],
   "dependencies": {
     "angular": "1.8.3",
@@ -43,7 +42,7 @@
   },
   "devDependencies": {
     "@stryker-mutator/core": "^9.6.0",
-    "@stryker-mutator/karma-runner": "^9.6.0",
+    "@stryker-mutator/vitest-runner": "^9.6.0",
     "angular-mocks": "^1.8.3",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
@@ -67,12 +66,12 @@
   "scripts": {
     "test": "grunt karma:unit",
     "test:coverage": "grunt karma:coverage",
-    "test:integration": "node test/integration/chunked-resolver-fetch.integration.js",
-    "lint": "eslint module.js 'services/**/*.js' 'factories/**/*.js' 'values/**/*.js'",
+    "test:integration": "node test/integration/chunked-resolver-fetch.integration.mjs",
+    "lint": "eslint 'services/**/*.js' 'factories/**/*.js' 'values/**/*.js'",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:vitest": "vitest run",
-    "test:ci": "npm run lint && npm test && npm run test:vitest && npm run test:integration",
+    "test:ci": "npm run lint && npm run test:vitest && npm run test:integration",
     "stryker": "stryker run",
     "build": "grunt",
     "build:dev": "grunt build"

@@ -35,13 +35,3 @@ export function tryParseObject(jsonString) {
   }
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .factory('customHeadersJson', function customHeadersJsonFactory() {
-      return {
-        tryParseObject: tryParseObject,
-      };
-    });
-}

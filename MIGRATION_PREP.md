@@ -10,7 +10,7 @@
 
 ### Public API & semver
 
-`package.json` `main` → root `splainer-search.js`, built by Grunt (`module.js` + `services/`, `factories/`, `values/`). Consumers load that bundle with Angular as a peer. Keep response shapes, module/globals, and behavior stable unless you ship a **semver-major** release with documented breaks. After ESM, set `main` / `exports` explicitly.
+`package.json` `main` → root `splainer-search.js`, built by Grunt (`services/`, `factories/`, `values/`). Keep response shapes, module/globals, and behavior stable unless you ship a **semver-major** release with documented breaks. After ESM, set `main` / `exports` explicitly.
 
 ---
 
@@ -37,7 +37,7 @@ This file is **what is left**: utils internals, optional cleanups, and Phase 4. 
 | API | Where | Notes |
 |-----|-------|--------|
 | `angular.forEach` / `angular.copy` / `angular.merge` | `utilsSvc.js` only | **Done** — native implementations (`Array.forEach`, `structuredClone`, custom `deepMerge`) |
-| `angular.module()` … | All 47 source files (guarded) | Removed in Phase 4 |
+| `angular.module()` … | ~~All 48 source files (guarded)~~ | **Done** — guards stripped, `module.js` deleted |
 | `$sce` | `httpJsonpTransportFactory` | Optional later removal once JSONP path is fully non-Angular — see **`FUTURE.md`** |
 
 #### Deep clone contract (`utilsSvc`)
@@ -111,13 +111,13 @@ The bottom-up plan (transport `httpClient` / `createFetchClient`, direct POST ca
 
 HTTP / `$q` / `$log` / `$timeout` work is **complete** on this branch — see **`MIGRATION_CHANGES.md`**. Open items:
 
-- [ ] Swap `utilsSvc` internals from `angular.*` to native implementations
+- [x] Swap `utilsSvc` internals from `angular.*` to native implementations
 - [ ] Optional: drop `$sce` from the JSONP factory when JSONP is fully non-Angular (see **`FUTURE.md`**)
 
 ### Phase 4: Remove Angular
 
-- [ ] Strip `if (typeof angular !== ‘undefined’)` registrations from all 47 files
-- [ ] Delete `module.js`
+- [x] Strip `if (typeof angular !== ‘undefined’)` registrations from all 48 files
+- [x] Delete `module.js`
 - [ ] Drop `angular` / `angular-mocks` from `package.json`
 - [ ] Migrate remaining Karma specs to Vitest; drop Karma
 - [ ] Grunt concat → esbuild

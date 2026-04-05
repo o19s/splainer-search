@@ -3,7 +3,8 @@
  *
  * - `eslint:recommended` — bug-prone patterns; no JSHint-era style rules.
  * - `eslint-config-prettier` — turn off stylistic rules that conflict with Prettier.
- * - Assumes modern runtimes (ES2023+); Angular 1.x globals for this codebase.
+ * - Assumes modern runtimes (ES2023+). `angular` / `inject` are limited to the
+ *   Karma/Jasmine override (`test/spec`, `test/mock`), not library sources.
  */
 /* eslint-env node */
 module.exports = {
@@ -18,8 +19,6 @@ module.exports = {
     sourceType: 'script',
   },
   globals: {
-    angular: 'readonly',
-    inject: 'readonly',
     Promise: 'readonly',
     URI: 'readonly',
   },
@@ -73,6 +72,8 @@ module.exports = {
         jasmine: true,
       },
       globals: {
+        angular: 'readonly',
+        inject: 'readonly',
         module: 'readonly',
       },
     },
@@ -90,6 +91,16 @@ module.exports = {
       files: ['test/integration/**/*.js'],
       env: {
         node: true,
+      },
+    },
+    {
+      // ESM integration scripts.
+      files: ['test/integration/**/*.mjs'],
+      env: {
+        node: true,
+      },
+      parserOptions: {
+        sourceType: 'module',
       },
     },
   ],

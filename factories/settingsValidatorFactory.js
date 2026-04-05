@@ -146,14 +146,3 @@ export function SettingsValidatorFactory(fieldSpecSvc, searchSvc, utilsSvc) {
   return Validator;
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .factory('SettingsValidatorFactory', [
-      'fieldSpecSvc',
-      'searchSvc',
-      'utilsSvc',
-      SettingsValidatorFactory,
-    ]);
-}

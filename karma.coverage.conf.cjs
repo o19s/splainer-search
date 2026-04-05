@@ -16,7 +16,6 @@ module.exports = function(config) {
       'node_modules/angular/angular.js',
       'node_modules/angular-mocks/angular-mocks.js',
       'node_modules/urijs/src/URI.min.js',
-      'module.js',
       'services/**/*.js',
       'factories/**/*.js',
       'values/**/*.js',
@@ -24,10 +23,8 @@ module.exports = function(config) {
       'test/spec/**/*.js'
     ],
     exclude: [],
-    // Instrument module.js (Angular module bootstrap) so coverage includes it, not only services/factories/values.
-    // esbuild strips ESM export syntax from migrated files before coverage instruments them.
+    // strip-exports removes ESM export syntax before coverage instruments them.
     preprocessors: {
-      'module.js': ['coverage'],
       'services/**/*.js': ['strip-exports', 'coverage'],
       'factories/**/*.js': ['strip-exports', 'coverage'],
       'values/**/*.js': ['strip-exports', 'coverage']

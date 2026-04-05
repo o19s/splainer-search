@@ -121,9 +121,3 @@ export function EsDocFactory(esUrlSvc, DocFactory, utilsSvc) {
   return Doc;
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .factory('EsDocFactory', ['esUrlSvc', 'DocFactory', 'utilsSvc', EsDocFactory]);
-}

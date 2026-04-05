@@ -26,13 +26,3 @@ export function HttpProxyTransportFactory(TransportFactory, HttpJsonpTransportFa
   return Transport;
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .factory('HttpProxyTransportFactory', [
-      'TransportFactory',
-      'HttpJsonpTransportFactory',
-      HttpProxyTransportFactory,
-    ]);
-}

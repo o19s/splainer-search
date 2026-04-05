@@ -26,7 +26,6 @@ module.exports = function(config) {
       'node_modules/angular/angular.js',
       'node_modules/angular-mocks/angular-mocks.js',
       'node_modules/urijs/src/URI.min.js',
-      'module.js',
       'services/**/*.js',
       'factories/**/*.js',
       'values/**/*.js',

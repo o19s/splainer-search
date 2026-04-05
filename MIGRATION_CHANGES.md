@@ -316,3 +316,54 @@ Replaced all remaining `$q.reject(x)` calls with `throw x` inside `.then()` / `.
 | Integration (`npm run test:integration`) | Chunked resolver fetch OK |
 
 ---
+
+## Phase 3 (tail) — `utilsSvc` native implementations
+
+**Behavioral changes: None.**
+
+`utilsSvc` internals (`forEach`, `deepClone`, `deepMerge`) were swapped from
+`angular.forEach` / `angular.copy` / `angular.merge` to native implementations
+in a prior commit. No Angular APIs remain in `utilsSvc.js`.
+
+---
+
+## Phase 4a — Strip Angular registration guards and delete `module.js`
+
+**Behavioral changes: Angular DI registration no longer occurs.** Consumers
+that relied on `angular.module('o19s.splainer-search')` will need to import
+ES module exports directly instead.
+
+### What changed
+
+| Area | Change |
+|------|--------|
+| 48 source files (`services/`, `factories/`, `values/`) | Removed `if (typeof angular !== 'undefined') { angular.module(...).factory/service/value(...) }` blocks and their `// Angular DI registration (removed in Phase 4)` comments |
+| `module.js` | **Deleted** — the `angular.module('o19s.splainer-search', [])` declaration |
+| `Gruntfile.cjs` | Removed `module.js` from `eslint.target` and `concat.dist.src` |
+| `package.json` | Removed `module.js` from `ignore` list and `lint` script |
+| `test/integration/chunked-resolver-fetch.integration.js` | **Replaced** with `.mjs` ESM version — imports from `serviceFactory.js` instead of Angular bootstrap; injects `jsonpRequest` via `createFetchClient()` for Node-native HTTP (no jsdom dependency) |
+| `karma.conf.js` | Removed `module.js` from `files` |
+| `karma.debug.conf.js` | Removed `module.js` from `files` and `preprocessors` |
+| `karma.coverage.conf.cjs` | Removed `module.js` from `files` and `preprocessors`; updated comment |
+| `stryker.conf.json` | Removed `module.js` from `mutate`; **`testRunner` → Vitest** via `@stryker-mutator/vitest-runner` (Karma runner removed — it depended on the same Angular module as `npm test`) |
+| `.npmignore` | Removed `module.js` entry |
+| `.eslintrc.cjs` | Scoped `angular` / `inject` globals to Karma/Jasmine files only (`test/spec`, `test/mock`); added ESM override for `test/integration/**/*.mjs` |
+| `package.json` | Updated description; removed Karma from `test:ci` (Angular DI no longer available) |
+
+### What did NOT change
+
+- **All 524 Vitest tests pass.** ES module exports are unaffected.
+- **Integration test still passes** (chunked resolver JSONP with real HTTP server).
+- **ESLint passes** on all source files.
+- **Karma tests are expected to break** — they depend on Angular DI registration
+  which was just removed. Karma migration to Vitest is the next Phase 4 step.
+
+### Runner counts (post Phase 4a)
+
+| Runner | Count |
+|--------|-------|
+| Vitest (`npm run test:vitest`) | 524 tests, 41 files (all pass) |
+| Integration (`npm run test:integration`) | Chunked resolver fetch OK |
+| Karma (`npm test`) | **Expected to fail** — Angular registrations removed |
+
+---

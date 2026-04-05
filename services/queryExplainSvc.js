@@ -269,15 +269,3 @@ export function queryExplainSvcConstructor(baseExplainSvc, vectorSvc, simExplain
   };
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .service('queryExplainSvc', [
-      'baseExplainSvc',
-      'vectorSvc',
-      'simExplainSvc',
-      'utilsSvc',
-      queryExplainSvcConstructor,
-    ]);
-}

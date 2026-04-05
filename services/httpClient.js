@@ -147,13 +147,3 @@ export function createFetchClient(options) {
   };
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .factory('httpClient', [
-      function () {
-        return createFetchClient();
-      },
-    ]);
-}

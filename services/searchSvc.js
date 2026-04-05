@@ -87,20 +87,3 @@ export function searchSvcConstructor(
   };
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .service('searchSvc', [
-      'SolrSearcherFactory',
-      'EsSearcherFactory',
-      'VectaraSearcherFactory',
-      'AlgoliaSearcherFactory',
-      'SearchApiSearcherFactory',
-      'activeQueries',
-      'defaultSolrConfig',
-      'customHeadersJson',
-      'utilsSvc',
-      searchSvcConstructor,
-    ]);
-}

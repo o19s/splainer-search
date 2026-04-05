@@ -361,9 +361,3 @@ export function normalDocsSvcConstructor(explainSvc, utilsSvc) {
   };
 }
 
-// Angular DI registration (removed in Phase 4)
-if (typeof angular !== 'undefined') {
-  angular
-    .module('o19s.splainer-search')
-    .service('normalDocsSvc', ['explainSvc', 'utilsSvc', normalDocsSvcConstructor]);
-}

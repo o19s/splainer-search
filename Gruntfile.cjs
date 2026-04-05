@@ -36,7 +36,7 @@ module.exports = function (grunt) {
         options: {
           fix: false,
         },
-        target: ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js'],
+        target: ['services/*.js', 'factories/*.js', 'values/*.js'],
       },
       concat: {
         options: {
@@ -46,7 +46,7 @@ module.exports = function (grunt) {
           },
         },
         dist: {
-          src: ['module.js', 'services/*.js', 'factories/*.js', 'values/*.js'],
+          src: ['services/*.js', 'factories/*.js', 'values/*.js'],
           dest: 'splainer-search.js',
         },
       },
