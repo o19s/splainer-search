@@ -1,0 +1,287 @@
+import { describe, it, expect } from 'vitest';
+import { getExplainSvc } from './helpers/serviceFactory.js';
+
+var explainSvc = getExplainSvc();
+
+describe('queryExplainSvc (via explainSvc)', () => {
+  describe('WeightExplain', () => {
+    it('is identified as a weight explain with hasMatch', () => {
+      var explJson = {
+        value: 2.5,
+        description: 'weight(text:foo in 1234) [DefaultSimilarity], result of:',
+        details: []
+      };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.hasMatch()).toBe(true);
+      expect(expl.explanation()).toEqual('text:foo in 1234');
+    });
+
+    it('strips trailing product-of from realExplanation', () => {
+      var explJson = {
+        value: 1.0,
+        description: 'weight(text:bar in 5678) [DefaultSimilarity], product of:',
+        details: [
+          { value: 0.5, description: 'fieldWeight in 0, product of:', details: [
+            { value: 1.0, description: 'tf(freq=1.0), with freq of:', details: [
+              { value: 1.0, description: 'termFreq=1.0', details: [] }
+            ]},
+            { value: 0.5, description: 'idf(docFreq=10, maxDocs=100)', details: [] }
+          ]},
+          { value: 2.0, description: 'queryWeight, product of:', details: [
+            { value: 1.0, description: 'idf(docFreq=10, maxDocs=100)', details: [] }
+          ]}
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var explanation = expl.explanation();
+      expect(explanation).not.toContain(', product of:');
+    });
+
+    it('returns matchDetails as an object', () => {
+      var explJson = {
+        value: 3.0,
+        description: 'weight(title:test in 100) [BM25Similarity], result of:',
+        details: [
+          { value: 3.0, description: 'score(freq=1.0), computed as boost * idf * tf from:', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var details = expl.matchDetails();
+      expect(details).toBeDefined();
+      expect(typeof details).toEqual('object');
+    });
+  });
+
+  describe('FunctionQueryExplain', () => {
+    it('extracts function name from FunctionQuery description', () => {
+      var explJson = { value: 5.0, description: 'FunctionQuery(popularity)', details: [] };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.explanation()).toEqual('popularity');
+    });
+
+    it('falls back to full description when regex does not match', () => {
+      var explJson = { value: 1.0, description: 'FunctionQuery(popularity)', details: [] };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.explanation()).toEqual('popularity');
+
+      var noParens = { value: 1.0, description: 'FunctionQuery no_parens_here', details: [] };
+      var expl2 = explainSvc.createExplain(noParens);
+      expect(expl2.explanation()).toEqual('FunctionQuery no_parens_here');
+    });
+  });
+
+  describe('SumExplain', () => {
+    it('returns influencers sorted by score descending', () => {
+      var explJson = {
+        value: 3.0, description: 'sum of',
+        details: [
+          { value: 0.5, description: 'low', details: [] },
+          { value: 2.0, description: 'high', details: [] },
+          { value: 0.5, description: 'also low', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var infl = expl.influencers();
+      expect(infl.length).toEqual(3);
+      expect(infl[0].contribution()).toEqual(2.0);
+      expect(infl[1].contribution()).toEqual(0.5);
+    });
+
+    it('flattens nested sum explains', () => {
+      var explJson = {
+        value: 3.0, description: 'sum of',
+        details: [
+          { value: 2.0, description: 'inner sum of', details: [
+            { value: 1.2, description: 'inner a', details: [] },
+            { value: 0.8, description: 'inner b', details: [] }
+          ]},
+          { value: 1.0, description: 'outer', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var infl = expl.influencers();
+      expect(infl.length).toEqual(3);
+    });
+
+    it('vectorizes as sum of child vectors', () => {
+      var explJson = {
+        value: 3.0, description: 'sum of',
+        details: [
+          { value: 1.0, description: 'match A', details: [] },
+          { value: 2.0, description: 'match B', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var vec = expl.vectorize();
+      expect(vec.get('match A')).toEqual(1.0);
+      expect(vec.get('match B')).toEqual(2.0);
+    });
+  });
+
+  describe('ProductExplain', () => {
+    it('returns influencers sorted by score descending', () => {
+      var explJson = {
+        value: 6.0, description: 'product of:',
+        details: [
+          { value: 2.0, description: 'factor a', details: [] },
+          { value: 3.0, description: 'factor b', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var infl = expl.influencers();
+      expect(infl.length).toEqual(2);
+      expect(infl[0].contribution()).toEqual(3.0);
+      expect(infl[1].contribution()).toEqual(2.0);
+    });
+
+    it('vectorizes with cross-multiplication scaling', () => {
+      var explJson = {
+        value: 6.0, description: 'product of:',
+        details: [
+          { value: 2.0, description: 'factor a', details: [] },
+          { value: 3.0, description: 'factor b', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var vec = expl.vectorize();
+      expect(vec.get('factor a')).toEqual(6.0);
+      expect(vec.get('factor b')).toEqual(6.0);
+    });
+  });
+
+  describe('DismaxExplain', () => {
+    it('takes the winner (highest score)', () => {
+      var explJson = {
+        value: 5.0, description: 'max of',
+        details: [
+          { value: 5.0, description: 'winner', details: [] },
+          { value: 2.0, description: 'loser', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var infl = expl.influencers();
+      expect(infl[0].contribution()).toEqual(5.0);
+    });
+
+    it('vectorizes to winner only', () => {
+      var explJson = {
+        value: 5.0, description: 'max of',
+        details: [
+          { value: 5.0, description: 'winner field', details: [] },
+          { value: 2.0, description: 'loser field', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var vec = expl.vectorize();
+      expect(vec.get('winner field')).toEqual(5.0);
+      expect(vec.get('loser field')).toBeUndefined();
+    });
+
+    it('returns an empty vector when there are no children', () => {
+      var explJson = { value: 0, description: 'max of', details: [] };
+      var expl = explainSvc.createExplain(explJson);
+      var vec = expl.vectorize();
+      expect(Object.keys(vec.vecObj).length).toEqual(0);
+    });
+  });
+
+  describe('DismaxTieExplain', () => {
+    it('uses tie factor for non-winners', () => {
+      var explJson = {
+        value: 5.3, description: 'max plus 0.1 times others of',
+        details: [
+          { value: 5.0, description: 'winner', details: [] },
+          { value: 3.0, description: 'second', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var vec = expl.vectorize();
+      expect(vec.get('winner')).toEqual(5.0);
+      expect(vec.get('second')).toBeCloseTo(0.3, 5);
+    });
+
+    it('returns an empty vector when there are no children', () => {
+      var explJson = { value: 0, description: 'max plus 0.1 times others of', details: [] };
+      var expl = explainSvc.createExplain(explJson);
+      var vec = expl.vectorize();
+      expect(Object.keys(vec.vecObj).length).toEqual(0);
+    });
+  });
+
+  describe('MinExplain', () => {
+    it('vectorizes to the minimum child', () => {
+      var explJson = {
+        value: 2.0, description: 'Math.min of',
+        details: [
+          { value: 2.0, description: 'lower', details: [] },
+          { value: 100.0, description: 'maxBoost', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      var vec = expl.vectorize();
+      expect(vec.get('lower')).toBeDefined();
+    });
+
+    it('returns no influencers and an empty vector when there are no children', () => {
+      var explJson = { value: 0, description: 'Math.min of', details: [] };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.influencers().length).toEqual(0);
+      var vec = expl.vectorize();
+      expect(Object.keys(vec.vecObj).length).toEqual(0);
+    });
+  });
+
+  describe('CoordExplain', () => {
+    it('scales vectors by coord factor', () => {
+      var explJson = {
+        value: 1.5, description: 'product of:',
+        details: [
+          { value: 2.0, description: 'sum of', details: [
+            { value: 2.0, description: 'match X', details: [] }
+          ]},
+          { value: 0.75, description: 'coord(1/2)', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.explanation()).toContain('Punished');
+    });
+  });
+
+  describe('ConstantScoreExplain', () => {
+    it('explains as constant scored query', () => {
+      var explJson = { value: 1.0, description: 'ConstantScore(text:foo)', details: [] };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.explanation()).toEqual('Constant Scored Query');
+    });
+  });
+
+  describe('MatchAllDocsExplain', () => {
+    it('explains as match all docs', () => {
+      var explJson = { value: 1.0, description: 'MatchAllDocsQuery, product of:', details: [] };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.explanation()).toContain('Match All Docs');
+    });
+  });
+
+  describe('EsFieldFunctionQueryExplain', () => {
+    it('extracts field name from function description', () => {
+      var explJson = {
+        value: 0.5, description: 'Function for field popularity:',
+        details: [
+          { value: 0.5, description: 'exp(-0.5 * pow(MAX[0.0, |1.0 - 5.0|],2.0) * 1.0)', details: [] }
+        ]
+      };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.explanation()).toContain('f(popularity)');
+    });
+  });
+
+  describe('EsFuncWeightExplain', () => {
+    it('explains constant weight function', () => {
+      var explJson = { value: 5.0, description: 'weight', details: [] };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.explanation()).toContain('constant weight');
+      expect(expl.explanation()).toContain('5');
+    });
+  });
+});
