@@ -1,7 +1,6 @@
 /**
  * Native-JS implementation of utilsSvc for Vitest.
- * Mirrors the contract of services/utilsSvc.js without Angular dependencies.
- * This is effectively what utilsSvc will become after Phase 3.
+ * Mirrors the contract of services/utilsSvc.js — no Angular dependency.
  */
 
 export function safeForEach(collection, callback) {
@@ -20,15 +19,19 @@ export function safeForEach(collection, callback) {
 }
 
 export function deepClone(obj) {
-  return structuredClone(obj);
+  if (obj == null || typeof obj !== 'object') return obj;
+  try {
+    return structuredClone(obj);
+  } catch (_e) {
+    return JSON.parse(JSON.stringify(obj));
+  }
 }
 
 export function copyOnto(destination, source) {
   Object.keys(destination).forEach(function (key) {
     delete destination[key];
   });
-  var cloned = deepClone(source);
-  Object.assign(destination, cloned);
+  Object.assign(destination, deepClone(source));
   return destination;
 }
 
@@ -40,12 +43,10 @@ export function deepMerge(target /*, ...sources */) {
       var srcVal = source[key];
       var tgtVal = target[key];
       if (
-        srcVal !== null &&
+        srcVal != null &&
         typeof srcVal === 'object' &&
-        !Array.isArray(srcVal) &&
-        tgtVal !== null &&
-        typeof tgtVal === 'object' &&
-        !Array.isArray(tgtVal)
+        tgtVal != null &&
+        typeof tgtVal === 'object'
       ) {
         deepMerge(tgtVal, srcVal);
       } else {

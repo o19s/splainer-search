@@ -36,13 +36,13 @@ This file is **what is left**: utils internals, optional cleanups, and Phase 4. 
 
 | API | Where | Notes |
 |-----|-------|--------|
-| `angular.forEach` / `angular.copy` / `angular.merge` | `utilsSvc.js` only | Still delegate to Angular; swap to native implementations next |
+| `angular.forEach` / `angular.copy` / `angular.merge` | `utilsSvc.js` only | **Done** — native implementations (`Array.forEach`, `structuredClone`, custom `deepMerge`) |
 | `angular.module()` … | All 47 source files (guarded) | Removed in Phase 4 |
 | `$sce` | `httpJsonpTransportFactory` | Optional later removal once JSONP path is fully non-Angular — see **`FUTURE.md`** |
 
 #### Deep clone contract (`utilsSvc`)
 
-Call sites use **plain data** (configs, Solr/ES shapes). **`structuredClone`** is usually enough; it is **not** equivalent to `angular.copy` for functions, symbols, prototypes, DOM, or some cycles. A native-JS stub lives in `test/vitest/helpers/utilsSvcStub.js`.
+Call sites use **plain data** (configs, Solr/ES shapes). `utilsSvc.deepClone` now uses `structuredClone` with a JSON-roundtrip fallback for objects containing functions (e.g. fieldSpec objects with methods). The JSON fallback **drops function-valued properties and undefined values** — this differs from `angular.copy`, which preserved both. No call site depends on cloning functions. The Vitest stub in `test/vitest/helpers/utilsSvcStub.js` mirrors the production implementation.
 
 ---
 

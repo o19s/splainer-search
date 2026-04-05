@@ -1,20 +1,17 @@
 'use strict';
 
 /**
- * Migration shims for {@link https://docs.angularjs.org/api/ng/function/angular.forEach angular.forEach},
- * {@link https://docs.angularjs.org/api/ng/function/angular.copy angular.copy} (including copy-onto),
- * and {@link https://docs.angularjs.org/api/ng/function/angular.merge angular.merge}.
+ * Utility helpers for iteration, deep-cloning, and deep-merging plain data
+ * (configs, Solr/ES/Vectara response shapes).
  *
- * Call sites should depend on this service (or future plain exports) instead of calling those APIs
- * directly. Implementations delegate to Angular while the library still ships as an Angular module;
- * post-migration, internals swap to native helpers (e.g. `structuredClone`, custom `deepMerge`)
- * without a broad call-site churn.
+ * These were originally thin shims over Angular's `forEach`, `copy`, and `merge`.
+ * They now use native JS — no Angular dependency required.
  *
  * @see MIGRATION_PREP.md §5 Introduce Shim Layer
  */
 export function utilsSvcFactory() {
   /**
-   * Iterates like `angular.forEach`: `null` / `undefined` are no-ops; arrays yield
+   * Iterates over a collection: `null` / `undefined` are no-ops; arrays yield
    * `(value, index, array)`; objects own keys yield `(value, key, obj)`; strings yield
    * per-code-unit `(char, index, string)`.
    *
@@ -22,27 +19,49 @@ export function utilsSvcFactory() {
    * @param {function(*, (string|number), (Object|string|Array)=): void} callback
    */
   function safeForEach(collection, callback) {
-    angular.forEach(collection, callback);
+    if (collection == null) return;
+    if (Array.isArray(collection)) {
+      collection.forEach(callback);
+    } else if (typeof collection === 'string') {
+      for (var i = 0; i < collection.length; i++) {
+        callback(collection[i], i, collection);
+      }
+    } else if (typeof collection === 'object') {
+      Object.keys(collection).forEach(function (key) {
+        callback(collection[key], key, collection);
+      });
+    }
   }
 
   /**
-   * Deep-clones plain data (configs, Solr/ES response shapes). Today: `angular.copy`.
+   * Deep-clones plain data (configs, Solr/ES response shapes).
    *
-   * **Guarantee:** JSON-ish POJOs, arrays, and primitives used across this library. Not equivalent
-   * to cloning functions, symbols, custom prototypes, DOM nodes, or arbitrary object graphs with
-   * cycles; those call sites need an explicit strategy after Angular removal.
+   * Handles JSON-ish POJOs, arrays, and primitives used across this library.
+   * Objects containing functions or other non-cloneable values fall back to a
+   * JSON roundtrip, which silently drops functions and undefined values.
    *
    * @template T
    * @param {T} obj
    * @returns {T}
    */
   function deepClone(obj) {
-    return angular.copy(obj);
+    if (obj == null || typeof obj !== 'object') return obj;
+    try {
+      return structuredClone(obj);
+    } catch (_e) {
+      // structuredClone throws on functions, DOM nodes, etc.
+      // Fall back to JSON roundtrip, which silently drops function-valued
+      // properties and undefined values.  This differs from angular.copy, which
+      // preserved function references.  No call site in this codebase depends
+      // on cloned functions surviving — origin() pre-filters them, and all
+      // other callers pass plain JSON data.
+      return JSON.parse(JSON.stringify(obj));
+    }
   }
 
   /**
-   * Clears `destination`, then deep-copies all properties from `source` into it (mutates
-   * `destination`), matching two-argument `angular.copy(source, destination)`.
+   * Clears `destination`, then deep-copies all properties from `source` into it
+   * (mutates `destination`).
    *
    * **Note:** existing own properties on `destination` are removed before copying.
    *
@@ -51,18 +70,43 @@ export function utilsSvcFactory() {
    * @returns {Object} `destination`
    */
   function copyOnto(destination, source) {
-    return angular.copy(source, destination);
+    Object.keys(destination).forEach(function (key) {
+      delete destination[key];
+    });
+    Object.assign(destination, deepClone(source));
+    return destination;
   }
 
   /**
-   * Deep-merges sources into `target` (mutates `target`), matching `angular.merge`.
+   * Deep-merges sources into `target` (mutates `target`).
+   *
+   * Matches `angular.merge` semantics: recursively merges nested objects and arrays
+   * (arrays merge by index, not wholesale replacement).
    *
    * @param {Object} target Destination object.
    * @param {...Object} sources
    * @returns {Object} `target`
    */
-  function deepMerge(/* target, ...sources */) {
-    return angular.merge.apply(angular, arguments);
+  function deepMerge(target /*, ...sources */) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+      if (source == null) continue;
+      Object.keys(source).forEach(function (key) {
+        var srcVal = source[key];
+        var tgtVal = target[key];
+        if (
+          srcVal != null &&
+          typeof srcVal === 'object' &&
+          tgtVal != null &&
+          typeof tgtVal === 'object'
+        ) {
+          deepMerge(tgtVal, srcVal);
+        } else {
+          target[key] = deepClone(srcVal);
+        }
+      });
+    }
+    return target;
   }
 
   return {

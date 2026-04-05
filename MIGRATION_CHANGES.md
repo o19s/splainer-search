@@ -17,8 +17,16 @@ documented drop-in replacements (summarized in this Phase 1 section) with identi
 semantics for the data types used in this codebase.
 
 `angular.forEach`, `angular.copy`, and `angular.merge` were routed through
-`utilsSvc` shims (`safeForEach`, `deepClone`, `copyOnto`, `deepMerge`) that
-currently delegate to the Angular originals. No call-site behavior changed.
+`utilsSvc` shims (`safeForEach`, `deepClone`, `copyOnto`, `deepMerge`).
+These now use native implementations: `Array.forEach`/`Object.keys` for iteration,
+`structuredClone` (with JSON-roundtrip fallback) for cloning, and a custom recursive
+`deepMerge` matching `angular.merge` semantics (including index-wise array merge).
+
+**Known semantic difference:** `deepClone` no longer preserves function-valued
+properties. `angular.copy` copied function references; the JSON-roundtrip fallback
+silently drops them. No call site depends on cloning functions — `origin()` pre-filters
+them, and all other callers pass plain JSON data. `undefined` values inside objects are
+also dropped in the fallback path (but preserved in the primary `structuredClone` path).
 
 ---
 

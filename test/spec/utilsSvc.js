@@ -50,6 +50,18 @@ describe('Service: utilsSvc (migration shims)', function() {
       });
       expect(out).toBe('0a1b');
     });
+
+    it('skips inherited prototype properties on objects', function() {
+      var Parent = function() {};
+      Parent.prototype.inherited = 'should not appear';
+      var obj = new Parent();
+      obj.own = 'visible';
+      var seen = [];
+      utilsSvc.safeForEach(obj, function(v, k) {
+        seen.push(k);
+      });
+      expect(seen).toEqual(['own']);
+    });
   });
 
   describe('deepClone', function() {
@@ -77,16 +89,62 @@ describe('Service: utilsSvc (migration shims)', function() {
       expect(utilsSvc.deepClone(null)).toBe(null);
       expect(utilsSvc.deepClone(undefined)).toBe(undefined);
     });
+
+    it('falls back to JSON roundtrip for objects containing functions (drops functions)', function() {
+      var src = { name: 'test', fn: function() { return 42; }, data: [1, 2] };
+      var copy = utilsSvc.deepClone(src);
+      expect(copy.name).toBe('test');
+      expect(copy.data).toEqual([1, 2]);
+      expect(copy.fn).toBeUndefined();
+      expect(Object.hasOwn(copy, 'fn')).toBe(false);
+    });
+
+    it('drops nested function-valued properties in fallback path', function() {
+      var src = { outer: { inner: 'kept', cb: function() {} } };
+      var copy = utilsSvc.deepClone(src);
+      expect(copy.outer.inner).toBe('kept');
+      expect(Object.hasOwn(copy.outer, 'cb')).toBe(false);
+    });
+
+    it('drops undefined values in fallback path (JSON roundtrip limitation)', function() {
+      var src = { a: 1, b: undefined, fn: function() {} };
+      var copy = utilsSvc.deepClone(src);
+      expect(copy.a).toBe(1);
+      expect(Object.hasOwn(copy, 'b')).toBe(false);
+    });
+
+    it('preserves undefined values in primary structuredClone path', function() {
+      var src = { a: 1, b: undefined };
+      var copy = utilsSvc.deepClone(src);
+      expect(copy.a).toBe(1);
+      expect(Object.hasOwn(copy, 'b')).toBe(true);
+      expect(copy.b).toBeUndefined();
+    });
   });
 
   describe('copyOnto', function() {
-    it('matches angular.copy(source, destination): replaces destination contents', function() {
+    it('replaces destination contents with deep-cloned source', function() {
       var dest = {};
       var src = { nested: { y: 2 }, add: 3 };
       var out = utilsSvc.copyOnto(dest, src);
       expect(out).toBe(dest);
       expect(dest).toEqual({ nested: { y: 2 }, add: 3 });
       expect(dest.nested).not.toBe(src.nested);
+    });
+
+    it('removes pre-existing keys from destination', function() {
+      var dest = { old: 'gone', stale: 99 };
+      utilsSvc.copyOnto(dest, { fresh: 'new' });
+      expect(dest).toEqual({ fresh: 'new' });
+      expect(Object.hasOwn(dest, 'old')).toBe(false);
+      expect(Object.hasOwn(dest, 'stale')).toBe(false);
+    });
+
+    it('preserves destination object identity', function() {
+      var dest = { x: 1 };
+      var ref = dest;
+      utilsSvc.copyOnto(dest, { y: 2 });
+      expect(dest).toBe(ref);
     });
   });
 
@@ -108,6 +166,38 @@ describe('Service: utilsSvc (migration shims)', function() {
       var target = {};
       utilsSvc.deepMerge(target, { tags: [1, 2, 3] }, { tags: [9] });
       expect(target.tags).toEqual([9, 2, 3]);
+    });
+
+    it('overwrites with null from a later source', function() {
+      var target = {};
+      var out = utilsSvc.deepMerge(target, { a: { b: 1 } }, { a: null });
+      expect(out.a).toBeNull();
+    });
+
+    it('skips null and undefined sources without error', function() {
+      var target = { a: 1 };
+      utilsSvc.deepMerge(target, null, undefined, { b: 2 });
+      expect(target).toEqual({ a: 1, b: 2 });
+    });
+
+    it('replaces primitive target value with object source value', function() {
+      var target = { a: 'string' };
+      utilsSvc.deepMerge(target, { a: { nested: true } });
+      expect(target.a).toEqual({ nested: true });
+    });
+
+    it('replaces object target value with primitive source value', function() {
+      var target = { a: { nested: true } };
+      utilsSvc.deepMerge(target, { a: 'string' });
+      expect(target.a).toBe('string');
+    });
+
+    it('deep-clones source values so mutations do not leak', function() {
+      var source = { a: { b: 1 } };
+      var target = {};
+      utilsSvc.deepMerge(target, source);
+      target.a.b = 99;
+      expect(source.a.b).toBe(1);
     });
   });
 });
