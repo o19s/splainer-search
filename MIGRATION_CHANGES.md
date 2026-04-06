@@ -2,7 +2,9 @@
 
 Tracks behavioral and structural changes introduced during the AngularJS removal
 migration (branch `splainer-rewrite`). Complements `MIGRATION_PREP.md` which
-describes the plan; this file records what actually shipped.
+describes the plan; this file records what actually shipped. The **Appendix**
+lists separate **correctness fixes** on the same branch that can change
+observable behavior independent of Angular removal.
 
 ---
 
@@ -79,7 +81,7 @@ already the constructor/factory identity.
 | `test/vitest/helpers/utilsSvcStub.js` | Native-JS implementation of `utilsSvc` for Vitest (no Angular dependency) |
 | `test/vitest/*.test.js` | Vitest specs for converted modules (values, simple services) |
 
-### Build pipeline changes
+### Build pipeline changes (Phase 2 — **superseded by Phase 4b**)
 
 | File | Change |
 |------|--------|
@@ -90,6 +92,8 @@ already the constructor/factory identity.
 | `package.json` | Added `vitest`, `test:vitest` script; `test:ci` now runs Vitest too |
 | `.eslintrc.cjs` | `sourceType: 'module'` override for `values/**/*.js`, `services/**/*.js`, `factories/**/*.js`, `test/vitest/**/*.js` |
 | `test/integration/chunked-resolver-fetch.integration.js` | `loadScript()` strips `export` keywords before `eval()` |
+
+Phase 4b **removed** Grunt, Karma, and export stripping; the published IIFE is now produced by **esbuild** (`build.js`). See Phase 4b.
 
 ### Coverage baseline comparison
 
@@ -211,7 +215,7 @@ Structural / preparatory changes:
 | Angular DI | `httpClient` factory wraps `$http` until Step 1 is finished (fetch registration) |
 | Transports | `HttpGetTransportFactory`, `HttpPostTransportFactory`, `HttpJsonpTransportFactory` inject `httpClient` instead of `$http` |
 | Direct POST | `BulkTransportFactory`, `EsSearcherFactory` use `httpClient.post()` for `_msearch` and explain |
-| JSONP + `$sce` | `HttpJsonpTransportFactory` calls `$sce.trustAsResourceUrl` only when `$sce` provides it (non-Angular / Vitest callers can pass `null`) |
+| JSONP + `$sce` (transitional) | While Angular was still wired, `HttpJsonpTransportFactory` optionally called `$sce.trustAsResourceUrl` when injected; **`$sce` was removed entirely** later (Phase 4c). |
 
 ### Vitest & Karma tests
 
@@ -219,7 +223,7 @@ Structural / preparatory changes:
 |----------|---------|
 | `test/vitest/httpClient.test.js` | Contract tests for `createFetchClient` (success, 4xx/5xx, network error, JSONP overrides / DOM mock) |
 | `test/vitest/transportFactories.test.js` | Transport factories with `createFetchClient` and `TransportFactory`, no Angular |
-| `test/spec/http{Get,Post,Jsonp}TransportFactory.js` | Karma: `$provide` override of `httpClient` with `createFetchClient({ fetch: spy })` or `jsonpRequest` spy |
+| `test/spec/http{Get,Post,Jsonp}TransportFactory.js` | Karma: `$provide` override of `httpClient` with `createFetchClient({ fetch: spy })` or `jsonpRequest` spy (**files removed in Phase 4b**) |
 
 ### Documentation
 
@@ -238,7 +242,7 @@ Structural / preparatory changes:
 | File | Change |
 |------|--------|
 | `factories/bulkTransportFactory.js` | `enqueue()` returns `new Promise`; pending items use `resolve` / `reject` instead of `deferred`; failure paths call `pendingQuery.reject` / `currRequest.reject` / `resolve` accordingly |
-| `factories/resolverFactory.js` | Chunked `fetchDocs` returns `Promise.all(promises)`; errors rethrown in `catch` (non-chunked path still uses `$q.reject` for failure propagation) |
+| `factories/resolverFactory.js` | Chunked `fetchDocs` returns `Promise.all(promises)`; errors rethrown in `catch` (non-chunked path still used `$q.reject` until Phase 3f) |
 | `factories/esSearcherFactory.js` | `explainOther` uses `Promise.all(promises).then(...)` instead of `$q.defer()` wrapping `$q.all` |
 | `factories/solrSearcherFactory.js` | Solr `search` returns the transport `.query().then(...)` chain directly (no outer `$q(function (resolve, reject) { ... })` executor); `activeQueries` increment/decrement aligned with that chain |
 
@@ -264,19 +268,36 @@ Structural / preparatory changes:
 
 ### Summary
 
-Switched the Angular `httpClient` factory from returning `$http` to `createFetchClient()`. All HTTP traffic now flows through native `fetch` (GET/POST) or `<script>` tag injection (JSONP). Migrated all 11 `$httpBackend`-based Karma test files to a new `MockHttpBackend` helper.
+Switched the Angular `httpClient` factory from returning `$http` to `createFetchClient()`. All HTTP traffic now flows through native `fetch` (GET/POST) or `<script>` tag injection (JSONP). Migrated all 11 `$httpBackend`-based Karma test files to a new `MockHttpBackend` helper (`test/mock/mockHttpBackend.js`, **removed again in Phase 4b** when Karma was dropped).
 
 ### Source changes
 
 | File | Change |
 |------|--------|
-| `services/httpClient.js` | Angular factory returns `createFetchClient()` instead of `$http`; removed `$http` from DI array; added `$sce` URL unwrapping in `jsonp()` |
+| `services/httpClient.js` | Angular factory returns `createFetchClient()` instead of `$http`; removed `$http` from DI array. During the transition, `jsonp()` briefly accepted Angular `$sce` trusted URL objects (coerced via `.toString()`); **that unwrap was removed in Phase 4c** once JSONP became string-only. |
+
+### Behavioral changes (production)
+
+Response shapes and status handling were kept aligned with `$http` (`{ data, status, statusText }`, JSON parse of bodies, structured errors on 4xx/5xx). Differences worth noting for integrators:
+
+| Area | `$http` (before) | `fetch` (`createFetchClient`) |
+|------|------------------|--------------------------------|
+| Cookies | Sent according to Angular/XHR defaults for same-site requests | `fetch` uses **credentials omitted** unless callers extend the client; this bundle does not set `credentials: 'include'` |
+| Interceptors / transforms | Angular `$http` pipeline | **None** — no global request/response interceptors or `$http`-style transforms |
+| JSON POST bodies | `$http` serialized objects | Non-string bodies are passed through `JSON.stringify` in `createFetchClient` (same practical effect for plain objects) |
+| Error object identity | Digest-linked `$q` | Native `Promise` rejection; no `$rootScope` digest (irrelevant once Angular is gone) |
+
+JSONP still uses a dynamic `<script>` tag (same class of behavior as Angular’s JSONP), so cross-origin Solr without CORS remains supported.
 
 ## Phase 3f — Steps 4 & 5: Remove `$q.reject()` and `$q` from all factories
 
 ### Summary
 
 Replaced all remaining `$q.reject(x)` calls with `throw x` inside `.then()` / `.catch()` handlers. Removed `$q` from function signatures and Angular DI arrays in all 7 affected factories. `$q` is no longer referenced anywhere in source code.
+
+### Behavioral notes
+
+Rejections remain **promise rejections** with the same payloads as before; the main difference is scheduling: there is no Angular digest tied to `$q`. Any caller that mixed `$q` and native `Promise` (tests used `flushAll`-style loops) needed to flush microtasks explicitly — moot after Angular removal.
 
 ### Source changes
 
@@ -290,11 +311,11 @@ Replaced all remaining `$q.reject(x)` calls with `throw x` inside `.then()` / `.
 | `factories/resolverFactory.js` | Same pattern |
 | `factories/bulkTransportFactory.js` | Same pattern |
 
-### Test changes
+### Test changes (Karma / Jasmine only — **deleted in Phase 4b**)
 
 | File | Change |
 |------|--------|
-| `test/mock/mockHttpBackend.js` | **New file.** `MockHttpBackend` helper providing `expectGET/POST/JSONP` → `.respond()` API with `fetch` and `jsonpRequest` mock functions for `createFetchClient`. Supports string, RegExp, and `.test()` URL matchers. |
+| `test/mock/mockHttpBackend.js` | **Added for Karma.** `MockHttpBackend` (`expectGET` / `POST` / `JSONP` → `.respond()`) backed `fetch` / `jsonpRequest` mocks for `createFetchClient`. Removed when Karma was dropped. |
 | `test/spec/transportSvc.js` | Replaced `$httpBackend` + `$timeout` with `MockHttpBackend`; tests async |
 | `test/spec/proxyTransport.js` | Same pattern |
 | `test/spec/bulkTransportFactory.js` | Same pattern; `flushMicrotasks` increased to 10 iterations for deeper fetch chain |
@@ -307,12 +328,12 @@ Replaced all remaining `$q.reject(x)` calls with `throw x` inside `.then()` / `.
 | `test/spec/settingsValidatorFactory.js` | Same pattern |
 | `test/spec/migrationSafetyTests.js` | `$httpBackend` blocks migrated; non-HTTP blocks untouched |
 
-### Dual runner counts (post Phase 3e–f)
+### Dual runner counts (post Phase 3e–f, pre–Phase 4b)
 
 | Runner | Count (approx.) |
 |--------|------------------|
-| Karma (`npm test`) | 620 tests (0 failures) |
-| Vitest (`npm run test:vitest`) | 70 tests in 8 files |
+| Karma (`npm test`) | ~620 tests (0 failures) — runner **removed** in Phase 4b |
+| Vitest (`npm run test:vitest`) | ~70 tests in 8 files — suite **expanded** in Phase 4b |
 | Integration (`npm run test:integration`) | Chunked resolver fetch OK |
 
 ---
@@ -352,18 +373,75 @@ ES module exports directly instead.
 
 ### What did NOT change
 
-- **All 524 Vitest tests pass.** ES module exports are unaffected.
-- **Integration test still passes** (chunked resolver JSONP with real HTTP server).
-- **ESLint passes** on all source files.
-- **Karma tests are expected to break** — they depend on Angular DI registration
-  which was just removed. Karma migration to Vitest is the next Phase 4 step.
+- **ES module exports and library logic** (aside from wiring) were unchanged by Phase 4a.
+- **Integration test** still passes (chunked resolver JSONP with real HTTP server).
 
-### Runner counts (post Phase 4a)
+### What broke until Phase 4b
+
+- **Karma / Jasmine** still assumed `angular.module('o19s.splainer-search')` registrations. Immediately after Phase 4a, `npm test` (Karma) **failed** until Karma was removed and specs were ported to Vitest (Phase 4b).
+
+### Runner counts (post Phase 4a only — historical)
 
 | Runner | Count |
 |--------|-------|
-| Vitest (`npm run test:vitest`) | 524 tests, 41 files (all pass) |
+| Vitest (`npm run test:vitest`) | Growing suite (see Phase 4b) |
 | Integration (`npm run test:integration`) | Chunked resolver fetch OK |
-| Karma (`npm test`) | **Expected to fail** — Angular registrations removed |
+| Karma (`npm test`) | **Failed** — no Angular module |
+
+---
+
+## Phase 4b — Drop Grunt/Karma; Vitest as primary; ESM package + esbuild IIFE
+
+### Summary
+
+Removed the legacy toolchain (Grunt concat, Karma, Jasmine specs under `test/spec/`, Karma helpers under `test/mock/`). **Vitest** is now the only unit/integration-style runner (`npm test`). The library ships as **native ESM** with a separate **IIFE** bundle for `<script>` tags.
+
+### Structural changes
+
+| Area | Change |
+|------|--------|
+| Deleted | `Gruntfile.cjs`, `karma.conf.js`, `karma.coverage.conf.cjs`, `karma.debug.conf.js`, `scripts/karma-strip-exports.cjs`, `scripts/karma-chrome-bin.js`, all of `test/spec/`, all of `test/mock/` |
+| Added | `build.js` (esbuild → `splainer-search.js` IIFE, `globalName: 'SplainerSearch'`), `index.js` (barrel re-exports), `shims/urijs-global.js` (IIFE maps `import URI from 'urijs'` → `globalThis.URI`) |
+| `package.json` | `"type": "module"`, `"main": "index.js"`, `"exports"` for `"."` and `"./splainer-search.js"`; **Angular removed** from dependencies; `npm test` → `vitest run`; `test:ci` → ESLint + Vitest + integration |
+| Vitest | Karma specs and migration-safety coverage **ported** into `test/vitest/` (41 files; **547** tests passing, **2** skipped as of 2026-04-05) |
+| Stryker | Remains on `@stryker-mutator/vitest-runner` |
+
+### Behavioral / consumer impacts (semver-relevant)
+
+| Topic | Detail |
+|-------|--------|
+| **npm / Node consumers** | Default entry is **`index.js` (ESM)**. Import named exports (`import { createFetchClient } from 'splainer-search'`, etc.). CommonJS `require()` of this package is **not** supported unless you add a separate CJS build (none shipped here). |
+| **Browser `<script>` consumers** | Run `npm run build` (or use the prebuilt `splainer-search.js` included in published `files`). The IIFE exposes **`globalThis.SplainerSearch`**. **URI.js** must be loaded first so `globalThis.URI` exists (see `shims/urijs-global.js`). |
+| **Compared to pre-migration Grunt bundle** | No runtime `export` stripping; ESM sources are first-class. IIFE shape is esbuild-generated (namespace object) rather than hand-concat — verify any code that reached into globals. |
+| **Tests / CI** | No Chrome/Karma; CI is Node + Vitest + jsdom where needed + integration script. |
+
+**Behavioral changes in search/HTTP logic:** None introduced by Phase 4b itself — this phase is tooling, packaging, and test relocation.
+
+---
+
+## Phase 4c — Remove `$sce` from the JSONP transport
+
+### Summary
+
+Angular’s strict contextual escaping (`$sce`) is no longer used anywhere. JSONP URLs are treated as **ordinary strings** end-to-end.
+
+### Source / API changes
+
+| File | Change |
+|------|--------|
+| `factories/httpJsonpTransportFactory.js` | Signature is `HttpJsonpTransportFactory(TransportFactory, httpClient)` — **`$sce` removed**; no `trustAsResourceUrl` call. |
+| `services/httpClient.js` | `jsonp()` no longer coerces non-string URLs via `.toString()` (that path existed for SCE-wrapped values). |
+| `test/vitest/helpers/serviceFactory.js` | Test wiring helpers no longer take a `$sce` argument when building JSONP/search stacks. |
+
+### Behavioral notes
+
+- **Typical Solr/OpenSearch JSONP** already used string URLs — **no change** for those callers.
+- **Custom integrations** that passed Angular `$sce` trusted URL objects into JSONP must now pass a **string** (e.g. unwrap before calling the transport).
+
+---
+
+## Appendix — Correctness fixes shipped on `splainer-rewrite` (not only “Angular removal”)
+
+The branch contains **behavior-changing bug fixes** relative to older line releases (see git history on `splainer-rewrite`, e.g. `0803b0c`, `b1ea256`, `10ad14b`, `eb2e09d`, `d3adade`, `7446e52`). Themes include: field / highlight handling, timed query array mutation, `explainOther` side effects and promise completion, empty Elasticsearch result edge cases, bulk/timer lifecycle, safer JSON header parsing, and URL encoding. **Upgrading for the migration may therefore change observable results** even where HTTP and Angular are unrelated — treat release notes + this appendix as signal to re-validate explain, resolver, and search edge cases.
 
 ---

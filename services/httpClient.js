@@ -86,13 +86,12 @@ export function createFetchClient(options) {
    * Appends a callback parameter to the URL, injects a <script> tag, and
    * resolves the promise when the server invokes the callback with data.
    * Matches Angular's $http.jsonp() behavior and response shape.
+   *
+   * @param {string} url - Request URL (must be a string; Angular `$sce` wrappers are not supported).
+   * @param {Object} [config]
+   * @param {string} [config.jsonpCallbackParam] - Query parameter name for the callback (default `callback`).
    */
   function jsonp(url, config) {
-    // Angular's $sce.trustAsResourceUrl wraps the URL in an object; unwrap it.
-    if (url && typeof url !== 'string' && typeof url.toString === 'function') {
-      url = url.toString();
-    }
-
     if (_jsonpRequest) {
       return _jsonpRequest(url, config);
     }

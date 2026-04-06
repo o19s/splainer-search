@@ -190,102 +190,102 @@ export function getHttpPostTransportFactory(httpClient) {
   return HttpPostTransportFactory(getTransportConstructor(), httpClient);
 }
 
-export function getHttpJsonpTransportFactory(httpClient, $sce) {
-  return HttpJsonpTransportFactory(getTransportConstructor(), httpClient, $sce || null);
+export function getHttpJsonpTransportFactory(httpClient) {
+  return HttpJsonpTransportFactory(getTransportConstructor(), httpClient);
 }
 
 export function getBulkTransportFactory(httpClient) {
   return BulkTransportFactory(getTransportConstructor(), httpClient, getUtilsSvc());
 }
 
-export function getHttpProxyTransportFactory(httpClient, $sce) {
+export function getHttpProxyTransportFactory(httpClient) {
   var BaseTransport = getTransportConstructor();
-  var JsonpFactory = HttpJsonpTransportFactory(BaseTransport, httpClient, $sce || null);
+  var JsonpFactory = HttpJsonpTransportFactory(BaseTransport, httpClient);
   return HttpProxyTransportFactory(BaseTransport, JsonpFactory);
 }
 
-export function getTransportSvc(httpClient, $sce) {
+export function getTransportSvc(httpClient) {
   var BaseTransport = getTransportConstructor();
   var PostFactory = HttpPostTransportFactory(BaseTransport, httpClient);
   var GetFactory = HttpGetTransportFactory(BaseTransport, httpClient);
-  var JsonpFactory = HttpJsonpTransportFactory(BaseTransport, httpClient, $sce || null);
+  var JsonpFactory = HttpJsonpTransportFactory(BaseTransport, httpClient);
   var BulkFactory = BulkTransportFactory(BaseTransport, httpClient, getUtilsSvc());
   var ProxyFactory = HttpProxyTransportFactory(BaseTransport, JsonpFactory);
   return new transportSvcConstructor(PostFactory, GetFactory, JsonpFactory, BulkFactory, ProxyFactory);
 }
 
 // ── Searcher factory constructors (match Angular DI registration order) ──
-export function getSolrSearcherConstructor(httpClient, $sce) {
+export function getSolrSearcherConstructor(httpClient) {
   // SolrSearcherFactory(SolrDocFactory, SearcherFactory, transportSvc, activeQueries,
   //                     defaultSolrConfig, solrSearcherPreprocessorSvc, esUrlSvc, utilsSvc)
   return SolrSearcherFactory(
     getSolrDocConstructor(), getSearcherConstructor(),
-    getTransportSvc(httpClient, $sce), activeQueries,
+    getTransportSvc(httpClient), activeQueries,
     defaultSolrConfig, getSolrSearcherPreprocessorSvc(),
     getEsUrlSvc(), getUtilsSvc()
   );
 }
 
-export function getEsSearcherConstructor(httpClient, $sce) {
+export function getEsSearcherConstructor(httpClient) {
   // EsSearcherFactory(httpClient, EsDocFactory, activeQueries,
   //                   esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory,
   //                   transportSvc, utilsSvc)
   return EsSearcherFactory(
     httpClient, getEsDocConstructor(), activeQueries,
     getEsSearcherPreprocessorSvc(), getEsUrlSvc(),
-    getSearcherConstructor(), getTransportSvc(httpClient, $sce),
+    getSearcherConstructor(), getTransportSvc(httpClient),
     getUtilsSvc()
   );
 }
 
-export function getVectaraSearcherConstructor(httpClient, $sce) {
+export function getVectaraSearcherConstructor(httpClient) {
   // VectaraSearcherFactory(VectaraDocFactory, activeQueries,
   //                        vectaraSearcherPreprocessorSvc, vectaraUrlSvc,
   //                        SearcherFactory, transportSvc, utilsSvc)
   return VectaraSearcherFactory(
     getVectaraDocConstructor(), activeQueries,
     getVectaraSearcherPreprocessorSvc(), getVectaraUrlSvc(),
-    getSearcherConstructor(), getTransportSvc(httpClient, $sce),
+    getSearcherConstructor(), getTransportSvc(httpClient),
     getUtilsSvc()
   );
 }
 
-export function getAlgoliaSearcherConstructor(httpClient, $sce) {
+export function getAlgoliaSearcherConstructor(httpClient) {
   // AlgoliaSearcherFactory(AlgoliaDocFactory, activeQueries,
   //                        algoliaSearcherPreprocessorSvc, esUrlSvc,
   //                        SearcherFactory, transportSvc, utilsSvc)
   return AlgoliaSearcherFactory(
     getAlgoliaDocConstructor(), activeQueries,
     getAlgoliaSearcherPreprocessorSvc(), getEsUrlSvc(),
-    getSearcherConstructor(), getTransportSvc(httpClient, $sce),
+    getSearcherConstructor(), getTransportSvc(httpClient),
     getUtilsSvc()
   );
 }
 
-export function getSearchApiSearcherConstructor(httpClient, $sce) {
+export function getSearchApiSearcherConstructor(httpClient) {
   // SearchApiSearcherFactory(SearchApiDocFactory, activeQueries,
   //                          searchApiSearcherPreprocessorSvc, esUrlSvc,
   //                          SearcherFactory, transportSvc, utilsSvc)
   return SearchApiSearcherFactory(
     getSearchApiDocConstructor(), activeQueries,
     getSearchApiSearcherPreprocessorSvc(), getEsUrlSvc(),
-    getSearcherConstructor(), getTransportSvc(httpClient, $sce),
+    getSearcherConstructor(), getTransportSvc(httpClient),
     getUtilsSvc()
   );
 }
 
 // ── searchSvc (needs searcher factories) ──────────
-export function getSearchSvc(httpClient, $sce) {
+export function getSearchSvc(httpClient) {
   // searchSvcConstructor(SolrSearcherFactory, EsSearcherFactory,
   //                      VectaraSearcherFactory, AlgoliaSearcherFactory,
   //                      SearchApiSearcherFactory, activeQueries,
   //                      defaultSolrConfig, customHeadersJson, utilsSvc)
   return new searchSvcConstructor(
-    getSolrSearcherConstructor(httpClient, $sce),
-    getEsSearcherConstructor(httpClient, $sce),
-    getVectaraSearcherConstructor(httpClient, $sce),
-    getAlgoliaSearcherConstructor(httpClient, $sce),
-    getSearchApiSearcherConstructor(httpClient, $sce),
+    getSolrSearcherConstructor(httpClient),
+    getEsSearcherConstructor(httpClient),
+    getVectaraSearcherConstructor(httpClient),
+    getAlgoliaSearcherConstructor(httpClient),
+    getSearchApiSearcherConstructor(httpClient),
     activeQueries,
     defaultSolrConfig,
     getCustomHeadersJson(),
@@ -293,23 +293,23 @@ export function getSearchSvc(httpClient, $sce) {
   );
 }
 
-export function getSettingsValidatorFactory(httpClient, $sce) {
+export function getSettingsValidatorFactory(httpClient) {
   return SettingsValidatorFactory(
     getFieldSpecSvc(),
-    getSearchSvc(httpClient, $sce),
+    getSearchSvc(httpClient),
     getUtilsSvc()
   );
 }
 
-export function getResolverFactory(httpClient, $sce) {
+export function getResolverFactory(httpClient) {
   return ResolverFactory(
-    getSearchSvc(httpClient, $sce),
+    getSearchSvc(httpClient),
     getSolrUrlSvc(),
     getNormalDocsSvc(),
     getUtilsSvc()
   );
 }
 
-export function getDocResolverSvc(httpClient, $sce) {
-  return new docResolverSvcConstructor(getResolverFactory(httpClient, $sce));
+export function getDocResolverSvc(httpClient) {
+  return new docResolverSvcConstructor(getResolverFactory(httpClient));
 }

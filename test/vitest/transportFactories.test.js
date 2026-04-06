@@ -22,7 +22,6 @@ function mockFetch(status, body) {
 }
 
 // Build a real TransportFactory constructor, then pass it + httpClient to each factory.
-// Extra args (e.g. $sce for JSONP) are forwarded.
 function buildTransport(FactoryFn, httpClient) {
   var BaseTransport = TransportFactory();
   var extraArgs = Array.prototype.slice.call(arguments, 2);
@@ -154,7 +153,7 @@ describe('HttpJsonpTransportFactory', function () {
       fetch: function () { throw new Error('fetch should not be called'); },
       jsonpRequest: jsonpSpy,
     });
-    var Transport = buildTransport(HttpJsonpTransportFactory, client, null);
+    var Transport = buildTransport(HttpJsonpTransportFactory, client);
     var transport = new Transport();
 
     var result = await transport.query('http://solr.example.com/select?q=*:*', {}, {});
@@ -176,7 +175,7 @@ describe('HttpJsonpTransportFactory', function () {
       fetch: function () { throw new Error('fetch should not be called'); },
       jsonpRequest: jsonpSpy,
     });
-    var Transport = buildTransport(HttpJsonpTransportFactory, client, null);
+    var Transport = buildTransport(HttpJsonpTransportFactory, client);
     var transport = new Transport();
     var headers = { Authorization: 'Basic ' + btoa('admin:secret/w') };
 
@@ -184,6 +183,29 @@ describe('HttpJsonpTransportFactory', function () {
 
     var calledUrl = jsonpSpy.mock.calls[0][0];
     var expectedPrefix = 'https://admin:' + encodeURIComponent('secret/w') + '@search.example.com/solr/select';
+    expect(calledUrl).toBe(expectedPrefix);
+  });
+
+  it('embeds Basic auth when the password contains a colon', async function () {
+    var jsonpSpy = vi.fn().mockResolvedValue({
+      data: {},
+      status: 200,
+      statusText: 'OK',
+    });
+    var client = createFetchClient({
+      fetch: function () { throw new Error('fetch should not be called'); },
+      jsonpRequest: jsonpSpy,
+    });
+    var Transport = buildTransport(HttpJsonpTransportFactory, client);
+    var transport = new Transport();
+    var password = 'part1:part2';
+    var headers = { Authorization: 'Basic ' + btoa('admin:' + password) };
+
+    await transport.query('https://search.example.com/solr/select', {}, headers);
+
+    var calledUrl = jsonpSpy.mock.calls[0][0];
+    var expectedPrefix =
+      'https://admin:' + encodeURIComponent(password) + '@search.example.com/solr/select';
     expect(calledUrl).toBe(expectedPrefix);
   });
 
@@ -197,7 +219,7 @@ describe('HttpJsonpTransportFactory', function () {
       fetch: function () { throw new Error('fetch should not be called'); },
       jsonpRequest: jsonpSpy,
     });
-    var Transport = buildTransport(HttpJsonpTransportFactory, client, null);
+    var Transport = buildTransport(HttpJsonpTransportFactory, client);
     var transport = new Transport();
 
     await transport.query('https://example.com/solr/select', {}, {});
