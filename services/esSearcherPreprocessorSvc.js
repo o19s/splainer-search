@@ -91,13 +91,7 @@ export function esSearcherPreprocessorSvcConstructor(queryTemplateSvc, defaultES
   };
 
   function prepare(searcher) {
-    if (searcher.config === undefined) {
-      searcher.config = defaultESConfig;
-    } else {
-      // make sure config params that weren't passed through are set from
-      // the default config object.
-      searcher.config = utilsSvc.deepMerge({}, defaultESConfig, searcher.config);
-    }
+    utilsSvc.mergeSearcherConfig(searcher, defaultESConfig);
 
     if (searcher.config.apiMethod === 'POST') {
       preparePostRequest(searcher);

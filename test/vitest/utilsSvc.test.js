@@ -217,6 +217,25 @@ describe('utilsSvc', () => {
     });
   });
 
+  describe('mergeSearcherConfig', () => {
+    it('assigns default config by reference when searcher.config is undefined', () => {
+      var utilsSvc = createUtilsSvc();
+      var defaults = { a: 1, b: 2 };
+      var searcher = {};
+      utilsSvc.mergeSearcherConfig(searcher, defaults);
+      expect(searcher.config).toBe(defaults);
+    });
+
+    it('deep-merges partial config over defaults', () => {
+      var utilsSvc = createUtilsSvc();
+      var defaults = { a: 1, b: 2, nested: { x: 0 } };
+      var searcher = { config: { b: 99, nested: { y: 1 } } };
+      utilsSvc.mergeSearcherConfig(searcher, defaults);
+      expect(searcher.config).toEqual({ a: 1, b: 99, nested: { x: 0, y: 1 } });
+      expect(searcher.config).not.toBe(defaults);
+    });
+  });
+
   describe('ensureUrlHasProtocol', () => {
     it('leaves http and https URLs unchanged', () => {
       var utilsSvc = createUtilsSvc();

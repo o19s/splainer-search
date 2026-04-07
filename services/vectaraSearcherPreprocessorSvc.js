@@ -34,13 +34,7 @@ export function vectaraSearcherPreprocessorSvcConstructor(
   };
 
   function prepare(searcher) {
-    if (searcher.config === undefined) {
-      searcher.config = defaultVectaraConfig;
-    } else {
-      // make sure config params that weren't passed through are set from
-      // the default config object.
-      searcher.config = utilsSvc.deepMerge({}, defaultVectaraConfig, searcher.config);
-    }
+    utilsSvc.mergeSearcherConfig(searcher, defaultVectaraConfig);
 
     preparePostRequest(searcher);
   }

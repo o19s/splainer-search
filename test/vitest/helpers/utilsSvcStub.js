@@ -57,6 +57,14 @@ export function deepMerge(target /*, ...sources */) {
   return target;
 }
 
+export function mergeSearcherConfig(searcher, defaultConfig) {
+  if (searcher.config === undefined) {
+    searcher.config = defaultConfig;
+  } else {
+    searcher.config = deepMerge({}, defaultConfig, searcher.config);
+  }
+}
+
 var HAS_HTTP_OR_HTTPS_PROTOCOL = /^https{0,1}:/;
 
 export function ensureUrlHasProtocol(url) {
@@ -71,5 +79,6 @@ export default {
   deepClone,
   copyOnto,
   deepMerge,
+  mergeSearcherConfig,
   ensureUrlHasProtocol,
 };

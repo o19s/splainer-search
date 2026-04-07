@@ -2,7 +2,8 @@
 
 /**
  * Utility helpers for iteration, deep-cloning, deep-merging plain data
- * (configs, Solr/ES/Vectara response shapes), and normalizing scheme-less URLs.
+ * (configs, Solr/ES/Vectara response shapes), normalizing scheme-less URLs,
+ * and applying default searcher config in preprocessors.
  *
  * These were originally thin shims over Angular's `forEach`, `copy`, and `merge`.
  * They now use native JS — no Angular dependency required.
@@ -109,6 +110,25 @@ export function utilsSvcFactory() {
     return target;
   }
 
+  /**
+   * Fills in `searcher.config` from defaults when it is missing; otherwise
+   * deep-merges so caller-supplied fields win and unspecified fields come from
+   * `defaultConfig` (same as `deepMerge({}, defaultConfig, searcher.config)`).
+   *
+   * When `searcher.config` is `undefined`, assigns the `defaultConfig` reference
+   * (no clone), matching prior preprocessor behavior.
+   *
+   * @param {{ config?: Object }} searcher
+   * @param {Object} defaultConfig
+   */
+  function mergeSearcherConfig(searcher, defaultConfig) {
+    if (searcher.config === undefined) {
+      searcher.config = defaultConfig;
+    } else {
+      searcher.config = deepMerge({}, defaultConfig, searcher.config);
+    }
+  }
+
   var HAS_HTTP_OR_HTTPS_PROTOCOL = /^https{0,1}:/;
 
   /**
@@ -130,6 +150,7 @@ export function utilsSvcFactory() {
     deepClone: deepClone,
     copyOnto: copyOnto,
     deepMerge: deepMerge,
+    mergeSearcherConfig: mergeSearcherConfig,
     ensureUrlHasProtocol: ensureUrlHasProtocol,
   };
 }

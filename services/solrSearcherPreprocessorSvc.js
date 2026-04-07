@@ -65,13 +65,7 @@ export function solrSearcherPreprocessorSvcConstructor(
   };
 
   function prepare(searcher) {
-    if (searcher.config === undefined) {
-      searcher.config = defaultSolrConfig;
-    } else {
-      // make sure config params that weren't passed through are set from
-      // the default config object.
-      searcher.config = utilsSvc.deepMerge({}, defaultSolrConfig, searcher.config);
-    }
+    utilsSvc.mergeSearcherConfig(searcher, defaultSolrConfig);
 
     searcher.callUrl = buildCallUrl(searcher);
 
