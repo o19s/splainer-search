@@ -57,9 +57,19 @@ export function deepMerge(target /*, ...sources */) {
   return target;
 }
 
+var HAS_HTTP_OR_HTTPS_PROTOCOL = /^https{0,1}:/;
+
+export function ensureUrlHasProtocol(url) {
+  if (!HAS_HTTP_OR_HTTPS_PROTOCOL.test(url)) {
+    return 'http://' + url;
+  }
+  return url;
+}
+
 export default {
   safeForEach,
   deepClone,
   copyOnto,
   deepMerge,
+  ensureUrlHasProtocol,
 };

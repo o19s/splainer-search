@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 export function SearcherFactory() {
   var Searcher = function (options, preprocessor) {
     var self = this;

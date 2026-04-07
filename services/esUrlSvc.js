@@ -19,26 +19,12 @@ export function esUrlSvcConstructor(customHeadersJson, utilsSvc) {
 
   /**
    *
-   * private method fixURLProtocol
-   * Adds 'http://' to the beginning of the URL if no protocol was specified.
-   *
-   */
-  var protocolRegex = /^https{0,1}:/;
-  function fixURLProtocol(url) {
-    if (!protocolRegex.test(url)) {
-      url = 'http://' + url;
-    }
-    return url;
-  }
-
-  /**
-   *
    * Parses an ES URL of the form [http|https]://[username@password:][host][:port]/[collectionName]/_search
    * Splits up the different parts of the URL.
    *
    */
   function parseUrl(url) {
-    url = fixURLProtocol(url);
+    url = utilsSvc.ensureUrlHasProtocol(url);
     var a = new URI(url);
 
     var esUri = {

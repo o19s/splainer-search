@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * Utility helpers for iteration, deep-cloning, and deep-merging plain data
- * (configs, Solr/ES/Vectara response shapes).
+ * Utility helpers for iteration, deep-cloning, deep-merging plain data
+ * (configs, Solr/ES/Vectara response shapes), and normalizing scheme-less URLs.
  *
  * These were originally thin shims over Angular's `forEach`, `copy`, and `merge`.
  * They now use native JS — no Angular dependency required.
@@ -109,11 +109,28 @@ export function utilsSvcFactory() {
     return target;
   }
 
+  var HAS_HTTP_OR_HTTPS_PROTOCOL = /^https{0,1}:/;
+
+  /**
+   * Prefixes `http://` when the string has no `http:` or `https:` scheme.
+   * Used before parsing scheme-less URLs (Solr/ES host-only input).
+   *
+   * @param {string} url
+   * @returns {string}
+   */
+  function ensureUrlHasProtocol(url) {
+    if (!HAS_HTTP_OR_HTTPS_PROTOCOL.test(url)) {
+      return 'http://' + url;
+    }
+    return url;
+  }
+
   return {
     safeForEach: safeForEach,
     deepClone: deepClone,
     copyOnto: copyOnto,
     deepMerge: deepMerge,
+    ensureUrlHasProtocol: ensureUrlHasProtocol,
   };
 }
 

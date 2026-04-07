@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 export function DocFactory(utilsSvc) {
   var Doc = function (doc, opts) {
     var self = this;
@@ -51,7 +49,6 @@ export function DocFactory(utilsSvc) {
   }
 
   function fieldsProperty() {
-    /*jslint validthis:true*/
     var self = this;
     return self[self.fieldsAttrName()];
   }

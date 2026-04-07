@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 export function VectaraDocFactory(vectaraUrlSvc, DocFactory, utilsSvc) {
   const Doc = function (doc, options) {
     DocFactory.call(this, doc, options);
@@ -31,7 +29,6 @@ export function VectaraDocFactory(vectaraUrlSvc, DocFactory, utilsSvc) {
   }
 
   function origin() {
-    /*jslint validthis:true*/
     var self = this;
 
     var src = {};
@@ -47,7 +44,6 @@ export function VectaraDocFactory(vectaraUrlSvc, DocFactory, utilsSvc) {
   }
 
   function fieldsProperty() {
-    /*jslint validthis:true*/
     const self = this;
     const metadata = self.metadata || [];
     return metadata.reduce(function (map, obj) {

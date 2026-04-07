@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 export function AlgoliaDocFactory(DocFactory, utilsSvc) {
   const Doc = function (doc, options) {
     DocFactory.call(this, doc, options);
@@ -37,7 +35,6 @@ export function AlgoliaDocFactory(DocFactory, utilsSvc) {
   }
 
   function origin() {
-    /*jslint validthis:true*/
     var self = this;
 
     var src = {};
@@ -51,7 +48,6 @@ export function AlgoliaDocFactory(DocFactory, utilsSvc) {
   }
 
   function fieldsProperty() {
-    /*jslint validthis:true*/
     const self = this;
     return self;
   }

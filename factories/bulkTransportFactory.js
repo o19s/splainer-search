@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 /**
  * Headers for Elasticsearch `_msearch` (NDJSON) POST bodies.
  * Sets `Content-Type: application/x-ndjson` when the caller did not supply

@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 export function SettingsValidatorFactory(fieldSpecSvc, searchSvc, utilsSvc) {
   var Validator = function (settings) {
     var self = this;

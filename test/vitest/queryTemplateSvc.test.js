@@ -265,4 +265,31 @@ describe('queryTemplateSvc', () => {
       expect(result.outer.inner[1]).toEqual('static');
     });
   });
+
+  describe('hydrateSearchQuery', () => {
+    it('returns object queryText unchanged when objectOverride is default', () => {
+      var queryTemplateSvc = createQueryTemplateSvc();
+      var dsl = { query: { match_all: {} } };
+      var args = { q: '#$query##' };
+      var out = queryTemplateSvc.hydrateSearchQuery(null, args, dsl);
+      expect(out).toBe(dsl);
+    });
+
+    it('escapes backslashes and quotes then hydrates string queryText', () => {
+      var queryTemplateSvc = createQueryTemplateSvc();
+      var args = { q: '#$query##' };
+      var out = queryTemplateSvc.hydrateSearchQuery({ foo: 1 }, args, 'a"b\\c');
+      expect(out.q).toBe('a\\"b\\\\c');
+    });
+
+    it('with escapeQuery false, does not escape quotes in query string', () => {
+      var queryTemplateSvc = createQueryTemplateSvc();
+      var args = { q: '#$query##' };
+      var out = queryTemplateSvc.hydrateSearchQuery(null, args, 'say "hi"', {
+        objectOverride: false,
+        escapeQuery: false,
+      });
+      expect(out.q).toBe('say "hi"');
+    });
+  });
 });

@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 import { isAbortError, transportRequestOpts } from '../services/transportRequestOpts.js';
 
 export function SearchApiSearcherFactory(
@@ -25,7 +23,6 @@ export function SearchApiSearcherFactory(
   Searcher.prototype.search = search;
 
   function addDocToGroup(_groupedBy, _group, _searchApiDoc) {
-    /*jslint validthis:true*/
     console.log('addDocToGroup');
   }
 
@@ -33,7 +30,6 @@ export function SearchApiSearcherFactory(
   // next page (see esSearcherFactory, solrSearcherFactory, algoliaSearchFactory). Search
   // API has no pager implementation yet; return null for the same contract.
   function pager() {
-    /*jslint validthis:true*/
     console.log('Pager');
     return null;
   }
@@ -41,7 +37,6 @@ export function SearchApiSearcherFactory(
   // search (execute the query) and produce results
   // to the returned future
   function search() {
-    /*jslint validthis:true*/
     const self = this;
     var apiMethod = self.config.apiMethod;
     var proxyUrl = self.config.proxyUrl;

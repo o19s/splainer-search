@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 export function ResolverFactory(searchSvc, solrUrlSvc, normalDocsSvc, utilsSvc) {
   var Resolver = function (ids, settings, chunkSize) {
     var self = this;

@@ -11,10 +11,9 @@ export function vectaraSearcherPreprocessorSvcConstructor(
   self.prepare = prepare;
 
   const replaceQuery = function (qOption, args, queryText) {
-    return queryTemplateSvc.hydrate(args, queryText, {
-      qOption: qOption,
-      encodeURI: false,
-      defaultKw: '\\"\\"',
+    return queryTemplateSvc.hydrateSearchQuery(qOption, args, queryText, {
+      objectOverride: false,
+      escapeQuery: false,
     });
   };
 

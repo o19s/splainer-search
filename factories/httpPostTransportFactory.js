@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 export function HttpPostTransportFactory(TransportFactory, httpClient) {
   var Transport = function (options) {
     TransportFactory.call(this, options);

@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 export function SolrDocFactory(DocFactory, solrUrlSvc, utilsSvc) {
   var Doc = function (doc, options) {
     DocFactory.call(this, doc, options);
@@ -63,13 +61,11 @@ export function SolrDocFactory(DocFactory, solrUrlSvc, utilsSvc) {
   };
 
   function _url(idField, docId) {
-    /*jslint validthis:true*/
     var self = this;
     return buildDocUrl(self.options().fieldList, self.options().url, idField, docId);
   }
 
   function explain(docId) {
-    /*jslint validthis:true*/
     var self = this;
 
     if (Object.hasOwn(self.options().explDict, docId)) {
@@ -80,7 +76,6 @@ export function SolrDocFactory(DocFactory, solrUrlSvc, utilsSvc) {
   }
 
   function snippet(docId, fieldName) {
-    /*jslint validthis:true*/
     var self = this;
 
     if (Object.hasOwn(self.options().hlDict, docId)) {
@@ -93,13 +88,11 @@ export function SolrDocFactory(DocFactory, solrUrlSvc, utilsSvc) {
   }
 
   function origin() {
-    /*jslint validthis:true*/
     var self = this;
     return utilsSvc.deepClone(self.doc);
   }
 
   function highlight(docId, fieldName, preText, postText) {
-    /*jslint validthis:true*/
     var self = this;
     var fieldValue = self.snippet(docId, fieldName);
     var prePat;

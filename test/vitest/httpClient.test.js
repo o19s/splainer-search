@@ -316,6 +316,84 @@ describe('createFetchClient', function () {
       ).rejects.toMatchObject({ name: 'AbortError' });
     });
 
+    it('rejects when script fails to load (onerror)', async function () {
+      var mockHead = {
+        appendChild: vi.fn(function (script) {
+          if (script.onerror) {
+            script.onerror();
+          }
+        }),
+        removeChild: vi.fn(),
+      };
+      var hadDocument = 'document' in globalThis;
+      var origDocument = globalThis.document;
+
+      globalThis.document = {
+        head: mockHead,
+        createElement: function (tag) {
+          if (tag === 'script') {
+            return { parentNode: mockHead, removeChild: vi.fn() };
+          }
+        },
+      };
+
+      try {
+        var client = createFetchClient({ fetch: vi.fn() });
+        await expect(
+          client.jsonp('http://example.com/solr/select?q=*:*', {
+            jsonpCallbackParam: 'callback',
+          }),
+        ).rejects.toEqual({ data: null, status: 0, statusText: '' });
+        expect(mockHead.removeChild).toHaveBeenCalled();
+      } finally {
+        if (hadDocument) {
+          globalThis.document = origDocument;
+        } else {
+          delete globalThis.document;
+        }
+      }
+    });
+
+    it('ignores duplicate JSONP callback invocations after the first', async function () {
+      var mockHead = {
+        appendChild: vi.fn(function (script) {
+          var callbackName = new URL(script.src).searchParams.get('callback');
+          // After the first call, cleanup() deletes globalThis[callbackName], so a
+          // second lookup would be undefined. A repeat invoke must use the same
+          // function reference to exercise the handler’s settled guard.
+          var cb = globalThis[callbackName];
+          cb({ first: true });
+          cb({ second: true });
+        }),
+        removeChild: vi.fn(),
+      };
+      var hadDocument = 'document' in globalThis;
+      var origDocument = globalThis.document;
+
+      globalThis.document = {
+        head: mockHead,
+        createElement: function (tag) {
+          if (tag === 'script') {
+            return { parentNode: mockHead, removeChild: vi.fn() };
+          }
+        },
+      };
+
+      try {
+        var client = createFetchClient({ fetch: vi.fn() });
+        var result = await client.jsonp('http://example.com/solr/select?q=*:*', {
+          jsonpCallbackParam: 'callback',
+        });
+        expect(result.data).toEqual({ first: true });
+      } finally {
+        if (hadDocument) {
+          globalThis.document = origDocument;
+        } else {
+          delete globalThis.document;
+        }
+      }
+    });
+
     it('rejects with AbortError when signal aborts after script is added', async function () {
       var mockHead = {
         appendChild: vi.fn(),

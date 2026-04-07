@@ -6,3 +6,4 @@
 - Run tests on the code you change.
 - Create tests when you write new code that deserves tests.
     - In general, favor writing tests over skipping them.
+- Make sure to highlight any time a change breaks in any way from the behavior provided by the Angular version of Splainer.

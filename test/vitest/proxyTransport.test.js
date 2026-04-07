@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createFetchClient } from '../../services/httpClient.js';
 import { MockHttpBackend } from './helpers/mockHttpBackend.js';
 import { getTransportSvc, getHttpGetTransportFactory } from './helpers/serviceFactory.js';
+import { TransportFactory } from '../../factories/transportFactory.js';
+import { HttpJsonpTransportFactory } from '../../factories/httpJsonpTransportFactory.js';
+import { HttpProxyTransportFactory } from '../../factories/httpProxyTransportFactory.js';
 
 describe('proxyTransport', () => {
   var mockBackend, httpClient, transportSvc, HttpGetTransportFactory;
@@ -72,5 +75,20 @@ describe('proxyTransport', () => {
     mockBackend.expectGET('http://localhost/proxy/' + url).respond(200, mockResultsTemplate);
     await transport.query(url, payload, headers);
     mockBackend.verifyNoOutstandingExpectation();
+  });
+
+  it('throws when HttpProxyTransportFactory wraps a JSONP transport', function () {
+    var baseTransport = TransportFactory();
+    var JsonpTransport = HttpJsonpTransportFactory(baseTransport, httpClient);
+    var ProxyTransport = HttpProxyTransportFactory(baseTransport, JsonpTransport);
+    var innerJsonp = new JsonpTransport({});
+    var proxy = new ProxyTransport({
+      proxyUrl: 'http://localhost/proxy?url=',
+      transport: innerJsonp,
+    });
+
+    expect(function () {
+      proxy.query('http://solr.example/solr/select', {}, {});
+    }).toThrow(/does not make sense to proxy a JSONP connection/i);
   });
 });

@@ -9,21 +9,12 @@ the Appendix of correctness fixes shipped on `splainer-rewrite`.
 
 ## Highlights
 
-- **No AngularJS dependency.** `angular`, `$http`, `$q`, `$timeout`, `$log`,
-  `$sce`, and `angular.module('o19s.splainer-search')` registration are gone.
-- **Native HTTP via `fetch`.** All transports route through
-  `createFetchClient()` (GET/POST = `fetch`, JSONP = dynamic `<script>` tag).
-- **Native `Promise`.** `$q.defer` / `$q()` / `$q.reject` replaced with
-  `new Promise` / `throw`. No digest cycles.
-- **Vitest + ESM tests.** Karma, Grunt, Jasmine specs, and the export-stripping
-  preprocessor are gone. `npm test` runs Vitest; **`npm run test:ci`** adds ESLint and the chunked-resolver integration script. Test and file counts drift — run **`npm test`** for current totals.
-- **esbuild IIFE bundles.** `npm run build` writes **`dist/splainer-search.js`**
-  (`globalThis.SplainerSearch`, 48 named exports) and **`dist/splainer-search-wired.js`**
-  (`globalThis.SplainerSearchWired`, same surface as ESM **`wired.js`**).
-- **`AbortSignal` support.** Pass **`config.signal`** into `createSearcher` options (or
-  `get`/`post` / `createFetchClient` defaults) to cancel in-flight GET/POST; JSONP honours
-  `signal` by removing the script and rejecting with **`AbortError`**. BULK `_msearch`
-  merges batched signals when **`AbortSignal.any`** is available (see **Environment / `AbortSignal.any`** below).
+- **No AngularJS dependency.** `angular`, `$http`, `$q`, `$timeout`, `$log`, `$sce`, and `angular.module('o19s.splainer-search')` registration are gone.
+- **Native HTTP via `fetch`.** All transports route through `createFetchClient()` (GET/POST = `fetch`, JSONP = dynamic `<script>` tag).
+- **Native `Promise`.** `$q.defer` / `$q()` / `$q.reject` replaced with `new Promise` / `throw`. No digest cycles.
+- **Vitest + ESM tests.** Karma, Grunt, Jasmine specs, and the export-stripping preprocessor are gone. `npm test` runs Vitest; **`npm run test:ci`** adds ESLint and the chunked-resolver integration script. Test and file counts drift — run **`npm test`** for current totals.
+- **esbuild IIFE bundles.** `npm run build` writes **`dist/splainer-search.js`** (`globalThis.SplainerSearch`, 48 named exports) and **`dist/splainer-search-wired.js`** (`globalThis.SplainerSearchWired`, same surface as ESM **`wired.js`**).
+- **`AbortSignal` support.** Pass **`config.signal`** into `createSearcher` options (or `get`/`post` / `createFetchClient` defaults) to cancel in-flight GET/POST; JSONP honours `signal` by removing the script and rejecting with **`AbortError`**. BULK `_msearch` merges batched signals when **`AbortSignal.any`** is available (see **Environment / `AbortSignal.any`** below).
 
 ## Breaking changes
 

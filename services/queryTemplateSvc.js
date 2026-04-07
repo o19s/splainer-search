@@ -3,6 +3,7 @@
 export function queryTemplateSvcConstructor() {
   var self = this;
   self.hydrate = hydrate;
+  self.hydrateSearchQuery = hydrateSearchQuery;
 
   var defaultConfig = {
     encodeURI: false,
@@ -132,6 +133,46 @@ export function queryTemplateSvcConstructor() {
     }
 
     return applyTemplating(template, parameters);
+  }
+
+  /**
+   * Shared path for search preprocessors: optional full-object query override, escape `\` and `"` in string
+   * query text for JSON-safe templates, then {@link hydrate} with the usual `encodeURI` / `defaultKw` defaults.
+   *
+   * @param {*} qOption - Passed through to hydrate as `config.qOption`
+   * @param {*} args - Template root (e.g. searcher.args)
+   * @param {*} queryText - String query or, when `objectOverride` is true, a full DSL object to return as-is
+   * @param {object} [templateOptions]
+   * @param {boolean} [templateOptions.objectOverride=true] - If true, return `queryText` unchanged when it is an object
+   * @param {boolean} [templateOptions.escapeQuery=true] - If true, escape backslashes and double-quotes in string `queryText`
+   * @param {object} [templateOptions.hydrate] - Merged into the hydrate config after defaults (`qOption`, `encodeURI`, `defaultKw`)
+   * @returns {*} Hydrated args or the object override
+   */
+  function hydrateSearchQuery(qOption, args, queryText, templateOptions) {
+    templateOptions = templateOptions || {};
+    const useObjectOverride = templateOptions.objectOverride !== false;
+    const useEscape = templateOptions.escapeQuery !== false;
+
+    if (useObjectOverride && queryText instanceof Object) {
+      return queryText;
+    }
+
+    var qt = queryText;
+    if (useEscape && qt) {
+      qt = qt.replace(/\\/g, '\\\\');
+      qt = qt.replace(/"/g, '\\' + '"');
+    }
+
+    const hydrateConfig = Object.assign(
+      {
+        qOption: qOption,
+        encodeURI: false,
+        defaultKw: '\\' + '"' + '\\' + '"',
+      },
+      templateOptions.hydrate,
+    );
+
+    return hydrate(args, qt, hydrateConfig);
   }
 }
 

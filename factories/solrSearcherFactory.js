@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 import { isAbortError, transportRequestOpts } from '../services/transportRequestOpts.js';
 
 export function SolrSearcherFactory(
@@ -28,7 +26,6 @@ export function SolrSearcherFactory(
   Searcher.prototype.queryDetails = {};
 
   function addDocToGroup(groupedBy, group, solrDoc) {
-    /*jslint validthis:true*/
     var self = this;
 
     if (!Object.hasOwn(self.grouped, groupedBy)) {
@@ -54,7 +51,6 @@ export function SolrSearcherFactory(
   // the next page upon search(). To get the subsequent
   // page, call pager on that searcher ad infinidum
   function pager() {
-    /*jslint validthis:true*/
     var self = this;
     var start = 0;
     var rows = self.config.numberOfRows;
@@ -104,7 +100,6 @@ export function SolrSearcherFactory(
   // search (execute the query) and produce results
   // to the returned future
   function search() {
-    /*jslint validthis:true*/
     var self = this;
     var url = self.callUrl;
     self.inError = false;
@@ -316,7 +311,6 @@ export function SolrSearcherFactory(
   } // end of search()
 
   function explainOther(otherQuery, fieldSpec, defType) {
-    /*jslint validthis:true*/
     var self = this;
 
     var originalArgs = self.args;

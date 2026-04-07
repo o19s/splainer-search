@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 /**
  * JSONP transport delegating to `httpClient.jsonp` (no Angular `$sce`).
  *

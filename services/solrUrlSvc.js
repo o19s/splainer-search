@@ -1,20 +1,8 @@
 'use strict';
 
 export function solrUrlSvcConstructor(utilsSvc) {
-  /* private method fixURLProtocol
-   * add 'http://' to the begining of the url if no protocol was
-   * specified
-   * */
-  var protocolRegex = /^https{0,1}:/;
-  function fixURLProtocol(url) {
-    if (!protocolRegex.test(url)) {
-      url = 'http://' + url;
-    }
-    return url;
-  }
-
   this.buildUrl = function (url, urlArgs) {
-    url = fixURLProtocol(url);
+    url = utilsSvc.ensureUrlHasProtocol(url);
     var baseUrl = url + '?';
     baseUrl += this.formatSolrArgs(urlArgs);
     return baseUrl;
@@ -102,7 +90,7 @@ export function solrUrlSvcConstructor(utilsSvc) {
    * return null on failure to parse
    * */
   this.parseSolrUrl = function (solrReq) {
-    solrReq = fixURLProtocol(solrReq);
+    solrReq = utilsSvc.ensureUrlHasProtocol(solrReq);
     var parseUrl = function (url) {
       // this is the crazy way you parse URLs in JS who am I to question the wisdom
       var a = document.createElement('a');

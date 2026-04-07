@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 export function EsDocFactory(esUrlSvc, DocFactory, utilsSvc) {
   var Doc = function (doc, options) {
     DocFactory.call(this, doc, options);
@@ -38,7 +36,6 @@ export function EsDocFactory(esUrlSvc, DocFactory, utilsSvc) {
   Doc.prototype.highlight = highlight;
 
   function _url() {
-    /*jslint validthis:true*/
     var self = this;
     var doc = self.doc;
     var esurl = self.options().url;
@@ -48,22 +45,17 @@ export function EsDocFactory(esUrlSvc, DocFactory, utilsSvc) {
   }
 
   function fieldsProperty() {
-    /*jslint validthis:true*/
     var self = this;
     // Bracket notation for ES document keys (_source, fields).
-    /*jslint -W069*/
     return Object.assign({}, self['_source'], self['fields']);
-    /*jslint +W069*/
   }
 
   function explain() {
-    /*jslint validthis:true*/
     var self = this;
     return self.options().explDict;
   }
 
   function snippet(docId, fieldName) {
-    /*jslint validthis:true*/
     var self = this;
 
     if (Object.hasOwn(self.doc, 'highlight')) {
@@ -76,7 +68,6 @@ export function EsDocFactory(esUrlSvc, DocFactory, utilsSvc) {
   }
 
   function origin() {
-    /*jslint validthis:true*/
     var self = this;
 
     // Usually you would return _source, but since we are specifying the
@@ -96,7 +87,6 @@ export function EsDocFactory(esUrlSvc, DocFactory, utilsSvc) {
   }
 
   function highlight(docId, fieldName, preText, postText) {
-    /*jslint validthis:true*/
     var self = this;
     var fieldValue = self.snippet(docId, fieldName);
 

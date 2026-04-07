@@ -216,4 +216,23 @@ describe('utilsSvc', () => {
       expect(source.a.b).toBe(1);
     });
   });
+
+  describe('ensureUrlHasProtocol', () => {
+    it('leaves http and https URLs unchanged', () => {
+      var utilsSvc = createUtilsSvc();
+      expect(utilsSvc.ensureUrlHasProtocol('http://host/solr/c/select')).toBe(
+        'http://host/solr/c/select',
+      );
+      expect(utilsSvc.ensureUrlHasProtocol('https://host/solr/c/select')).toBe(
+        'https://host/solr/c/select',
+      );
+    });
+
+    it('prefixes http when no scheme is present', () => {
+      var utilsSvc = createUtilsSvc();
+      expect(utilsSvc.ensureUrlHasProtocol('localhost:8983/solr/c/select')).toBe(
+        'http://localhost:8983/solr/c/select',
+      );
+    });
+  });
 });

@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 import { isAbortError, transportRequestOpts } from '../services/transportRequestOpts.js';
 
 export function EsSearcherFactory(
@@ -31,7 +29,6 @@ export function EsSearcherFactory(
   Searcher.prototype.renderTemplate = renderTemplate;
 
   function addDocToGroup(groupedBy, group, solrDoc) {
-    /*jslint validthis:true*/
     var self = this;
 
     if (!Object.hasOwn(self.grouped, groupedBy)) {
@@ -57,7 +54,6 @@ export function EsSearcherFactory(
   // the next page upon search(). To get the subsequent
   // page, call pager on that searcher ad infinidum
   function pager() {
-    /*jslint validthis:true*/
     var self = this;
     var pagerArgs = { from: 0, size: self.config.numberOfRows };
     var nextArgs = utilsSvc.deepClone(self.args);
@@ -96,7 +92,6 @@ export function EsSearcherFactory(
   // search (execute the query) and produce results
   // to the returned future
   function search() {
-    /*jslint validthis:true*/
     var self = this;
     var uri = esUrlSvc.parseUrl(self.url);
     var apiMethod = self.config.apiMethod;
@@ -264,7 +259,6 @@ export function EsSearcherFactory(
   } // end of search()
 
   function explainOther(otherQuery) {
-    /*jslint validthis:true*/
     var self = this;
 
     var otherConfig = {
@@ -321,7 +315,6 @@ export function EsSearcherFactory(
   } // end of explainOther()
 
   function explain(doc) {
-    /*jslint validthis:true*/
     var self = this;
     var uri = esUrlSvc.parseUrl(self.url);
     var url = esUrlSvc.buildExplainUrl(uri, doc);
@@ -376,7 +369,6 @@ export function EsSearcherFactory(
   // Templatized queries require us to add a /template to the url.
   // Lots of refactoring between this method and the search() method!
   function renderTemplate() {
-    /*jslint validthis:true*/
     var self = this;
     var uri = esUrlSvc.parseUrl(self.url);
 

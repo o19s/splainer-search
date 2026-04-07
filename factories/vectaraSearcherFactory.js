@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 import { isAbortError, transportRequestOpts } from '../services/transportRequestOpts.js';
 
 export function VectaraSearcherFactory(
@@ -25,7 +23,6 @@ export function VectaraSearcherFactory(
   Searcher.prototype.search = search;
 
   function addDocToGroup(groupedBy, group, vectaraDoc) {
-    /*jslint validthis:true*/
     const self = this;
 
     if (!Object.hasOwn(self.grouped, groupedBy)) {
@@ -51,7 +48,6 @@ export function VectaraSearcherFactory(
   // the next page upon search(). To get the subsequent
   // page, call pager on that searcher
   function pager() {
-    /*jslint validthis:true*/
     const self = this;
     let pagerArgs = {};
     let nextArgs = utilsSvc.deepClone(self.args);
@@ -88,7 +84,6 @@ export function VectaraSearcherFactory(
   // search (execute the query) and produce results
   // to the returned future
   function search() {
-    /*jslint validthis:true*/
     const self = this;
     var apiMethod = 'POST';
     var proxyUrl = self.config.proxyUrl;

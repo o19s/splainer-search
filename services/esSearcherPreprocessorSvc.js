@@ -11,20 +11,7 @@ export function esSearcherPreprocessorSvcConstructor(queryTemplateSvc, defaultES
   self.prepare = prepare;
 
   var replaceQuery = function (qOption, args, queryText) {
-    // Allows full override of query if a JSON friendly format is sent in
-    if (queryText instanceof Object) {
-      return queryText;
-    } else {
-      if (queryText) {
-        queryText = queryText.replace(/\\/g, '\\\\');
-        queryText = queryText.replace(/"/g, '\\' + '"');
-      }
-      return queryTemplateSvc.hydrate(args, queryText, {
-        qOption: qOption,
-        encodeURI: false,
-        defaultKw: '\\' + '"' + '\\' + '"',
-      });
-    }
+    return queryTemplateSvc.hydrateSearchQuery(qOption, args, queryText);
   };
 
   var prepareHighlighting = function (args, fields) {

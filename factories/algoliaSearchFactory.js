@@ -1,7 +1,5 @@
 'use strict';
 
-/*jslint latedef:false*/
-
 import { isAbortError, transportRequestOpts } from '../services/transportRequestOpts.js';
 
 export function AlgoliaSearcherFactory(
@@ -26,7 +24,6 @@ export function AlgoliaSearcherFactory(
   Searcher.prototype.getTransportParameters = getTransportParameters;
 
   function addDocToGroup(_groupedBy, _group, _algoliaDoc) {
-    /*jslint validthis:true*/
     console.log('addDocToGroup');
   }
 
@@ -34,7 +31,6 @@ export function AlgoliaSearcherFactory(
   // the next page upon search(). To get the subsequent
   // page, call pager on that searcher
   function pager() {
-    /*jslint validthis:true*/
     var self = this;
     var page = 0;
     var nextArgs = utilsSvc.deepClone(self.args);
@@ -142,7 +138,6 @@ export function AlgoliaSearcherFactory(
   // search (execute the query) and produce results
   // to the returned future
   function search() {
-    /*jslint validthis:true*/
 
     const self = this;
     var apiMethod = self.config.apiMethod;
