@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, beforeEach, afterEach, vi } from 'vitest';
 import { createFetchClient } from '../../services/httpClient.js';
 import { MockHttpBackend } from './helpers/mockHttpBackend.js';
 import { getTransportSvc } from './helpers/serviceFactory.js';

@@ -38,6 +38,7 @@
   "devDependencies": {
     "@stryker-mutator/core": "^9.6.0",
     "@stryker-mutator/vitest-runner": "^9.6.0",
+    "@vitest/coverage-v8": "^4.1.2",
     "esbuild": "^0.25.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
@@ -50,9 +51,10 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:integration": "node test/integration/chunked-resolver-fetch.integration.js",
     "test:integration:demo": "node test/integration/quepid-demo-endpoints.integration.js",
-    "lint": "eslint 'services/**/*.js' 'factories/**/*.js' 'values/**/*.js'",
+    "lint": "eslint 'index.js' 'build.js' 'services/**/*.js' 'factories/**/*.js' 'values/**/*.js' 'shims/**/*.js' 'test/**/*.js' 'vitest.config.js'",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:ci": "npm run lint && npm run test && npm run test:integration",

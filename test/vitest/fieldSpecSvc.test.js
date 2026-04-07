@@ -41,32 +41,49 @@ describe('fieldSpecSvc', () => {
     var fs = svc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 id:foo_id');
     expect(fs.id).toEqual('foo_id');
     expect(fs.title).toEqual('atitlefield');
+    expect(fs.subs).toContain('subfield1');
+    expect(fs.subs).toContain('subfield2');
   });
 
   it('extracts a thumb property', () => {
     var svc = createFieldSpecSvc();
-    var fs = svc.createFieldSpec('id:foo_id atitlefield thumb:foo_img');
+    var fs = svc.createFieldSpec('id:foo_id atitlefield subfield1 thumb:foo_img subfield2');
+    expect(fs.id).toEqual('foo_id');
+    expect(fs.title).toEqual('atitlefield');
     expect(fs.thumb).toEqual('foo_img');
+    expect(fs.subs).toContain('subfield1');
+    expect(fs.subs).toContain('subfield2');
   });
 
   it('extracts an image property', () => {
     var svc = createFieldSpecSvc();
-    var fs = svc.createFieldSpec('id:foo_id atitlefield image:foo_img');
+    var fs = svc.createFieldSpec('id:foo_id atitlefield subfield1 image:foo_img subfield2');
+    expect(fs.id).toEqual('foo_id');
+    expect(fs.title).toEqual('atitlefield');
     expect(fs.image).toEqual('foo_img');
+    expect(fs.subs).toContain('subfield1');
+    expect(fs.subs).toContain('subfield2');
   });
 
   it('extracts media fields', () => {
     var svc = createFieldSpecSvc();
-    var fs = svc.createFieldSpec('id:foo_id atitlefield media:media1 media:media2');
+    var fs = svc.createFieldSpec('id:foo_id atitlefield subfield1 media:media1 media:media2 subfield2');
+    expect(fs.id).toEqual('foo_id');
+    expect(fs.title).toEqual('atitlefield');
     expect(fs.embeds).toContain('media1');
     expect(fs.embeds).toContain('media2');
+    expect(fs.subs).toContain('subfield1');
+    expect(fs.subs).toContain('subfield2');
   });
 
   it('extracts translations fields', () => {
     var svc = createFieldSpecSvc();
     var fs = svc.createFieldSpec('id:foo_id atitlefield subfield1 translate:subfield2');
-    expect(fs.translations).toContain('subfield2');
+    expect(fs.id).toEqual('foo_id');
+    expect(fs.title).toEqual('atitlefield');
+    expect(fs.subs).toContain('subfield1');
     expect(fs.subs).not.toContain('subfield2');
+    expect(fs.translations).toContain('subfield2');
   });
 
   it('extracts unabridged fields', () => {
@@ -74,8 +91,11 @@ describe('fieldSpecSvc', () => {
     var fs = svc.createFieldSpec('id:foo_id atitlefield subfield1 unabridged:subfield2');
     // NB: current code stores these in `unabridgeds` (plural) — main had a
     // `hasOwnProperty('unabridged')` typo that this branch fixed.
-    expect(fs.unabridgeds).toContain('subfield2');
+    expect(fs.id).toEqual('foo_id');
+    expect(fs.title).toEqual('atitlefield');
+    expect(fs.subs).toContain('subfield1');
     expect(fs.subs).not.toContain('subfield2');
+    expect(fs.unabridgeds).toContain('subfield2');
   });
 
   it('gets plain field list', () => {
@@ -152,6 +172,8 @@ describe('fieldSpecSvc', () => {
     var svc = createFieldSpecSvc();
     var fs = svc.createFieldSpec('*,score');
     expect(fs.subs).toEqual('*');
+    expect(fs.id).toEqual('id');
+    expect(fs.title).toEqual('id');
     expect(fs.fieldList()).toEqual('*');
   });
 
@@ -176,6 +198,7 @@ describe('fieldSpecSvc', () => {
     var fs = svc.createFieldSpec('catch_line,text,function:someFunctionQuery');
     expect(fs.subs).toContain('text');
     expect(fs.functions).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fs.id).toEqual('id');
     expect(fs.title).toEqual('catch_line');
     var fl = fs.fieldList();
     expect(fl).toContain('someFunctionQuery:$someFunctionQuery');
@@ -184,18 +207,46 @@ describe('fieldSpecSvc', () => {
   });
 
   it('tolerates $ in function field name', () => {
+    // Integration check: a `$`-prefixed function name must coexist correctly
+    // with id/title/sub parsing — i.e. the parser must not let the `$` leak
+    // into the title/sub branch.
     var svc = createFieldSpecSvc();
     var fs = svc.createFieldSpec('catch_line,text,function:$someFunctionQuery');
+    expect(fs.subs).toContain('text');
     expect(fs.functions).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fs.id).toEqual('id');
+    expect(fs.title).toEqual('catch_line');
+
+    var fieldList = fs.fieldList();
+    expect(fieldList).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fieldList).toContain('text');
+    expect(fieldList).toContain('catch_line');
   });
 
   it('respects function aliases (func: and f:)', () => {
+    // Both `func:` and `f:` must produce the same canonical
+    // `name:$name` form *and* leave the rest of the spec parsing intact.
     var svc = createFieldSpecSvc();
+
     var fs1 = svc.createFieldSpec('catch_line,text,func:someFunctionQuery');
+    expect(fs1.subs).toContain('text');
     expect(fs1.functions).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fs1.id).toEqual('id');
+    expect(fs1.title).toEqual('catch_line');
+    var fl1 = fs1.fieldList();
+    expect(fl1).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fl1).toContain('text');
+    expect(fl1).toContain('catch_line');
 
     var fs2 = svc.createFieldSpec('catch_line,text,f:someFunctionQuery');
+    expect(fs2.subs).toContain('text');
     expect(fs2.functions).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fs2.id).toEqual('id');
+    expect(fs2.title).toEqual('catch_line');
+    var fl2 = fs2.fieldList();
+    expect(fl2).toContain('someFunctionQuery:$someFunctionQuery');
+    expect(fl2).toContain('text');
+    expect(fl2).toContain('catch_line');
   });
 
   it('allows periods in a field name', () => {
@@ -208,9 +259,11 @@ describe('fieldSpecSvc', () => {
   it('respects escaping periods by wrapping in quotes', () => {
     var svc = createFieldSpecSvc();
     var fs1 = svc.createFieldSpec('id:foo_id, "foo.bar"');
+    expect(fs1.id).toEqual('foo_id');
     expect(fs1.fieldList()).toContain('"foo.bar"');
 
     var fs2 = svc.createFieldSpec("id:foo_id, 'foo.bar'");
+    expect(fs2.id).toEqual('foo_id');
     expect(fs2.fieldList()).toContain("'foo.bar'");
   });
 
@@ -226,6 +279,8 @@ describe('fieldSpecSvc', () => {
   it('handles json definition for images', () => {
     var svc = createFieldSpecSvc();
     var fs = svc.createFieldSpec('id:foo_id atitlefield {"name": "image_url", "type":"image", "prefix": "http://example.org/images", "height": 250} subfield2');
+    expect(fs.id).toEqual('foo_id');
+    expect(fs.title).toEqual('atitlefield');
     expect(fs.image).toContain('image_url');
     expect(fs.image_options).toEqual({ prefix: 'http://example.org/images', height: 250 });
     expect(fs.subs).toContain('subfield2');
@@ -234,6 +289,8 @@ describe('fieldSpecSvc', () => {
   it('handles json definition for thumb', () => {
     var svc = createFieldSpecSvc();
     var fs = svc.createFieldSpec('id:foo_id atitlefield {"name": "image_url", "type":"thumb", "prefix": "http://example.org/thumbs", "height": 250} subfield2');
+    expect(fs.id).toEqual('foo_id');
+    expect(fs.title).toEqual('atitlefield');
     expect(fs.thumb).toContain('image_url');
     expect(fs.thumb_options).toEqual({ prefix: 'http://example.org/thumbs', height: 250 });
     expect(fs.subs).toContain('subfield2');

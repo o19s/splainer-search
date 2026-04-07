@@ -68,7 +68,7 @@ export function ResolverFactory(searchSvc, solrUrlSvc, normalDocsSvc, utilsSvc) 
     };
 
     // Only set optional config values when they are defined in settings,
-    // so that undefined values do not clobber defaults during angular.merge.
+    // so that undefined values do not clobber defaults when the config is merged.
     var optionalKeys = ['version', 'proxyUrl', 'customHeaders', 'basicAuthCredential', 'apiMethod'];
     utilsSvc.safeForEach(optionalKeys, function (key) {
       if (self.settings[key] !== undefined) {
@@ -138,6 +138,7 @@ export function ResolverFactory(searchSvc, solrUrlSvc, normalDocsSvc, utilsSvc) 
         return Promise.all(promises)
           .then(function (docsChunk) {
             self.docs = self.docs.concat.apply(self.docs, docsChunk);
+            return self.docs;
           })
           .catch(function (response) {
             console.debug('Failed to fetch docs');

@@ -186,11 +186,20 @@ describe('createFetchClient', function () {
       var client = createFetchClient(fetchFn);
 
       await expect(client.get('http://unreachable.example.com', { headers: {} }))
-        .rejects.toEqual({
+        .rejects.toMatchObject({
           data: null,
           status: 0,
           statusText: '',
         });
+    });
+
+    it('preserves the original error as `cause` for debugging', async function () {
+      var underlying = new TypeError('Failed to fetch');
+      var fetchFn = function () { return Promise.reject(underlying); };
+      var client = createFetchClient(fetchFn);
+
+      await expect(client.get('http://unreachable.example.com', { headers: {} }))
+        .rejects.toMatchObject({ cause: underlying });
     });
   });
 

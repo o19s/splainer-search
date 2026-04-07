@@ -37,7 +37,7 @@ searcher.search()
     // highlights. You need to pass id as that's how Solr
     // organizes the explain. See below for a friendlier/higher-level
     // interface with normalDocs
-    console.log(doc.highlight(doc.source().id, 'title', '<b>', '</b>');
+    console.log(doc.highlight(doc.source().id, 'title', '<b>', '</b>'));
     // explain info
     console.log(doc.explain(doc.source().id));
   }

@@ -16,6 +16,7 @@ await build({
   outfile: 'splainer-search.js',
   platform: 'browser',
   target: ['es2020'],
+  sourcemap: true,
   // urijs is loaded globally via <script> by IIFE consumers.
   // Map `import URI from 'urijs'` → `globalThis.URI`.
   alias: { urijs: './shims/urijs-global.js' },

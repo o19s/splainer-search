@@ -83,8 +83,11 @@ export function createFetchClient(options) {
           delete err._httpClientError;
           throw err;
         }
-        // Network error (fetch itself rejected, or text() failed)
-        throw { data: null, status: 0, statusText: '' };
+        // Network error (fetch itself rejected, or text() failed).
+        // Preserve the original error via `cause` so consumers and devtools
+        // can still see the underlying message/stack while the documented
+        // { data, status, statusText } shape is unchanged.
+        throw { data: null, status: 0, statusText: '', cause: err };
       });
   }
 
