@@ -80,9 +80,42 @@ describe('createFetchClient', function () {
 
       expect(fetchFn).toHaveBeenCalledWith('http://example.com/search', {
         method: 'POST',
-        headers: {},
+        headers: { 'Content-Type': 'application/json;charset=utf-8' },
         body: JSON.stringify(payload),
       });
+    });
+
+    it('defaults Content-Type to application/json on POST when caller omits it', async function () {
+      var fetchFn = mockFetch(200, {});
+      var client = createFetchClient(fetchFn);
+
+      await client.post('http://example.com/_search', { q: 1 });
+
+      var callArgs = fetchFn.mock.calls[0][1];
+      expect(callArgs.headers['Content-Type']).toBe('application/json;charset=utf-8');
+    });
+
+    it('preserves caller-supplied Content-Type (case-insensitive) on POST', async function () {
+      var fetchFn = mockFetch(200, {});
+      var client = createFetchClient(fetchFn);
+
+      await client.post('http://example.com/x', 'a=1&b=2', {
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      });
+
+      var headers = fetchFn.mock.calls[0][1].headers;
+      expect(headers['content-type']).toBe('application/x-www-form-urlencoded');
+      expect(headers['Content-Type']).toBeUndefined();
+    });
+
+    it('does not mutate the caller-supplied headers object', async function () {
+      var fetchFn = mockFetch(200, {});
+      var client = createFetchClient(fetchFn);
+      var sharedHeaders = {};
+
+      await client.post('http://example.com/x', { a: 1 }, { headers: sharedHeaders });
+
+      expect(sharedHeaders).toEqual({});
     });
 
     it('sends string body without re-stringifying', async function () {

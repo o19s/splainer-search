@@ -36,7 +36,7 @@ export function createFetchClient(options) {
   var _jsonpRequest = options.jsonpRequest || null;
 
   function request(method, url, data, config) {
-    var headers = (config && config.headers) || {};
+    var headers = Object.assign({}, (config && config.headers) || {});
     var fetchOptions = {
       method: method,
       headers: headers,
@@ -44,6 +44,15 @@ export function createFetchClient(options) {
 
     if (data !== undefined && data !== null && method !== 'GET') {
       fetchOptions.body = typeof data === 'string' ? data : JSON.stringify(data);
+      // Match Angular $http.post() default: serialized objects get
+      // application/json. Preserve any caller-supplied Content-Type
+      // (case-insensitive check) so transports can override (e.g. form-encoded).
+      var hasContentType = Object.keys(headers).some(function (h) {
+        return h.toLowerCase() === 'content-type';
+      });
+      if (!hasContentType) {
+        headers['Content-Type'] = 'application/json;charset=utf-8';
+      }
     }
 
     return _fetch(url, fetchOptions)

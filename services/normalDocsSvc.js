@@ -209,11 +209,15 @@ export function normalDocsSvcConstructor(explainSvc, utilsSvc) {
     };
   };
 
+  /**
+   * @param {*} subFieldValue Fallback text when highlight is missing; null/undefined yields empty snippet.
+   */
   var getHighlightSnippet = function (aDoc, docId, subFieldName, subFieldValue, hlPre, hlPost) {
     var snip = aDoc.highlight(docId, subFieldName, hlPre, hlPost);
 
     if (null === snip || undefined === snip || '' === snip) {
-      snip = escapeHtml(subFieldValue.slice(0, 200));
+      var raw = subFieldValue == null ? '' : String(subFieldValue);
+      snip = escapeHtml(raw.slice(0, 200));
     }
 
     return snip;
