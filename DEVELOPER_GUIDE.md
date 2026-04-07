@@ -1,30 +1,35 @@
 ## Development Notes
 
-Splainer-search is written using AngularJS project. It requires `npm` and `grunt`:
+Splainer-search is a plain ESM JavaScript library. It requires only `npm` and **Node.js 18+** (`package.json` `engines`). Grunt, Karma, and AngularJS were removed in the 3.0 migration.
 
-* On a Mac [follow these instructions](http://thechangelog.com/install-node-js-with-homebrew-on-os-x/)
-* On Ubuntu [follow these instructions](https://rtcamp.com/tutorials/nodejs/node-js-npm-install-ubuntu/)
-* Use npm to install Grunt globally on your system (may require sudo)
+* On a Mac [install Node.js via Homebrew](http://thechangelog.com/install-node-js-with-homebrew-on-os-x/)
+* On Ubuntu [install Node.js via NodeSource](https://github.com/nodesource/distributions)
 
-Make sure you have a recent Node.js version installed, older versions won't work.  Version 20 or newer.
-
-```
-npm install -g grunt-cli
-```
-
-To run the tests:
+To install dependencies and run the unit tests (Vitest):
 
 ```
 npm install
 npm test
 ```
-Tip: add an `f` in front of any `describe` or `it` in your unit tests to run just that unit test.
 
-We need to build a `splainer-search.js` file as part of the build.
+Other useful scripts:
 
 ```
-npm run-script build
+npm run lint               # ESLint over services/, factories/, values/
+npm run test:integration   # node-based integration test against a real chunked fetch
+npm run test:ci            # lint + unit + integration (what CI should run)
+npm run format             # prettier --write
 ```
+
+Tip: use `it.only` / `describe.only` in a Vitest spec to focus on a single test, or pass a path to `npx vitest run test/vitest/yourSpec.test.js`.
+
+To build the IIFE bundle (`splainer-search.js`) consumed via `<script>` tags:
+
+```
+npm run build
+```
+
+The build is driven by [build.js](build.js) (esbuild). It produces `splainer-search.js` exposing all exports under `globalThis.SplainerSearch`. Consumers using `<script src=".../splainer-search.js">` must also load [urijs](https://medialize.github.io/URI.js/) before splainer-search.
 ### Release Process
 
 We use NP to publish splainer-search to npmjs.org.  

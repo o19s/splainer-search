@@ -1,11 +1,12 @@
-[![Build Status](https://travis-ci.org/o19s/splainer-search.svg?branch=master)](https://travis-ci.org/o19s/splainer-search)
 [![npm version](https://badge.fury.io/js/splainer-search.svg)](https://badge.fury.io/js/splainer-search)
 
-# AngularJS Search Service
+# Splainer Search
 
-Splainer Search is an Angular [Solr](https://solr.apache.org/), [OpenSearch](https://opensearch.org/) and [Elasticsearch](https://www.elastic.co/) search library
+Splainer Search is a plain-JavaScript (ESM) [Solr](https://solr.apache.org/), [OpenSearch](https://opensearch.org/) and [Elasticsearch](https://www.elastic.co/) search library
 focussed on relevance diagnostics with some experimental support for other search engines, starting with [Vectara](https://www.vectara.com).
 It's used in the relevancy tuning tools [Quepid](http://quepid.com) and [Splainer](http://splainer.io). It is available for anyone to use (see [license](LICENSE.txt)).
+
+> **Note:** As of v3.0.0, splainer-search is a plain ESM library with no AngularJS dependency. If you are upgrading from a 2.x release, see [CHANGELOG.md](CHANGELOG.md) for migration notes — most notably, `angular.forEach` examples below have become plain `for…of` loops, and the library is now consumed via `import { searchSvcConstructor, … } from 'splainer-search'` rather than Angular DI.
 
 
 Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsearch, OpenSearch, and Vectara communication
@@ -31,15 +32,15 @@ var searcher = searchSvc.createSearcher(
 
 searcher.search()
 .then(function() {
-  angular.forEach(searcher.docs, function(doc) {
+  for (const doc of searcher.docs) {
     console.log(doc.source().title);
     // highlights. You need to pass id as that's how Solr
     // organizes the explain. See below for a friendlier/higher-level
     // interface with normalDocs
     console.log(doc.highlight(doc.source().id, 'title', '<b>', '</b>');
     // explain info
-    console.log(doc.explain(doc.source().id);
-  });
+    console.log(doc.explain(doc.source().id));
+  }
 });
 ```
 
@@ -159,9 +160,9 @@ Paging is done by asking the original searcher for another searcher. This search
 var results = [];
 searcher.search()
 .then(function() {
-  angular.forEach(searcher.docs, function(doc) {
-    results.push(doc.source().title));
-  });
+  for (const doc of searcher.docs) {
+    results.push(doc.source().title);
+  }
   // once results returned, get a new searcher for the next
   // page of results, just rerun the search later exactly as
   // its run here
@@ -267,7 +268,7 @@ var searcher = searchSvc.createSearcher(
 searcher.search()
 .then(function() {
   var  bestScore = 0;
-  angular.forEach(searcher.docs, function(doc) {
+  for (const doc of searcher.docs) {
     var normalDoc = normalDocsSvc.createNormalDoc(fs, doc);
     // access unique id and title
     // (above specified to be uuid and title)
@@ -275,9 +276,9 @@ searcher.search()
     console.log("Title is:" + normalDoc.id);
 
     // snippets -- best try to highlight the field
-    angular.forEach(normalDoc.subSnippets, function(snippet, fieldName) {
+    for (const [fieldName, snippet] of Object.entries(normalDoc.subSnippets)) {
       console.log('hopefully this is a highlight! ' + snippet);
-    });
+    }
 
     // prettier and heavily sanitized explain info:
     // (the explain modal on Splainer shows this)
@@ -296,7 +297,7 @@ searcher.search()
 
     // a link to the document in Solr is handy:
     console.log(normalDoc._url())
-  })
+  }
 });
 ```
 

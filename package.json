@@ -5,7 +5,8 @@
   "main": "index.js",
   "exports": {
     ".": "./index.js",
-    "./splainer-search.js": "./splainer-search.js"
+    "./splainer-search.js": "./splainer-search.js",
+    "./package.json": "./package.json"
   },
   "contributors": [
     "Doug Turnbull <dturnbull@opensourceconnections.com>",
@@ -45,11 +46,12 @@
     "vitest": "^4.1.2"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "scripts": {
     "test": "vitest run",
-    "test:integration": "node test/integration/chunked-resolver-fetch.integration.mjs",
+    "test:integration": "node test/integration/chunked-resolver-fetch.integration.js",
+    "test:integration:demo": "node test/integration/quepid-demo-endpoints.integration.js",
     "lint": "eslint 'services/**/*.js' 'factories/**/*.js' 'values/**/*.js'",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

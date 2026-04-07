@@ -44,9 +44,8 @@ export function createFetchClient(options) {
 
     if (data !== undefined && data !== null && method !== 'GET') {
       fetchOptions.body = typeof data === 'string' ? data : JSON.stringify(data);
-      // Match Angular $http.post() default: serialized objects get
-      // application/json. Preserve any caller-supplied Content-Type
-      // (case-insensitive check) so transports can override (e.g. form-encoded).
+      // Angular-style default: JSON objects → application/json; strings unchanged.
+      // Skip default Content-Type if caller set one (any casing).
       var hasContentType = Object.keys(headers).some(function (h) {
         return h.toLowerCase() === 'content-type';
       });

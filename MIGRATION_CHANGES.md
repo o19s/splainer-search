@@ -362,13 +362,13 @@ ES module exports directly instead.
 | `module.js` | **Deleted** — the `angular.module('o19s.splainer-search', [])` declaration |
 | `Gruntfile.cjs` | Removed `module.js` from `eslint.target` and `concat.dist.src` |
 | `package.json` | Removed `module.js` from `ignore` list and `lint` script |
-| `test/integration/chunked-resolver-fetch.integration.js` | **Replaced** with `.mjs` ESM version — imports from `serviceFactory.js` instead of Angular bootstrap; injects `jsonpRequest` via `createFetchClient()` for Node-native HTTP (no jsdom dependency) |
+| `test/integration/chunked-resolver-fetch.integration.js` | Node ESM integration script — imports from `serviceFactory.js` instead of Angular bootstrap; injects `jsonpRequest` via `createFetchClient()` for Node-native HTTP (no jsdom dependency) |
 | `karma.conf.js` | Removed `module.js` from `files` |
 | `karma.debug.conf.js` | Removed `module.js` from `files` and `preprocessors` |
 | `karma.coverage.conf.cjs` | Removed `module.js` from `files` and `preprocessors`; updated comment |
 | `stryker.conf.json` | Removed `module.js` from `mutate`; **`testRunner` → Vitest** via `@stryker-mutator/vitest-runner` (Karma runner removed — it depended on the same Angular module as `npm test`) |
 | `.npmignore` | Removed `module.js` entry |
-| `.eslintrc.cjs` | Scoped `angular` / `inject` globals to Karma/Jasmine files only (`test/spec`, `test/mock`); added ESM override for `test/integration/**/*.mjs` |
+| `.eslintrc.cjs` | Scoped `angular` / `inject` globals to Karma/Jasmine files only (`test/spec`, `test/mock`); added ESM override for `test/integration/**/*.js` |
 | `package.json` | Updated description; removed Karma from `test:ci` (Angular DI no longer available) |
 
 ### What did NOT change

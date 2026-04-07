@@ -46,7 +46,12 @@ export function SolrDocFactory(DocFactory, solrUrlSvc, utilsSvc) {
    * Builds Solr URL for a single Solr document.
    */
   var buildDocUrl = function (fieldList, url, idField, docId) {
-    // SUSS_USE_OF_ESCAPING.  Going to disable this and see what happens.
+    // SUSS_USE_OF_ESCAPING — intentional, matches main. Solr-side escaping
+    // (escapeUserQuery) is deliberately disabled here and the corresponding
+    // tests in solrSearchSvc/docResolverSvc are `it.skip`. Callers are
+    // currently expected to pass ids that don't need Solr query-syntax
+    // escaping. Do not re-enable without a product decision; see the SUSS
+    // comments in the skipped tests for context.
     //var escId = encodeURIComponent(solrUrlSvc.escapeUserQuery(docId));
     var escId = encodeURIComponent(docId);
 

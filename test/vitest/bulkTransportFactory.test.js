@@ -166,6 +166,61 @@ describe('bulkTransportFactory', () => {
     expect(promisesRejected).toBe(2);
   });
 
+  it('rejects all when response body is not a sane _msearch payload (null data)', async () => {
+    var bulkTransport = new BulkTransportFactory();
+    var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
+    var headers = { header: 1 };
+    var expectedObjects = [];
+    var numToQuery = 2;
+    var promisesRejected = 0;
+    for (var i = 0; i < numToQuery; i++) {
+      bulkTransport.query(url, { test: i }, headers).then(
+        function () {},
+        function () {
+          promisesRejected++;
+        },
+      );
+      expectedObjects.push({});
+      expectedObjects.push({ test: i });
+    }
+    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers)).respond(
+      200,
+      null,
+    );
+    vi.advanceTimersByTime(100);
+    await flushMicrotasks();
+    mockBackend.verifyNoOutstandingExpectation();
+    expect(promisesRejected).toBe(numToQuery);
+  });
+
+  it('rejects all when responses length does not match batch size', async () => {
+    var bulkTransport = new BulkTransportFactory();
+    var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
+    var headers = { header: 1 };
+    var expectedObjects = [];
+    var numToQuery = 3;
+    var promisesRejected = 0;
+    for (var i = 0; i < numToQuery; i++) {
+      bulkTransport.query(url, { test: i }, headers).then(
+        function () {},
+        function () {
+          promisesRejected++;
+        },
+      );
+      expectedObjects.push({});
+      expectedObjects.push({ test: i });
+    }
+    var tooShort = { responses: [{ hits: { total: 1, hits: [] } }, { hits: { total: 1, hits: [] } }] };
+    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers)).respond(
+      200,
+      tooShort,
+    );
+    vi.advanceTimersByTime(100);
+    await flushMicrotasks();
+    mockBackend.verifyNoOutstandingExpectation();
+    expect(promisesRejected).toBe(numToQuery);
+  });
+
   it('rejects all on http errors', async () => {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
@@ -265,6 +320,43 @@ describe('bulkTransportFactory', () => {
     await flushMicrotasks();
     mockBackend.verifyNoOutstandingExpectation();
     vi.advanceTimersByTime(100);
+    mockBackend.verifyNoOutstandingExpectation();
+  });
+
+  it('sends Content-Type application/x-ndjson when not provided', async () => {
+    var bulkTransport = new BulkTransportFactory();
+    var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
+    var payload = structuredClone({ test: 0 });
+    var mockResults = buildMockResults(1);
+    bulkTransport.query(url, payload, {});
+    mockBackend.expectPOST(
+      url,
+      function () { return true; },
+      function (sent) {
+        return sent['Content-Type'] === 'application/x-ndjson';
+      }
+    ).respond(200, mockResults);
+    vi.advanceTimersByTime(100);
+    await flushMicrotasks();
+    mockBackend.verifyNoOutstandingExpectation();
+  });
+
+  it('preserves caller Content-Type when set (case-insensitive)', async () => {
+    var bulkTransport = new BulkTransportFactory();
+    var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
+    var payload = structuredClone({ test: 0 });
+    var customType = 'application/vnd.elasticsearch+x-ndjson; compatible-with=8';
+    var mockResults = buildMockResults(1);
+    bulkTransport.query(url, payload, { 'content-type': customType });
+    mockBackend.expectPOST(
+      url,
+      function () { return true; },
+      function (sent) {
+        return sent['content-type'] === customType;
+      }
+    ).respond(200, mockResults);
+    vi.advanceTimersByTime(100);
+    await flushMicrotasks();
     mockBackend.verifyNoOutstandingExpectation();
   });
 

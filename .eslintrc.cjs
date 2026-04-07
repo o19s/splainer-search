@@ -57,7 +57,7 @@ module.exports = {
     },
     {
       // Node-driven integration scripts.
-      files: ['test/integration/**/*.js', 'test/integration/**/*.mjs'],
+      files: ['test/integration/**/*.js'],
       env: {
         node: true,
       },

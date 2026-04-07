@@ -2,6 +2,53 @@
 
 /*jslint latedef:false*/
 
+/**
+ * Headers for Elasticsearch `_msearch` (NDJSON) POST bodies.
+ * Sets `Content-Type: application/x-ndjson` when the caller did not supply
+ * any Content-Type (case-insensitive), matching ES multi-search requirements.
+ *
+ * @param {Object} [incoming]
+ * @returns {Object}
+ */
+function headersForMsearchBody(incoming) {
+  var h = Object.assign({}, incoming);
+  var hasContentType = Object.keys(h).some(function (key) {
+    return key.toLowerCase() === 'content-type';
+  });
+  if (!hasContentType) {
+    h['Content-Type'] = 'application/x-ndjson';
+  }
+  return h;
+}
+
+/**
+ * True when `data` looks like an Elasticsearch `_msearch` JSON body: a plain object
+ * with a `responses` array whose length matches the number of in-flight queries in
+ * this batch (the queue may already hold newly enqueued items for the next batch).
+ *
+ * @param {*} data - `httpResp.data` from the POST
+ * @param {number} expectedResponseCount - number of `inFlight` entries for this POST
+ * @returns {boolean}
+ */
+function isSaneMsearchBody(data, expectedResponseCount) {
+  if (data === null || data === undefined) {
+    return false;
+  }
+  if (typeof data !== 'object' || Array.isArray(data)) {
+    return false;
+  }
+  if (!Object.hasOwn(data, 'responses')) {
+    return false;
+  }
+  if (!Array.isArray(data.responses)) {
+    return false;
+  }
+  if (data.responses.length !== expectedResponseCount) {
+    return false;
+  }
+  return true;
+}
+
 export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
   var Transport = function (options) {
     TransportFactory.call(this, options);
@@ -18,7 +65,7 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
      * batches of searches one batch at a time
      * */
 
-    var requestConfig = { headers: headers };
+    var requestConfig = { headers: headersForMsearchBody(headers) };
     var self = this;
     self.enqueue = enqueue;
     self.url = getUrl;
@@ -30,17 +77,25 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
       queue = queue.slice(batchSize);
     }
 
+    function countInFlight() {
+      var n = 0;
+      utilsSvc.safeForEach(queue, function (pendingQuery) {
+        if (pendingQuery.inFlight) {
+          n++;
+        }
+      });
+      return n;
+    }
+
     function multiSearchSuccess(httpResp) {
-      // Examine the responses and dequeue the corresponding
-      // searches
-      var bulkHttpResp = httpResp.data;
-      if (Object.hasOwn(bulkHttpResp, 'responses')) {
-        var respLen = bulkHttpResp.responses.length;
-        dequeuePendingSearches(bulkHttpResp);
-        finishBatch(respLen);
-      } else {
-        multiSearchFailed(bulkHttpResp);
+      var bulkHttpResp = httpResp && httpResp.data;
+      var batchSize = countInFlight();
+      if (!isSaneMsearchBody(bulkHttpResp, batchSize)) {
+        multiSearchFailed(bulkHttpResp !== undefined ? bulkHttpResp : httpResp);
+        return;
       }
+      dequeuePendingSearches(bulkHttpResp);
+      finishBatch(bulkHttpResp.responses.length);
     }
 
     function multiSearchFailed(bulkHttpResp) {
@@ -75,7 +130,12 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
       var queueIdx = 0;
       utilsSvc.safeForEach(bulkHttpResp.responses, function (resp) {
         var currRequest = queue[queueIdx];
-        if (Object.hasOwn(resp, 'error')) {
+        if (
+          resp !== null &&
+          resp !== undefined &&
+          typeof resp === 'object' &&
+          Object.hasOwn(resp, 'error')
+        ) {
           currRequest.reject(resp);
           // individual query failure
         } else {
@@ -92,10 +152,12 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
         // Implementation of Elasticsearch's _msearch ("Multi Search") API
         var payload = buildMultiSearch();
         pendingHttp = httpClient.post(url, payload, requestConfig);
-        pendingHttp.then(multiSearchSuccess, multiSearchFailed).catch(function (response) {
-          console.debug('Failed to do multi search');
-          throw response;
-        });
+        pendingHttp
+          .then(multiSearchSuccess, multiSearchFailed)
+          .catch(function (err) {
+            console.debug('Failed to do multi search');
+            multiSearchFailed(err);
+          });
       }
     }
 
@@ -134,6 +196,11 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
       }
     }
 
+    /**
+     * Stops the batching timer only. Any `httpClient.post` already in flight is not
+     * aborted; when it settles, `multiSearchSuccess` / `multiSearchFailed` still run
+     * on this BatchSender’s closure.
+     */
     function cancel() {
       if (timerId !== null) {
         clearTimeout(timerId);

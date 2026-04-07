@@ -1,5 +1,9 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
+# 3.0.0 (unreleased)
+- **Breaking:** 3.0.0 is ESM-only. CommonJS `require('splainer-search')` is no longer supported; use `import` or upgrade to Node 22.12+ which supports `require(esm)` natively. See `RELEASE_NOTES_3.0.0_DRAFT.md` for the full migration guide.
+- **Breaking:** `splainer-search.min.js` is no longer published. Use `splainer-search.js` (the IIFE bundle) directly, import the ESM entry, or let your bundler / CDN handle minification.
+
 # 2.36.4 (2026-02-23)
 - Custom Search API should be better at handling when an array of filed values is provided.  https://github.com/o19s/splainer-search/pull/158 by @epugh.
 - 
