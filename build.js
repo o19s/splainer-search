@@ -1,28 +1,47 @@
 /**
  * Build script — replaces Grunt concat.
  *
- * Produces splainer-search.js as an IIFE bundle from the ESM entry point.
- * All exports are attached to globalThis.SplainerSearch for <script> tag consumers.
+ * Produces:
+ * - **splainer-search.js** — IIFE from `index.js` (`globalThis.SplainerSearch`): constructors
+ *   and factories for low-level / tree-shaking consumers.
+ * - **splainer-search-wired.js** — IIFE from `wired.js` (`globalThis.SplainerSearchWired`): the
+ *   same pre-wired graph as ESM `splainer-search/wired.js` (Splainer, Quepid, importmap).
+ *
+ * Load **URI.js** before either bundle (`<script>` consumers).
  *
  * Usage:  node build.js
  */
 import { build } from 'esbuild';
 
-await build({
-  entryPoints: ['index.js'],
+var common = {
   bundle: true,
-  format: 'iife',
-  globalName: 'SplainerSearch',
-  outfile: 'splainer-search.js',
   platform: 'browser',
   target: ['es2020'],
   sourcemap: true,
   // urijs is loaded globally via <script> by IIFE consumers.
-  // Map `import URI from 'urijs'` → `globalThis.URI`.
   alias: { urijs: './shims/urijs-global.js' },
+};
+
+await build({
+  ...common,
+  entryPoints: ['index.js'],
+  format: 'iife',
+  globalName: 'SplainerSearch',
+  outfile: 'splainer-search.js',
   banner: {
-    js: '/* splainer-search — bundled IIFE build. Do not edit by hand. */',
+    js: '/* splainer-search — bundled IIFE (index). Do not edit by hand. */',
   },
 });
 
-console.log('Built splainer-search.js');
+await build({
+  ...common,
+  entryPoints: ['wired.js'],
+  format: 'iife',
+  globalName: 'SplainerSearchWired',
+  outfile: 'splainer-search-wired.js',
+  banner: {
+    js: '/* splainer-search — bundled IIFE (wired). Do not edit by hand. */',
+  },
+});
+
+console.log('Built splainer-search.js and splainer-search-wired.js');

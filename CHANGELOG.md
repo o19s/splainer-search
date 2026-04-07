@@ -3,6 +3,7 @@ Version numbers correspond to `package.json` version.  Follows the _major.minor.
 # 3.0.0 (unreleased)
 - **Breaking:** 3.0.0 is ESM-only. CommonJS `require('splainer-search')` is no longer supported; use `import` or upgrade to Node 22.12+ which supports `require(esm)` natively. See `RELEASE_NOTES_3.0.0_DRAFT.md` for the full migration guide.
 - **Breaking:** `splainer-search.min.js` is no longer published. Use `splainer-search.js` (the IIFE bundle) directly, import the ESM entry, or let your bundler / CDN handle minification.
+- Add **`splainer-search/wired`** and **`splainer-search/wired.js`**: pre-wired service graph (`createWiredServices`, Quepid/Splainer-shaped helpers) shared with Vitest. `npm run build` also emits **`splainer-search-wired.js`** (`globalThis.SplainerSearchWired`) for importmap / script-tag consumers that need the wired surface in one file.
 
 # 2.36.4 (2026-02-23)
 - Custom Search API should be better at handling when an array of filed values is provided.  https://github.com/o19s/splainer-search/pull/158 by @epugh.

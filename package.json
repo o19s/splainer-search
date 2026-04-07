@@ -5,7 +5,10 @@
   "main": "index.js",
   "exports": {
     ".": "./index.js",
+    "./wired": "./wired.js",
+    "./wired.js": "./wired.js",
     "./splainer-search.js": "./splainer-search.js",
+    "./splainer-search-wired.js": "./splainer-search-wired.js",
     "./package.json": "./package.json"
   },
   "contributors": [
@@ -27,10 +30,15 @@
   "license": "Apache-2.0",
   "files": [
     "index.js",
+    "wired.js",
+    "wired/",
     "services/",
     "factories/",
     "values/",
-    "splainer-search.js"
+    "splainer-search.js",
+    "splainer-search.js.map",
+    "splainer-search-wired.js",
+    "splainer-search-wired.js.map"
   ],
   "dependencies": {
     "urijs": "^1.19.7"
@@ -54,12 +62,13 @@
     "test:coverage": "vitest run --coverage",
     "test:integration": "node test/integration/chunked-resolver-fetch.integration.js",
     "test:integration:demo": "node test/integration/quepid-demo-endpoints.integration.js",
-    "lint": "eslint 'index.js' 'build.js' 'services/**/*.js' 'factories/**/*.js' 'values/**/*.js' 'shims/**/*.js' 'test/**/*.js' 'vitest.config.js'",
+    "lint": "eslint 'index.js' 'wired.js' 'build.js' 'wired/**/*.js' 'services/**/*.js' 'factories/**/*.js' 'values/**/*.js' 'shims/**/*.js' 'test/**/*.js' 'vitest.config.js'",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:ci": "npm run lint && npm run test && npm run test:integration",
     "stryker": "stryker run",
-    "build": "node build.js"
+    "build": "node build.js",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",

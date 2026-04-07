@@ -1,5 +1,8 @@
-# complied package shouldnt be checked in
+# compiled package shouldn't be checked in
 splainer-search.js
+splainer-search.js.map
+splainer-search-wired.js
+splainer-search-wired.js.map
 # generic (system) files/extensions we don't want
 *.seed
 *.log

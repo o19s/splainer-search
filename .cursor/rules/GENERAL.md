@@ -1,8 +1,8 @@
-- Don't make changes outside of what has been requested, if you have to make sure to point it out.
+- Don't make changes outside of what has been requested, if you have to make changes beyond immediate scope be sure to ask the user about it first.
 - If you are finding a specific portion of code difficult to understand or work with, say so.
 - Use the web to find best practices and utilize them.
 - Prioritize clarity over conciseness.
-- Review your code for errors, bugs, bad practices, code smells, etc.
+- Review your code for errors, bugs, bad practices, code smells, regressions, lost functionality, etc.
 - Run tests on the code you change.
 - Create tests when you write new code that deserves tests.
     - In general, favor writing tests over skipping them.

@@ -6,8 +6,30 @@ Splainer Search is a plain-JavaScript (ESM) [Solr](https://solr.apache.org/), [O
 focussed on relevance diagnostics with some experimental support for other search engines, starting with [Vectara](https://www.vectara.com).
 It's used in the relevancy tuning tools [Quepid](http://quepid.com) and [Splainer](http://splainer.io). It is available for anyone to use (see [license](LICENSE.txt)).
 
-> **Note:** As of v3.0.0, splainer-search is a plain ESM library with no AngularJS dependency. If you are upgrading from a 2.x release, see [CHANGELOG.md](CHANGELOG.md) for migration notes — most notably, `angular.forEach` examples below have become plain `for…of` loops, and the library is now consumed via `import { searchSvcConstructor, … } from 'splainer-search'` rather than Angular DI.
+> **Note:** As of v3.0.0, splainer-search is a plain ESM library with no AngularJS dependency. If you are upgrading from a 2.x release, see [CHANGELOG.md](CHANGELOG.md) for migration notes — most notably, `angular.forEach` examples below have become plain `for…of` loops. For **Splainer and Quepid**, prefer the **wired** entry (below). Advanced use: `import { …Constructor } from 'splainer-search'` and wire dependencies yourself.
 
+## Splainer, Quepid, and other full apps
+
+Use the **`splainer-search/wired.js`** (or **`splainer-search/wired`**) entry so you get the same service graph the library tests use (`fieldSpecSvc`, `searchSvc`, `createSearcher`, …) without copying wiring into your repo:
+
+```js
+import { createWiredServices, createFetchClient } from 'splainer-search/wired.js';
+
+var httpClient = createFetchClient({
+  fetch: globalThis.fetch, // or wrap for credentials / CSRF (see integrator doc)
+});
+var api = createWiredServices(httpClient);
+
+var searcher = api.searchSvc.createSearcher(
+  ['id', 'title', 'hl:body', 'author'],
+  'http://localhost:8983/solr/select',
+  { q: ['*:*'] }
+);
+```
+
+`<script>` consumers: run **`npm run build`** in this package, load **URI.js** first, then **`splainer-search-wired.js`** — APIs live on **`globalThis.SplainerSearchWired`** (e.g. `SplainerSearchWired.createWiredServices`).
+
+---
 
 Splainer search utilizes a JSONP wrapper for communication with Solr. Elasticsearch, OpenSearch, and Vectara communication
 happens with simple HTTP and JSON via CORS.

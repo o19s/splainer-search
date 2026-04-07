@@ -1,315 +1,201 @@
 /**
  * Manual dependency wiring for Vitest tests — replaces Angular DI.
  *
- * Each create* function instantiates a service/factory with its full
- * dependency chain, returning the same object Angular would inject.
+ * Delegates to the same graph as {@link ../../../../wired/wiring.js#createWiredServices}
+ * (and the public `splainer-search/wired.js` entry). Each getter returns the same
+ * object shape Angular would inject, cached per HTTP client instance.
  */
-// URI is now imported directly by esUrlSvc.js (no global patching needed).
+'use strict';
 
-import { utilsSvcFactory } from '../../../services/utilsSvc.js';
-import { tryParseObject } from '../../../services/customHeadersJson.js';
-import { vectorSvcConstructor } from '../../../services/vectorSvc.js';
-import { fieldSpecSvcConstructor } from '../../../services/fieldSpecSvc.js';
-import { solrUrlSvcConstructor } from '../../../services/solrUrlSvc.js';
-import { esUrlSvcConstructor } from '../../../services/esUrlSvc.js';
-import { vectaraUrlSvcConstructor } from '../../../services/vectaraUrlSvc.js';
-import { queryTemplateSvcConstructor } from '../../../services/queryTemplateSvc.js';
-import { baseExplainSvcConstructor } from '../../../services/baseExplainSvc.js';
-import { simExplainSvcConstructor } from '../../../services/simExplainSvc.js';
-import { queryExplainSvcConstructor } from '../../../services/queryExplainSvc.js';
-import { explainSvcConstructor } from '../../../services/explainSvc.js';
-import { normalDocsSvcConstructor } from '../../../services/normalDocsSvc.js';
-import { esExplainExtractorSvcConstructor } from '../../../services/esExplainExtractorSvc.js';
-import { solrExplainExtractorSvcConstructor } from '../../../services/solrExplainExtractorSvc.js';
-import { esSearcherPreprocessorSvcConstructor } from '../../../services/esSearcherPreprocessorSvc.js';
-import { solrSearcherPreprocessorSvcConstructor } from '../../../services/solrSearcherPreprocessorSvc.js';
-import { vectaraSearcherPreprocessorSvcConstructor } from '../../../services/vectaraSearcherPreprocessorSvc.js';
-import { algoliaSearcherPreprocessorSvcConstructor } from '../../../services/algoliaSearcherPreprocessorSvc.js';
-import { searchApiSearcherPreprocessorSvcConstructor } from '../../../services/searchApiSearcherPreprocessorSvc.js';
+import { createFetchClient } from '../../../services/httpClient.js';
+import { createWiredServices } from '../../../wired/wiring.js';
 
-import { transportSvcConstructor } from '../../../services/transportSvc.js';
-import { searchSvcConstructor } from '../../../services/searchSvc.js';
-import { docResolverSvcConstructor } from '../../../services/docResolverSvc.js';
+var NOOP_HTTP_CLIENT = createFetchClient({
+  fetch: function () {
+    return Promise.reject(new Error('splainer-search test helper: unused HTTP client'));
+  },
+});
 
-import { TransportFactory } from '../../../factories/transportFactory.js';
-import { SearcherFactory } from '../../../factories/searcherFactory.js';
-import { DocFactory } from '../../../factories/docFactory.js';
-import { HttpGetTransportFactory } from '../../../factories/httpGetTransportFactory.js';
-import { HttpPostTransportFactory } from '../../../factories/httpPostTransportFactory.js';
-import { HttpJsonpTransportFactory } from '../../../factories/httpJsonpTransportFactory.js';
-import { HttpProxyTransportFactory } from '../../../factories/httpProxyTransportFactory.js';
-import { BulkTransportFactory } from '../../../factories/bulkTransportFactory.js';
-import { SettingsValidatorFactory } from '../../../factories/settingsValidatorFactory.js';
-import { ResolverFactory } from '../../../factories/resolverFactory.js';
-import { SolrSearcherFactory } from '../../../factories/solrSearcherFactory.js';
-import { EsSearcherFactory } from '../../../factories/esSearcherFactory.js';
-import { VectaraSearcherFactory } from '../../../factories/vectaraSearcherFactory.js';
-import { AlgoliaSearcherFactory } from '../../../factories/algoliaSearchFactory.js';
-import { SearchApiSearcherFactory } from '../../../factories/searchApiSearcherFactory.js';
+var _wiredCache = new WeakMap();
 
-import { activeQueries } from '../../../values/activeQueries.js';
-import { EsDocFactory } from '../../../factories/esDocFactory.js';
-import { SolrDocFactory } from '../../../factories/solrDocFactory.js';
-import { VectaraDocFactory } from '../../../factories/vectaraDocFactory.js';
-import { AlgoliaDocFactory } from '../../../factories/algoliaDocFactory.js';
-import { SearchApiDocFactory } from '../../../factories/searchApiDocFactory.js';
-
-import { defaultSolrConfig } from '../../../values/defaultSolrConfig.js';
-import { defaultESConfig } from '../../../values/defaultESConfig.js';
-import { defaultVectaraConfig } from '../../../values/defaultVectaraConfig.js';
-
-// Singleton-ish instances (stateless services can be shared)
-var _utilsSvc;
-export function getUtilsSvc() {
-  if (!_utilsSvc) _utilsSvc = utilsSvcFactory();
-  return _utilsSvc;
+function wiredFor(httpClient) {
+  var key = httpClient === undefined || httpClient === null ? NOOP_HTTP_CLIENT : httpClient;
+  var g = _wiredCache.get(key);
+  if (!g) {
+    g = createWiredServices(key);
+    _wiredCache.set(key, g);
+  }
+  return g;
 }
 
-var _customHeadersJson;
+export function getUtilsSvc() {
+  return wiredFor(NOOP_HTTP_CLIENT).utilsSvc;
+}
+
 export function getCustomHeadersJson() {
-  if (!_customHeadersJson) _customHeadersJson = { tryParseObject: tryParseObject };
-  return _customHeadersJson;
+  return wiredFor(NOOP_HTTP_CLIENT).customHeadersJson;
 }
 
 export function getVectorSvc() {
-  return new vectorSvcConstructor(getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).vectorSvc;
 }
 
 export function getFieldSpecSvc() {
-  return new fieldSpecSvcConstructor(getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).fieldSpecSvc;
 }
 
 export function getSolrUrlSvc() {
-  return new solrUrlSvcConstructor(getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).solrUrlSvc;
 }
 
 export function getEsUrlSvc() {
-  return new esUrlSvcConstructor(getCustomHeadersJson(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).esUrlSvc;
 }
 
 export function getVectaraUrlSvc() {
-  return new vectaraUrlSvcConstructor(getCustomHeadersJson());
+  return wiredFor(NOOP_HTTP_CLIENT).vectaraUrlSvc;
 }
 
 export function getQueryTemplateSvc() {
-  return new queryTemplateSvcConstructor();
+  return wiredFor(NOOP_HTTP_CLIENT).queryTemplateSvc;
 }
 
 export function getBaseExplainSvc() {
-  return new baseExplainSvcConstructor(getVectorSvc(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).baseExplainSvc;
 }
 
 export function getSimExplainSvc() {
-  return new simExplainSvcConstructor(getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).simExplainSvc;
 }
 
 export function getQueryExplainSvc() {
-  return new queryExplainSvcConstructor(getBaseExplainSvc(), getVectorSvc(), getSimExplainSvc(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).queryExplainSvc;
 }
 
 export function getExplainSvc() {
-  return new explainSvcConstructor(getBaseExplainSvc(), getQueryExplainSvc(), getSimExplainSvc(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).explainSvc;
 }
 
 export function getNormalDocsSvc() {
-  return new normalDocsSvcConstructor(getExplainSvc(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).normalDocsSvc;
 }
 
 export function getEsExplainExtractorSvc() {
-  return new esExplainExtractorSvcConstructor(getNormalDocsSvc(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).esExplainExtractorSvc;
 }
 
 export function getSolrExplainExtractorSvc() {
-  return new solrExplainExtractorSvcConstructor(getNormalDocsSvc(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).solrExplainExtractorSvc;
 }
 
 export function getEsSearcherPreprocessorSvc() {
-  return new esSearcherPreprocessorSvcConstructor(getQueryTemplateSvc(), defaultESConfig, getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).esSearcherPreprocessorSvc;
 }
 
 export function getSolrSearcherPreprocessorSvc(overrideDefaultConfig) {
-  return new solrSearcherPreprocessorSvcConstructor(
-    getSolrUrlSvc(),
-    overrideDefaultConfig || defaultSolrConfig,
-    getQueryTemplateSvc(),
-    getUtilsSvc()
-  );
+  return wiredFor(NOOP_HTTP_CLIENT).createSolrSearcherPreprocessorSvc(overrideDefaultConfig);
 }
 
 export function getVectaraSearcherPreprocessorSvc() {
-  return new vectaraSearcherPreprocessorSvcConstructor(getQueryTemplateSvc(), defaultVectaraConfig, getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).vectaraSearcherPreprocessorSvc;
 }
 
 export function getAlgoliaSearcherPreprocessorSvc() {
-  return new algoliaSearcherPreprocessorSvcConstructor(getQueryTemplateSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).algoliaSearcherPreprocessorSvc;
 }
 
 export function getSearchApiSearcherPreprocessorSvc() {
-  return new searchApiSearcherPreprocessorSvcConstructor(getQueryTemplateSvc(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).searchApiSearcherPreprocessorSvc;
 }
 
-// Factory getters — these return constructor functions (not instances)
 export function getDocConstructor() {
-  return DocFactory(getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).docConstructor;
 }
 
 export function getEsDocConstructor() {
-  return EsDocFactory(getEsUrlSvc(), getDocConstructor(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).esDocConstructor;
 }
 
 export function getSolrDocConstructor() {
-  return SolrDocFactory(getDocConstructor(), getSolrUrlSvc(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).solrDocConstructor;
 }
 
 export function getVectaraDocConstructor() {
-  return VectaraDocFactory(getVectaraUrlSvc(), getDocConstructor(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).vectaraDocConstructor;
 }
 
 export function getAlgoliaDocConstructor() {
-  return AlgoliaDocFactory(getDocConstructor(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).algoliaDocConstructor;
 }
 
 export function getSearchApiDocConstructor() {
-  return SearchApiDocFactory(getDocConstructor(), getUtilsSvc());
+  return wiredFor(NOOP_HTTP_CLIENT).searchApiDocConstructor;
 }
 
 export function getTransportConstructor() {
-  return TransportFactory();
+  return wiredFor(NOOP_HTTP_CLIENT).transportConstructor;
 }
 
 export function getSearcherConstructor() {
-  return SearcherFactory();
+  return wiredFor(NOOP_HTTP_CLIENT).searcherConstructor;
 }
 
-// ── Transport factories (need httpClient injection) ──────────────────────
 export function getHttpGetTransportFactory(httpClient) {
-  return HttpGetTransportFactory(getTransportConstructor(), httpClient);
+  return wiredFor(httpClient).httpGetTransportFactory;
 }
 
 export function getHttpPostTransportFactory(httpClient) {
-  return HttpPostTransportFactory(getTransportConstructor(), httpClient);
+  return wiredFor(httpClient).httpPostTransportFactory;
 }
 
 export function getHttpJsonpTransportFactory(httpClient) {
-  return HttpJsonpTransportFactory(getTransportConstructor(), httpClient);
+  return wiredFor(httpClient).httpJsonpTransportFactory;
 }
 
 export function getBulkTransportFactory(httpClient) {
-  return BulkTransportFactory(getTransportConstructor(), httpClient, getUtilsSvc());
+  return wiredFor(httpClient).bulkTransportFactory;
 }
 
 export function getHttpProxyTransportFactory(httpClient) {
-  var BaseTransport = getTransportConstructor();
-  var JsonpFactory = HttpJsonpTransportFactory(BaseTransport, httpClient);
-  return HttpProxyTransportFactory(BaseTransport, JsonpFactory);
+  return wiredFor(httpClient).httpProxyTransportFactory;
 }
 
 export function getTransportSvc(httpClient) {
-  var BaseTransport = getTransportConstructor();
-  var PostFactory = HttpPostTransportFactory(BaseTransport, httpClient);
-  var GetFactory = HttpGetTransportFactory(BaseTransport, httpClient);
-  var JsonpFactory = HttpJsonpTransportFactory(BaseTransport, httpClient);
-  var BulkFactory = BulkTransportFactory(BaseTransport, httpClient, getUtilsSvc());
-  var ProxyFactory = HttpProxyTransportFactory(BaseTransport, JsonpFactory);
-  return new transportSvcConstructor(PostFactory, GetFactory, JsonpFactory, BulkFactory, ProxyFactory);
+  return wiredFor(httpClient).transportSvc;
 }
 
-// ── Searcher factory constructors (match Angular DI registration order) ──
 export function getSolrSearcherConstructor(httpClient) {
-  // SolrSearcherFactory(SolrDocFactory, SearcherFactory, transportSvc, activeQueries,
-  //                     defaultSolrConfig, solrSearcherPreprocessorSvc, esUrlSvc, utilsSvc)
-  return SolrSearcherFactory(
-    getSolrDocConstructor(), getSearcherConstructor(),
-    getTransportSvc(httpClient), activeQueries,
-    defaultSolrConfig, getSolrSearcherPreprocessorSvc(),
-    getEsUrlSvc(), getUtilsSvc()
-  );
+  return wiredFor(httpClient).solrSearcherConstructor;
 }
 
 export function getEsSearcherConstructor(httpClient) {
-  // EsSearcherFactory(httpClient, EsDocFactory, activeQueries,
-  //                   esSearcherPreprocessorSvc, esUrlSvc, SearcherFactory,
-  //                   transportSvc, utilsSvc)
-  return EsSearcherFactory(
-    httpClient, getEsDocConstructor(), activeQueries,
-    getEsSearcherPreprocessorSvc(), getEsUrlSvc(),
-    getSearcherConstructor(), getTransportSvc(httpClient),
-    getUtilsSvc()
-  );
+  return wiredFor(httpClient).esSearcherConstructor;
 }
 
 export function getVectaraSearcherConstructor(httpClient) {
-  // VectaraSearcherFactory(VectaraDocFactory, activeQueries,
-  //                        vectaraSearcherPreprocessorSvc, vectaraUrlSvc,
-  //                        SearcherFactory, transportSvc, utilsSvc)
-  return VectaraSearcherFactory(
-    getVectaraDocConstructor(), activeQueries,
-    getVectaraSearcherPreprocessorSvc(), getVectaraUrlSvc(),
-    getSearcherConstructor(), getTransportSvc(httpClient),
-    getUtilsSvc()
-  );
+  return wiredFor(httpClient).vectaraSearcherConstructor;
 }
 
 export function getAlgoliaSearcherConstructor(httpClient) {
-  // AlgoliaSearcherFactory(AlgoliaDocFactory, activeQueries,
-  //                        algoliaSearcherPreprocessorSvc, esUrlSvc,
-  //                        SearcherFactory, transportSvc, utilsSvc)
-  return AlgoliaSearcherFactory(
-    getAlgoliaDocConstructor(), activeQueries,
-    getAlgoliaSearcherPreprocessorSvc(), getEsUrlSvc(),
-    getSearcherConstructor(), getTransportSvc(httpClient),
-    getUtilsSvc()
-  );
+  return wiredFor(httpClient).algoliaSearcherConstructor;
 }
 
 export function getSearchApiSearcherConstructor(httpClient) {
-  // SearchApiSearcherFactory(SearchApiDocFactory, activeQueries,
-  //                          searchApiSearcherPreprocessorSvc, esUrlSvc,
-  //                          SearcherFactory, transportSvc, utilsSvc)
-  return SearchApiSearcherFactory(
-    getSearchApiDocConstructor(), activeQueries,
-    getSearchApiSearcherPreprocessorSvc(), getEsUrlSvc(),
-    getSearcherConstructor(), getTransportSvc(httpClient),
-    getUtilsSvc()
-  );
+  return wiredFor(httpClient).searchApiSearcherConstructor;
 }
 
-// ── searchSvc (needs searcher factories) ──────────
 export function getSearchSvc(httpClient) {
-  // searchSvcConstructor(SolrSearcherFactory, EsSearcherFactory,
-  //                      VectaraSearcherFactory, AlgoliaSearcherFactory,
-  //                      SearchApiSearcherFactory, activeQueries,
-  //                      defaultSolrConfig, customHeadersJson, utilsSvc)
-  return new searchSvcConstructor(
-    getSolrSearcherConstructor(httpClient),
-    getEsSearcherConstructor(httpClient),
-    getVectaraSearcherConstructor(httpClient),
-    getAlgoliaSearcherConstructor(httpClient),
-    getSearchApiSearcherConstructor(httpClient),
-    activeQueries,
-    defaultSolrConfig,
-    getCustomHeadersJson(),
-    getUtilsSvc()
-  );
+  return wiredFor(httpClient).searchSvc;
 }
 
 export function getSettingsValidatorFactory(httpClient) {
-  return SettingsValidatorFactory(
-    getFieldSpecSvc(),
-    getSearchSvc(httpClient),
-    getUtilsSvc()
-  );
+  return wiredFor(httpClient).settingsValidatorFactory;
 }
 
 export function getResolverFactory(httpClient) {
-  return ResolverFactory(
-    getSearchSvc(httpClient),
-    getSolrUrlSvc(),
-    getNormalDocsSvc(),
-    getUtilsSvc()
-  );
+  return wiredFor(httpClient).resolverFactory;
 }
 
 export function getDocResolverSvc(httpClient) {
-  return new docResolverSvcConstructor(getResolverFactory(httpClient));
+  return wiredFor(httpClient).docResolverSvc;
 }
