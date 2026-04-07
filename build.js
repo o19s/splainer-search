@@ -1,10 +1,10 @@
 /**
  * Build script — replaces Grunt concat.
  *
- * Produces:
- * - **splainer-search.js** — IIFE from `index.js` (`globalThis.SplainerSearch`): constructors
+ * Produces (under **dist/**):
+ * - **dist/splainer-search.js** — IIFE from `index.js` (`globalThis.SplainerSearch`): constructors
  *   and factories for low-level / tree-shaking consumers.
- * - **splainer-search-wired.js** — IIFE from `wired.js` (`globalThis.SplainerSearchWired`): the
+ * - **dist/splainer-search-wired.js** — IIFE from `wired.js` (`globalThis.SplainerSearchWired`): the
  *   same pre-wired graph as ESM `splainer-search/wired.js` (Splainer, Quepid, importmap).
  *
  * Load **URI.js** before either bundle (`<script>` consumers).
@@ -27,7 +27,7 @@ await build({
   entryPoints: ['index.js'],
   format: 'iife',
   globalName: 'SplainerSearch',
-  outfile: 'splainer-search.js',
+  outfile: 'dist/splainer-search.js',
   banner: {
     js: '/* splainer-search — bundled IIFE (index). Do not edit by hand. */',
   },
@@ -38,10 +38,10 @@ await build({
   entryPoints: ['wired.js'],
   format: 'iife',
   globalName: 'SplainerSearchWired',
-  outfile: 'splainer-search-wired.js',
+  outfile: 'dist/splainer-search-wired.js',
   banner: {
     js: '/* splainer-search — bundled IIFE (wired). Do not edit by hand. */',
   },
 });
 
-console.log('Built splainer-search.js and splainer-search-wired.js');
+console.log('Built dist/splainer-search.js and dist/splainer-search-wired.js');

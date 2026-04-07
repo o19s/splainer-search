@@ -2,6 +2,8 @@
 
 /*jslint latedef:false*/
 
+import { isAbortError, transportRequestOpts } from '../services/transportRequestOpts.js';
+
 export function EsSearcherFactory(
   httpClient,
   EsDocFactory,
@@ -208,7 +210,7 @@ export function EsSearcherFactory(
 
     activeQueries.count++;
     return transport
-      .query(url, queryDslWithPagerArgs, headers)
+      .query(url, queryDslWithPagerArgs, headers, transportRequestOpts(self.config))
       .then(
         function success(httpConfig) {
           var data = httpConfig.data;
@@ -248,6 +250,9 @@ export function EsSearcherFactory(
         },
         function error(msg) {
           activeQueries.count--;
+          if (isAbortError(msg)) {
+            throw msg;
+          }
           self.inError = true;
           throw formatError(msg);
         },
@@ -262,17 +267,24 @@ export function EsSearcherFactory(
     /*jslint validthis:true*/
     var self = this;
 
+    var otherConfig = {
+      apiMethod: 'POST',
+      customHeaders: self.config.customHeaders,
+      numberOfRows: self.config.numberOfRows,
+      version: self.config.version,
+    };
+    if (self.config && self.config.signal !== undefined) {
+      otherConfig.signal = self.config.signal;
+    }
+    if (self.config && self.config.proxyUrl !== undefined) {
+      otherConfig.proxyUrl = self.config.proxyUrl;
+    }
     var otherSearcherOptions = {
       fieldList: self.fieldList,
       url: self.url,
       args: self.args,
       queryText: otherQuery,
-      config: {
-        apiMethod: 'POST',
-        customHeaders: self.config.customHeaders,
-        numberOfRows: self.config.numberOfRows,
-        version: self.config.version,
-      },
+      config: otherConfig,
       type: self.type,
     };
 
@@ -315,8 +327,13 @@ export function EsSearcherFactory(
     var url = esUrlSvc.buildExplainUrl(uri, doc);
     var headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);
 
+    var explainPostConfig = { headers: headers };
+    if (self.config && self.config.signal !== undefined && self.config.signal !== null) {
+      explainPostConfig.signal = self.config.signal;
+    }
+
     return httpClient
-      .post(url, { query: self.queryDsl.query }, { headers: headers })
+      .post(url, { query: self.queryDsl.query }, explainPostConfig)
       .then(function (response) {
         var explDict = response.data.explanation || null;
 
@@ -441,7 +458,7 @@ export function EsSearcherFactory(
 
     activeQueries.count++;
     return transport
-      .query(url, queryDslWithPagerArgs, headers)
+      .query(url, queryDslWithPagerArgs, headers, transportRequestOpts(self.config))
       .then(
         function success(httpConfig) {
           var data = httpConfig.data;
@@ -451,6 +468,9 @@ export function EsSearcherFactory(
         },
         function error(msg) {
           activeQueries.count--;
+          if (isAbortError(msg)) {
+            throw msg;
+          }
           self.inError = true;
           throw formatError(msg);
         },

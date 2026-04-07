@@ -18,7 +18,8 @@ export function HttpJsonpTransportFactory(TransportFactory, httpClient) {
 
   Transport.prototype.query = query;
 
-  function query(url, payload, headers) {
+  function query(url, payload, headers, requestOpts) {
+    requestOpts = requestOpts || {};
     // JSONP doesn't support headers, so we need to encode the user password in the URL.
     // Special characters need to be encoded.
     if (headers && headers['Authorization']) {
@@ -34,7 +35,11 @@ export function HttpJsonpTransportFactory(TransportFactory, httpClient) {
     }
 
     // you don't get header or payload support with jsonp, it's akin to GET requests that way.
-    return httpClient.jsonp(url, { jsonpCallbackParam: 'json.wrf' });
+    var jsonpConfig = { jsonpCallbackParam: 'json.wrf' };
+    if (requestOpts.signal !== undefined && requestOpts.signal !== null) {
+      jsonpConfig.signal = requestOpts.signal;
+    }
+    return httpClient.jsonp(url, jsonpConfig);
   }
 
   return Transport;

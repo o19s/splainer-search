@@ -16,10 +16,14 @@ the Appendix of correctness fixes shipped on `splainer-rewrite`.
 - **Native `Promise`.** `$q.defer` / `$q()` / `$q.reject` replaced with
   `new Promise` / `throw`. No digest cycles.
 - **Vitest + ESM tests.** Karma, Grunt, Jasmine specs, and the export-stripping
-  preprocessor are gone. `npm test` runs Vitest (548 tests, 41 files);
-  `npm run test:ci` adds ESLint and the chunked-resolver integration script.
-- **esbuild IIFE bundle.** `npm run build` produces `splainer-search.js`
-  (`globalThis.SplainerSearch`, 48 named exports).
+  preprocessor are gone. `npm test` runs Vitest; **`npm run test:ci`** adds ESLint and the chunked-resolver integration script. Test and file counts drift — run **`npm test`** for current totals.
+- **esbuild IIFE bundles.** `npm run build` writes **`dist/splainer-search.js`**
+  (`globalThis.SplainerSearch`, 48 named exports) and **`dist/splainer-search-wired.js`**
+  (`globalThis.SplainerSearchWired`, same surface as ESM **`wired.js`**).
+- **`AbortSignal` support.** Pass **`config.signal`** into `createSearcher` options (or
+  `get`/`post` / `createFetchClient` defaults) to cancel in-flight GET/POST; JSONP honours
+  `signal` by removing the script and rejecting with **`AbortError`**. BULK `_msearch`
+  merges batched signals when **`AbortSignal.any`** is available (see **Environment / `AbortSignal.any`** below).
 
 ## Breaking changes
 
@@ -28,7 +32,7 @@ the Appendix of correctness fixes shipped on `splainer-rewrite`.
 | Topic | Before (2.36.x) | After (3.0.0) |
 |---|---|---|
 | `package.json` `main` | `splainer-search.js` (concat IIFE) | `index.js` (**ESM**) |
-| `exports` | none | `"."` → `index.js`, `"./splainer-search.js"` → IIFE |
+| `exports` | none | `"."` → `index.js`, `"./splainer-search.js"` → `dist/splainer-search.js` (IIFE), `"./splainer-search-wired.js"` → `dist/splainer-search-wired.js` (IIFE) |
 | Module type | CommonJS-compatible | `"type": "module"` — **no CJS build shipped**; `require('splainer-search')` is unsupported |
 | AngularJS | Required peer; registered services on `o19s.splainer-search` | **Removed**. No `angular.module(...)` registration anywhere |
 | Browser global (IIFE) | Angular module registration | **`globalThis.SplainerSearch`** namespace object |
@@ -42,14 +46,16 @@ the Appendix of correctness fixes shipped on `splainer-rewrite`.
   `DocFactory`, `createFetchClient`, `defaultSolrConfig`, …) from
   `splainer-search` and wire them into your DI container yourself, or load the
   IIFE and read off `globalThis.SplainerSearch`.
-- **`<script>` consumers**: load `urijs` first, then `splainer-search.js`. Use
-  `window.SplainerSearch.<Name>` instead of any prior global / Angular service
-  lookup.
+- **`<script>` consumers**: load `urijs` first, then **`dist/splainer-search.js`**
+  from a local build or **`node_modules/splainer-search/dist/splainer-search.js`**
+  when installed from npm. Use `window.SplainerSearch.<Name>` instead of any prior
+  global / Angular service lookup. For the pre-wired graph in one file, use
+  **`dist/splainer-search-wired.js`** / **`globalThis.SplainerSearchWired`**.
 - **JSONP integrators**: pass **plain string URLs**. Angular `$sce` trusted
   URL objects are no longer accepted (Phase 4c).
-- **Cookies on cross-origin requests**: `fetch` defaults to *credentials
-  omitted*. If you previously relied on Angular/XHR same-site cookie defaults,
-  wrap `createFetchClient` with a `fetch` that sets `credentials: 'include'`.
+- **Cookies on cross-origin requests**: use `createFetchClient({ credentials: 'include' })`
+  for GET/POST, or wrap the injected `fetch` if you need finer control (CSRF, tracing).
+  JSONP still uses `<script>` tags, not `fetch` credentials.
 - **`$http` interceptors / transforms**: not replicated. There is no global
   request/response pipeline — wrap `createFetchClient`'s injected `fetch` if
   you need one.
@@ -62,8 +68,8 @@ the Appendix of correctness fixes shipped on `splainer-rewrite`.
   no longer get it — use `String.prototype.includes` directly.
 - **Browser baseline: ES2020.** The IIFE bundle is built with esbuild
   `target: ['es2020']`, which means modern Edge/Chrome/Firefox/Safari only —
-  no IE11, no pre-2020 Safari. Source maps are now emitted alongside the bundle
-  to make debugging the IIFE feasible.
+  no IE11, no pre-2020 Safari. Source maps are emitted next to the bundles under
+  **`dist/`** to make debugging the IIFEs feasible.
 
 ### Promise rejection contract
 
@@ -119,6 +125,10 @@ upgrading.
 Angular `$http`. JSON bodies are parsed; 4xx/5xx reject with the same shape.
 POST bodies that are non-string are `JSON.stringify`'d.
 
+### Environment / `AbortSignal.any`
+
+Bulk `_msearch` uses **`AbortSignal.any(signals)`** when the runtime provides it (e.g. **Safari 16.4+**, **Chromium 113+**, **Firefox 124+**, **Node 20+**). When `AbortSignal.any` is missing, the library falls back to a **composite `AbortController`** that listens for `abort` on each batched signal, so cancellation still works on older browsers at the cost of a small polyfill-style shim.
+
 ## Correctness fixes (independent of Angular removal)
 
 The `splainer-rewrite` branch also contains behavior-changing bug fixes that
@@ -163,14 +173,16 @@ See `MIGRATION_CHANGES.md` Appendix and the commits referenced there
 
 ## Validation
 
-- `npm run test:ci` — ESLint + Vitest (548 passed, 2 skipped) + integration.
-- IIFE smoke test — `node build.js` → load `urijs` then `splainer-search.js`;
-  `globalThis.SplainerSearch` exposes 48 named exports including
+- **`npm run test:ci`** — ESLint + Vitest + integration. Do not rely on hard-coded test counts in docs; run **`npm test`** for the current Vitest total.
+- **`npm run pack:check`** — Runs `build` then **`npm pack --dry-run`** so you can confirm **`dist/splainer-search.js`**, **`dist/splainer-search-wired.js`**, and their **`.map`** files are included in the tarball (guards against `npm publish --ignore-scripts` or a bad **`files`** list).
+- IIFE smoke test — `node build.js` → load `urijs` then `dist/splainer-search.js`;
+  `globalThis.SplainerSearch` exposes named exports including
   `createFetchClient`, `SolrSearcherFactory`, `EsSearcherFactory`, `DocFactory`,
   `defaultSolrConfig`.
 
 ## Pointers
 
+- Short integrator checklist: **`MIGRATION_CHANGES.md`** (section **3.0 integrator checklist**)
 - Phase-by-phase change log: `MIGRATION_CHANGES.md`
 - Migration plan / sign-off checklist: `MIGRATION_PREP.md`
 - Future direction (CORS / JSONP deprecation): `FUTURE.md`

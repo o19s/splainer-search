@@ -2,6 +2,8 @@
 
 /*jslint latedef:false*/
 
+import { isAbortError, transportRequestOpts } from '../services/transportRequestOpts.js';
+
 export function SolrSearcherFactory(
   SolrDocFactory,
   SearcherFactory,
@@ -78,6 +80,9 @@ export function SolrSearcherFactory(
     pageConfig.sanitize = false;
     pageConfig.escapeQuery = self.config.escapeQuery;
     pageConfig.apiMethod = self.config.apiMethod;
+    if (self.config && self.config.signal !== undefined) {
+      pageConfig.signal = self.config.signal;
+    }
 
     var options = {
       fieldList: self.fieldList,
@@ -233,7 +238,7 @@ export function SolrSearcherFactory(
 
     activeQueries.count++;
     return transport
-      .query(url, null, headers)
+      .query(url, null, headers, transportRequestOpts(self.config))
       .then(
         function success(resp) {
           var solrResp = resp.data;
@@ -295,6 +300,9 @@ export function SolrSearcherFactory(
         },
         function error(msg) {
           activeQueries.count--;
+          if (isAbortError(msg)) {
+            throw msg;
+          }
           thisSearcher.inError = true;
           msg.searchError =
             'Error with Solr query or server. Contact Solr directly to inspect the error';
@@ -341,15 +349,19 @@ export function SolrSearcherFactory(
           solrParams.defType = defType;
         }
 
+        var otherConfig = {
+          numberOfRows: self.config.numberOfRows,
+        };
+        if (self.config && self.config.signal !== undefined) {
+          otherConfig.signal = self.config.signal;
+        }
         var otherSearcherOptions = {
           fieldList: self.fieldList,
           hlFieldList: self.hlFieldList,
           url: self.url,
           args: solrParams,
           queryText: otherQuery,
-          config: {
-            numberOfRows: self.config.numberOfRows,
-          },
+          config: otherConfig,
           type: self.type,
           HIGHLIGHTING_PRE: self.HIGHLIGHTING_PRE,
           HIGHLIGHTING_POST: self.HIGHLIGHTING_POST,

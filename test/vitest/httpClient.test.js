@@ -302,6 +302,56 @@ describe('createFetchClient', function () {
         }
       }
     });
+
+    it('rejects with AbortError when signal is already aborted', async function () {
+      var client = createFetchClient({ fetch: vi.fn() });
+      var ac = new AbortController();
+      ac.abort();
+
+      await expect(
+        client.jsonp('http://example.com/solr/select?q=*:*', {
+          jsonpCallbackParam: 'callback',
+          signal: ac.signal,
+        }),
+      ).rejects.toMatchObject({ name: 'AbortError' });
+    });
+
+    it('rejects with AbortError when signal aborts after script is added', async function () {
+      var mockHead = {
+        appendChild: vi.fn(),
+        removeChild: vi.fn(),
+      };
+      var scriptStub = { parentNode: mockHead, src: '' };
+      var hadDocument = 'document' in globalThis;
+      var origDocument = globalThis.document;
+
+      globalThis.document = {
+        head: mockHead,
+        createElement: function (tag) {
+          if (tag === 'script') {
+            return scriptStub;
+          }
+        },
+      };
+
+      try {
+        var client = createFetchClient({ fetch: vi.fn() });
+        var ac = new AbortController();
+        var p = client.jsonp('http://example.com/solr/select?q=*:*', {
+          jsonpCallbackParam: 'callback',
+          signal: ac.signal,
+        });
+        ac.abort();
+        await expect(p).rejects.toMatchObject({ name: 'AbortError' });
+        expect(mockHead.removeChild).toHaveBeenCalled();
+      } finally {
+        if (hadDocument) {
+          globalThis.document = origDocument;
+        } else {
+          delete globalThis.document;
+        }
+      }
+    });
   });
 
   describe('defaults', function () {
@@ -313,6 +363,91 @@ describe('createFetchClient', function () {
 
       var callArgs = fetchFn.mock.calls[0][1];
       expect(callArgs.headers).toEqual({});
+    });
+  });
+
+  describe('AbortSignal (GET/POST)', function () {
+    it('passes signal from config to fetch for get', async function () {
+      var fetchFn = mockFetch(200, {});
+      var client = createFetchClient(fetchFn);
+      var ac = new AbortController();
+
+      await client.get('http://example.com/api', { headers: {}, signal: ac.signal });
+
+      expect(fetchFn.mock.calls[0][1].signal).toBe(ac.signal);
+    });
+
+    it('passes signal from config to fetch for post', async function () {
+      var fetchFn = mockFetch(200, {});
+      var client = createFetchClient(fetchFn);
+      var ac = new AbortController();
+
+      await client.post('http://example.com/api', { a: 1 }, { headers: {}, signal: ac.signal });
+
+      expect(fetchFn.mock.calls[0][1].signal).toBe(ac.signal);
+    });
+
+    it('uses default signal from createFetchClient when request omits it', async function () {
+      var fetchFn = mockFetch(200, {});
+      var ac = new AbortController();
+      var client = createFetchClient({ fetch: fetchFn, signal: ac.signal });
+
+      await client.get('http://example.com/api', { headers: {} });
+
+      expect(fetchFn.mock.calls[0][1].signal).toBe(ac.signal);
+    });
+
+    it('per-request signal overrides createFetchClient default', async function () {
+      var fetchFn = mockFetch(200, {});
+      var defaultAc = new AbortController();
+      var reqAc = new AbortController();
+      var client = createFetchClient({ fetch: fetchFn, signal: defaultAc.signal });
+
+      await client.get('http://example.com/api', { headers: {}, signal: reqAc.signal });
+
+      expect(fetchFn.mock.calls[0][1].signal).toBe(reqAc.signal);
+    });
+
+    it('propagates AbortError from fetch without wrapping', async function () {
+      var abortErr =
+        typeof DOMException !== 'undefined'
+          ? new DOMException('Aborted', 'AbortError')
+          : Object.assign(new Error('Aborted'), { name: 'AbortError' });
+      var fetchFn = vi.fn().mockRejectedValue(abortErr);
+      var client = createFetchClient(fetchFn);
+
+      await expect(client.get('http://example.com/api', { headers: {} })).rejects.toBe(abortErr);
+    });
+  });
+
+  describe('credentials (GET/POST)', function () {
+    it('omits credentials from fetch options when not configured', async function () {
+      var fetchFn = mockFetch(200, {});
+      var client = createFetchClient(fetchFn);
+
+      await client.get('http://example.com/api', { headers: {} });
+
+      expect(fetchFn.mock.calls[0][1]).not.toHaveProperty('credentials');
+    });
+
+    it('applies default credentials from createFetchClient options', async function () {
+      var fetchFn = mockFetch(200, {});
+      var client = createFetchClient({ fetch: fetchFn, credentials: 'include' });
+
+      await client.get('http://example.com/api', { headers: {} });
+      await client.post('http://example.com/api', { a: 1 }, { headers: {} });
+
+      expect(fetchFn.mock.calls[0][1].credentials).toBe('include');
+      expect(fetchFn.mock.calls[1][1].credentials).toBe('include');
+    });
+
+    it('lets per-request config.credentials override the default', async function () {
+      var fetchFn = mockFetch(200, {});
+      var client = createFetchClient({ fetch: fetchFn, credentials: 'include' });
+
+      await client.get('http://example.com/api', { headers: {}, credentials: 'omit' });
+
+      expect(fetchFn.mock.calls[0][1].credentials).toBe('omit');
     });
   });
 });

@@ -25,6 +25,16 @@ export function searchSvcConstructor(
     return utilsSvc.deepClone(defaultSolrConfig);
   };
 
+  /**
+   * @param {*} fieldSpec
+   * @param {string} url
+   * @param {object} args
+   * @param {string} queryText
+   * @param {object} [config] - May include {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal}
+   *   as **`config.signal`** to cancel in-flight search traffic (GET/POST via `fetch`, JSONP via script removal).
+   *   BULK (`_msearch`) combines per-request signals when `AbortSignal.any` exists; otherwise a composite controller is used.
+   * @param {string} [searchEngine]
+   */
   this.createSearcher = function (fieldSpec, url, args, queryText, config, searchEngine) {
     if (searchEngine === undefined) {
       searchEngine = 'solr';

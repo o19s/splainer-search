@@ -6,10 +6,17 @@
  * `createSearcher`, …), instead of importing `*Constructor` symbols from the root
  * package and wiring dependencies yourself.
  *
- * **Custom `fetch` (cookies, CSRF, tests):** call {@link createWiredServices} with
- * `createFetchClient({ fetch: myFetch })`. For the default global `fetch`, use
+ * **Cookies / CSRF / tests:** use {@link createFetchClient} with `{ credentials: 'include' }` for
+ * credentialed cross-origin GET/POST, or `{ fetch: myFetch }` for a full custom `fetch`. For the
+ * default global `fetch`, use
  * {@link getDefaultWiredServices} or the top-level {@link createSearcher} /
  * {@link createFieldSpec} / {@link createNormalDoc} helpers.
+ *
+ * **Cancellation:** pass **`signal`** on the searcher **`config`** object (5th argument to
+ * {@link createSearcher}) so GET/POST/JSONP traffic can be aborted; optional default
+ * **`createFetchClient({ signal })`** applies when a per-request signal is omitted.
+ * Use **`isAbortError`** in `.catch` handlers; **`transportRequestOpts`** matches the root
+ * package helper for advanced wiring.
  *
  * @module splainer-search/wired
  */
@@ -20,6 +27,7 @@ import { createWiredServices } from './wired/wiring.js';
 
 export { createWiredServices } from './wired/wiring.js';
 export { createFetchClient } from './services/httpClient.js';
+export { isAbortError, transportRequestOpts } from './services/transportRequestOpts.js';
 
 export { activeQueries } from './values/activeQueries.js';
 export { defaultSolrConfig } from './values/defaultSolrConfig.js';

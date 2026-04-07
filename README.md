@@ -16,7 +16,8 @@ Use the **`splainer-search/wired.js`** (or **`splainer-search/wired`**) entry so
 import { createWiredServices, createFetchClient } from 'splainer-search/wired.js';
 
 var httpClient = createFetchClient({
-  fetch: globalThis.fetch, // or wrap for credentials / CSRF (see integrator doc)
+  credentials: 'include', // optional: cross-origin session cookies (needs CORS)
+  // fetch: globalThis.fetch, // optional: wrap for CSRF, tracing, tests (see integrator doc)
 });
 var api = createWiredServices(httpClient);
 
@@ -27,7 +28,7 @@ var searcher = api.searchSvc.createSearcher(
 );
 ```
 
-`<script>` consumers: run **`npm run build`** in this package, load **URI.js** first, then **`splainer-search-wired.js`** — APIs live on **`globalThis.SplainerSearchWired`** (e.g. `SplainerSearchWired.createWiredServices`).
+`<script>` consumers: run **`npm run build`** in this package, load **URI.js** first, then **`dist/splainer-search-wired.js`** (from a published install: **`node_modules/splainer-search/dist/splainer-search-wired.js`**) — APIs live on **`globalThis.SplainerSearchWired`** (e.g. `SplainerSearchWired.createWiredServices`).
 
 ---
 

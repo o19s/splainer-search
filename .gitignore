@@ -1,8 +1,5 @@
-# compiled package shouldn't be checked in
-splainer-search.js
-splainer-search.js.map
-splainer-search-wired.js
-splainer-search-wired.js.map
+# esbuild IIFE output (npm run build / prepublishOnly)
+dist/
 # generic (system) files/extensions we don't want
 *.seed
 *.log

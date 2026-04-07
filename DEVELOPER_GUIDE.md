@@ -18,6 +18,7 @@ Other useful scripts:
 npm run lint               # ESLint over services/, factories/, values/
 npm run test:integration   # node-based integration test against a real chunked fetch
 npm run test:ci            # lint + unit + integration (what CI should run)
+npm run pack:check         # build + npm pack --dry-run (verify dist/ lands in tarball)
 npm run format             # prettier --write
 ```
 
@@ -29,7 +30,7 @@ To build the IIFE bundles consumed via `<script>` tags:
 npm run build
 ```
 
-The build is driven by [build.js](build.js) (esbuild). It produces **`splainer-search.js`** (`globalThis.SplainerSearch`, constructor-level `index.js` exports) and **`splainer-search-wired.js`** (`globalThis.SplainerSearchWired`, same as ESM **`wired.js`**). Load [urijs](https://medialize.github.io/URI.js/) before either bundle.
+The build is driven by [build.js](build.js) (esbuild). It produces **`dist/splainer-search.js`** (`globalThis.SplainerSearch`, constructor-level `index.js` exports) and **`dist/splainer-search-wired.js`** (`globalThis.SplainerSearchWired`, same as ESM **`wired.js`**). Load [urijs](https://medialize.github.io/URI.js/) before either bundle.
 
 The ESM subpath **`splainer-search/wired.js`** is the supported pre-wired graph for apps (Splainer 2, Quepid). Its implementation lives in [wired/wiring.js](wired/wiring.js); Vitest uses the same graph via [test/vitest/helpers/serviceFactory.js](test/vitest/helpers/serviceFactory.js).
 
@@ -57,4 +58,4 @@ np --no-2fa
 4. This will also pop open a browser window on GitHub to create a new release for the project.
 Use the "Generate Release Notes" button on Github to make the template, and then paste in the contents of `CHANGELOG.md` into the _Whats Changed_ section.
 
-**IIFE bundles in the tarball:** `splainer-search.js` / `splainer-search-wired.js` and their **`.map`** files are **not** committed to git but **are** listed in `package.json` `"files"` for the npm pack. **`prepublishOnly`** runs `npm run build` automatically on `npm publish` (and `npm pack`), so the tarball includes them unless scripts are disabled (e.g. `npm publish --ignore-scripts`). Run `npm run build` locally anytime to verify the bundles before releasing; CI also runs the build after `test:ci` (see [.circleci/config.yml](.circleci/config.yml)).
+**IIFE bundles in the tarball:** `dist/splainer-search.js` / `dist/splainer-search-wired.js` and their **`.map`** files are **not** committed to git but **are** listed in `package.json` `"files"` for the npm pack. **`prepublishOnly`** runs `npm run build` automatically on `npm publish` (and `npm pack`), so the tarball includes them unless scripts are disabled (e.g. `npm publish --ignore-scripts`). Run **`npm run pack:check`** before a release to confirm the dry-run pack lists those files. Run `npm run build` locally anytime to verify the bundles; CI also runs the build after `test:ci` (see [.circleci/config.yml](.circleci/config.yml)).

@@ -12,7 +12,7 @@ export function HttpProxyTransportFactory(TransportFactory, HttpJsonpTransportFa
 
   Transport.prototype.query = query;
 
-  function query(url, payload, headers) {
+  function query(url, payload, headers, requestOpts) {
     var transport = this.options().transport;
 
     // It doesn't make sense to use JSONP instead of GET with a proxy
@@ -20,7 +20,7 @@ export function HttpProxyTransportFactory(TransportFactory, HttpJsonpTransportFa
       throw new Error('It does not make sense to proxy a JSONP connection, use GET instead.');
     }
     url = this.options().proxyUrl + url;
-    return transport.query(url, payload, headers);
+    return transport.query(url, payload, headers, requestOpts);
   }
 
   return Transport;

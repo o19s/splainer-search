@@ -50,6 +50,40 @@ function isSaneMsearchBody(data, expectedResponseCount) {
 }
 
 export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
+  /**
+   * @param {AbortSignal[]} signals
+   * @returns {AbortSignal|undefined}
+   */
+  function combineAbortSignals(signals) {
+    var filtered = signals.filter(function (s) {
+      return s !== undefined && s !== null;
+    });
+    if (filtered.length === 0) {
+      return undefined;
+    }
+    if (filtered.length === 1) {
+      return filtered[0];
+    }
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.any === 'function') {
+      return AbortSignal.any(filtered);
+    }
+    var composite = new AbortController();
+    utilsSvc.safeForEach(filtered, function (sig) {
+      if (sig.aborted) {
+        composite.abort();
+        return;
+      }
+      sig.addEventListener(
+        'abort',
+        function () {
+          composite.abort();
+        },
+        { once: true },
+      );
+    });
+    return composite.signal;
+  }
+
   var Transport = function (options) {
     TransportFactory.call(this, options);
     this.batchSender = null;
@@ -151,7 +185,18 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
       if (!pendingHttp && queue.length > 0) {
         // Implementation of Elasticsearch's _msearch ("Multi Search") API
         var payload = buildMultiSearch();
-        pendingHttp = httpClient.post(url, payload, requestConfig);
+        var signals = [];
+        utilsSvc.safeForEach(queue, function (pendingQuery) {
+          if (pendingQuery.signal) {
+            signals.push(pendingQuery.signal);
+          }
+        });
+        var combinedSignal = combineAbortSignals(signals);
+        var postConfig = Object.assign({}, requestConfig);
+        if (combinedSignal) {
+          postConfig.signal = combinedSignal;
+        }
+        pendingHttp = httpClient.post(url, payload, postConfig);
         pendingHttp
           .then(multiSearchSuccess, multiSearchFailed)
           .catch(function (err) {
@@ -161,7 +206,8 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
       }
     }
 
-    function enqueue(query) {
+    function enqueue(queryPayload, requestOpts) {
+      requestOpts = requestOpts || {};
       var resolve, reject;
       var promise = new Promise(function (res, rej) {
         resolve = res;
@@ -172,7 +218,8 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
         resolve: resolve,
         reject: reject,
         inFlight: false,
-        payload: query,
+        payload: queryPayload,
+        signal: requestOpts.signal,
       };
       queue.push(pendingQuery);
       ensureTimer();
@@ -215,7 +262,7 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
     }
   };
 
-  function query(url, payload, headers) {
+  function query(url, payload, headers, requestOpts) {
     var self = this;
     if (!self.batchSender) {
       self.batchSender = new BatchSender(url, headers);
@@ -223,7 +270,7 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
       self.batchSender.cancel();
       self.batchSender = new BatchSender(url, headers);
     }
-    return self.batchSender.enqueue(payload);
+    return self.batchSender.enqueue(payload, requestOpts || {});
   }
 
   return Transport;

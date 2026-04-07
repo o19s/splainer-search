@@ -2,6 +2,8 @@
 
 /*jslint latedef:false*/
 
+import { isAbortError, transportRequestOpts } from '../services/transportRequestOpts.js';
+
 export function AlgoliaSearcherFactory(
   AlgoliaDocFactory,
   activeQueries,
@@ -156,7 +158,12 @@ export function AlgoliaSearcherFactory(
     activeQueries.count++;
 
     return transport
-      .query(transportParameters.url, transportParameters.payload, transportParameters.headers)
+      .query(
+        transportParameters.url,
+        transportParameters.payload,
+        transportParameters.headers,
+        transportRequestOpts(self.config),
+      )
       .then(
         function success(httpConfig) {
           const data = httpConfig.data;
@@ -202,6 +209,9 @@ export function AlgoliaSearcherFactory(
         function error(msg) {
           console.log('Error');
           activeQueries.count--;
+          if (isAbortError(msg)) {
+            throw msg;
+          }
           self.inError = true;
           msg.searchError = 'Error with Algolia query or API endpoint. Review request manually.';
           throw msg;

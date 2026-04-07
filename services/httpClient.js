@@ -13,6 +13,19 @@
 
 var _jsonpCounter = 0;
 
+function makeAbortError() {
+  if (typeof DOMException !== 'undefined') {
+    try {
+      return new DOMException('The operation was aborted.', 'AbortError');
+    } catch (_e) {
+      /* IE / very old engines */
+    }
+  }
+  var err = new Error('The operation was aborted.');
+  err.name = 'AbortError';
+  return err;
+}
+
 /**
  * Create a fetch-based HTTP client with the same response contract as
  * Angular's $http service.
@@ -23,7 +36,20 @@ var _jsonpCounter = 0;
  *
  * @param {Object} [options]
  * @param {Function} [options.fetch] - Custom fetch function (for testing)
- * @param {Function} [options.jsonpRequest] - Custom JSONP function (for testing)
+ * @param {Function} [options.jsonpRequest] - Custom JSONP implementation `(url, config) => Promise`.
+ *   The same **`config`** the client receives on **`jsonp(url, config)`** is forwarded (including
+ *   **`config.signal`** when set). The built-in script-tag JSONP honours **`signal`**; **custom
+ *   implementations must handle abort themselves** (e.g. reject with `AbortError` when
+ *   `config.signal.aborted` or on the `abort` event) if callers rely on cancellation.
+ * @param {'omit'|'same-origin'|'include'} [options.credentials] - Default
+ *   {@link https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials | Request.credentials}
+ *   for GET/POST. Omitted properties keep the environment default (`same-origin` in browsers).
+ *   Use `'include'` for credentialed cross-origin requests when the server sends the right CORS
+ *   headers. JSONP uses script tag injection, not this option.
+ * @param {AbortSignal} [options.signal] - Default {@link https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal | AbortSignal}
+ *   for GET/POST (merged with per-request `config.signal` when both are set — request wins).
+ *   JSONP: `config.signal` on `jsonp()` aborts the promise and removes the script when possible;
+ *   the in-flight HTTP response cannot be cancelled.
  */
 export function createFetchClient(options) {
   // Support legacy signature: createFetchClient(fetchFn)
@@ -34,13 +60,27 @@ export function createFetchClient(options) {
 
   var _fetch = options.fetch || globalThis.fetch;
   var _jsonpRequest = options.jsonpRequest || null;
+  var _defaultCredentials = options.credentials;
+  var _defaultSignal = options.signal;
 
   function request(method, url, data, config) {
-    var headers = Object.assign({}, (config && config.headers) || {});
+    config = config || {};
+    var headers = Object.assign({}, config.headers || {});
     var fetchOptions = {
       method: method,
       headers: headers,
     };
+
+    var credentials =
+      config.credentials !== undefined ? config.credentials : _defaultCredentials;
+    if (credentials !== undefined) {
+      fetchOptions.credentials = credentials;
+    }
+
+    var signal = config.signal !== undefined ? config.signal : _defaultSignal;
+    if (signal !== undefined && signal !== null) {
+      fetchOptions.signal = signal;
+    }
 
     if (data !== undefined && data !== null && method !== 'GET') {
       fetchOptions.body = typeof data === 'string' ? data : JSON.stringify(data);
@@ -83,6 +123,9 @@ export function createFetchClient(options) {
           delete err._httpClientError;
           throw err;
         }
+        if (err && err.name === 'AbortError') {
+          throw err;
+        }
         // Network error (fetch itself rejected, or text() failed).
         // Preserve the original error via `cause` so consumers and devtools
         // can still see the underlying message/stack while the documented
@@ -101,13 +144,27 @@ export function createFetchClient(options) {
    * @param {string} url - Request URL (must be a string; Angular `$sce` wrappers are not supported).
    * @param {Object} [config]
    * @param {string} [config.jsonpCallbackParam] - Query parameter name for the callback (default `callback`).
+   * @param {AbortSignal} [config.signal] - When aborted, rejects with `AbortError` and removes the script tag
+   *   (default implementation only). With **`jsonpRequest`**, the override receives **`config.signal`** but
+   *   must implement cancellation if needed — see **`options.jsonpRequest`** on {@link createFetchClient}.
    */
   function jsonp(url, config) {
+    config = config || {};
+
     if (_jsonpRequest) {
       return _jsonpRequest(url, config);
     }
 
-    var callbackParam = (config && config.jsonpCallbackParam) || 'callback';
+    var signal = config.signal;
+    var signalUsable =
+      signal &&
+      typeof signal.addEventListener === 'function' &&
+      typeof signal.removeEventListener === 'function';
+    if (signal && signal.aborted) {
+      return Promise.reject(makeAbortError());
+    }
+
+    var callbackParam = config.jsonpCallbackParam || 'callback';
     var callbackName = '__splainerJsonpCb_' + (_jsonpCounter++);
     var separator = url.indexOf('?') === -1 ? '?' : '&';
     var scriptUrl = url + separator + encodeURIComponent(callbackParam) + '=' + callbackName;
@@ -121,10 +178,28 @@ export function createFetchClient(options) {
         if (script.parentNode) {
           script.parentNode.removeChild(script);
         }
+        if (signalUsable) {
+          signal.removeEventListener('abort', onAbort);
+        }
+      }
+
+      function onAbort() {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        cleanup();
+        reject(makeAbortError());
+      }
+
+      if (signalUsable) {
+        signal.addEventListener('abort', onAbort);
       }
 
       globalThis[callbackName] = function (data) {
-        if (settled) { return; }
+        if (settled) {
+          return;
+        }
         settled = true;
         cleanup();
         resolve({
@@ -135,7 +210,9 @@ export function createFetchClient(options) {
       };
 
       script.onerror = function () {
-        if (settled) { return; }
+        if (settled) {
+          return;
+        }
         settled = true;
         cleanup();
         reject({ data: null, status: 0, statusText: '' });

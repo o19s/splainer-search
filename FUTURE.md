@@ -8,12 +8,6 @@ As of the Phase 3 migration, JSONP is preserved via `<script>` tag injection in 
 
 - **Security**: JSONP injects remote code via `<script>` tags, making it vulnerable to XSS if the Solr server is compromised.
 - **Limited**: JSONP only supports GET requests, cannot send custom headers, and has no proper error handling (no HTTP status codes on failure).
-- **Legacy**: Modern Solr supports CORS headers natively. All other search engines in splainer-search (Elasticsearch, OpenSearch, Algolia, Search.io, Vectara) use GET/POST with CORS.
+- **Legacy**: Modern Solr supports CORS headers natively. All other backends in splainer-search (Elasticsearch, OpenSearch, Algolia, Vectara, custom Search API, etc.) use GET/POST over HTTP with CORS as usual, not JSONP.
 
 **Recommendation**: In a future semver-major release, change the default `apiMethod` from `'JSONP'` to `'GET'` and deprecate JSONP support. Document that Solr users should configure CORS headers on their Solr server.
-
-## JSONP Basic-Auth Colon Bug
-
-`httpJsonpTransportFactory.js` decodes the `Authorization: Basic …` header, splits on `:` to separate username from password, and embeds credentials in the URL. The split uses `userPassword.split(':')` and only keeps index `[1]`, so a password containing `:` (e.g. `user:abc:def`) is silently truncated to `abc`. This is a pre-existing bug — legal passwords with colons will fail on JSONP connections.
-
-**Fix**: Use `split(':', 2)` or `indexOf(':')` to split only on the first colon, preserving the rest of the password.

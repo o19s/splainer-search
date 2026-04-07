@@ -1,13 +1,19 @@
 Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
 # 3.0.0 (unreleased)
+- **Breaking:** IIFE bundles live under **`dist/`**, not the package/repo root. If you referenced **`splainer-search.js`** at the root of a clone or old layout, use **`dist/splainer-search.js`** (after `npm run build`), **`node_modules/splainer-search/dist/splainer-search.js`** from npm, or the **`exports`** subpaths **`splainer-search/splainer-search.js`** and **`splainer-search/splainer-search-wired.js`**. Quick checklist: **`MIGRATION_CHANGES.md`** (section **3.0 integrator checklist**).
 - **Breaking:** 3.0.0 is ESM-only. CommonJS `require('splainer-search')` is no longer supported; use `import` or upgrade to Node 22.12+ which supports `require(esm)` natively. See `RELEASE_NOTES_3.0.0_DRAFT.md` for the full migration guide.
-- **Breaking:** `splainer-search.min.js` is no longer published. Use `splainer-search.js` (the IIFE bundle) directly, import the ESM entry, or let your bundler / CDN handle minification.
-- Add **`splainer-search/wired`** and **`splainer-search/wired.js`**: pre-wired service graph (`createWiredServices`, Quepid/Splainer-shaped helpers) shared with Vitest. `npm run build` also emits **`splainer-search-wired.js`** (`globalThis.SplainerSearchWired`) for importmap / script-tag consumers that need the wired surface in one file.
+- **Breaking:** AngularJS is removed (`$http`, `$q`, `angular.module` registration). Use named ESM exports from `splainer-search` or the IIFE `globalThis.SplainerSearch` namespace; HTTP goes through `createFetchClient()` (Fetch for GET/POST, JSONP via `<script>`).
+- **Breaking:** Several searcher and resolver code paths now **reject** failed HTTP/error states instead of resolving with an error-shaped object (e.g. explain / explainOther / renderTemplate and resolver doc-fetch). Consumers that assumed a resolved error payload need `.catch` or updated `then` handlers. Details in `RELEASE_NOTES_3.0.0_DRAFT.md`.
+- **Breaking:** `splainer-search.min.js` is no longer published. Use the IIFE under **`dist/splainer-search.js`** (or the package subpath **`splainer-search/splainer-search.js`**), import the ESM entry, or let your bundler / CDN handle minification.
+- Vitest replaces Karma/Grunt for unit tests (`npm test`). `npm run build` uses esbuild; IIFE output is **`dist/splainer-search.js`** (`globalThis.SplainerSearch`, named exports).
+- Add **`splainer-search/wired`** and **`splainer-search/wired.js`**: pre-wired service graph (`createWiredServices`, Quepid/Splainer-shaped helpers) shared with Vitest. `npm run build` also emits **`dist/splainer-search-wired.js`** (`globalThis.SplainerSearchWired`; package subpath **`splainer-search/splainer-search-wired.js`**) for importmap / script-tag consumers that need the wired surface in one file.
+- **`createFetchClient({ credentials })`**: optional default `Request.credentials` for GET/POST (e.g. `'include'` for cross-origin cookies). Per-request override via `get`/`post` config `{ credentials }`. JSONP is unchanged (`<script>` loading).
+- **`AbortSignal`:** optional **`createFetchClient({ signal })`** default for GET/POST; per-request **`get`/`post` `config.signal`** overrides. Searcher **`config.signal`** (from `createSearcher` options) is passed through transports; **`AbortError`** propagates without the usual `{ data, status, statusText }` wrapper. JSONP honours **`config.signal`** (script removed on abort). BULK `_msearch` combines batched signals via **`AbortSignal.any`** when available. New helpers: **`transportRequestOpts`**, **`isAbortError`** (exported from the package root).
 
 # 2.36.4 (2026-02-23)
-- Custom Search API should be better at handling when an array of filed values is provided.  https://github.com/o19s/splainer-search/pull/158 by @epugh.
-- 
+- Custom Search API should be better at handling when an array of field values is provided.  https://github.com/o19s/splainer-search/pull/158 by @epugh.
+
 # 2.36.2 (2026-01-08)
 - Custom Search API should respect the number of results setting, so if we ask for 20 results, and the custom search api is returning 30, then only return the first 20!  https://github.com/o19s/splainer-search/pull/157 by @epugh.
 

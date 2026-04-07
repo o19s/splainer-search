@@ -69,7 +69,14 @@ export function ResolverFactory(searchSvc, solrUrlSvc, normalDocsSvc, utilsSvc) 
 
     // Only set optional config values when they are defined in settings,
     // so that undefined values do not clobber defaults when the config is merged.
-    var optionalKeys = ['version', 'proxyUrl', 'customHeaders', 'basicAuthCredential', 'apiMethod'];
+    var optionalKeys = [
+      'version',
+      'proxyUrl',
+      'customHeaders',
+      'basicAuthCredential',
+      'apiMethod',
+      'signal',
+    ];
     utilsSvc.safeForEach(optionalKeys, function (key) {
       if (self.settings[key] !== undefined) {
         self.config[key] = self.settings[key];

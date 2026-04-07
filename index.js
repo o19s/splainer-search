@@ -2,13 +2,14 @@
  * splainer-search — ESM entry point.
  *
  * Re-exports every public constructor, factory, and value so consumers
- * can import individually or use the bundled IIFE (splainer-search.js).
+ * can import individually or use the bundled IIFE (`dist/splainer-search.js` after `npm run build`).
  */
 
 // ── Services ────────────────────────────────────────────────────────────
 export { utilsSvcFactory } from './services/utilsSvc.js';
 export { tryParseObject } from './services/customHeadersJson.js';
 export { createFetchClient } from './services/httpClient.js';
+export { isAbortError, transportRequestOpts } from './services/transportRequestOpts.js';
 export { vectorSvcConstructor } from './services/vectorSvc.js';
 export { fieldSpecSvcConstructor } from './services/fieldSpecSvc.js';
 export { solrUrlSvcConstructor } from './services/solrUrlSvc.js';

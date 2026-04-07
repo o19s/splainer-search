@@ -7,8 +7,8 @@
     ".": "./index.js",
     "./wired": "./wired.js",
     "./wired.js": "./wired.js",
-    "./splainer-search.js": "./splainer-search.js",
-    "./splainer-search-wired.js": "./splainer-search-wired.js",
+    "./splainer-search.js": "./dist/splainer-search.js",
+    "./splainer-search-wired.js": "./dist/splainer-search-wired.js",
     "./package.json": "./package.json"
   },
   "contributors": [
@@ -35,10 +35,10 @@
     "services/",
     "factories/",
     "values/",
-    "splainer-search.js",
-    "splainer-search.js.map",
-    "splainer-search-wired.js",
-    "splainer-search-wired.js.map"
+    "dist/splainer-search.js",
+    "dist/splainer-search.js.map",
+    "dist/splainer-search-wired.js",
+    "dist/splainer-search-wired.js.map"
   ],
   "dependencies": {
     "urijs": "^1.19.7"
@@ -68,6 +68,7 @@
     "test:ci": "npm run lint && npm run test && npm run test:integration",
     "stryker": "stryker run",
     "build": "node build.js",
+    "pack:check": "npm run build && npm pack --dry-run",
     "prepublishOnly": "npm run build"
   },
   "repository": {

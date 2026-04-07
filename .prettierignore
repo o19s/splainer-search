@@ -1,6 +1,6 @@
 node_modules
 coverage
 *.min.js
-splainer-search.js
+dist/
 package-lock.json
 *.md

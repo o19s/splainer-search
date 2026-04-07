@@ -1,3 +1,0 @@
-- The previous commit should be safe if we need to rollback at any point to an earlier stable state. Almost all changes are additional tests with some very minimal bug fixes. The code is still Angular.
-- All commits up to this point have been focused on fixing issues in the Angular codebase to ensure they don't get migrated into the new codebase or confuse the agents while they assist in conversion.
-- It has also included some tool modernization - we've replaced jshint with eslint and prettier.

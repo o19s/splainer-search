@@ -12,8 +12,12 @@ export function HttpGetTransportFactory(TransportFactory, httpClient) {
 
   Transport.prototype.query = query;
 
-  function query(url, payload, headers) {
+  function query(url, payload, headers, requestOpts) {
+    requestOpts = requestOpts || {};
     var requestConfig = { headers: headers };
+    if (requestOpts.signal !== undefined && requestOpts.signal !== null) {
+      requestConfig.signal = requestOpts.signal;
+    }
     return httpClient.get(url, requestConfig);
   }
 

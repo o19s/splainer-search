@@ -8,6 +8,26 @@ observable behavior independent of Angular removal.
 
 ---
 
+## 3.0 integrator checklist
+
+Use this list before and after upgrading. Semver-major narrative and breaking-change tables: **`RELEASE_NOTES_3.0.0_DRAFT.md`**. Phase-by-phase detail: the sections below in this file.
+
+1. **IIFE / `<script>` paths** — Bundles live under **`dist/`**. If you pointed at a **repo-root** `splainer-search.js` from a git clone, switch to **`dist/splainer-search.js`** (after `npm run build`), **`node_modules/splainer-search/dist/splainer-search.js`** when installed from npm, or the package subpaths **`splainer-search/splainer-search.js`** / **`splainer-search/splainer-search-wired.js`** (via `package.json` `exports`). Load **URI.js** first.
+
+2. **ESM entry** — Prefer `import { … } from 'splainer-search'` or **`splainer-search/wired.js`**. CommonJS `require('splainer-search')` is unsupported unless your runtime supports **`require(esm)`** (e.g. Node **22.12+**).
+
+3. **Cookies on cross-origin GET/POST** — Use **`createFetchClient({ credentials: 'include' })`** when the server sends the right CORS headers. JSONP still uses `<script>` tags (not `fetch` credentials).
+
+4. **Cancellation** — Pass **`signal`** on the searcher **`config`** (5th argument to `createSearcher`). Optional default: **`createFetchClient({ signal })`**. In `.catch`, use **`isAbortError(err)`** (from **`splainer-search`** or **`splainer-search/wired.js`**) to distinguish user abort from search errors.
+
+5. **Promise contract** — **`explain`**, **`explainOther`**, **`renderTemplate`**, and resolver **doc-fetch** paths **reject** on failure instead of resolving with an error-shaped value. Use **`.catch`**, **`try`/`await`**, or `isAbortError` as needed.
+
+6. **Validate locally** — Run **`npm run test:ci`**. Before publish, run **`npm run pack:check`** to confirm the tarball would include **`dist/*.js`** and maps (catches `--ignore-scripts` / `files` mistakes).
+
+Test and file counts change over time; use **`npm test`** for current Vitest totals, not numbers copied from older docs.
+
+---
+
 ## Phase 1 — Angular utility API replacements
 
 **Behavioral changes: None.**
@@ -282,10 +302,13 @@ Response shapes and status handling were kept aligned with `$http` (`{ data, sta
 
 | Area | `$http` (before) | `fetch` (`createFetchClient`) |
 |------|------------------|--------------------------------|
-| Cookies | Sent according to Angular/XHR defaults for same-site requests | `fetch` uses **credentials omitted** unless callers extend the client; this bundle does not set `credentials: 'include'` |
+| Cookies | Sent according to Angular/XHR defaults for same-site requests | Pass **`createFetchClient({ credentials: 'include' })`** for credentialed cross-origin GET/POST, or a custom `fetch`; otherwise browser defaults apply (`same-origin`). JSONP is not affected. |
 | Interceptors / transforms | Angular `$http` pipeline | **None** — no global request/response interceptors or `$http`-style transforms |
 | JSON POST bodies | `$http` serialized objects | Non-string bodies are passed through `JSON.stringify` in `createFetchClient` (same practical effect for plain objects) |
 | Error object identity | Digest-linked `$q` | Native `Promise` rejection; no `$rootScope` digest (irrelevant once Angular is gone) |
+| Network failures | `$http` rejection shape varies by adapter | Rejections still use `{ data: null, status: 0, statusText: '' }`; **`cause`** may carry the underlying error for debugging |
+| **`customHeaders` JSON** | Invalid JSON could surface as a hard failure depending on call path | **`customHeadersJson.tryParseObject`** logs a **console warning** and uses **empty headers** so the request may proceed → watch for sudden **401s** if config JSON is wrong (see `INTEGRATOR_SPLAINER_QUEPID.md`) |
+| **Request cancellation** | Apps could cancel in-flight `$http` in some patterns | **As of 3.0.0:** pass **`config.signal`** on `createSearcher` options (and optional **`createFetchClient({ signal })`**); see **AbortSignal / cancellable search (post–Phase 4)** below. |
 
 JSONP still uses a dynamic `<script>` tag (same class of behavior as Angular’s JSONP), so cross-origin Solr without CORS remains supported.
 
@@ -401,9 +424,9 @@ Removed the legacy toolchain (Grunt concat, Karma, Jasmine specs under `test/spe
 | Area | Change |
 |------|--------|
 | Deleted | `Gruntfile.cjs`, `karma.conf.js`, `karma.coverage.conf.cjs`, `karma.debug.conf.js`, `scripts/karma-strip-exports.cjs`, `scripts/karma-chrome-bin.js`, all of `test/spec/`, all of `test/mock/` |
-| Added | `build.js` (esbuild → `splainer-search.js` IIFE, `globalName: 'SplainerSearch'`), `index.js` (barrel re-exports), `shims/urijs-global.js` (IIFE maps `import URI from 'urijs'` → `globalThis.URI`) |
-| `package.json` | `"type": "module"`, `"main": "index.js"`, `"exports"` for `"."` and `"./splainer-search.js"`; **Angular removed** from dependencies; `npm test` → `vitest run`; `test:ci` → ESLint + Vitest + integration |
-| Vitest | Karma specs and migration-safety coverage **ported** into `test/vitest/` (41 files; **547** tests passing, **2** skipped as of 2026-04-05) |
+| Added | `build.js` (esbuild → **`dist/splainer-search.js`** IIFE `globalThis.SplainerSearch` and **`dist/splainer-search-wired.js`** IIFE `globalThis.SplainerSearchWired`), `index.js` (barrel re-exports), **`wired.js`** (pre-wired graph for Splainer/Quepid), `shims/urijs-global.js` (IIFE maps `import URI from 'urijs'` → `globalThis.URI`) |
+| `package.json` | `"type": "module"`, `"main": "index.js"`, `"exports"` for `"."`, **`"./wired"` / `"./wired.js"`**, `"./splainer-search.js"` → **`dist/splainer-search.js`**, **`"./splainer-search-wired.js"`** → **`dist/splainer-search-wired.js`**; **Angular removed** from dependencies; `npm test` → `vitest run`; `test:ci` → ESLint + Vitest + integration |
+| Vitest | Karma specs and migration-safety coverage **ported** into `test/vitest/` (counts drift over time — run `npm test` for current totals) |
 | Stryker | Remains on `@stryker-mutator/vitest-runner` |
 
 ### Behavioral / consumer impacts (semver-relevant)
@@ -411,7 +434,8 @@ Removed the legacy toolchain (Grunt concat, Karma, Jasmine specs under `test/spe
 | Topic | Detail |
 |-------|--------|
 | **npm / Node consumers** | Default entry is **`index.js` (ESM)**. Import named exports (`import { createFetchClient } from 'splainer-search'`, etc.). CommonJS `require()` of this package is **not** supported unless you add a separate CJS build (none shipped here). |
-| **Browser `<script>` consumers** | Run `npm run build` (or use the prebuilt `splainer-search.js` included in published `files`). The IIFE exposes **`globalThis.SplainerSearch`**. **URI.js** must be loaded first so `globalThis.URI` exists (see `shims/urijs-global.js`). |
+| **Browser `<script>` consumers** | Run `npm run build` (or use prebuilt IIFEs in published `files`). **`dist/splainer-search.js`** → **`globalThis.SplainerSearch`** (constructors / manual wiring). **`dist/splainer-search-wired.js`** → **`globalThis.SplainerSearchWired`** (`createWiredServices`, `createFetchClient`, …). **URI.js** must be loaded first so `globalThis.URI` exists (see `shims/urijs-global.js`). Package subpaths **`splainer-search/splainer-search.js`** and **`splainer-search/splainer-search-wired.js`** still resolve via `exports`. |
+| **Splainer / Quepid-style apps** | Prefer ESM **`import … from 'splainer-search/wired.js'`** (or **`'splainer-search/wired'`**) — same graph as `test/vitest/helpers/serviceFactory.js` / `wired/wiring.js`. Documented in **`INTEGRATOR_SPLAINER_QUEPID.md`**. |
 | **Compared to pre-migration Grunt bundle** | No runtime `export` stripping; ESM sources are first-class. IIFE shape is esbuild-generated (namespace object) rather than hand-concat — verify any code that reached into globals. |
 | **Tests / CI** | No Chrome/Karma; CI is Node + Vitest + jsdom where needed + integration script. |
 
@@ -440,8 +464,26 @@ Angular’s strict contextual escaping (`$sce`) is no longer used anywhere. JSON
 
 ---
 
+## AbortSignal / cancellable search (post–Phase 4)
+
+**Behavioral changes:** Optional enhancement — callers that omit `config.signal` behave as before.
+
+| Area | Change |
+|------|--------|
+| `services/httpClient.js` | Optional default `options.signal` for GET/POST; per-request `config.signal` overrides when **not** `undefined`. **`AbortError`** from `fetch` is rethrown without wrapping. `jsonp()` accepts `config.signal` (reject if already aborted; listen for `abort`, remove `<script>`, reject with `AbortError`). |
+| `services/transportRequestOpts.js` | **`transportRequestOpts(config)`** and **`isAbortError(err)`** for integrators. |
+| `factories/http*TransportFactory.js`, `httpProxyTransportFactory.js` | Optional 4th argument **`requestOpts`** with **`signal`**, passed to `httpClient`. |
+| `factories/bulkTransportFactory.js` | Each enqueue stores `signal`; **`_msearch` POST** uses **`AbortSignal.any`** when defined, else a composite **`AbortController`**. |
+| Searcher factories (Solr, ES, Vectara, Algolia, Search API) | Pass **`transportRequestOpts(self.config)`** into `.query()`; **`explain`** (ES) passes **`config.signal`** into `httpClient.post`. **AbortError** skips generic `searchError` / `formatError` wrapping in failure handlers. |
+| `factories/solrSearcherFactory.js` | **`pager()`** copies **`config.signal`** into page config; **`explainOther`** copies **`signal`** into the inner searcher config. |
+| `factories/esSearcherFactory.js` | **`explainOther`** copies **`signal`** and **`proxyUrl`** into the inner searcher config. |
+| `factories/resolverFactory.js` | Optional **`signal`** on resolver **`settings`** is forwarded into **`createSearcher`** config. |
+| `index.js` | Exports **`transportRequestOpts`**, **`isAbortError`**. |
+
+---
+
 ## Appendix — Correctness fixes shipped on `splainer-rewrite` (not only “Angular removal”)
 
-The branch contains **behavior-changing bug fixes** relative to older line releases (see git history on `splainer-rewrite`, e.g. `0803b0c`, `b1ea256`, `10ad14b`, `eb2e09d`, `d3adade`, `7446e52`). Themes include: field / highlight handling, timed query array mutation, `explainOther` side effects and promise completion, empty Elasticsearch result edge cases, bulk/timer lifecycle, safer JSON header parsing, and URL encoding. **Upgrading for the migration may therefore change observable results** even where HTTP and Angular are unrelated — treat release notes + this appendix as signal to re-validate explain, resolver, and search edge cases.
+The branch contains **behavior-changing bug fixes** relative to older line releases (see git history on `splainer-rewrite`, e.g. `0803b0c`, `b1ea256`, `10ad14b`, `eb2e09d`, `d3adade`, `7446e52`). Themes include: field / highlight handling, timed query array mutation, `explainOther` side effects and promise completion, empty Elasticsearch result edge cases, bulk/timer lifecycle, safer JSON header parsing, URL encoding, and **JSONP Basic-auth userinfo parsing** (split only on the **first** `:` so passwords may contain `:`). **Upgrading for the migration may therefore change observable results** even where HTTP and Angular are unrelated — treat release notes + this appendix as signal to re-validate explain, resolver, and search edge cases.
 
 ---

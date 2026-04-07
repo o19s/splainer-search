@@ -2,6 +2,8 @@
 
 /*jslint latedef:false*/
 
+import { isAbortError, transportRequestOpts } from '../services/transportRequestOpts.js';
+
 export function SearchApiSearcherFactory(
   SearchApiDocFactory,
   activeQueries,
@@ -64,7 +66,7 @@ export function SearchApiSearcherFactory(
 
     activeQueries.count++;
     return transport
-      .query(url, payload, headers)
+      .query(url, payload, headers, transportRequestOpts(self.config))
       .then(
         function success(httpConfig) {
           const data = httpConfig.data;
@@ -119,6 +121,9 @@ export function SearchApiSearcherFactory(
         function error(msg) {
           console.log('Error');
           activeQueries.count--;
+          if (isAbortError(msg)) {
+            throw msg;
+          }
           self.inError = true;
           msg.searchError = 'Error with Search API query or server. Review request manually.';
           throw msg;

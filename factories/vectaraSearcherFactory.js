@@ -2,6 +2,8 @@
 
 /*jslint latedef:false*/
 
+import { isAbortError, transportRequestOpts } from '../services/transportRequestOpts.js';
+
 export function VectaraSearcherFactory(
   VectaraDocFactory,
   activeQueries,
@@ -105,7 +107,7 @@ export function VectaraSearcherFactory(
 
     activeQueries.count++;
     return transport
-      .query(url, queryDslWithPagerArgs, headers)
+      .query(url, queryDslWithPagerArgs, headers, transportRequestOpts(self.config))
       .then(
         function success(httpConfig) {
           var data = httpConfig.data;
@@ -134,6 +136,9 @@ export function VectaraSearcherFactory(
         },
         function error(msg) {
           activeQueries.count--;
+          if (isAbortError(msg)) {
+            throw msg;
+          }
           self.inError = true;
           msg.searchError = 'Error with Vectara query or server. Review request manually.';
           throw msg;
