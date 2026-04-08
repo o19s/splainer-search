@@ -1,100 +1,61 @@
 # 3.0.0 (DRAFT) — Angular removal & ESM rewrite
 
-This is a **semver-major** release. AngularJS has been removed entirely and the
-library is now distributed as native ES modules with a separate IIFE bundle for
-`<script>`-tag consumers.
+This is a **semver-major** release. AngularJS is fully removed. The package is native ES modules for `import`; IIFE bundles under `dist/` remain if you load the library with a `<script>` tag.
 
-Source of truth for everything below: `MIGRATION_CHANGES.md` (Phases 1–4c) and
-the Appendix of correctness fixes shipped on `splainer-rewrite`.
+The long-form migration log—phases, file-level tables, and a short appendix that points at correctness themes and commits—is [MIGRATION_CHANGES.md](MIGRATION_CHANGES.md). **This draft** is the upgrade guide: what breaks, how to adapt, and the full **Correctness fixes** checklist so you can see what might change in behavior without reading the whole migration story.
 
 ## Highlights
 
-- **No AngularJS dependency.** `angular`, `$http`, `$q`, `$timeout`, `$log`, `$sce`, and `angular.module('o19s.splainer-search')` registration are gone.
-- **Native HTTP via `fetch`.** All transports route through `createFetchClient()` (GET/POST = `fetch`, JSONP = dynamic `<script>` tag).
-- **Native `Promise`.** `$q.defer` / `$q()` / `$q.reject` replaced with `new Promise` / `throw`. No digest cycles.
-- **Vitest + ESM tests.** Karma, Grunt, Jasmine specs, and the export-stripping preprocessor are gone. `npm test` runs Vitest; **`npm run test:ci`** runs ESLint, Vitest, and **`npm run test:integration`** (chunked resolver fetch). Release checks and current totals: **Validation** (below).
-- **Pre-wired ESM entry.** Import **`splainer-search/wired.js`** (or **`splainer-search/wired`**) for **`createWiredServices`**, **`createSearcher`**, **`createFieldSpec`**, **`createNormalDoc`**, and the lazy **`wired`** namespace — same graph as **`test/vitest/helpers/serviceFactory.js`** / **`wired/wiring.js`**. Use the root **`splainer-search`** entry when you wire constructors yourself.
-- **esbuild IIFE bundles.** `npm run build` writes **`dist/splainer-search.js`** (`globalThis.SplainerSearch`, barrel from **`index.js`**, ~50 named exports) and **`dist/splainer-search-wired.js`** (`globalThis.SplainerSearchWired`, same surface as ESM **`wired.js`**).
-- **`AbortSignal` support.** Pass **`config.signal`** into `createSearcher` options (or `get`/`post` / `createFetchClient` defaults) to cancel in-flight GET/POST; JSONP honors `signal` by removing the script and rejecting with **`AbortError`**. BULK `_msearch` merges batched signals when **`AbortSignal.any`** is available (see **Environment / `AbortSignal.any`** below). The package exports **`isAbortError`** and **`transportRequestOpts`** so `.catch` handlers can tell user aborts from HTTP/search failures.
+- Angular is gone: no `angular`, `$http`, `$q`, `$timeout`, `$log`, `$sce`, or `angular.module('o19s.splainer-search')`.
+- Regular HTTP uses the Fetch API through `createFetchClient()`. JSONP still loads with a dynamic `<script>` tag where that path applies.
+- Promises are plain `Promise`; there are no Angular digest cycles tied to async work.
+- Tests are Vitest-only—Karma, Grunt, the old Jasmine specs, and the export-stripping preprocessor are removed. `npm test` runs Vitest; `npm run test:ci` adds ESLint and `npm run test:integration` (chunked resolver fetch). More release checks are in **Validation** below.
+- For a Quepid- or Splainer-style service graph in one place, import from `splainer-search/wired.js` or `splainer-search/wired`—you get `createWiredServices`, `createSearcher`, `createFieldSpec`, `createNormalDoc`, and the lazy `wired` namespace (same wiring as `test/vitest/helpers/serviceFactory.js` / `wired/wiring.js`). Import from the package root when you wire constructors yourself.
+- `npm run build` (esbuild) writes `dist/splainer-search.js` as `globalThis.SplainerSearch` (barrel re-exported from `index.js`) and `dist/splainer-search-wired.js` as `globalThis.SplainerSearchWired`, matching the ESM wired entry.
+- You can cancel in-flight GET/POST by passing `signal` on the searcher `config`, on individual `get`/`post` calls, or as defaults on `createFetchClient`. JSONP respects `signal` by tearing down the script and rejecting with `AbortError`. Bulk `_msearch` combines batched signals when `AbortSignal.any` exists (details under **Environment / `AbortSignal.any`** below). Exports `isAbortError` and `transportRequestOpts` help shared `.catch` blocks treat cancellation separately from HTTP or search errors.
 
 ## Breaking changes
 
 ### Packaging / consumption
 
-| Topic | Before (2.36.x) | After (3.0.0) |
-|---|---|---|
-| `package.json` `main` | `splainer-search.js` (concat IIFE) | `index.js` (**ESM**) |
-| `exports` | none | `"."` → `index.js`; **`"./wired"` / `"./wired.js"`** → **`wired.js`**; `"./splainer-search.js"` → `dist/splainer-search.js` (IIFE); `"./splainer-search-wired.js"` → `dist/splainer-search-wired.js` (IIFE); `"./package.json"` for tooling |
-| Module type | CommonJS-compatible | `"type": "module"` — **no CJS build shipped**; `require('splainer-search')` is unsupported in older Node (Node **22.12+** may load this package via **`require(esm)`** if your app uses that path) |
-| AngularJS | Required peer; registered services on `o19s.splainer-search` | **Removed**. No `angular.module(...)` registration anywhere |
-| Browser global (IIFE) | Angular module registration | **`globalThis.SplainerSearch`** (barrel / manual wiring) and **`globalThis.SplainerSearchWired`** (pre-wired graph; build **`dist/splainer-search-wired.js`**) |
-| URI.js | Bundled via Angular dep graph | **Must be loaded first** so `globalThis.URI` exists before the IIFE (see `shims/urijs-global.js`) |
-| Node engines | unspecified | `>=18` |
+- **Breaking:** `package.json` `main` used to point at a root-level concat IIFE (`splainer-search.js`). It now points at `index.js`, which is ESM.
+- **Breaking:** The package declares `exports`: the root resolves to `index.js`; `splainer-search/wired` and `splainer-search/wired.js` resolve to `wired.js`; `splainer-search/splainer-search.js` and `splainer-search/splainer-search-wired.js` resolve to the built IIFEs under `dist/`; `package.json` is exposed for tooling that asks for it.
+- **Breaking:** `"type": "module"` — we do not ship a CommonJS build. `require('splainer-search')` will not work on older Node; prefer `import`, or Node **22.12+** with `require(esm)` if that matches how your app loads dependencies.
+- **Breaking:** AngularJS is no longer a peer. Nothing registers `angular.module('o19s.splainer-search')`.
+- **Breaking:** Script-tag users no longer get an Angular module. After `npm run build`, `dist/splainer-search.js` attaches `globalThis.SplainerSearch` (constructors / barrel surface); `dist/splainer-search-wired.js` attaches `globalThis.SplainerSearchWired` for the pre-wired graph.
+- **Breaking:** URI.js is not pulled in implicitly the way it was under the old Angular graph. Load URI first so `globalThis.URI` exists before the IIFE runs (see `shims/urijs-global.js`).
+- **Breaking:** There is no longer a published `splainer-search.min.js`. Use `dist/splainer-search.js`, the `splainer-search/splainer-search.js` subpath, or run your own minifier in the app build.
+- Node **>=18** is declared in `engines`.
 
 ### Consumer migration
 
-- **Angular apps**: `angular.module('o19s.splainer-search')` no longer exists.
-  For a Splainer/Quepid-style pre-wired graph, import from **`splainer-search/wired.js`**
-  (`createWiredServices`, `createSearcher`, …). Otherwise import named ESM exports
-  (`SolrSearcherFactory`, `EsSearcherFactory`, `DocFactory`, `createFetchClient`,
-  `defaultSolrConfig`, …) from **`splainer-search`** and wire them into your DI
-  container yourself, or load the IIFE and read off `globalThis.SplainerSearch`.
-- **`<script>` consumers**: load `urijs` first, then **`dist/splainer-search.js`**
-  from a local build or **`node_modules/splainer-search/dist/splainer-search.js`**
-  when installed from npm. Use `window.SplainerSearch.<Name>` instead of any prior
-  global / Angular service lookup. For the pre-wired graph in one file, use
-  **`dist/splainer-search-wired.js`** / **`globalThis.SplainerSearchWired`**.
-- **JSONP integrators**: pass **plain string URLs**. Angular `$sce` trusted
-  URL objects are no longer accepted (Phase 4c).
-- **Cookies on cross-origin requests**: use `createFetchClient({ credentials: 'include' })`
-  for GET/POST, or wrap the injected `fetch` if you need finer control (CSRF, tracing).
-  JSONP still uses `<script>` tags, not `fetch` credentials.
-- **`$http` interceptors / transforms**: not replicated. There is no global
-  request/response pipeline — wrap `createFetchClient`'s injected `fetch` if
-  you need one.
-- **No default export.** `import splainer from 'splainer-search'` will not
-  work; use named imports (`import { SolrSearcherFactory } from 'splainer-search'`).
-- **`String.prototype.hasSubstr` polyfill removed.** Main shipped a
-  `services/stringPatch.js` polyfill that monkey-patched `String.prototype`.
-  No source still calls it. Third-party code that *incidentally* relied on the
-  polyfill being installed as a side effect of importing splainer-search will
-  no longer get it — use `String.prototype.includes` directly.
-- **Browser baseline: ES2020.** The IIFE bundle is built with esbuild
-  `target: ['es2020']`, which means modern Edge/Chrome/Firefox/Safari only —
-  no IE11, no pre-2020 Safari. Source maps are emitted next to the bundles under
-  **`dist/`** to make debugging the IIFEs feasible.
+- If you used `angular.module('o19s.splainer-search')`, that entry point is gone. For the same pre-wired service graph Splainer- and Quepid-style apps expect, import from `splainer-search/wired.js` (e.g. `createWiredServices`, `createSearcher`). Otherwise import named exports from `splainer-search`—`SolrSearcherFactory`, `EsSearcherFactory`, `DocFactory`, `createFetchClient`, `defaultSolrConfig`, and others—and wire them yourself, or load the built IIFE and use `globalThis.SplainerSearch`.
+- With `<script>` tags: load URI.js first, then either `dist/splainer-search.js` from a local build or `node_modules/splainer-search/dist/splainer-search.js` from npm. Use `window.SplainerSearch.<exportName>` instead of Angular service lookup. For the wired graph in one file, use `dist/splainer-search-wired.js` and `globalThis.SplainerSearchWired`.
+- **Breaking:** JSONP URLs must be plain strings. Angular `$sce` “trusted resource” objects are not accepted anymore.
+- For cookies on cross-origin GET/POST, pass `credentials: 'include'` (or your policy) into `createFetchClient`, or wrap the `fetch` you inject there if you need CSRF headers, tracing, and so on. JSONP does not go through `fetch`, so credential behavior there is unchanged.
+- **Breaking:** There is no Angular `$http` interceptor or transform pipeline. If you relied on that globally, wrap the `fetch` passed into `createFetchClient` instead.
+- **Breaking:** There is no default export—`import splainer from 'splainer-search'` will fail. Use named imports, e.g. `import { SolrSearcherFactory } from 'splainer-search'`.
+- **Breaking:** We removed the old `String.prototype.hasSubstr` polyfill (`services/stringPatch.js`). Nothing in this repo still needs it; if outside code accidentally depended on that side effect, switch callers to `String.prototype.includes` (or polyfill in your own app).
+- IIFE builds target ES2020 (esbuild). Expect current Edge, Chrome, Firefox, and Safari—not IE11 or very old Safari. Source maps sit next to the bundles under `dist/` for easier debugging.
 
 ### Splainer, Quepid, importmap, and SPA wiring
 
-These notes apply to **[Splainer](https://github.com/o19s/splainer)** and **[Quepid](https://github.com/o19s/quepid)** and to any app that mirrors their integration style.
+These notes are aimed at [Splainer](https://github.com/o19s/splainer), [Quepid](https://github.com/o19s/quepid), and any app that wires the library the same way.
 
-#### Wired vs barrel IIFE:
-
-If you vendor a single file for **importmap** or `<script>`, prefer **`dist/splainer-search-wired.js`** / **`globalThis.SplainerSearchWired`** (or ESM **`splainer-search/wired.js`**) when you need **`createWiredServices`**, **`createSearcher`**, **`createFieldSpec`**, **`createNormalDoc`**, and the same service graph as **`test/vitest/helpers/serviceFactory.js`**. The barrel **`dist/splainer-search.js`** / **`globalThis.SplainerSearch`** exposes **constructor-level** exports only — you must wire dependencies yourself.
-
-#### One wiring graph:
-
-Import from **`splainer-search/wired.js`** in a **single bootstrap module** (e.g. `createFetchClient` → `createWiredServices` → export `api.*`). **Do not** copy **`wired/wiring.js`** into your application; extend behavior with a **wrapped `fetch`** (CSRF, tracing, tests), not a forked DI graph.
-
-
-- **Avoid duplicate builds:** Do not maintain a **second** custom esbuild (or similar) of splainer-search beside the published package — dependency order will drift from what **`npm test`** exercises.
-- **Try / search cancellation:** Thread the same **`AbortController`** (or **`AbortSignal`**) your UI uses to cancel work into **`createSearcher`** options as **`config.signal`** so engine traffic aborts with the user action (see **Highlights** and **Environment / `AbortSignal.any`** above). In **Quepid**, that usually means the same controller feeds **`fetchTryConfig`** (or your equivalent try-fetch path) **and** the searcher **`config.signal`**.
-- **Regression focus after upgrade:** Re-run automated and manual checks on **proxy**, **basic auth**, **custom headers**, **snapshots**, and **explain**; keep **Splainer 2** and **Quepid** (or sibling apps) on **compatible splainer-search** versions and on **one** wired integration surface each. **Legacy Splainer (Angular)** can stay on **2.x** until you migrate that track.
-- **Lazy explain / snapshots:** When explain is loaded lazily, some paths may parse more than raw JSON strictly requires — expect minor **snapshot** or **explain** churn compared to “JSON only” assumptions; still validate explain UI after upgrades.
+- If you ship one file via import map or a plain `<script>` tag and you want `createWiredServices`, `createSearcher`, `createFieldSpec`, `createNormalDoc`, and the same graph our tests use (`test/vitest/helpers/serviceFactory.js`), prefer `dist/splainer-search-wired.js` / `globalThis.SplainerSearchWired`, or ESM `splainer-search/wired.js`. The barrel file `dist/splainer-search.js` / `globalThis.SplainerSearch` only exposes constructors—you still have to connect dependencies yourself.
+- Do your wiring in a single bootstrap module: e.g. create the fetch client, call `createWiredServices`, export your app API. Do not vendor a copy of `wired/wiring.js` into your repo; if you need CSRF, tracing, or test doubles, wrap the `fetch` you pass in instead of forking the graph.
+- Avoid maintaining a second private esbuild (or similar) of this package next to the published one—constructor order will drift from what `npm test` actually covers.
+- Wire cancellation end to end: the same `AbortController` or `AbortSignal` the UI uses to drop work should reach `createSearcher` as `config.signal` (see **Highlights** and **Environment / `AbortSignal.any`**). In Quepid that usually means one controller drives both `fetchTryConfig` (or your try-fetch equivalent) and the searcher `config.signal`.
+- After upgrading, re-check proxy paths, basic auth, custom headers, snapshot compare, and explain. Keep Splainer 2, Quepid, and sibling apps on a splainer-search version they support and on one wired integration style each. Legacy Splainer (Angular) can stay on 2.x until that line is migrated.
+- Lazy-loaded explain can touch code paths that parse a bit more than “strict JSON only” would suggest—expect small snapshot or explain diffs versus older assumptions; still eyeball the explain UI after a bump.
 
 ### Promise rejection contract
 
-Several `.catch` blocks across the searcher factories and `resolverFactory`
-used to do `return response`, which silently converted a rejection into a
-*resolution* whose value was the error payload. Downstream `.then()` handlers
-had to inspect the value and figure out whether it represented success or
-failure. **In 3.0.0, these rejections are real rejections.**
+**Breaking:** In several places the old code caught a failure and `return`ed the error-shaped object from `.catch`, which turned a real failure into a *successful* promise whose value looked like an error. Callers were expected to branch inside `.then` on `resp.error`. In 3.0.0 those paths **reject** the promise instead, which matches normal `async`/`Promise` usage but breaks handlers that only inspect `resp.error` inside `.then`.
 
-Affected code paths include `EsSearcherFactory.explain` /
-`explainOther` / `renderTemplate`, `SolrSearcherFactory.explainOther`, and
-`resolverFactory.fetchDocs` (both chunked and non-chunked paths).
+That affects `EsSearcherFactory.explain`, `explainOther`, and `renderTemplate`, `SolrSearcherFactory.explainOther`, and `resolverFactory.fetchDocs` (chunked and non-chunked).
 
-If your code looked like:
+If you still do this, failures will skip the `.then` body and often surface as unhandled rejections:
 
 ```js
 searcher.explain().then(resp => {
@@ -102,9 +63,7 @@ searcher.explain().then(resp => {
 });
 ```
 
-…it will now silently miss the failure case (the `.then` handler is never
-called and you'll see an unhandled rejection instead). Wrap calls in `.catch`
-or use `try`/`catch` with `await`:
+Prefer `.catch` on the promise, or `try` / `await` / `catch`:
 
 ```js
 try {
@@ -115,89 +74,54 @@ try {
 }
 ```
 
-This is a correctness fix — silently swallowing rejections is a Promise
-anti-pattern — but it changes the contract of every search Promise in the
-library, so audit any custom error-handling that reads error fields off the
-resolved value.
+This is deliberate (turning fake successes into real rejections is the right Promise shape), but it touches a lot of search-related promises—audit any custom code that treated “resolved with an error field” as the error path.
 
 ### `customHeaders` JSON parsing
 
-In 2.x, passing invalid JSON for `customHeaders` (in `searchSvc`, `esUrlSvc`,
-or `vectaraUrlSvc`) threw a `SyntaxError` from inside the search call. In
-3.0.0, invalid JSON logs a `console.warn` via `customHeadersJson.tryParseObject`
-and falls back to an empty header map, so the request still goes out — just
-without the bad headers. Watch your devtools console for
-`splainer-search: invalid customHeaders JSON` if you suddenly see 401s after
-upgrading.
+**Breaking:** In 2.x, bad `customHeaders` JSON (in `searchSvc`, `esUrlSvc`, or `vectaraUrlSvc`) blew up the search with a `SyntaxError`. In 3.0.0, `customHeadersJson.tryParseObject` logs a `console.warn`, drops the bad value, and sends the request with no custom headers instead of throwing. If auth suddenly starts failing after upgrade, open devtools and look for `splainer-search: invalid customHeaders JSON`.
 
 ### Response shape (unchanged on purpose)
 
-`createFetchClient` resolves with `{ data, status, statusText }` to match
-Angular `$http`. JSON bodies are parsed; 4xx/5xx reject with the same shape.
-POST bodies that are non-string are `JSON.stringify`'d.
+`createFetchClient` still resolves successful responses as `{ data, status, statusText }`, like Angular’s `$http`. JSON responses are parsed into `data`. Failed HTTP status codes reject with that same object shape. Non-string POST bodies are sent as `JSON.stringify(body)`.
 
 ### Environment / `AbortSignal.any`
 
-Bulk `_msearch` uses **`AbortSignal.any(signals)`** when the runtime provides it (e.g. **Safari 16.4+**, **Chromium 113+**, **Firefox 124+**, **Node 20+**). When `AbortSignal.any` is missing, the library falls back to a **composite `AbortController`** that listens for `abort` on each batched signal, so cancellation still works on older browsers at the cost of a small polyfill-style shim.
+Bulk `_msearch` batches several in-flight requests; when the runtime implements `AbortSignal.any`, we use it to combine their signals (Safari 16.4+, Chromium 113+, Firefox 124+, Node 20+, and other current engines). If `AbortSignal.any` is missing, we attach a small composite `AbortController` that forwards abort from any batched signal—cancellation still works, with a bit more glue code.
 
-Use **`isAbortError(err)`** (and optionally **`transportRequestOpts(config)`**) from **`splainer-search`** or **`splainer-search/wired.js`** in shared error handlers so **`AbortError`** is not mistaken for a normal HTTP failure.
+In shared `.catch` blocks, use `isAbortError(err)` (and `transportRequestOpts(config)` if you need the same defaults the transports use) from `splainer-search` or `splainer-search/wired.js` so user cancellation does not look like an ordinary HTTP or search error.
 
 ## Correctness fixes (independent of Angular removal)
 
-The `splainer-rewrite` branch also contains behavior-changing bug fixes that
-ship in 3.0.0. Re-validate the following areas against your fixtures (apps such
-as **Splainer** and **Quepid** should pay particular attention to **explain UI**,
-**snapshots**, and **edge-case Solr/Elasticsearch queries**):
+The `splainer-rewrite` work also landed a pile of behavior fixes that ship in 3.0.0. You may see different highlights, explain trees, URLs, or field text even if you did not change how you call the library—worth re-running your fixtures and manual checks. **Splainer** and **Quepid** are the usual places this shows up first (explain UI, snapshot compare, weird Solr/Elasticsearch queries).
 
-- Field / highlight handling
-- `explainOther` side effects and promise completion
-- Empty Elasticsearch result edge cases
-- Bulk transport and timer lifecycle
-- Timed query array mutation
-- Safer JSON header parsing (`tryParseObject`)
-- URL encoding edges
-- Basic auth when the password contains `:` (commit `82ba5bf`)
-- Algolia `retrieveObjects` (`/1/indexes/*/objects` endpoint) now sets `numFound = results.length` and `nbPages = 1`. On 2.x both fields were `undefined` because the endpoint doesn't return `nbHits`/`nbPages`.
-- Elasticsearch GET requests now `encodeURIComponent` the `q=` query text. On 2.x the query was concatenated raw, so any query containing `&`, `=`, `+`, `#`, spaces, or non-ASCII produced a malformed URL. URL-level snapshots and HTTP captures will diff for non-trivial queries. **If your code pre-encodes `searcher.queryText` before passing it in, stop — you'll now get double-encoding.**
-- `WeightExplain` regex now has a capture group, so `weight(...)` wrappers actually get stripped from explain labels. Main's regex was `/^weight\((?!FunctionScoreQuery).*/` (no parens), so `match[1]` was always `undefined`. **Explain UI labels will visibly shorten — golden-master tests will diff.**
-- `MinExplain.realExplaination` typo → `realExplanation`. The previous name silently never matched anywhere; the rename makes it actually fire.
-- `MinExplain` / `DismaxExplain` / `DismaxTieExplain` `vectorize()` now guards empty children with `vectorSvc.create()` instead of throwing on `infl[0]`.
-- `explainSvc` `weight(FunctionScoreQuery(...))` branch now sets the prototype before instantiation, so influencers/vectorize on that node work for the first time.
-- `fieldSpecSvc` `unabridged` parsing now uses the correct `unabridgeds` key (main checked `unabridged`, which never matched the actual list — `unabridged:body_content` declarations on main were silently ignored).
-- `fieldSpecSvc.transformFieldSpec(undefined)` no longer throws. Main required `=== null` and crashed inside `.trim()` for `undefined`.
-- `normalDocsSvc` `assignSingleField` and `assignSubs.parseValue` now coerce `null`/`undefined` to `''` instead of the literal strings `'null'`/`'undefined'`. **UI titles for nullish source fields will change.**
-- `solrUrlSvc` percent-encoding regex fixed (main's `/\%(?!(2|3|4|5))/g` only treated `%2x..%5x` as already-encoded; new regex handles all `%XX` hex pairs). Strings containing `%6x..%Fx` will encode differently.
-- `solrSearcherFactory.pageConfig` is now deep-cloned from `defaultSolrConfig`. Main mutated the shared default constant — multiple searchers on the same page could pollute each other's pagination defaults.
-- `solrSearcherFactory.explainOther` now restores `self.args.explainOther` on failure instead of leaving it permanently mutated.
-- `esDocFactory.origin()` deep-clones each field. Main returned live references — callers that mutated the returned object accidentally mutated the underlying doc.
-- `vectaraDocFactory.fieldsProperty()` guards missing `metadata` with `|| []`; main threw.
-- `bulkTransportFactory` `enqueue` correctly restarts the recursive timer chain after it ends, and switching URLs now cancels the prior `BatchSender` (main leaked the timer).
+Quick themes to re-check: field highlighting, `explainOther` side effects and when its promise settles, empty Elasticsearch results, bulk transport and timers, timed-query array handling, JSON header parsing (`tryParseObject`), URL encoding, and JSONP basic auth when the password contains `:` (commit `82ba5bf`).
 
-See `MIGRATION_CHANGES.md` Appendix and the commits referenced there
-(`0803b0c`, `b1ea256`, `10ad14b`, `eb2e09d`, `d3adade`, `7446e52`) for context.
+- **Algolia:** `retrieveObjects` (`/1/indexes/*/objects`) now sets `numFound = results.length` and `nbPages = 1`. On 2.x both were `undefined` because that response omits `nbHits` / `nbPages`.
+- **Elasticsearch GET:** The `q=` segment is now passed through `encodeURIComponent`. On 2.x it was concatenated raw, so `&`, `=`, `+`, `#`, spaces, or non-ASCII could corrupt the URL. Expect snapshot and HTTP-capture diffs for non-trivial queries. **If you pre-encoded `searcher.queryText` before passing it in, stop—you will double-encode now.**
+- **Explain labels:** `WeightExplain`’s regex now captures the inner text, so `weight(...)` wrappers actually strip from labels. On main the pattern had no real capture, so `match[1]` was always `undefined`. Labels shorten; golden tests may move.
+- **Explain typos / guards:** `MinExplain.realExplaination` is renamed to `realExplanation` (the old name never matched anything). `MinExplain`, `DismaxExplain`, and `DismaxTieExplain` `vectorize()` no longer throw on empty children—they use `vectorSvc.create()` instead of indexing `infl[0]`. The `weight(FunctionScoreQuery(...))` branch in `explainSvc` sets the prototype before `new`, so influencers and `vectorize` behave on that node.
+- **Field specs:** `unabridged` parsing reads the real `unabridgeds` list (main looked for `unabridged`, so `unabridged:body_content` was ignored). `transformFieldSpec(undefined)` no longer crashes in `.trim()`; main only tolerated `null`.
+- **Doc display:** `normalDocsSvc` maps `null`/`undefined` to empty string instead of the literal strings `'null'`/`'undefined'`—UI titles for missing fields change. `esDocFactory.origin()` deep-clones fields so mutating the returned object does not corrupt the stored doc. `vectaraDocFactory.fieldsProperty()` treats missing `metadata` as `[]` instead of throwing.
+- **Solr URL encoding:** The “already percent-encoded” detector was wrong for `%6x`–`%Fx`; strings with those escapes may encode differently now.
+- **Solr searchers:** `pageConfig` is deep-cloned from `defaultSolrConfig` so two searchers no longer share one mutable pagination template. `explainOther` restores `self.args.explainOther` after a failed call instead of leaving it stuck.
+- **Bulk transport:** `enqueue` restarts the timer chain when a batch finishes, and changing URLs cancels the previous `BatchSender` instead of leaking timers.
+
+For themes, commit hashes, and migration-appendix context, see [MIGRATION_CHANGES.md](MIGRATION_CHANGES.md) (Appendix: `0803b0c`, `b1ea256`, `10ad14b`, `eb2e09d`, `d3adade`, `7446e52`).
 
 ## Subtle non-breaking differences
 
-- `utilsSvc.deepClone` uses `structuredClone` with a JSON-roundtrip fallback.
-  The fallback **drops function-valued properties and `undefined` values**.
-  No internal call site clones functions; flagged for downstream callers that
-  used to lean on `angular.copy` semantics.
-- BulkTransport batching still uses a 100 ms timer, now via `setTimeout` /
-  `clearTimeout` (no digest tick).
-- Logging uses `console.debug` / `console.error` directly (was `$log.*`).
+- `utilsSvc.deepClone` prefers `structuredClone` and falls back to a JSON round-trip. That fallback drops function-valued properties and `undefined` keys—closer to `angular.copy` for plain data, but not identical if your app ever cloned objects that carried functions. We do not rely on cloning functions internally.
+- Bulk batching still waits ~100 ms before flushing; the timer is ordinary `setTimeout` / `clearTimeout` instead of an Angular digest tick.
+- Debug and error output go through `console.debug` and `console.error` instead of Angular’s `$log`.
 
 ## Validation
 
-- **`npm run test:ci`** — ESLint + Vitest + integration. Do not rely on hard-coded test counts in docs; run **`npm test`** for the current Vitest total.
-- **`npm run pack:check`** — Runs `build` then **`npm pack --dry-run`** so you can confirm **`dist/splainer-search.js`**, **`dist/splainer-search-wired.js`**, and their **`.map`** files are included in the tarball (guards against `npm publish --ignore-scripts` or a bad **`files`** list).
-- IIFE smoke test — `node build.js` → load `urijs` then `dist/splainer-search.js`;
-  `globalThis.SplainerSearch` exposes named exports including
-  `createFetchClient`, `SolrSearcherFactory`, `EsSearcherFactory`, `DocFactory`,
-  `defaultSolrConfig`.
+- `npm run test:ci` runs ESLint, Vitest, and the chunked resolver integration script. Test counts drift—do not trust numbers copied from old docs; run `npm test` locally when you need the current Vitest total.
+- `npm run pack:check` runs a production build, then `npm pack --dry-run`, so you can see that `dist/splainer-search.js`, `dist/splainer-search-wired.js`, and their `.map` files would actually ship. That catches a bad `files` list or publishing with scripts skipped.
+- Quick IIFE sanity check: run `node build.js`, load URI.js, then load `dist/splainer-search.js` in a browser or harness—you should get `globalThis.SplainerSearch` with exports such as `createFetchClient`, `SolrSearcherFactory`, `EsSearcherFactory`, `DocFactory`, and `defaultSolrConfig`.
 
 ## Pointers
 
-- Integrator checklist (with pointers back here for promise contract and **Validation**): **`MIGRATION_CHANGES.md`** → **3.0 integrator checklist**
-- Splainer / Quepid **repository path map** (which files call which APIs): **`INTEGRATOR_SPLAINER_QUEPID.md`**
-- Phase-by-phase change log: `MIGRATION_CHANGES.md` (includes historical branch notes at the top)
-- Future direction (CORS / JSONP deprecation): `FUTURE.md`
+- [MIGRATION_CHANGES.md](MIGRATION_CHANGES.md) — phase-by-phase log, historical branch notes at the top, and the **3.0 integrator checklist** (it links back here for the promise contract and **Validation**).
+- [INTEGRATOR_SPLAINER_QUEPID.md](INTEGRATOR_SPLAINER_QUEPID.md) — which Splainer / Quepid files touch which APIs.
+- [FUTURE.md](FUTURE.md) — planned direction (e.g. CORS / JSONP deprecation).

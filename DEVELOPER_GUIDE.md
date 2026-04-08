@@ -15,11 +15,13 @@ npm test
 Other useful scripts:
 
 ```
-npm run lint               # ESLint over services/, factories/, values/
-npm run test:integration   # node-based integration test against a real chunked fetch
-npm run test:ci            # lint + unit + integration (what CI should run)
+npm run lint               # ESLint (source, shims, tests, vitest.config.js — see package.json)
+npm run test:integration   # node: chunked-resolver fetch integration
+npm run test:integration:demo   # node: Quepid demo endpoints (optional)
+npm run test:ci            # lint + unit + integration (what CI runs before build)
 npm run pack:check         # build + npm pack --dry-run (verify dist/ lands in tarball)
-npm run format             # prettier --write
+npm run format             # prettier --write .
+npm run format:check       # prettier --check .
 ```
 
 Tip: use `it.only` / `describe.only` in a Vitest spec to focus on a single test, or pass a path to `npx vitest run test/vitest/yourSpec.test.js`.
