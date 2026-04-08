@@ -58,12 +58,21 @@ export function VectaraSearcherFactory(
       pagerArgs = self.pagerArgs;
     }
 
+    // Vectara's v1 query API does not return a total match count in its
+    // response, so we cannot rely on self.numFound to know when to stop —
+    // search() sets it to the size of the *current* page, not the total.
+    // Detect end-of-results by checking whether the previous page came
+    // back short: if the server returned fewer docs than we asked for,
+    // there is nothing left to fetch.
+    //
+    // Pagination contract (start + numResults, no total) documented at:
+    //   https://docs.vectara.com/docs/1.0/learn/semantic-search/enable-pagination
+    if (pagerArgs.size && self.docs.length < pagerArgs.size) {
+      return null;
+    }
+
     if (Object.hasOwn(pagerArgs, 'from')) {
       pagerArgs.from = parseInt(pagerArgs.from) + pagerArgs.size;
-
-      if (pagerArgs.from >= self.numFound) {
-        return null; // no more results
-      }
     } else {
       pagerArgs.from = pagerArgs.size;
     }

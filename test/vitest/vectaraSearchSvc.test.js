@@ -199,38 +199,80 @@ describe('searchSvc: Vectara', () => {
       );
     });
 
-    it('returns a new searcher for the next page', async () => {
-      var manyDocsResponse = structuredClone(mockVectaraResults);
-      manyDocsResponse.responseSet[0].document = [];
-      for (var i = 0; i < 10; i++) {
-        manyDocsResponse.responseSet[0].document.push({
+    function buildPageResponse(count) {
+      var resp = structuredClone(mockVectaraResults);
+      resp.responseSet[0].document = [];
+      for (var i = 0; i < count; i++) {
+        resp.responseSet[0].document.push({
           id: '' + i,
           metadata: [{ name: 'field1', value: 'val' + i }],
         });
       }
+      return resp;
+    }
 
-      mockBackend.expectPOST(mockVectaraUrl).respond(200, manyDocsResponse);
+    it('returns a new searcher for the next page when the current page is full', async () => {
+      // A full page (size === 2) means there *might* be more results.
+      mockBackend.expectPOST(mockVectaraUrl).respond(200, buildPageResponse(2));
 
-      var called = 0;
-      await searcher.search().then(function () {
-        var pagerSearcher = searcher.pager();
-        expect(pagerSearcher).not.toBeNull();
-        expect(pagerSearcher).toBeDefined();
-        called++;
-      });
-      expect(called).toEqual(1);
+      await searcher.search();
+      var pagerSearcher = searcher.pager();
+      expect(pagerSearcher).not.toBeNull();
+      expect(pagerSearcher).toBeDefined();
+      expect(pagerSearcher.pagerArgs.from).toEqual(2);
+      expect(pagerSearcher.pagerArgs.size).toEqual(2);
     });
 
-    it('returns null when all results exhausted', async () => {
-      mockBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
+    it('walks through multiple pages until the server returns a short page', async () => {
+      // Page 1: full (2 docs) -> more pages possible
+      // Page 2: full (2 docs) -> more pages possible
+      // Page 3: short (1 doc) -> end of results
+      mockBackend
+        .expectPOST(mockVectaraUrl, function (body) {
+          var parsed = typeof body === 'string' ? JSON.parse(body) : body;
+          return parsed.from === 0 && parsed.size === 2;
+        })
+        .respond(200, buildPageResponse(2));
+      mockBackend
+        .expectPOST(mockVectaraUrl, function (body) {
+          var parsed = typeof body === 'string' ? JSON.parse(body) : body;
+          return parsed.from === 2 && parsed.size === 2;
+        })
+        .respond(200, buildPageResponse(2));
+      mockBackend
+        .expectPOST(mockVectaraUrl, function (body) {
+          var parsed = typeof body === 'string' ? JSON.parse(body) : body;
+          return parsed.from === 4 && parsed.size === 2;
+        })
+        .respond(200, buildPageResponse(1));
 
-      var called = 0;
-      await searcher.search().then(function () {
-        var pagerSearcher = searcher.pager();
-        expect(pagerSearcher).toBeNull();
-        called++;
-      });
-      expect(called).toEqual(1);
+      await searcher.search();
+      expect(searcher.docs.length).toEqual(2);
+
+      var page2 = searcher.pager();
+      expect(page2).not.toBeNull();
+      await page2.search();
+      expect(page2.docs.length).toEqual(2);
+
+      var page3 = page2.pager();
+      expect(page3).not.toBeNull();
+      await page3.search();
+      expect(page3.docs.length).toEqual(1);
+
+      // page 3 came back short, so there is no page 4
+      var page4 = page3.pager();
+      expect(page4).toBeNull();
+
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('returns null when the very first page is already short', async () => {
+      // size=2 but server returns only 1 doc -> nothing more to fetch
+      mockBackend.expectPOST(mockVectaraUrl).respond(200, buildPageResponse(1));
+
+      await searcher.search();
+      var pagerSearcher = searcher.pager();
+      expect(pagerSearcher).toBeNull();
     });
   });
 
