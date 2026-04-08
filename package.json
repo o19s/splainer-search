@@ -1,6 +1,6 @@
 {
   "name": "splainer-search",
-  "version": "2.36.4",
+  "version": "3.0.0",
   "type": "module",
   "main": "index.js",
   "exports": {

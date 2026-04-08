@@ -78,7 +78,7 @@ export function SearchApiSearcherFactory(
             try {
               self.numFound = self.config.numberOfResultsMapper(data);
             } catch (error) {
-              const errMsg = 'Attemping to run numberOfResultsMapper failed: ' + error;
+              const errMsg = 'Attempting to run numberOfResultsMapper failed: ' + error;
               console.error(errMsg);
               throw new Error('MapperError: ' + errMsg);
             }
@@ -98,7 +98,7 @@ export function SearchApiSearcherFactory(
             try {
               mappedDocs = self.config.docsMapper(data);
             } catch (error) {
-              const errMsg = 'Attemping to run docsMapper failed: ' + error;
+              const errMsg = 'Attempting to run docsMapper failed: ' + error;
               console.error(errMsg);
               throw new Error('MapperError: ' + errMsg);
             }
