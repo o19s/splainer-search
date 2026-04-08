@@ -1,6 +1,6 @@
 ## Development Notes
 
-Splainer-search is a plain ESM JavaScript library. It requires only `npm` and **Node.js 18+** (`package.json` `engines`). Grunt, Karma, and AngularJS were removed in the 3.0 migration.
+Splainer-search is a plain ESM JavaScript library. It requires only `npm` and **Node.js 20.12+** (`package.json` `engines`; Vitest 4’s bundler depends on `util.styleText`). With [nvm](https://github.com/nvm-sh/nvm), run `nvm use` in the repo root to pick up **`.nvmrc`** (currently **22**). Grunt, Karma, and AngularJS were removed in the 3.0 migration.
 
 * On a Mac [install Node.js via Homebrew](http://thechangelog.com/install-node-js-with-homebrew-on-os-x/)
 * On Ubuntu [install Node.js via NodeSource](https://github.com/nodesource/distributions)

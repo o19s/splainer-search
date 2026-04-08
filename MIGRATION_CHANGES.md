@@ -328,7 +328,7 @@ Grunt concat, Karma, the Jasmine suite under `test/spec/`, and Karma helpers und
 - **`<script>` tags** — Run `npm run build` (or rely on published `dist/`). `dist/splainer-search.js` attaches the barrel as `globalThis.SplainerSearch`; `dist/splainer-search-wired.js` attaches the wired API as `globalThis.SplainerSearchWired`. Load URI.js first so `globalThis.URI` exists (`shims/urijs-global.js`). Stable npm subpaths still point at both IIFEs via `exports`.
 - **Splainer / Quepid-style wiring** — Prefer `import … from 'splainer-search/wired.js'` (or `'splainer-search/wired'`), matching `test/vitest/helpers/serviceFactory.js` / `wired/wiring.js`. Narrative + importmap notes: [RELEASE_NOTES_3.0.0_DRAFT.md](RELEASE_NOTES_3.0.0_DRAFT.md) → **Splainer, Quepid, importmap, and SPA wiring**; file-level map: [INTEGRATOR_SPLAINER_QUEPID.md](INTEGRATOR_SPLAINER_QUEPID.md).
 - **Versus the old Grunt bundle** — Sources are real ESM (no runtime export stripping). The IIFE layout is esbuild’s namespace object, not hand-concat—double-check anything that poked at globals assuming the old shape.
-- **CI** — Node-only: Vitest, jsdom where needed, plus the Node integration script (no Chrome/Karma).
+- **CI** — Node-only: Vitest, jsdom where needed, plus the Node integration script (no Chrome/Karma). Run **Node ≥ 20.12** locally and in CI (`.circleci/config.yml` pins `cimg/node:22.14`; Vitest 4 / Rolldown require `util.styleText` from `node:util`).
 
 **Search / HTTP behavior:** Phase 4b did not change engine logic—only tooling, packaging, and where tests live.
 

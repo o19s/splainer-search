@@ -478,6 +478,10 @@ In ES/OS we default to `profile=true`, and map everything nested under the `prof
 The `searcher.parsedQueryDetails` property surfaces all the debugging information about what rewriting Querqy is doing to the input query. Assuming you are also requesting the details on what rules are being matched via the `querqy.infoLogging=on` query parameter, then you will also see that information in the `searcher.parsedQueryDetails` structure.
 
 
+## Developing this repo
+
+Contributors need **Node.js 20.12+** (Vitest 4 / tooling). See [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) for install, `npm test`, lint, build, and release notes.
+
 ## Thanks to...
 
 Development for this library is done primarily by [OpenSource Connections](http://opensourceconnections.com) for search relevance tools [Splainer](http://splainer.io) and [Quepid](http://quepid.com)

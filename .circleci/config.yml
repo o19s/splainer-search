@@ -7,7 +7,8 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: cimg/node:20.2.0
+    # Vitest 4 / Rolldown require util.styleText (Node >= 20.12); pin a current LTS for CI.
+    - image: cimg/node:22.14
 
 jobs:
   test-build:

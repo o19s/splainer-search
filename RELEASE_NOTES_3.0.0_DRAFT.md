@@ -25,7 +25,7 @@ The long-form migration log—phases, file-level tables, and a short appendix th
 - **Breaking:** Script-tag users no longer get an Angular module. After `npm run build`, `dist/splainer-search.js` attaches `globalThis.SplainerSearch` (constructors / barrel surface); `dist/splainer-search-wired.js` attaches `globalThis.SplainerSearchWired` for the pre-wired graph.
 - **Breaking:** URI.js is not pulled in implicitly the way it was under the old Angular graph. Load URI first so `globalThis.URI` exists before the IIFE runs (see `shims/urijs-global.js`).
 - **Breaking:** There is no longer a published `splainer-search.min.js`. Use `dist/splainer-search.js`, the `splainer-search/splainer-search.js` subpath, or run your own minifier in the app build.
-- Node **>=18** is declared in `engines`.
+- **Breaking (tooling / `engines`):** Node **>=20.12** is declared in `engines` (Vitest 4 / Rolldown need `util.styleText`). `npm install` with `engine-strict=true` fails on older Node even if you only consume the browser bundles.
 
 ### Consumer migration
 
@@ -116,6 +116,7 @@ For themes, commit hashes, and migration-appendix context, see [MIGRATION_CHANGE
 
 ## Validation
 
+- Use **Node.js 20.12 or newer** for installs and tests (`package.json` `engines`; Vitest 4’s Rolldown stack needs `util.styleText`). [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) has setup notes; **`.nvmrc`** is `22`. CircleCI uses **`cimg/node:22.14`** so CI matches that baseline.
 - `npm run test:ci` runs ESLint, Vitest, and the chunked resolver integration script. Test counts drift—do not trust numbers copied from old docs; run `npm test` locally when you need the current Vitest total.
 - `npm run pack:check` runs a production build, then `npm pack --dry-run`, so you can see that `dist/splainer-search.js`, `dist/splainer-search-wired.js`, and their `.map` files would actually ship. That catches a bad `files` list or publishing with scripts skipped.
 - Quick IIFE sanity check: run `node build.js`, load URI.js, then load `dist/splainer-search.js` in a browser or harness—you should get `globalThis.SplainerSearch` with exports such as `createFetchClient`, `SolrSearcherFactory`, `EsSearcherFactory`, `DocFactory`, and `defaultSolrConfig`.
