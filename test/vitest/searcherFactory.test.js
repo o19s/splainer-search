@@ -6,19 +6,19 @@ var SearcherConstructor = SearcherFactory();
 describe('SearcherFactory', () => {
   it('runs preprocessor.prepare on the new searcher and copies core options', () => {
     var preprocessor = {
-      prepare: vi.fn()
+      prepare: vi.fn(),
     };
     var options = {
-      fieldList:     ['f'],
-      hlFieldList:   ['h'],
-      url:           'http://localhost/s',
-      args:          { q: ['*:*'] },
-      queryText:     'q',
-      config:        { numberOfRows: 10 },
-      type:          'solr',
+      fieldList: ['f'],
+      hlFieldList: ['h'],
+      url: 'http://localhost/s',
+      args: { q: ['*:*'] },
+      queryText: 'q',
+      config: { numberOfRows: 10 },
+      type: 'solr',
       customHeaders: '',
-      HIGHLIGHTING_PRE:  '<em>',
-      HIGHLIGHTING_POST: '</em>'
+      HIGHLIGHTING_PRE: '<em>',
+      HIGHLIGHTING_POST: '</em>',
     };
     var s = new SearcherConstructor(options, preprocessor);
 

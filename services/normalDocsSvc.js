@@ -364,4 +364,3 @@ export function normalDocsSvcConstructor(explainSvc, utilsSvc) {
     }
   };
 }
-

@@ -10,18 +10,9 @@
   "warnings": {
     "slow": false
   },
-  "reporters": [
-    "clear-text",
-    "progress",
-    "html",
-    "json"
-  ],
+  "reporters": ["clear-text", "progress", "html", "json"],
   "vitest": {
     "configFile": "vitest.config.js"
   },
-  "mutate": [
-    "services/**/*.js",
-    "factories/**/*.js",
-    "values/**/*.js"
-  ]
+  "mutate": ["services/**/*.js", "factories/**/*.js", "values/**/*.js"]
 }

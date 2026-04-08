@@ -22,29 +22,51 @@ Expectation.prototype.respond = function (status, data, headers) {
 };
 
 function matchUrl(matcher, url) {
-  if (typeof matcher === 'string') { return url === matcher; }
-  if (matcher instanceof RegExp) { return matcher.test(url); }
-  if (matcher && typeof matcher.test === 'function') { return matcher.test(url); }
+  if (typeof matcher === 'string') {
+    return url === matcher;
+  }
+  if (matcher instanceof RegExp) {
+    return matcher.test(url);
+  }
+  if (matcher && typeof matcher.test === 'function') {
+    return matcher.test(url);
+  }
   return false;
 }
 
 function matchBody(matcher, body) {
-  if (matcher === undefined || matcher === null) { return true; }
-  if (typeof matcher === 'function') { return matcher(body); }
-  if (matcher && typeof matcher.test === 'function') { return matcher.test(body); }
+  if (matcher === undefined || matcher === null) {
+    return true;
+  }
+  if (typeof matcher === 'function') {
+    return matcher(body);
+  }
+  if (matcher && typeof matcher.test === 'function') {
+    return matcher.test(body);
+  }
   var bodyForCompare = body;
   if (typeof bodyForCompare === 'string') {
-    try { bodyForCompare = JSON.parse(bodyForCompare); } catch (_e) { /* keep as string */ }
+    try {
+      bodyForCompare = JSON.parse(bodyForCompare);
+    } catch (_e) {
+      /* keep as string */
+    }
   }
   return JSON.stringify(matcher) === JSON.stringify(bodyForCompare);
 }
 
 function matchHeaders(matcher, headers) {
-  if (matcher === undefined || matcher === null) { return true; }
-  if (typeof matcher === 'function') { return matcher(headers); }
+  if (matcher === undefined || matcher === null) {
+    return true;
+  }
+  if (typeof matcher === 'function') {
+    return matcher(headers);
+  }
   var keys = Object.keys(matcher);
   for (var i = 0; i < keys.length; i++) {
-    if (!headers || headers[keys[i]] !== matcher[keys[i]]) { return false; }
+    if (!headers || headers[keys[i]] !== matcher[keys[i]]) {
+      return false;
+    }
   }
   return true;
 }
@@ -56,10 +78,13 @@ export function MockHttpBackend() {
   function findExpectation(method, url, body, headers) {
     for (var i = 0; i < expectations.length; i++) {
       var exp = expectations[i];
-      if (!exp.matched && exp.method === method &&
-          matchUrl(exp.urlMatcher, url) &&
-          matchBody(exp.bodyMatcher, body) &&
-          matchHeaders(exp.headersMatcher, headers)) {
+      if (
+        !exp.matched &&
+        exp.method === method &&
+        matchUrl(exp.urlMatcher, url) &&
+        matchBody(exp.bodyMatcher, body) &&
+        matchHeaders(exp.headersMatcher, headers)
+      ) {
         exp.matched = true;
         return exp;
       }
@@ -84,7 +109,9 @@ export function MockHttpBackend() {
       ok: isOk,
       status: exp._status,
       statusText: isOk ? 'OK' : 'Error',
-      text: function () { return Promise.resolve(responseText); },
+      text: function () {
+        return Promise.resolve(responseText);
+      },
     });
   };
 

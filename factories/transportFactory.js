@@ -14,4 +14,3 @@ export function TransportFactory() {
   // Return factory object
   return Transporter;
 }
-

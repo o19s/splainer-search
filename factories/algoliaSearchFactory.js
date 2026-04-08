@@ -138,7 +138,6 @@ export function AlgoliaSearcherFactory(
   // search (execute the query) and produce results
   // to the returned future
   function search() {
-
     const self = this;
     var apiMethod = self.config.apiMethod;
     var proxyUrl = self.config.proxyUrl;
@@ -221,4 +220,3 @@ export function AlgoliaSearcherFactory(
   // Return factory object
   return Searcher;
 }
-

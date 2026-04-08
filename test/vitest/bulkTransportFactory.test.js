@@ -29,13 +29,13 @@ describe('bulkTransportFactory', () => {
   });
 
   var mockResultsTemplate = {
-    hits: { total: 2, 'max_score': 1.0, hits: [{}] }
+    hits: { total: 2, max_score: 1.0, hits: [{}] },
   };
 
   var mockResultsErrorTemplate = { error: 'Error for query' };
 
-  var buildMockResults = function(howMany) {
-    var results = { 'responses': [] };
+  var buildMockResults = function (howMany) {
+    var results = { responses: [] };
     for (var i = 0; i < howMany; i++) {
       var mockResults = structuredClone(mockResultsTemplate);
       mockResults.hits.total = i;
@@ -44,29 +44,38 @@ describe('bulkTransportFactory', () => {
     return results;
   };
 
-  var hasExpectedJsonList = function(expectedObjects) {
+  var hasExpectedJsonList = function (expectedObjects) {
     return {
-      test: function(textSent) {
-        if (!textSent.endsWith('\n')) { return false; }
+      test: function (textSent) {
+        if (!textSent.endsWith('\n')) {
+          return false;
+        }
         textSent = textSent.substring(0, textSent.length - 1);
         var sentObjs = textSent.split('\n');
-        if (sentObjs.length !== expectedObjects.length) { return false; }
+        if (sentObjs.length !== expectedObjects.length) {
+          return false;
+        }
         for (var i = 0; i < sentObjs.length; i++) {
           var ithObj = JSON.parse(sentObjs[i]);
-          if (JSON.stringify(expectedObjects[i]) !== JSON.stringify(ithObj)) { return false; }
+          if (JSON.stringify(expectedObjects[i]) !== JSON.stringify(ithObj)) {
+            return false;
+          }
         }
         return true;
-      }
+      },
     };
   };
 
-  var containsExpectedHeaders = function(expectedHeaders) {
-    return function(headerSent) {
+  var containsExpectedHeaders = function (expectedHeaders) {
+    return function (headerSent) {
       var match = true;
-      Object.keys(expectedHeaders).forEach(function(headerKey) {
+      Object.keys(expectedHeaders).forEach(function (headerKey) {
         var headerValue = expectedHeaders[headerKey];
-        if (!Object.hasOwn(headerSent, headerKey)) { match = false; }
-        else if (headerSent[headerKey] !== headerValue) { match = false; }
+        if (!Object.hasOwn(headerSent, headerKey)) {
+          match = false;
+        } else if (headerSent[headerKey] !== headerValue) {
+          match = false;
+        }
       });
       return match;
     };
@@ -75,8 +84,8 @@ describe('bulkTransportFactory', () => {
   it('sends whats in queue after timeout', async () => {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
-    var payloadTemplate = {'test': 0};
-    var headers = {'header': 1};
+    var payloadTemplate = { test: 0 };
+    var headers = { header: 1 };
     var expectedObjects = [];
     var numToQuery = 10;
     for (var i = 0; i < numToQuery; i++) {
@@ -87,7 +96,8 @@ describe('bulkTransportFactory', () => {
       expectedObjects.push(payload);
     }
     var mockResults = buildMockResults(numToQuery);
-    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
+    mockBackend
+      .expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
       .respond(200, mockResults);
     vi.advanceTimersByTime(100);
     await flushMicrotasks();
@@ -97,15 +107,15 @@ describe('bulkTransportFactory', () => {
   it('resolves whats in flight', async () => {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
-    var payloadTemplate = {'test': 0};
-    var headers = {'header': 1};
+    var payloadTemplate = { test: 0 };
+    var headers = { header: 1 };
     var expectedObjects = [];
     var numToQuery = 10;
     var promisesResolved = 0;
     var mockResults = buildMockResults(numToQuery);
 
-    var indivSuccessCheck = function(requestIdx) {
-      return function(results) {
+    var indivSuccessCheck = function (requestIdx) {
+      return function (results) {
         expect(results.data).toEqual(mockResults.responses[requestIdx]);
         promisesResolved++;
       };
@@ -118,7 +128,8 @@ describe('bulkTransportFactory', () => {
       expectedObjects.push({});
       expectedObjects.push(payload);
     }
-    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
+    mockBackend
+      .expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
       .respond(200, mockResults);
     vi.advanceTimersByTime(100);
     await flushMicrotasks();
@@ -129,8 +140,8 @@ describe('bulkTransportFactory', () => {
   it('rejects individual errors', async () => {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
-    var payloadTemplate = {'test': 0};
-    var headers = {'header': 1};
+    var payloadTemplate = { test: 0 };
+    var headers = { header: 1 };
     var expectedObjects = [];
     var numToQuery = 10;
     var promisesResolved = 0;
@@ -139,14 +150,14 @@ describe('bulkTransportFactory', () => {
     mockResults.responses[2] = structuredClone(mockResultsErrorTemplate);
     mockResults.responses[4] = structuredClone(mockResultsErrorTemplate);
 
-    var indivSuccessCheck = function(requestIdx) {
-      return function(results) {
+    var indivSuccessCheck = function (requestIdx) {
+      return function (results) {
         expect(results.data).toEqual(mockResults.responses[requestIdx]);
         promisesResolved++;
       };
     };
-    var indivErrorCheck = function(requestIdx) {
-      return function(results) {
+    var indivErrorCheck = function (requestIdx) {
+      return function (results) {
         expect(results).toEqual(mockResults.responses[requestIdx]);
         promisesRejected++;
       };
@@ -159,7 +170,8 @@ describe('bulkTransportFactory', () => {
       expectedObjects.push({});
       expectedObjects.push(payload);
     }
-    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
+    mockBackend
+      .expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
       .respond(200, mockResults);
     vi.advanceTimersByTime(100);
     await flushMicrotasks();
@@ -185,10 +197,9 @@ describe('bulkTransportFactory', () => {
       expectedObjects.push({});
       expectedObjects.push({ test: i });
     }
-    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers)).respond(
-      200,
-      null,
-    );
+    mockBackend
+      .expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
+      .respond(200, null);
     vi.advanceTimersByTime(100);
     await flushMicrotasks();
     mockBackend.verifyNoOutstandingExpectation();
@@ -212,11 +223,12 @@ describe('bulkTransportFactory', () => {
       expectedObjects.push({});
       expectedObjects.push({ test: i });
     }
-    var tooShort = { responses: [{ hits: { total: 1, hits: [] } }, { hits: { total: 1, hits: [] } }] };
-    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers)).respond(
-      200,
-      tooShort,
-    );
+    var tooShort = {
+      responses: [{ hits: { total: 1, hits: [] } }, { hits: { total: 1, hits: [] } }],
+    };
+    mockBackend
+      .expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
+      .respond(200, tooShort);
     vi.advanceTimersByTime(100);
     await flushMicrotasks();
     mockBackend.verifyNoOutstandingExpectation();
@@ -226,22 +238,24 @@ describe('bulkTransportFactory', () => {
   it('rejects all on http errors', async () => {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
-    var payloadTemplate = {'test': 0};
-    var headers = {'header': 1};
+    var payloadTemplate = { test: 0 };
+    var headers = { header: 1 };
     var expectedObjects = [];
     var numToQuery = 10;
     var promisesResolved = 0;
     var promisesRejected = 0;
     var mockResults = buildMockResults(numToQuery);
 
-    var indivSuccessCheck = function(requestIdx) {
-      return function(results) {
+    var indivSuccessCheck = function (requestIdx) {
+      return function (results) {
         expect(results.data).toEqual(mockResults.responses[requestIdx]);
         promisesResolved++;
       };
     };
-    var indivErrorCheck = function() {
-      return function() { promisesRejected++; };
+    var indivErrorCheck = function () {
+      return function () {
+        promisesRejected++;
+      };
     };
 
     for (var i = 0; i < numToQuery; i++) {
@@ -251,8 +265,7 @@ describe('bulkTransportFactory', () => {
       expectedObjects.push({});
       expectedObjects.push(payload);
     }
-    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjects))
-      .respond(400, {});
+    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjects)).respond(400, {});
     vi.advanceTimersByTime(100);
     await flushMicrotasks();
     mockBackend.verifyNoOutstandingExpectation();
@@ -263,15 +276,15 @@ describe('bulkTransportFactory', () => {
   it('bulks requests serially', async () => {
     var bulkTransport = new BulkTransportFactory();
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
-    var payloadTemplate = {'test': 0};
-    var headers = {'header': 1};
+    var payloadTemplate = { test: 0 };
+    var headers = { header: 1 };
     var expectedObjects = [];
     var numToQuery = 10;
     var promisesResolved = 0;
     var mockResults = buildMockResults(numToQuery);
 
-    var indivSuccessCheck = function(requestIdx) {
-      return function(results) {
+    var indivSuccessCheck = function (requestIdx) {
+      return function (results) {
         expect(results.data).toEqual(mockResults.responses[requestIdx]);
         promisesResolved++;
       };
@@ -285,7 +298,8 @@ describe('bulkTransportFactory', () => {
       expectedObjects.push({});
       expectedObjects.push(payload);
     }
-    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
+    mockBackend
+      .expectPOST(url, hasExpectedJsonList(expectedObjects), containsExpectedHeaders(headers))
       .respond(200, mockResults);
     vi.advanceTimersByTime(100);
 
@@ -302,7 +316,8 @@ describe('bulkTransportFactory', () => {
     mockBackend.verifyNoOutstandingExpectation();
     expect(promisesResolved).toBe(numToQuery);
 
-    mockBackend.expectPOST(url, hasExpectedJsonList(expectedObjectsBatch2), containsExpectedHeaders(headers))
+    mockBackend
+      .expectPOST(url, hasExpectedJsonList(expectedObjectsBatch2), containsExpectedHeaders(headers))
       .respond(200, mockResults);
     vi.advanceTimersByTime(100);
     await flushMicrotasks();
@@ -312,9 +327,9 @@ describe('bulkTransportFactory', () => {
 
   it('doesnt issue http if nothing to send', async () => {
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
-    var headers = {'header': 1};
+    var headers = { header: 1 };
     var bulkTransport = new BulkTransportFactory();
-    var payload = structuredClone({'test': 0});
+    var payload = structuredClone({ test: 0 });
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
     mockBackend.expectPOST(url).respond(200, mockResults);
@@ -331,13 +346,17 @@ describe('bulkTransportFactory', () => {
     var payload = structuredClone({ test: 0 });
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, {});
-    mockBackend.expectPOST(
-      url,
-      function () { return true; },
-      function (sent) {
-        return sent['Content-Type'] === 'application/x-ndjson';
-      }
-    ).respond(200, mockResults);
+    mockBackend
+      .expectPOST(
+        url,
+        function () {
+          return true;
+        },
+        function (sent) {
+          return sent['Content-Type'] === 'application/x-ndjson';
+        },
+      )
+      .respond(200, mockResults);
     vi.advanceTimersByTime(100);
     await flushMicrotasks();
     mockBackend.verifyNoOutstandingExpectation();
@@ -350,13 +369,17 @@ describe('bulkTransportFactory', () => {
     var customType = 'application/vnd.elasticsearch+x-ndjson; compatible-with=8';
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, { 'content-type': customType });
-    mockBackend.expectPOST(
-      url,
-      function () { return true; },
-      function (sent) {
-        return sent['content-type'] === customType;
-      }
-    ).respond(200, mockResults);
+    mockBackend
+      .expectPOST(
+        url,
+        function () {
+          return true;
+        },
+        function (sent) {
+          return sent['content-type'] === customType;
+        },
+      )
+      .respond(200, mockResults);
     vi.advanceTimersByTime(100);
     await flushMicrotasks();
     mockBackend.verifyNoOutstandingExpectation();
@@ -364,12 +387,14 @@ describe('bulkTransportFactory', () => {
 
   it('adds a trailing \\n', async () => {
     var trailingEndlineTest = {
-      test: function(data) { return data.endsWith('\n'); }
+      test: function (data) {
+        return data.endsWith('\n');
+      },
     };
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
-    var headers = {'header': 1};
+    var headers = { header: 1 };
     var bulkTransport = new BulkTransportFactory();
-    var payload = structuredClone({'test': 0});
+    var payload = structuredClone({ test: 0 });
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
     mockBackend.expectPOST(url, trailingEndlineTest).respond(200, mockResults);
@@ -380,9 +405,9 @@ describe('bulkTransportFactory', () => {
 
   it('changes URLs', async () => {
     var url = 'http://es.splainer-search.com/foods/tacos/_msearch';
-    var headers = {'header': 1};
+    var headers = { header: 1 };
     var bulkTransport = new BulkTransportFactory();
-    var payload = structuredClone({'test': 0});
+    var payload = structuredClone({ test: 0 });
     var mockResults = buildMockResults(1);
     bulkTransport.query(url, payload, headers);
     mockBackend.expectPOST(url).respond(200, mockResults);
@@ -459,10 +484,9 @@ describe('bulkTransportFactory', () => {
         bulkTransport.query(url, { test: 0 }, headers, { signal: ac1.signal });
         bulkTransport.query(url, { test: 1 }, headers, { signal: ac2.signal });
         var mockResults = buildMockResults(2);
-        localBackend.expectPOST(url, hasExpectedJsonList([{}, { test: 0 }, {}, { test: 1 }])).respond(
-          200,
-          mockResults,
-        );
+        localBackend
+          .expectPOST(url, hasExpectedJsonList([{}, { test: 0 }, {}, { test: 1 }]))
+          .respond(200, mockResults);
         vi.advanceTimersByTime(100);
         await flushMicrotasks();
         localBackend.verifyNoOutstandingExpectation();

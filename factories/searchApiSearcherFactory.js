@@ -133,4 +133,3 @@ export function SearchApiSearcherFactory(
   // Return factory object
   return Searcher;
 }
-

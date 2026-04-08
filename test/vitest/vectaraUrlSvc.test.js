@@ -10,7 +10,9 @@ function createVectaraUrlSvc() {
 }
 
 describe('vectaraUrlSvc', () => {
-  afterEach(() => { vi.restoreAllMocks(); });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it('returns an empty object when customHeaders is omitted', () => {
     var vectaraUrlSvc = createVectaraUrlSvc();
@@ -25,7 +27,7 @@ describe('vectaraUrlSvc', () => {
   it('parses JSON customHeaders into a header map', () => {
     var vectaraUrlSvc = createVectaraUrlSvc();
     var headers = vectaraUrlSvc.getHeaders('{"X-Custom":"1","Authorization":"Bearer t"}');
-    expect(headers).toEqual({ 'X-Custom': '1', 'Authorization': 'Bearer t' });
+    expect(headers).toEqual({ 'X-Custom': '1', Authorization: 'Bearer t' });
   });
 
   it('returns empty object when customHeaders is not valid JSON', () => {

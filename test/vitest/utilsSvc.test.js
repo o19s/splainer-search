@@ -10,15 +10,19 @@ describe('utilsSvc', () => {
     it('does not invoke the callback for null or undefined', () => {
       var utilsSvc = createUtilsSvc();
       var n = 0;
-      utilsSvc.safeForEach(null, function() { n++; });
-      utilsSvc.safeForEach(undefined, function() { n++; });
+      utilsSvc.safeForEach(null, function () {
+        n++;
+      });
+      utilsSvc.safeForEach(undefined, function () {
+        n++;
+      });
       expect(n).toBe(0);
     });
 
     it('iterates arrays with value, index, and array', () => {
       var utilsSvc = createUtilsSvc();
       var pairs = [];
-      utilsSvc.safeForEach(['a', 'b'], function(v, i, arr) {
+      utilsSvc.safeForEach(['a', 'b'], function (v, i, arr) {
         pairs.push([v, i, arr]);
       });
       expect(pairs.length).toBe(2);
@@ -32,7 +36,7 @@ describe('utilsSvc', () => {
     it('iterates own keys on plain objects', () => {
       var utilsSvc = createUtilsSvc();
       var keys = [];
-      utilsSvc.safeForEach({ x: 1, y: 2 }, function(v, k) {
+      utilsSvc.safeForEach({ x: 1, y: 2 }, function (v, k) {
         keys.push(k + '=' + v);
       });
       keys.sort();
@@ -42,7 +46,7 @@ describe('utilsSvc', () => {
     it('iterates string characters by index', () => {
       var utilsSvc = createUtilsSvc();
       var out = '';
-      utilsSvc.safeForEach('ab', function(ch, i) {
+      utilsSvc.safeForEach('ab', function (ch, i) {
         out += i + ch;
       });
       expect(out).toBe('0a1b');
@@ -50,12 +54,12 @@ describe('utilsSvc', () => {
 
     it('skips inherited prototype properties on objects', () => {
       var utilsSvc = createUtilsSvc();
-      var Parent = function() {};
+      var Parent = function () {};
       Parent.prototype.inherited = 'should not appear';
       var obj = new Parent();
       obj.own = 'visible';
       var seen = [];
-      utilsSvc.safeForEach(obj, function(v, k) {
+      utilsSvc.safeForEach(obj, function (v, k) {
         seen.push(k);
       });
       expect(seen).toEqual(['own']);
@@ -93,7 +97,13 @@ describe('utilsSvc', () => {
 
     it('falls back to JSON roundtrip for objects containing functions (drops functions)', () => {
       var utilsSvc = createUtilsSvc();
-      var src = { name: 'test', fn: function() { return 42; }, data: [1, 2] };
+      var src = {
+        name: 'test',
+        fn: function () {
+          return 42;
+        },
+        data: [1, 2],
+      };
       var copy = utilsSvc.deepClone(src);
       expect(copy.name).toBe('test');
       expect(copy.data).toEqual([1, 2]);
@@ -103,7 +113,7 @@ describe('utilsSvc', () => {
 
     it('drops nested function-valued properties in fallback path', () => {
       var utilsSvc = createUtilsSvc();
-      var src = { outer: { inner: 'kept', cb: function() {} } };
+      var src = { outer: { inner: 'kept', cb: function () {} } };
       var copy = utilsSvc.deepClone(src);
       expect(copy.outer.inner).toBe('kept');
       expect(Object.hasOwn(copy.outer, 'cb')).toBe(false);
@@ -111,7 +121,7 @@ describe('utilsSvc', () => {
 
     it('drops undefined values in fallback path (JSON roundtrip limitation)', () => {
       var utilsSvc = createUtilsSvc();
-      var src = { a: 1, b: undefined, fn: function() {} };
+      var src = { a: 1, b: undefined, fn: function () {} };
       var copy = utilsSvc.deepClone(src);
       expect(copy.a).toBe(1);
       expect(Object.hasOwn(copy, 'b')).toBe(false);

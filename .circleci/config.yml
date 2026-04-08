@@ -16,18 +16,26 @@ jobs:
     steps:
       - checkout
 
-      - run: npm install
+      - restore_cache:
+          keys:
+            - v2-dependencies-{{ checksum "package-lock.json" }}
+            - v2-dependencies-
+
       - run:
-          name: Lint, unit tests, and local integration test
-          command: npm run test:ci
-      - run:
-          name: Run build
-          command: npm run build
+          name: Install dependencies
+          command: npm install
 
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+          key: v2-dependencies-{{ checksum "package-lock.json" }}
+
+      - run:
+          name: Format check, lint, unit tests, and local integration test
+          command: npm run test:ci
+      - run:
+          name: Run build
+          command: npm run build
 
       - persist_to_workspace:
           root: ~/repo

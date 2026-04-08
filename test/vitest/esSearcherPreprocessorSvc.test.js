@@ -15,10 +15,10 @@ describe('esSearcherPreprocessorSvc', () => {
       url: 'http://localhost:9200/i/_search',
       args: {
         query: { term: { t: '#$query##' } },
-        pager: { from: 5, size: 7 }
+        pager: { from: 5, size: 7 },
       },
       queryText: 'hello',
-      config: { apiMethod: 'POST', qOption: 'query', numberOfRows: 10 }
+      config: { apiMethod: 'POST', qOption: 'query', numberOfRows: 10 },
     };
     esSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.pagerArgs.from).toBe(5);
@@ -31,7 +31,7 @@ describe('esSearcherPreprocessorSvc', () => {
       fieldList: ['a'],
       args: { query: { match_all: {} } },
       queryText: 'x',
-      config: { apiMethod: 'POST', qOption: 'query', numberOfRows: 10 }
+      config: { apiMethod: 'POST', qOption: 'query', numberOfRows: 10 },
     };
     esSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.queryDsl.explain).toBe(true);
@@ -44,7 +44,7 @@ describe('esSearcherPreprocessorSvc', () => {
       fieldList: null,
       args: {},
       queryText: dsl,
-      config: { apiMethod: 'POST', numberOfRows: 10, qOption: 'query' }
+      config: { apiMethod: 'POST', numberOfRows: 10, qOption: 'query' },
     };
     esSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.queryDsl).toBe(dsl);
@@ -57,7 +57,7 @@ describe('esSearcherPreprocessorSvc', () => {
       fieldList: ['_id', 'title'],
       args: { query: { term: { x: '#$query##' } } },
       queryText: 'q',
-      config: { apiMethod: 'POST', numberOfRows: 10, qOption: 'query' }
+      config: { apiMethod: 'POST', numberOfRows: 10, qOption: 'query' },
     };
     esSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.queryDsl.highlight.fields._id).toBeUndefined();
@@ -70,7 +70,7 @@ describe('esSearcherPreprocessorSvc', () => {
       url: 'http://localhost:9200/i/_search',
       args: {},
       queryText: 'foo',
-      config: { apiMethod: 'GET', numberOfRows: 15 }
+      config: { apiMethod: 'GET', numberOfRows: 15 },
     };
     esSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.url.indexOf('q=foo')).not.toBe(-1);

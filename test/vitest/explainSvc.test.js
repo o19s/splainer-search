@@ -41,12 +41,14 @@ describe('explainSvc', () => {
 
   it('handles sum explains', () => {
     var sumExplain = {
-      match: true, value: 1.5, description: 'sum of',
+      match: true,
+      value: 1.5,
+      description: 'sum of',
       details: [
         { match: true, value: 0.5, description: 'part 1 is 0.5', details: [] },
         { match: true, value: 0.3, description: 'part 2 is 0.3', details: [] },
-        { match: true, value: 0.7, description: 'part 3 is 0.7', details: [] }
-      ]
+        { match: true, value: 0.7, description: 'part 3 is 0.7', details: [] },
+      ],
     };
     var simplerExplain = explainSvc.createExplain(sumExplain);
     var infl = simplerExplain.influencers();
@@ -58,17 +60,22 @@ describe('explainSvc', () => {
 
   it('collapses sums with sum children', () => {
     var sumOfSumExplain = {
-      match: true, value: 1.5, description: 'sum of',
+      match: true,
+      value: 1.5,
+      description: 'sum of',
       details: [
-        { match: true, value: 0.5, description: 'part 1 is 0.5 sum of',
+        {
+          match: true,
+          value: 0.5,
+          description: 'part 1 is 0.5 sum of',
           details: [
             { match: true, value: 0.2, description: 'part 1a is 0.2', details: [] },
-            { match: true, value: 0.3, description: 'part 1b is 0.3', details: [] }
-          ]
+            { match: true, value: 0.3, description: 'part 1b is 0.3', details: [] },
+          ],
         },
         { match: true, value: 0.1, description: 'part 2 is 0.1', details: [] },
-        { match: true, value: 0.7, description: 'part 3 is 0.7', details: [] }
-      ]
+        { match: true, value: 0.7, description: 'part 3 is 0.7', details: [] },
+      ],
     };
     var simplerExplain = explainSvc.createExplain(sumOfSumExplain);
     var infl = simplerExplain.influencers();
@@ -82,16 +89,25 @@ describe('explainSvc', () => {
   describe('elasticsearch explains', () => {
     it('deals with Math.minOf', () => {
       var minOfExpl = {
-        'value': 0.033063494, 'description': 'Math.min of',
-        'details': [{
-          'value': 0.033063494, 'description': 'Function for field created_at:',
-          'details': [{
-            'value': 0.033063494,
-            'description': 'exp(- MIN[Math.max(Math.abs(1.399894202E12(=doc value) - 1.450890423697E12(=origin))) - 0.0(=offset), 0)] * 6.68544734336367E-11)'
-          }]
-        }, {
-          'value': 3.4028235E38, 'description': 'maxBoost'
-        }]
+        value: 0.033063494,
+        description: 'Math.min of',
+        details: [
+          {
+            value: 0.033063494,
+            description: 'Function for field created_at:',
+            details: [
+              {
+                value: 0.033063494,
+                description:
+                  'exp(- MIN[Math.max(Math.abs(1.399894202E12(=doc value) - 1.450890423697E12(=origin))) - 0.0(=offset), 0)] * 6.68544734336367E-11)',
+              },
+            ],
+          },
+          {
+            value: 3.4028235e38,
+            description: 'maxBoost',
+          },
+        ],
       };
       var simplerExplain = explainSvc.createExplain(minOfExpl);
       var infl = simplerExplain.influencers();
@@ -105,21 +121,35 @@ describe('explainSvc', () => {
 
     it('ignores meaningless queryBoost', () => {
       var funcScoreQuery = {
-        'value': 0.033157118, 'description': 'function score, product of:',
-        'details': [{
-          'value': 0.033063494, 'description': 'Math.min of',
-          'details': [{
-            'value': 0.033063494, 'description': 'Function for field created_at:',
-            'details': [{
-              'value': 0.033063494,
-              'description': 'exp(- MIN[Math.max(Math.abs(1.399894202E12(=doc value) - 1.450890423697E12(=origin))) - 0.0(=offset), 0)] * 6.68544734336367E-11)'
-            }]
-          }, {
-            'value': 3.4028235E38, 'description': 'maxBoost'
-          }]
-        }, {
-          'value': 1.0, 'description': 'queryBoost'
-        }]
+        value: 0.033157118,
+        description: 'function score, product of:',
+        details: [
+          {
+            value: 0.033063494,
+            description: 'Math.min of',
+            details: [
+              {
+                value: 0.033063494,
+                description: 'Function for field created_at:',
+                details: [
+                  {
+                    value: 0.033063494,
+                    description:
+                      'exp(- MIN[Math.max(Math.abs(1.399894202E12(=doc value) - 1.450890423697E12(=origin))) - 0.0(=offset), 0)] * 6.68544734336367E-11)',
+                  },
+                ],
+              },
+              {
+                value: 3.4028235e38,
+                description: 'maxBoost',
+              },
+            ],
+          },
+          {
+            value: 1.0,
+            description: 'queryBoost',
+          },
+        ],
       };
       var simplerExplain = explainSvc.createExplain(funcScoreQuery);
       var infl = simplerExplain.influencers();
@@ -131,12 +161,14 @@ describe('explainSvc', () => {
 
   describe('weird explains', () => {
     var weirdExplain = {
-      match: true, value: 1.5, description: 'Weird thing matched',
+      match: true,
+      value: 1.5,
+      description: 'Weird thing matched',
       details: [
         { match: true, value: 0.5, description: 'part 1 is 0.5', details: [] },
         { match: true, value: 0.3, description: 'part 2 is 0.3', details: [] },
-        { match: true, value: 0.7, description: 'part 3 is 0.7', details: [] }
-      ]
+        { match: true, value: 0.7, description: 'part 3 is 0.7', details: [] },
+      ],
     };
 
     it('vectorize empty', () => {
@@ -148,34 +180,84 @@ describe('explainSvc', () => {
   describe('multiplicative boosts in Solr 8.11', () => {
     it('deals with multiplicative boosts in Solr', () => {
       var multiplicativeExpl = {
-        'match': true, 'value': 2237.4985427856445,
-        'description': 'weight(FunctionScoreQuery(text_all:rambo, scored by boost(sum(int(vote_count),const(0))))), result of:',
-        'details': [{
-          'match': true, 'value': 2237.4985427856445, 'description': 'product of:',
-          'details': [{
-            'match': true, 'value': 2.6078072,
-            'description': 'weight(text_all:rambo in 2978) [SchemaSimilarity], result of:',
-            'details': [{
-              'match': true, 'value': 2.6078072,
-              'description': 'score(freq=1.0), computed as boost * idf * tf from:',
-              'details': [
-                { 'match': true, 'value': 6.6984444, 'description': 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:', 'details': [
-                  { 'match': true, 'value': 10, 'description': "n, number of documents containing term" },
-                  { 'match': true, 'value': 8516, 'description': 'N, total number of documents with field' }
-                ]},
-                { 'match': true, 'value': 0.38931537, 'description': "tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:", 'details': [
-                  { 'match': true, 'value': 1, 'description': "freq, occurrences of term within document" },
-                  { 'match': true, 'value': 1.2, 'description': "k1, term saturation parameter" },
-                  { 'match': true, 'value': 0.75, 'description': "b, length normalization parameter" },
-                  { 'match': true, 'value': 168, 'description': 'dl, length of field (approximate)' },
-                  { 'match': true, 'value': 119.18542, 'description': 'avgdl, average length of field' }
-                ]}
-              ]
-            }]
-          }, {
-            'match': true, 'value': 858, 'description': 'sum(int(vote_count)=858,const(0))'
-          }]
-        }]
+        match: true,
+        value: 2237.4985427856445,
+        description:
+          'weight(FunctionScoreQuery(text_all:rambo, scored by boost(sum(int(vote_count),const(0))))), result of:',
+        details: [
+          {
+            match: true,
+            value: 2237.4985427856445,
+            description: 'product of:',
+            details: [
+              {
+                match: true,
+                value: 2.6078072,
+                description: 'weight(text_all:rambo in 2978) [SchemaSimilarity], result of:',
+                details: [
+                  {
+                    match: true,
+                    value: 2.6078072,
+                    description: 'score(freq=1.0), computed as boost * idf * tf from:',
+                    details: [
+                      {
+                        match: true,
+                        value: 6.6984444,
+                        description: 'idf, computed as log(1 + (N - n + 0.5) / (n + 0.5)) from:',
+                        details: [
+                          {
+                            match: true,
+                            value: 10,
+                            description: 'n, number of documents containing term',
+                          },
+                          {
+                            match: true,
+                            value: 8516,
+                            description: 'N, total number of documents with field',
+                          },
+                        ],
+                      },
+                      {
+                        match: true,
+                        value: 0.38931537,
+                        description:
+                          'tf, computed as freq / (freq + k1 * (1 - b + b * dl / avgdl)) from:',
+                        details: [
+                          {
+                            match: true,
+                            value: 1,
+                            description: 'freq, occurrences of term within document',
+                          },
+                          { match: true, value: 1.2, description: 'k1, term saturation parameter' },
+                          {
+                            match: true,
+                            value: 0.75,
+                            description: 'b, length normalization parameter',
+                          },
+                          {
+                            match: true,
+                            value: 168,
+                            description: 'dl, length of field (approximate)',
+                          },
+                          {
+                            match: true,
+                            value: 119.18542,
+                            description: 'avgdl, average length of field',
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                match: true,
+                value: 858,
+                description: 'sum(int(vote_count)=858,const(0))',
+              },
+            ],
+          },
+        ],
       };
       var multiplicativeExplain = explainSvc.createExplain(multiplicativeExpl);
       var infl = multiplicativeExplain.influencers();
@@ -190,22 +272,47 @@ describe('explainSvc', () => {
   describe('multiplicative boosts in Solr 4.6', () => {
     it('deals with multiplicative boosts in Solr', () => {
       var multiplicativeExpl = {
-        match: true, value: 1,
-        description: "boost(+technicalDescriptionClean_text_de_mv:70 (),termfreq(technicalDescriptionClean_text_de_mv,70)), product of:",
+        match: true,
+        value: 1,
+        description:
+          'boost(+technicalDescriptionClean_text_de_mv:70 (),termfreq(technicalDescriptionClean_text_de_mv,70)), product of:',
         details: [
-          { match: true, value: 1, description: "sum of:", details: [
-            { match: true, value: 1, description: "weight(technicalDescriptionClean_text_de_mv:70 in 0) [DefaultSimilarity], result of:", details: [
-              { match: true, value: 1, description: "fieldWeight in 0, product of:", details: [
-                { match: true, value: 1, description: "tf(freq=1.0), with freq of:", details: [
-                  { match: true, value: 1, description: "termFreq=1.0" }
-                ]},
-                { match: true, value: 1, description: "idf(docFreq=1, maxDocs=2)" },
-                { match: true, value: 1, description: "fieldNorm(doc=0)" }
-              ]}
-            ]}
-          ]},
-          { match: true, value: 1, description: "termfreq(technicalDescriptionClean_text_de_mv,70)=1" }
-        ]
+          {
+            match: true,
+            value: 1,
+            description: 'sum of:',
+            details: [
+              {
+                match: true,
+                value: 1,
+                description:
+                  'weight(technicalDescriptionClean_text_de_mv:70 in 0) [DefaultSimilarity], result of:',
+                details: [
+                  {
+                    match: true,
+                    value: 1,
+                    description: 'fieldWeight in 0, product of:',
+                    details: [
+                      {
+                        match: true,
+                        value: 1,
+                        description: 'tf(freq=1.0), with freq of:',
+                        details: [{ match: true, value: 1, description: 'termFreq=1.0' }],
+                      },
+                      { match: true, value: 1, description: 'idf(docFreq=1, maxDocs=2)' },
+                      { match: true, value: 1, description: 'fieldNorm(doc=0)' },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            match: true,
+            value: 1,
+            description: 'termfreq(technicalDescriptionClean_text_de_mv,70)=1',
+          },
+        ],
       };
       var multiplicativeExplain = explainSvc.createExplain(multiplicativeExpl);
       var infl = multiplicativeExplain.influencers();

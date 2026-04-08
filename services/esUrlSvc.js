@@ -207,4 +207,3 @@ export function esUrlSvcConstructor(customHeadersJson, utilsSvc) {
     }
   }
 }
-

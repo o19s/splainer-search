@@ -135,4 +135,3 @@ export function SolrDocFactory(DocFactory, solrUrlSvc, utilsSvc) {
 
   return Doc;
 }
-

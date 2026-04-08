@@ -73,4 +73,3 @@ export function solrSearcherPreprocessorSvcConstructor(
     searcher.linkUrl = searcher.linkUrl + '&indent=true&echoParams=all';
   }
 }
-

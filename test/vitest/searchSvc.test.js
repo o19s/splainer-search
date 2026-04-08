@@ -8,7 +8,7 @@ describe('searchSvc', () => {
   var searchSvc, fieldSpecSvc, mockFieldSpec;
   var mockEsUrl = 'http://localhost:9200/index/_search';
   var mockEsArgs = {
-    query: { term: { text: '#$query##' } }
+    query: { term: { text: '#$query##' } },
   };
 
   beforeEach(() => {
@@ -43,17 +43,27 @@ describe('searchSvc', () => {
         'http://localhost:8983/solr/core/select',
         { q: ['#$query##'] },
         'q',
-        { escapeQuery: false, highlight: false, debug: false }
+        { escapeQuery: false, highlight: false, debug: false },
       );
       expect(s.type).toBe('solr');
     });
 
     it('routes OpenSearch (os) through the same factory as Elasticsearch (es)', () => {
       var esSearcher = searchSvc.createSearcher(
-        mockFieldSpec, mockEsUrl, mockEsArgs, 'elastic', {}, 'es'
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsArgs,
+        'elastic',
+        {},
+        'es',
       );
       var osSearcher = searchSvc.createSearcher(
-        mockFieldSpec, mockEsUrl, mockEsArgs, 'elastic', {}, 'os'
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsArgs,
+        'elastic',
+        {},
+        'os',
       );
       expect(osSearcher.type).toBe('os');
       expect(esSearcher.type).toBe('es');
@@ -62,8 +72,12 @@ describe('searchSvc', () => {
 
     it('adds Authorization from basicAuthCredential when customHeaders is absent', () => {
       var searcher = searchSvc.createSearcher(
-        mockFieldSpec, mockEsUrl, mockEsArgs, 'elastic',
-        { basicAuthCredential: 'alice:secret' }, 'es'
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsArgs,
+        'elastic',
+        { basicAuthCredential: 'alice:secret' },
+        'es',
       );
       var headers = JSON.parse(searcher.config.customHeaders);
       expect(headers.Authorization).toBe('Basic ' + btoa('alice:secret'));
@@ -71,8 +85,12 @@ describe('searchSvc', () => {
 
     it('merges Authorization into existing customHeaders JSON', () => {
       var searcher = searchSvc.createSearcher(
-        mockFieldSpec, mockEsUrl, mockEsArgs, 'elastic',
-        { basicAuthCredential: 'u:p', customHeaders: JSON.stringify({ 'X-Custom': '1' }) }, 'es'
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsArgs,
+        'elastic',
+        { basicAuthCredential: 'u:p', customHeaders: JSON.stringify({ 'X-Custom': '1' }) },
+        'es',
       );
       var headers = JSON.parse(searcher.config.customHeaders);
       expect(headers.Authorization).toBe('Basic ' + btoa('u:p'));
@@ -82,8 +100,12 @@ describe('searchSvc', () => {
     it('uses Authorization-only headers when customHeaders JSON is invalid', () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {});
       var searcher = searchSvc.createSearcher(
-        mockFieldSpec, mockEsUrl, mockEsArgs, 'elastic',
-        { basicAuthCredential: 'u:p', customHeaders: 'not-json' }, 'es'
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsArgs,
+        'elastic',
+        { basicAuthCredential: 'u:p', customHeaders: 'not-json' },
+        'es',
       );
       var headers = JSON.parse(searcher.config.customHeaders);
       expect(headers.Authorization).toBe('Basic ' + btoa('u:p'));
@@ -93,16 +115,24 @@ describe('searchSvc', () => {
 
     it('does not set customHeaders when basicAuthCredential is empty', () => {
       var searcher = searchSvc.createSearcher(
-        mockFieldSpec, mockEsUrl, mockEsArgs, 'elastic',
-        { basicAuthCredential: '' }, 'es'
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsArgs,
+        'elastic',
+        { basicAuthCredential: '' },
+        'es',
       );
       expect(searcher.config.customHeaders).toBeUndefined();
     });
 
     it('does not set customHeaders when basicAuthCredential is omitted', () => {
       var searcher = searchSvc.createSearcher(
-        mockFieldSpec, mockEsUrl, mockEsArgs, 'elastic',
-        {}, 'es'
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsArgs,
+        'elastic',
+        {},
+        'es',
       );
       expect(searcher.config.customHeaders).toBeUndefined();
     });

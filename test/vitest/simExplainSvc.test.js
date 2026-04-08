@@ -25,8 +25,8 @@ describe('simExplainSvc', () => {
       description: 'fieldWeight',
       details: [
         { value: '1.0', description: 'Term Freq', details: [] },
-        { value: '1.0', description: 'IDF Score', details: [] }
-      ]
+        { value: '1.0', description: 'IDF Score', details: [] },
+      ],
     };
     var factory = function (d) {
       return new baseExplainSvc.Explain(d, factory);
@@ -46,7 +46,15 @@ describe('simExplainSvc', () => {
 
   it('creates a DefaultSimTfExplain with term frequency', () => {
     var { simExplainSvc } = createServices();
-    var expl = { children: [{ contribution: function () { return 4; } }] };
+    var expl = {
+      children: [
+        {
+          contribution: function () {
+            return 4;
+          },
+        },
+      ],
+    };
     simExplainSvc.DefaultSimTfExplain.call(expl);
     expect(expl.realExplanation).toBe('Term Freq Score (4)');
   });
@@ -80,8 +88,16 @@ describe('simExplainSvc', () => {
 
   it('exposes tf()/idf() accessors via tfIdfable on FieldWeightExplain', () => {
     var { simExplainSvc } = createServices();
-    var tfChild = { explanation: function () { return 'Term Frequency'; } };
-    var idfChild = { explanation: function () { return 'IDF Score'; } };
+    var tfChild = {
+      explanation: function () {
+        return 'Term Frequency';
+      },
+    };
+    var idfChild = {
+      explanation: function () {
+        return 'IDF Score';
+      },
+    };
     var expl = { children: [tfChild, idfChild] };
     simExplainSvc.FieldWeightExplain.call(expl);
     expect(expl.realExplanation).toBe('Field Weight');
@@ -96,16 +112,34 @@ describe('simExplainSvc', () => {
     // contract DefaultSimilarityMatch and formulaStr() expect.
     function fakeWeight(label, tfContribution, idfContribution) {
       return {
-        explanation: function () { return label; },
-        tf: function () { return { contribution: function () { return tfContribution; } }; },
-        idf: function () { return { contribution: function () { return idfContribution; } }; },
+        explanation: function () {
+          return label;
+        },
+        tf: function () {
+          return {
+            contribution: function () {
+              return tfContribution;
+            },
+          };
+        },
+        idf: function () {
+          return {
+            contribution: function () {
+              return idfContribution;
+            },
+          };
+        },
       };
     }
 
     it('finds Field Weight and Query Weight among direct children', () => {
       var { simExplainSvc } = createServices();
       var fw = fakeWeight('Field Weight', 0.5, 2);
-      var qw = { explanation: function () { return 'Query Weight'; } };
+      var qw = {
+        explanation: function () {
+          return 'Query Weight';
+        },
+      };
       var match = new simExplainSvc.DefaultSimilarityMatch([fw, qw]);
       expect(match.fieldWeight).toBe(fw);
       expect(match.queryWeight).toBe(qw);
@@ -114,9 +148,15 @@ describe('simExplainSvc', () => {
     it('unwraps a single Score child to find the underlying weights', () => {
       var { simExplainSvc } = createServices();
       var fw = fakeWeight('Field Weight', 0.5, 2);
-      var qw = { explanation: function () { return 'Query Weight'; } };
+      var qw = {
+        explanation: function () {
+          return 'Query Weight';
+        },
+      };
       var scoreWrapper = {
-        explanation: function () { return 'Score …'; },
+        explanation: function () {
+          return 'Score …';
+        },
         children: [fw, qw],
       };
       var match = new simExplainSvc.DefaultSimilarityMatch([scoreWrapper]);
@@ -127,7 +167,11 @@ describe('simExplainSvc', () => {
     it('formulaStr() reports TF * IDF using the field weight contributions', () => {
       var { simExplainSvc } = createServices();
       var fw = fakeWeight('Field Weight', 0.5, 2);
-      var qw = { explanation: function () { return 'Query Weight'; } };
+      var qw = {
+        explanation: function () {
+          return 'Query Weight';
+        },
+      };
       var match = new simExplainSvc.DefaultSimilarityMatch([fw, qw]);
       expect(match.formulaStr()).toBe('TF=0.5 * IDF=2');
     });

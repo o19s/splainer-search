@@ -87,4 +87,3 @@ export function vectorSvcConstructor(utilsSvc) {
     return rVal;
   };
 }
-

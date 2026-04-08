@@ -380,4 +380,3 @@ export function SolrSearcherFactory(
   // Return factory object
   return Searcher;
 }
-

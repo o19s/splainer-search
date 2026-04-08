@@ -18,7 +18,7 @@ Other useful scripts:
 npm run lint               # ESLint (source, shims, tests, vitest.config.js — see package.json)
 npm run test:integration   # node: chunked-resolver fetch integration
 npm run test:integration:demo   # node: Quepid demo endpoints (optional)
-npm run test:ci            # lint + unit + integration (what CI runs before build)
+npm run test:ci            # Prettier check + lint + unit + integration (what CI runs before build)
 npm run pack:check         # build + npm pack --dry-run (verify dist/ lands in tarball)
 npm run format             # prettier --write .
 npm run format:check       # prettier --check .

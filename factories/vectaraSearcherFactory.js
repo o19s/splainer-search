@@ -148,4 +148,3 @@ export function VectaraSearcherFactory(
   // Return factory object
   return Searcher;
 }
-

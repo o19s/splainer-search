@@ -12,12 +12,12 @@ describe('solrSearcherPreprocessorSvc', () => {
     debug: true,
     numberOfRows: 10,
     escapeQuery: true,
-    apiMethod: 'JSONP'
+    apiMethod: 'JSONP',
   };
 
   beforeEach(() => {
     solrSearcherPreprocessorSvc = getSolrSearcherPreprocessorSvc(
-      structuredClone(freshDefaultConfig)
+      structuredClone(freshDefaultConfig),
     );
   });
 
@@ -35,16 +35,22 @@ describe('solrSearcherPreprocessorSvc', () => {
         numberOfRows: 10,
         escapeQuery: false,
         apiMethod: 'JSONP',
-        qOption: 'q'
+        qOption: 'q',
       },
       HIGHLIGHTING_PRE: 'PRE',
-      HIGHLIGHTING_POST: 'POST'
+      HIGHLIGHTING_POST: 'POST',
     };
     // Deep merge partial overrides
     function testDeepMerge(target, source) {
-      Object.keys(source).forEach(function(key) {
-        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) &&
-            target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])) {
+      Object.keys(source).forEach(function (key) {
+        if (
+          source[key] &&
+          typeof source[key] === 'object' &&
+          !Array.isArray(source[key]) &&
+          target[key] &&
+          typeof target[key] === 'object' &&
+          !Array.isArray(target[key])
+        ) {
           testDeepMerge(target[key], source[key]);
         } else {
           target[key] = source[key];
@@ -68,10 +74,10 @@ describe('solrSearcherPreprocessorSvc', () => {
         debug: false,
         numberOfRows: 10,
         apiMethod: 'JSONP',
-        qOption: 'q'
+        qOption: 'q',
       },
       HIGHLIGHTING_PRE: 'PRE',
-      HIGHLIGHTING_POST: 'POST'
+      HIGHLIGHTING_POST: 'POST',
     };
     expect(Object.hasOwn(searcher.config, 'sanitize')).toBe(false);
     solrSearcherPreprocessorSvc.prepare(searcher);
@@ -109,7 +115,9 @@ describe('solrSearcherPreprocessorSvc', () => {
   });
 
   it('appends linkUrl with indent and echoParams', () => {
-    var searcher = baseSearcher({ config: { sanitize: false, highlight: false, debug: false, escapeQuery: false, qOption: 'q' } });
+    var searcher = baseSearcher({
+      config: { sanitize: false, highlight: false, debug: false, escapeQuery: false, qOption: 'q' },
+    });
     solrSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.linkUrl).toContain('indent=true');
     expect(searcher.linkUrl).toContain('echoParams=all');

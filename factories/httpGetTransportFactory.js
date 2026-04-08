@@ -21,4 +21,3 @@ export function HttpGetTransportFactory(TransportFactory, httpClient) {
 
   return Transport;
 }
-

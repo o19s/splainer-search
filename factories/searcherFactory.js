@@ -30,4 +30,3 @@ export function SearcherFactory() {
   // Return factory object
   return Searcher;
 }
-

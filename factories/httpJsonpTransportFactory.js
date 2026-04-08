@@ -42,4 +42,3 @@ export function HttpJsonpTransportFactory(TransportFactory, httpClient) {
 
   return Transport;
 }
-

@@ -107,11 +107,21 @@ export function createWiredServices(httpClient) {
   }
 
   function queryExplainSvc() {
-    return new queryExplainSvcConstructor(baseExplainSvc(), vectorSvc(), simExplainSvc(), utilsSvc());
+    return new queryExplainSvcConstructor(
+      baseExplainSvc(),
+      vectorSvc(),
+      simExplainSvc(),
+      utilsSvc(),
+    );
   }
 
   function explainSvc() {
-    return new explainSvcConstructor(baseExplainSvc(), queryExplainSvc(), simExplainSvc(), utilsSvc());
+    return new explainSvcConstructor(
+      baseExplainSvc(),
+      queryExplainSvc(),
+      simExplainSvc(),
+      utilsSvc(),
+    );
   }
 
   function normalDocsSvc() {
@@ -127,7 +137,11 @@ export function createWiredServices(httpClient) {
   }
 
   function esSearcherPreprocessorSvc() {
-    return new esSearcherPreprocessorSvcConstructor(queryTemplateSvc(), defaultESConfig, utilsSvc());
+    return new esSearcherPreprocessorSvcConstructor(
+      queryTemplateSvc(),
+      defaultESConfig,
+      utilsSvc(),
+    );
   }
 
   function solrSearcherPreprocessorSvc() {
@@ -135,12 +149,16 @@ export function createWiredServices(httpClient) {
       solrUrlSvc(),
       defaultSolrConfig,
       queryTemplateSvc(),
-      utilsSvc()
+      utilsSvc(),
     );
   }
 
   function vectaraSearcherPreprocessorSvc() {
-    return new vectaraSearcherPreprocessorSvcConstructor(queryTemplateSvc(), defaultVectaraConfig, utilsSvc());
+    return new vectaraSearcherPreprocessorSvcConstructor(
+      queryTemplateSvc(),
+      defaultVectaraConfig,
+      utilsSvc(),
+    );
   }
 
   function algoliaSearcherPreprocessorSvc() {
@@ -166,7 +184,13 @@ export function createWiredServices(httpClient) {
   var bulkFactory = BulkTransportFactory(transportConstructor, httpClient, utilsSvc());
   var proxyFactory = HttpProxyTransportFactory(transportConstructor, jsonpFactory);
 
-  var transportSvc = new transportSvcConstructor(postFactory, getFactory, jsonpFactory, bulkFactory, proxyFactory);
+  var transportSvc = new transportSvcConstructor(
+    postFactory,
+    getFactory,
+    jsonpFactory,
+    bulkFactory,
+    proxyFactory,
+  );
 
   var solrSearcherConstructor = SolrSearcherFactory(
     solrDocConstructor,
@@ -176,7 +200,7 @@ export function createWiredServices(httpClient) {
     defaultSolrConfig,
     solrSearcherPreprocessorSvc(),
     esUrlSvc(),
-    utilsSvc()
+    utilsSvc(),
   );
 
   var esSearcherConstructor = EsSearcherFactory(
@@ -187,7 +211,7 @@ export function createWiredServices(httpClient) {
     esUrlSvc(),
     searcherConstructor,
     transportSvc,
-    utilsSvc()
+    utilsSvc(),
   );
 
   var vectaraSearcherConstructor = VectaraSearcherFactory(
@@ -197,7 +221,7 @@ export function createWiredServices(httpClient) {
     vectaraUrlSvc(),
     searcherConstructor,
     transportSvc,
-    utilsSvc()
+    utilsSvc(),
   );
 
   var algoliaSearcherConstructor = AlgoliaSearcherFactory(
@@ -207,7 +231,7 @@ export function createWiredServices(httpClient) {
     esUrlSvc(),
     searcherConstructor,
     transportSvc,
-    utilsSvc()
+    utilsSvc(),
   );
 
   var searchApiSearcherConstructor = SearchApiSearcherFactory(
@@ -217,7 +241,7 @@ export function createWiredServices(httpClient) {
     esUrlSvc(),
     searcherConstructor,
     transportSvc,
-    utilsSvc()
+    utilsSvc(),
   );
 
   var searchSvc = new searchSvcConstructor(
@@ -229,7 +253,7 @@ export function createWiredServices(httpClient) {
     activeQueries,
     defaultSolrConfig,
     customHeadersJson(),
-    utilsSvc()
+    utilsSvc(),
   );
 
   var settingsValidatorFactory = SettingsValidatorFactory(fieldSpecSvc(), searchSvc, utilsSvc());
@@ -313,7 +337,7 @@ export function createWiredServices(httpClient) {
         solrUrlSvcInst,
         overrideDefaultConfig || defaultSolrConfig,
         queryTemplateSvcInst,
-        utilsSvcInst
+        utilsSvcInst,
       );
     },
 

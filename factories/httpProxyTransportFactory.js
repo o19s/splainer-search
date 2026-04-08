@@ -23,4 +23,3 @@ export function HttpProxyTransportFactory(TransportFactory, HttpJsonpTransportFa
 
   return Transport;
 }
-

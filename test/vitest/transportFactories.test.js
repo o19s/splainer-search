@@ -17,7 +17,9 @@ function mockFetch(status, body) {
     ok: isOk,
     status: status,
     statusText: isOk ? 'OK' : 'Error',
-    text: function () { return Promise.resolve(bodyText); },
+    text: function () {
+      return Promise.resolve(bodyText);
+    },
   });
 }
 
@@ -62,8 +64,11 @@ describe('HttpGetTransportFactory', function () {
     var Transport = buildTransport(HttpGetTransportFactory, client);
     var transport = new Transport();
 
-    await expect(transport.query('http://example.com/api', {}, {}))
-      .rejects.toEqual({ data: { error: 'fail' }, status: 500, statusText: 'Error' });
+    await expect(transport.query('http://example.com/api', {}, {})).rejects.toEqual({
+      data: { error: 'fail' },
+      status: 500,
+      statusText: 'Error',
+    });
   });
 
   it('stores options passed to constructor', function () {
@@ -119,8 +124,11 @@ describe('HttpPostTransportFactory', function () {
     var Transport = buildTransport(HttpPostTransportFactory, client);
     var transport = new Transport();
 
-    await expect(transport.query('http://example.com/search', {}, {}))
-      .rejects.toEqual({ data: { error: 'forbidden' }, status: 403, statusText: 'Error' });
+    await expect(transport.query('http://example.com/search', {}, {})).rejects.toEqual({
+      data: { error: 'forbidden' },
+      status: 403,
+      statusText: 'Error',
+    });
   });
 
   it('stores options passed to constructor', function () {
@@ -150,7 +158,9 @@ describe('HttpJsonpTransportFactory', function () {
       statusText: 'OK',
     });
     var client = createFetchClient({
-      fetch: function () { throw new Error('fetch should not be called'); },
+      fetch: function () {
+        throw new Error('fetch should not be called');
+      },
       jsonpRequest: jsonpSpy,
     });
     var Transport = buildTransport(HttpJsonpTransportFactory, client);
@@ -159,10 +169,9 @@ describe('HttpJsonpTransportFactory', function () {
     var result = await transport.query('http://solr.example.com/select?q=*:*', {}, {});
 
     expect(result.data).toEqual({ response: { docs: [] } });
-    expect(jsonpSpy).toHaveBeenCalledWith(
-      'http://solr.example.com/select?q=*:*',
-      { jsonpCallbackParam: 'json.wrf' }
-    );
+    expect(jsonpSpy).toHaveBeenCalledWith('http://solr.example.com/select?q=*:*', {
+      jsonpCallbackParam: 'json.wrf',
+    });
   });
 
   it('embeds Basic auth credentials in the URL', async function () {
@@ -172,7 +181,9 @@ describe('HttpJsonpTransportFactory', function () {
       statusText: 'OK',
     });
     var client = createFetchClient({
-      fetch: function () { throw new Error('fetch should not be called'); },
+      fetch: function () {
+        throw new Error('fetch should not be called');
+      },
       jsonpRequest: jsonpSpy,
     });
     var Transport = buildTransport(HttpJsonpTransportFactory, client);
@@ -182,7 +193,8 @@ describe('HttpJsonpTransportFactory', function () {
     await transport.query('https://search.example.com/solr/select', {}, headers);
 
     var calledUrl = jsonpSpy.mock.calls[0][0];
-    var expectedPrefix = 'https://admin:' + encodeURIComponent('secret/w') + '@search.example.com/solr/select';
+    var expectedPrefix =
+      'https://admin:' + encodeURIComponent('secret/w') + '@search.example.com/solr/select';
     expect(calledUrl).toBe(expectedPrefix);
   });
 
@@ -193,7 +205,9 @@ describe('HttpJsonpTransportFactory', function () {
       statusText: 'OK',
     });
     var client = createFetchClient({
-      fetch: function () { throw new Error('fetch should not be called'); },
+      fetch: function () {
+        throw new Error('fetch should not be called');
+      },
       jsonpRequest: jsonpSpy,
     });
     var Transport = buildTransport(HttpJsonpTransportFactory, client);
@@ -216,7 +230,9 @@ describe('HttpJsonpTransportFactory', function () {
       statusText: 'OK',
     });
     var client = createFetchClient({
-      fetch: function () { throw new Error('fetch should not be called'); },
+      fetch: function () {
+        throw new Error('fetch should not be called');
+      },
       jsonpRequest: jsonpSpy,
     });
     var Transport = buildTransport(HttpJsonpTransportFactory, client);

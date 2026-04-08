@@ -39,4 +39,3 @@ export function vectaraSearcherPreprocessorSvcConstructor(
     preparePostRequest(searcher);
   }
 }
-

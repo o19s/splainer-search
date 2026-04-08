@@ -154,4 +154,3 @@ export function utilsSvcFactory() {
     ensureUrlHasProtocol: ensureUrlHasProtocol,
   };
 }
-

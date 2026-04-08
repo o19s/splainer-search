@@ -12,7 +12,7 @@ describe('VectaraDocFactory', () => {
     expect(VectaraDocFactory).toBeDefined();
   });
 
-  var makeDoc = function(rawDoc, options) {
+  var makeDoc = function (rawDoc, options) {
     options = options || {};
     return new VectaraDocFactory(rawDoc, options);
   };
@@ -23,8 +23,8 @@ describe('VectaraDocFactory', () => {
       var rawDoc = {
         metadata: [
           { name: 'title', value: 'Test Document' },
-          { name: 'author', value: 'Jane Doe' }
-        ]
+          { name: 'author', value: 'Jane Doe' },
+        ],
       };
       var doc = makeDoc(rawDoc);
       expect(doc.title).toEqual('Test Document');
@@ -36,8 +36,8 @@ describe('VectaraDocFactory', () => {
       var rawDoc = {
         metadata: [
           { name: 'title', value: ['Only Title'] },
-          { name: 'tags', value: ['tag1', 'tag2'] }
-        ]
+          { name: 'tags', value: ['tag1', 'tag2'] },
+        ],
       };
       var doc = makeDoc(rawDoc);
       expect(doc.title).toEqual('Only Title');
@@ -46,8 +46,12 @@ describe('VectaraDocFactory', () => {
 
     it('treats missing or null metadata as empty', () => {
       VectaraDocFactory = getVectaraDocConstructor();
-      expect(function() { makeDoc({}); }).not.toThrow();
-      expect(function() { makeDoc({ metadata: null }); }).not.toThrow();
+      expect(function () {
+        makeDoc({});
+      }).not.toThrow();
+      expect(function () {
+        makeDoc({ metadata: null });
+      }).not.toThrow();
       var doc = makeDoc({});
       expect(doc.fieldsProperty()).toEqual({});
     });
@@ -57,7 +61,7 @@ describe('VectaraDocFactory', () => {
     it('returns non-function properties excluding doc, metadata, opts', () => {
       VectaraDocFactory = getVectaraDocConstructor();
       var rawDoc = {
-        metadata: [{ name: 'title', value: 'Test' }]
+        metadata: [{ name: 'title', value: 'Test' }],
       };
       var doc = makeDoc(rawDoc);
       var orig = doc.origin();

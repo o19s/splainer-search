@@ -31,4 +31,3 @@ export function solrExplainExtractorSvcConstructor(normalDocsSvc, utilsSvc) {
     return parsedDocs;
   }
 }
-

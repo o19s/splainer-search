@@ -56,4 +56,3 @@ export function DocFactory(utilsSvc) {
   // Return factory object
   return Doc;
 }
-

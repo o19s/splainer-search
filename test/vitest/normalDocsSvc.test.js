@@ -9,27 +9,41 @@ describe('normalDocsSvc', () => {
     fieldSpecSvc = getFieldSpecSvc();
   });
 
-  var mockDoc = function(origin, options) {
+  var mockDoc = function (origin, options) {
     options = options || {};
     return {
-      origin: function() { return origin; },
-      explain: function() { return options.explainJson || null; },
-      highlight: function() { return null; },
-      _url: function() { return 'http://example.com'; }
+      origin: function () {
+        return origin;
+      },
+      explain: function () {
+        return options.explainJson || null;
+      },
+      highlight: function () {
+        return null;
+      },
+      _url: function () {
+        return 'http://example.com';
+      },
     };
   };
 
-  var mockDocWithHighlight = function(origin, hlDict) {
+  var mockDocWithHighlight = function (origin, hlDict) {
     return {
-      origin: function() { return origin; },
-      explain: function() { return null; },
-      highlight: function(docId, fieldName, _pre, _post) {
+      origin: function () {
+        return origin;
+      },
+      explain: function () {
+        return null;
+      },
+      highlight: function (docId, fieldName, _pre, _post) {
         if (hlDict && hlDict[fieldName]) {
           return hlDict[fieldName];
         }
         return null;
       },
-      _url: function() { return 'http://example.com'; }
+      _url: function () {
+        return 'http://example.com';
+      },
     };
   };
 
@@ -79,7 +93,9 @@ describe('normalDocsSvc', () => {
       var doc = mockDoc(origin);
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc);
       expect(normalDoc.subsList.length).toEqual(2);
-      var fieldNames = normalDoc.subsList.map(function(s) { return s.field; });
+      var fieldNames = normalDoc.subsList.map(function (s) {
+        return s.field;
+      });
       expect(fieldNames).toContain('a');
       expect(fieldNames).toContain('b');
     });
@@ -202,11 +218,12 @@ describe('normalDocsSvc', () => {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId title:myTitle');
       var origin = { myId: '1', myTitle: 'Test' };
       var explainJson = {
-        value: 1.5, description: 'sum of',
+        value: 1.5,
+        description: 'sum of',
         details: [
           { value: 0.5, description: 'part 1', details: [] },
-          { value: 1.0, description: 'part 2', details: [] }
-        ]
+          { value: 1.0, description: 'part 2', details: [] },
+        ],
       };
       var doc = mockDoc(origin, { explainJson: explainJson });
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc, explainJson);
@@ -217,11 +234,12 @@ describe('normalDocsSvc', () => {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId title:myTitle');
       var origin = { myId: '1', myTitle: 'Test' };
       var explainJson = {
-        value: 2.0, description: 'sum of',
+        value: 2.0,
+        description: 'sum of',
         details: [
           { value: 1.2, description: 'match A', details: [] },
-          { value: 0.8, description: 'match B', details: [] }
-        ]
+          { value: 0.8, description: 'match B', details: [] },
+        ],
       };
       var doc = mockDoc(origin, { explainJson: explainJson });
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc, explainJson);
@@ -234,18 +252,19 @@ describe('normalDocsSvc', () => {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId title:myTitle');
       var origin = { myId: '1', myTitle: 'Test' };
       var explainJson = {
-        value: 3.0, description: 'sum of',
+        value: 3.0,
+        description: 'sum of',
         details: [
           { value: 1.0, description: 'match A', details: [] },
-          { value: 2.0, description: 'match B', details: [] }
-        ]
+          { value: 2.0, description: 'match B', details: [] },
+        ],
       };
       var doc = mockDoc(origin, { explainJson: explainJson });
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc, explainJson);
       var hotOutOf = normalDoc.hotMatchesOutOf(3.0);
       expect(hotOutOf.length).toBeGreaterThan(0);
       for (var i = 1; i < hotOutOf.length; i++) {
-        expect(hotOutOf[i-1].percentage).toBeGreaterThanOrEqual(hotOutOf[i].percentage);
+        expect(hotOutOf[i - 1].percentage).toBeGreaterThanOrEqual(hotOutOf[i].percentage);
       }
     });
   });
@@ -306,13 +325,19 @@ describe('normalDocsSvc', () => {
       var solrDoc = {
         custom_id_field: '1234',
         title_field: 'a title',
-        origin: function() { return this; },
-        _url: function(fieldName, fieldValue) {
+        origin: function () {
+          return this;
+        },
+        _url: function (fieldName, fieldValue) {
           lastFieldName = fieldName;
           lastFieldValue = fieldValue;
         },
-        explain: function() { return null; },
-        highlight: function() { return null; }
+        explain: function () {
+          return null;
+        },
+        highlight: function () {
+          return null;
+        },
       };
       var fieldSpec = { id: 'custom_id_field', title: 'title_field' };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -336,10 +361,18 @@ describe('normalDocsSvc', () => {
     it('escapes HTML in sub snippets when no highlights are available', () => {
       var origin = { myId: '1', myTitle: 'a title', another_field: '<blah>another_value</blah>' };
       var solrDoc = {
-        origin: function() { return origin; },
-        explain: function() { return null; },
-        highlight: function() { return null; },
-        _url: function() { return ''; }
+        origin: function () {
+          return origin;
+        },
+        explain: function () {
+          return null;
+        },
+        highlight: function () {
+          return null;
+        },
+        _url: function () {
+          return '';
+        },
       };
       var fieldSpec = { id: 'myId', title: 'myTitle', subs: ['another_field'] };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -353,10 +386,18 @@ describe('normalDocsSvc', () => {
       var availableHighlight = 'something';
       var origin = { myId: '1', title_field: 'a title', another_field: 'another_value' };
       var solrDoc = {
-        origin: function() { return origin; },
-        explain: function() { return null; },
-        highlight: function(ign, ign2, pre, post) { return pre + availableHighlight + post; },
-        _url: function() { return ''; }
+        origin: function () {
+          return origin;
+        },
+        explain: function () {
+          return null;
+        },
+        highlight: function (ign, ign2, pre, post) {
+          return pre + availableHighlight + post;
+        },
+        _url: function () {
+          return '';
+        },
       };
       var fieldSpec = { id: 'myId', title: 'title_field', subs: ['another_field'] };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -371,10 +412,18 @@ describe('normalDocsSvc', () => {
     it('uses original value when highlight returns null', () => {
       var origin = { myId: '1', title_field: 'a title', another_field: 'another_value' };
       var solrDoc = {
-        origin: function() { return origin; },
-        explain: function() { return null; },
-        highlight: function() { return null; },
-        _url: function() { return ''; }
+        origin: function () {
+          return origin;
+        },
+        explain: function () {
+          return null;
+        },
+        highlight: function () {
+          return null;
+        },
+        _url: function () {
+          return '';
+        },
       };
       var fieldSpec = { id: 'myId', title: 'title_field', subs: ['another_field'] };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -387,11 +436,21 @@ describe('normalDocsSvc', () => {
       var fieldSpec = { id: 'myId', title: 'myTitle' };
       var origin = { myId: '1', myTitle: 'Test' };
       var solrDoc = {
-        origin: function() { return origin; },
-        explain: function() { return null; },
-        highlight: function() { return null; },
-        url: function() { return 'http://127.0.0.1'; },
-        _url: function() { return ''; }
+        origin: function () {
+          return origin;
+        },
+        explain: function () {
+          return null;
+        },
+        highlight: function () {
+          return null;
+        },
+        url: function () {
+          return 'http://127.0.0.1';
+        },
+        _url: function () {
+          return '';
+        },
       };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
       expect(normalDoc.explain().explanation()).toContain('no explain');
@@ -402,14 +461,24 @@ describe('normalDocsSvc', () => {
       var fieldSpec = { id: 'myId', title: 'myTitle' };
       var origin = { myId: '1', myTitle: 'Test' };
       var altExplain = {
-        match: true, value: 0.5,
-        description: 'weight(text:order in 1234)', details: []
+        match: true,
+        value: 0.5,
+        description: 'weight(text:order in 1234)',
+        details: [],
       };
       var solrDoc = {
-        origin: function() { return origin; },
-        explain: function() { return null; },
-        highlight: function() { return null; },
-        _url: function() { return ''; }
+        origin: function () {
+          return origin;
+        },
+        explain: function () {
+          return null;
+        },
+        highlight: function () {
+          return null;
+        },
+        _url: function () {
+          return '';
+        },
       };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc, altExplain);
       var hmOutOf = normalDoc.hotMatchesOutOf(1.0);
@@ -421,22 +490,45 @@ describe('normalDocsSvc', () => {
 
     it('falls back to doc.origin().id when custom id field explain lookup returns null', () => {
       var fieldSpec = { id: 'custom_id_field', title: 'title_field' };
-      var basicExplain1 = { match: true, value: 1.5, description: 'weight(text:law in 1234)', details: [] };
-      var basicExplain2 = { match: true, value: 0.5, description: 'weight(text:order in 1234)', details: [] };
-      var sumExplain = { match: true, value: 1.0, description: 'sum of', details: [basicExplain1, basicExplain2] };
+      var basicExplain1 = {
+        match: true,
+        value: 1.5,
+        description: 'weight(text:law in 1234)',
+        details: [],
+      };
+      var basicExplain2 = {
+        match: true,
+        value: 0.5,
+        description: 'weight(text:order in 1234)',
+        details: [],
+      };
+      var sumExplain = {
+        match: true,
+        value: 1.0,
+        description: 'sum of',
+        details: [basicExplain1, basicExplain2],
+      };
       var idVals = [];
       var solrDoc = {
         custom_id_field: '1234',
         title_field: 'a title',
         id: 'solrs_actual_id',
-        origin: function() { return this; },
-        explain: function(idVal) {
+        origin: function () {
+          return this;
+        },
+        explain: function (idVal) {
           idVals.push(idVal);
-          if (idVal === 'solrs_actual_id') { return sumExplain; }
+          if (idVal === 'solrs_actual_id') {
+            return sumExplain;
+          }
           return null;
         },
-        highlight: function() { return null; },
-        _url: function() { return ''; }
+        highlight: function () {
+          return null;
+        },
+        _url: function () {
+          return '';
+        },
       };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
       expect(idVals.length).toBe(2);
@@ -457,12 +549,23 @@ describe('normalDocsSvc', () => {
         title_field: 'a title',
         sub1: 'sub1_val',
         sub2: 'sub2_val',
-        origin: function() {
-          return { custom_id_field: idFromSrc, title_field: titleFromSrc, sub1: sub1FromSrc, sub2: sub2FromSrc };
+        origin: function () {
+          return {
+            custom_id_field: idFromSrc,
+            title_field: titleFromSrc,
+            sub1: sub1FromSrc,
+            sub2: sub2FromSrc,
+          };
         },
-        explain: function() { return null; },
-        highlight: function() { return null; },
-        _url: function() { return ''; }
+        explain: function () {
+          return null;
+        },
+        highlight: function () {
+          return null;
+        },
+        _url: function () {
+          return '';
+        },
       };
       var fieldSpec = { id: 'custom_id_field', title: 'title_field', subs: '*' };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -475,13 +578,24 @@ describe('normalDocsSvc', () => {
   });
 
   describe('wildcard subs with functions', () => {
-    var makeSolrDoc = function(fields) {
-      var merged = Object.assign({
-        origin: function() { return this; },
-        explain: function() { return null; },
-        highlight: function() { return null; },
-        _url: function() { return ''; }
-      }, fields);
+    var makeSolrDoc = function (fields) {
+      var merged = Object.assign(
+        {
+          origin: function () {
+            return this;
+          },
+          explain: function () {
+            return null;
+          },
+          highlight: function () {
+            return null;
+          },
+          _url: function () {
+            return '';
+          },
+        },
+        fields,
+      );
       return merged;
     };
 
@@ -493,8 +607,18 @@ describe('normalDocsSvc', () => {
     });
 
     it('captures function values as subs', () => {
-      var solrDoc = makeSolrDoc({ custom_id_field: '1234', title_field: 'a title', sub2: 'sub2_val', fn: 2.0 });
-      var fieldSpec = { id: 'custom_id_field', title: 'title_field', subs: ['sub2'], functions: ['fn:$fn'] };
+      var solrDoc = makeSolrDoc({
+        custom_id_field: '1234',
+        title_field: 'a title',
+        sub2: 'sub2_val',
+        fn: 2.0,
+      });
+      var fieldSpec = {
+        id: 'custom_id_field',
+        title: 'title_field',
+        subs: ['sub2'],
+        functions: ['fn:$fn'],
+      };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
       expect(Object.keys(normalDoc.subs).length).toEqual(2);
       expect(normalDoc.subs.sub2).toEqual('sub2_val');
@@ -502,8 +626,19 @@ describe('normalDocsSvc', () => {
     });
 
     it('captures function values with wildcard subs', () => {
-      var solrDoc = makeSolrDoc({ custom_id_field: '1234', title_field: 'a title', sub1: 'sub1_val', sub2: 'sub2_val', fn: 2.0 });
-      var fieldSpec = { id: 'custom_id_field', title: 'title_field', subs: '*', functions: ['fn:$fn'] };
+      var solrDoc = makeSolrDoc({
+        custom_id_field: '1234',
+        title_field: 'a title',
+        sub1: 'sub1_val',
+        sub2: 'sub2_val',
+        fn: 2.0,
+      });
+      var fieldSpec = {
+        id: 'custom_id_field',
+        title: 'title_field',
+        subs: '*',
+        functions: ['fn:$fn'],
+      };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
       expect(Object.keys(normalDoc.subs).length).toEqual(3);
       expect(normalDoc.subs.sub1).toEqual('sub1_val');
@@ -514,15 +649,26 @@ describe('normalDocsSvc', () => {
     it('captures wildcard sub values with highlights', () => {
       var highlights = { sub1: 'sub1_hl' };
       var solrDoc = {
-        custom_id_field: '1234', title_field: 'a title',
-        sub1: 'sub1_val', sub2: 'sub2_val', fn: 2.0,
-        origin: function() { return this; },
-        explain: function() { return null; },
-        highlight: function(docId, field, pre, post) {
-          if (highlights[field]) { return pre + highlights[field] + post; }
+        custom_id_field: '1234',
+        title_field: 'a title',
+        sub1: 'sub1_val',
+        sub2: 'sub2_val',
+        fn: 2.0,
+        origin: function () {
+          return this;
+        },
+        explain: function () {
           return null;
         },
-        _url: function() { return ''; }
+        highlight: function (docId, field, pre, post) {
+          if (highlights[field]) {
+            return pre + highlights[field] + post;
+          }
+          return null;
+        },
+        _url: function () {
+          return '';
+        },
       };
       var fieldSpec = { id: 'custom_id_field', title: 'title_field', subs: '*' };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -535,19 +681,34 @@ describe('normalDocsSvc', () => {
   });
 
   describe('dot notation edge cases', () => {
-    var makeSolrDoc = function(fields) {
-      return Object.assign({
-        origin: function() { return this; },
-        explain: function() { return null; },
-        highlight: function() { return null; },
-        _url: function() { return ''; }
-      }, fields);
+    var makeSolrDoc = function (fields) {
+      return Object.assign(
+        {
+          origin: function () {
+            return this;
+          },
+          explain: function () {
+            return null;
+          },
+          highlight: function () {
+            return null;
+          },
+          _url: function () {
+            return '';
+          },
+        },
+        fields,
+      );
     };
 
     it('captures sub values with dot notation in an array', () => {
       var solrDoc = makeSolrDoc({
-        id: '1234', title_field: 'a title',
-        genres: [{ name: 'Action', id: 1 }, { name: 'Comedy', id: 2 }]
+        id: '1234',
+        title_field: 'a title',
+        genres: [
+          { name: 'Action', id: 1 },
+          { name: 'Comedy', id: 2 },
+        ],
       });
       var fieldSpec = { id: 'id', title: 'title_field', subs: ['genres.name'] };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -556,8 +717,14 @@ describe('normalDocsSvc', () => {
 
     it('captures sub values with dot notation in both an array and a dictionary', () => {
       var solrDoc = makeSolrDoc({
-        id: '1234', title_field: 'a title',
-        nesting: { genres: [{ name: 'Action', id: 1 }, { name: 'Comedy', id: 2 }] }
+        id: '1234',
+        title_field: 'a title',
+        nesting: {
+          genres: [
+            { name: 'Action', id: 1 },
+            { name: 'Comedy', id: 2 },
+          ],
+        },
       });
       var fieldSpec = { id: 'id', title: 'title_field', subs: ['nesting.genres.name'] };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -566,8 +733,9 @@ describe('normalDocsSvc', () => {
 
     it('captures sub values when the field name has a dot in it (not dot notation)', () => {
       var solrDoc = makeSolrDoc({
-        id: '1234', title_field: 'a title',
-        'actor.name': 'Harrison Ford'
+        id: '1234',
+        title_field: 'a title',
+        'actor.name': 'Harrison Ford',
       });
       var fieldSpec = { id: 'id', title: 'title_field', subs: ['actor.name'] };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -576,8 +744,9 @@ describe('normalDocsSvc', () => {
 
     it('captures sub values with dot notation into nested object', () => {
       var solrDoc = makeSolrDoc({
-        id: '1234', title_field: 'a title',
-        director: { credit_id: '52fe44fac3a36847f80b56e7', name: 'Robert Clouse' }
+        id: '1234',
+        title_field: 'a title',
+        director: { credit_id: '52fe44fac3a36847f80b56e7', name: 'Robert Clouse' },
       });
       var fieldSpec = { id: 'id', title: 'title_field', subs: ['director.name'] };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
@@ -586,22 +755,38 @@ describe('normalDocsSvc', () => {
   });
 
   describe('field spec options (image/thumb)', () => {
-    var makeSolrDoc = function(fields) {
-      return Object.assign({
-        origin: function() { return this; },
-        explain: function() { return null; },
-        highlight: function() { return null; },
-        _url: function() { return ''; }
-      }, fields);
+    var makeSolrDoc = function (fields) {
+      return Object.assign(
+        {
+          origin: function () {
+            return this;
+          },
+          explain: function () {
+            return null;
+          },
+          highlight: function () {
+            return null;
+          },
+          _url: function () {
+            return '';
+          },
+        },
+        fields,
+      );
     };
 
     it('handles image_options from fieldSpec', () => {
       var solrDoc = makeSolrDoc({
-        id: '1234', title_field: 'a title', relative_image: '/some/image.png'
+        id: '1234',
+        title_field: 'a title',
+        relative_image: '/some/image.png',
       });
       var fieldSpec = {
-        id: 'id', title: 'title_field', subs: ['relative_image'],
-        image: 'relative_image', image_options: { prefix: 'http://example.org/' }
+        id: 'id',
+        title: 'title_field',
+        subs: ['relative_image'],
+        image: 'relative_image',
+        image_options: { prefix: 'http://example.org/' },
       };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
       expect(normalDoc.subs['relative_image']).toEqual('/some/image.png');
@@ -612,11 +797,16 @@ describe('normalDocsSvc', () => {
 
     it('handles thumb_options from fieldSpec', () => {
       var solrDoc = makeSolrDoc({
-        id: '1234', title_field: 'a title', relative_image: '/some/image.png'
+        id: '1234',
+        title_field: 'a title',
+        relative_image: '/some/image.png',
       });
       var fieldSpec = {
-        id: 'id', title: 'title_field', subs: ['relative_image'],
-        thumb: 'relative_image', thumb_options: { prefix: 'http://example.org/thumbs/' }
+        id: 'id',
+        title: 'title_field',
+        subs: ['relative_image'],
+        thumb: 'relative_image',
+        thumb_options: { prefix: 'http://example.org/thumbs/' },
       };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
       expect(normalDoc.subs['relative_image']).toEqual('/some/image.png');

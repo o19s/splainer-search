@@ -69,4 +69,3 @@ export function VectaraDocFactory(vectaraUrlSvc, DocFactory, utilsSvc) {
 
   return Doc;
 }
-

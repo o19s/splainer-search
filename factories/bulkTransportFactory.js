@@ -195,12 +195,10 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
           postConfig.signal = combinedSignal;
         }
         pendingHttp = httpClient.post(url, payload, postConfig);
-        pendingHttp
-          .then(multiSearchSuccess, multiSearchFailed)
-          .catch(function (err) {
-            console.debug('Failed to do multi search');
-            multiSearchFailed(err);
-          });
+        pendingHttp.then(multiSearchSuccess, multiSearchFailed).catch(function (err) {
+          console.debug('Failed to do multi search');
+          multiSearchFailed(err);
+        });
       }
     }
 
@@ -273,4 +271,3 @@ export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
 
   return Transport;
 }
-

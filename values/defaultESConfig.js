@@ -9,4 +9,3 @@ export var defaultESConfig = {
   apiMethod: 'POST',
   version: '5.0',
 };
-

@@ -15,10 +15,10 @@ describe('algoliaSearcherPreprocessorSvc', () => {
       args: {
         query: '#$query##',
         hitsPerPage: 5,
-        page: 0
+        page: 0,
       },
       queryText: 'algolia term',
-      config: { apiMethod: 'POST', qOption: 'query' }
+      config: { apiMethod: 'POST', qOption: 'query' },
     };
     svc.prepare(searcher);
     expect(searcher.queryDsl.query).toBe('algolia term');
@@ -30,9 +30,9 @@ describe('algoliaSearcherPreprocessorSvc', () => {
     var searcher = {
       args: {},
       queryText: 'x',
-      config: { apiMethod: 'GET' }
+      config: { apiMethod: 'GET' },
     };
-    expect(function() {
+    expect(function () {
       svc.prepare(searcher);
     }).toThrowError(/GET is not supported/);
   });

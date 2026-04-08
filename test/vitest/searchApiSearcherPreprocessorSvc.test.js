@@ -13,7 +13,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'GET', qOption: null },
       args: { query: '#$query##' },
       queryText: 'plain',
-      url: 'http://mycompany/bob/search'
+      url: 'http://mycompany/bob/search',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.url).toBe('http://mycompany/bob/search?query=plain');
@@ -24,7 +24,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'GET', qOption: null },
       args: { query: '#$query##' },
       queryText: 'something',
-      url: 'http://mycompany/bob/something?x=y&b=s'
+      url: 'http://mycompany/bob/something?x=y&b=s',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.url).toBe('http://mycompany/bob/something?x=y&b=s&query=something');
@@ -35,7 +35,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'GET', qOption: null },
       args: { query: '#$query##' },
       queryText: 'something',
-      url: 'http://mycompany/bob/something?'
+      url: 'http://mycompany/bob/something?',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.url).toBe('http://mycompany/bob/something?query=something');
@@ -46,7 +46,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'GET', qOption: null },
       args: { query: '#$query##' },
       queryText: { alpha: 'one', beta: 2 },
-      url: 'http://example.com/api'
+      url: 'http://example.com/api',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.url.indexOf('http://example.com/api?')).toBe(0);
@@ -59,7 +59,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'POST', qOption: null },
       args: { query: '#$query##' },
       queryText: 'hydrate-me',
-      url: 'http://example.com/api'
+      url: 'http://example.com/api',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.queryDsl).toEqual({ query: 'hydrate-me' });
@@ -71,7 +71,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'POST', qOption: { corpusId: 1 } },
       args: { query: '#$query##' },
       queryText: dsl,
-      url: 'http://example.com/api'
+      url: 'http://example.com/api',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.queryDsl).toBe(dsl);
@@ -82,7 +82,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'POST', qOption: null },
       args: { q: '#$query##' },
       queryText: 'a\\b"c',
-      url: 'http://example.com/api'
+      url: 'http://example.com/api',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.queryDsl).toEqual({ q: 'a\\\\b\\"c' });
@@ -93,7 +93,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'GET', qOption: null },
       args: { query: '#$query##', rows: '10' },
       queryText: null,
-      url: 'http://example.com/api'
+      url: 'http://example.com/api',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.url.indexOf('http://example.com/api?')).toBe(0);
@@ -106,9 +106,9 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'GET', qOption: null },
       args: null,
       queryText: null,
-      url: 'http://example.com/api'
+      url: 'http://example.com/api',
     };
-    expect(function() {
+    expect(function () {
       searchApiSearcherPreprocessorSvc.prepare(searcher);
     }).toThrow();
   });

@@ -156,4 +156,3 @@ export function ResolverFactory(searchSvc, solrUrlSvc, normalDocsSvc, utilsSvc) 
   // Return factory object
   return Resolver;
 }
-

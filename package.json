@@ -65,7 +65,7 @@
     "lint": "eslint 'index.js' 'wired.js' 'build.js' 'wired/**/*.js' 'services/**/*.js' 'factories/**/*.js' 'values/**/*.js' 'shims/**/*.js' 'test/**/*.js' 'vitest.config.js'",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:ci": "npm run lint && npm run test && npm run test:integration",
+    "test:ci": "npm run format:check && npm run lint && npm run test && npm run test:integration",
     "stryker": "stryker run",
     "build": "node build.js",
     "pack:check": "npm run build && npm pack --dry-run",

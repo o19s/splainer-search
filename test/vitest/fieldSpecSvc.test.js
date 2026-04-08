@@ -67,7 +67,9 @@ describe('fieldSpecSvc', () => {
 
   it('extracts media fields', () => {
     var svc = createFieldSpecSvc();
-    var fs = svc.createFieldSpec('id:foo_id atitlefield subfield1 media:media1 media:media2 subfield2');
+    var fs = svc.createFieldSpec(
+      'id:foo_id atitlefield subfield1 media:media1 media:media2 subfield2',
+    );
     expect(fs.id).toEqual('foo_id');
     expect(fs.title).toEqual('atitlefield');
     expect(fs.embeds).toContain('media1');
@@ -100,7 +102,9 @@ describe('fieldSpecSvc', () => {
 
   it('gets plain field list', () => {
     var svc = createFieldSpecSvc();
-    var fs = svc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 image:imagefield thumb:foo_img media:media1');
+    var fs = svc.createFieldSpec(
+      'id:foo_id atitlefield subfield1 subfield2 image:imagefield thumb:foo_img media:media1',
+    );
     expect(fs.fields).toContain('foo_id');
     expect(fs.fields).toContain('atitlefield');
     expect(fs.fields).toContain('subfield1');
@@ -120,7 +124,9 @@ describe('fieldSpecSvc', () => {
     var svc = createFieldSpecSvc();
     var fs = svc.createFieldSpec('id:foo_id atitlefield subfield1 subfield2 thumb:foo_img');
     var fieldsIterated = [];
-    fs.forEachField(function (fieldName) { fieldsIterated.push(fieldName); });
+    fs.forEachField(function (fieldName) {
+      fieldsIterated.push(fieldName);
+    });
     expect(fieldsIterated).toContain('atitlefield');
     expect(fieldsIterated).toContain('subfield1');
     expect(fieldsIterated).toContain('subfield2');
@@ -269,7 +275,9 @@ describe('fieldSpecSvc', () => {
 
   it('hl switch is working', () => {
     var svc = createFieldSpecSvc();
-    var fs = svc.createFieldSpec('id:foo_id, nohighlight, title:hl:titleCombo highlight:regular foo.bar');
+    var fs = svc.createFieldSpec(
+      'id:foo_id, nohighlight, title:hl:titleCombo highlight:regular foo.bar',
+    );
     var hl = fs.highlightFieldList();
     expect(hl).toContain('regular');
     expect(hl).toContain('titleCombo');
@@ -278,7 +286,9 @@ describe('fieldSpecSvc', () => {
 
   it('handles json definition for images', () => {
     var svc = createFieldSpecSvc();
-    var fs = svc.createFieldSpec('id:foo_id atitlefield {"name": "image_url", "type":"image", "prefix": "http://example.org/images", "height": 250} subfield2');
+    var fs = svc.createFieldSpec(
+      'id:foo_id atitlefield {"name": "image_url", "type":"image", "prefix": "http://example.org/images", "height": 250} subfield2',
+    );
     expect(fs.id).toEqual('foo_id');
     expect(fs.title).toEqual('atitlefield');
     expect(fs.image).toContain('image_url');
@@ -288,7 +298,9 @@ describe('fieldSpecSvc', () => {
 
   it('handles json definition for thumb', () => {
     var svc = createFieldSpecSvc();
-    var fs = svc.createFieldSpec('id:foo_id atitlefield {"name": "image_url", "type":"thumb", "prefix": "http://example.org/thumbs", "height": 250} subfield2');
+    var fs = svc.createFieldSpec(
+      'id:foo_id atitlefield {"name": "image_url", "type":"thumb", "prefix": "http://example.org/thumbs", "height": 250} subfield2',
+    );
     expect(fs.id).toEqual('foo_id');
     expect(fs.title).toEqual('atitlefield');
     expect(fs.thumb).toContain('image_url');
@@ -300,7 +312,9 @@ describe('fieldSpecSvc', () => {
     var svc = createFieldSpecSvc();
     var fs = svc.createFieldSpec('id:myId myTitle');
     var fields = [];
-    fs.forEachField(function (f) { fields.push(f); });
+    fs.forEachField(function (f) {
+      fields.push(f);
+    });
     expect(fields).toContain('myTitle');
   });
 });

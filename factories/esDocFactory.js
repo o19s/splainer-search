@@ -110,4 +110,3 @@ export function EsDocFactory(esUrlSvc, DocFactory, utilsSvc) {
 
   return Doc;
 }
-

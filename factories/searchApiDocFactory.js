@@ -64,4 +64,3 @@ export function SearchApiDocFactory(DocFactory, utilsSvc) {
 
   return Doc;
 }
-

@@ -71,8 +71,7 @@ export function createFetchClient(options) {
       headers: headers,
     };
 
-    var credentials =
-      config.credentials !== undefined ? config.credentials : _defaultCredentials;
+    var credentials = config.credentials !== undefined ? config.credentials : _defaultCredentials;
     if (credentials !== undefined) {
       fetchOptions.credentials = credentials;
     }
@@ -165,7 +164,7 @@ export function createFetchClient(options) {
     }
 
     var callbackParam = config.jsonpCallbackParam || 'callback';
-    var callbackName = '__splainerJsonpCb_' + (_jsonpCounter++);
+    var callbackName = '__splainerJsonpCb_' + _jsonpCounter++;
     var separator = url.indexOf('?') === -1 ? '?' : '&';
     var scriptUrl = url + separator + encodeURIComponent(callbackParam) + '=' + callbackName;
 
@@ -233,4 +232,3 @@ export function createFetchClient(options) {
     jsonp: jsonp,
   };
 }
-

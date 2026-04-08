@@ -13,7 +13,9 @@ describe('baseExplainSvc', () => {
   it('creates an Explain from JSON', () => {
     var { baseExplainSvc } = createServices();
     var json = { value: '3.5', description: 'test explain', details: [] };
-    var expl = new baseExplainSvc.Explain(json, function () { return null; });
+    var expl = new baseExplainSvc.Explain(json, function () {
+      return null;
+    });
     expect(expl.score).toBeCloseTo(3.5);
     expect(expl.description).toBe('test explain');
     expect(expl.children).toEqual([]);
@@ -26,8 +28,8 @@ describe('baseExplainSvc', () => {
       description: 'parent',
       details: [
         { value: '2.0', description: 'child1', details: [] },
-        { value: '3.0', description: 'child2', details: [] }
-      ]
+        { value: '3.0', description: 'child2', details: [] },
+      ],
     };
     var factory = function (detail) {
       return new baseExplainSvc.Explain(detail, factory);
@@ -40,7 +42,9 @@ describe('baseExplainSvc', () => {
   it('returns contribution and explanation', () => {
     var { baseExplainSvc } = createServices();
     var json = { value: '7.5', description: 'sum of:', details: [] };
-    var expl = new baseExplainSvc.Explain(json, function () { return null; });
+    var expl = new baseExplainSvc.Explain(json, function () {
+      return null;
+    });
     expect(expl.contribution()).toBeCloseTo(7.5);
     expect(expl.explanation()).toBe('sum of:');
   });
@@ -48,7 +52,9 @@ describe('baseExplainSvc', () => {
   it('vectorizes the explain', () => {
     var { baseExplainSvc } = createServices();
     var json = { value: '4.0', description: 'weight', details: [] };
-    var expl = new baseExplainSvc.Explain(json, function () { return null; });
+    var expl = new baseExplainSvc.Explain(json, function () {
+      return null;
+    });
     var vec = expl.vectorize();
     expect(vec.get('weight')).toBeCloseTo(4.0);
   });
@@ -56,7 +62,9 @@ describe('baseExplainSvc', () => {
   it('generates a string representation', () => {
     var { baseExplainSvc } = createServices();
     var json = { value: '1.0', description: 'leaf', details: [] };
-    var expl = new baseExplainSvc.Explain(json, function () { return null; });
+    var expl = new baseExplainSvc.Explain(json, function () {
+      return null;
+    });
     var str = expl.toStr();
     expect(str).toContain('1');
     expect(str).toContain('leaf');

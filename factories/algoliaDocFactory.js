@@ -69,4 +69,3 @@ export function AlgoliaDocFactory(DocFactory, utilsSvc) {
 
   return Doc;
 }
-

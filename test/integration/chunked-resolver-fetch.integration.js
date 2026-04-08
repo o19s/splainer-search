@@ -78,23 +78,27 @@ function nodeJsonpRequest(url, _config) {
   var parsed = new URL(url);
 
   return new Promise(function (resolve, reject) {
-    http.get(parsed.href, function (res) {
-      var body = '';
-      res.on('data', function (chunk) { body += chunk; });
-      res.on('end', function () {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          try {
-            resolve({ data: JSON.parse(body), status: res.statusCode, statusText: 'OK' });
-          } catch (_e) {
-            reject({ data: null, status: res.statusCode, statusText: 'parse error' });
+    http
+      .get(parsed.href, function (res) {
+        var body = '';
+        res.on('data', function (chunk) {
+          body += chunk;
+        });
+        res.on('end', function () {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              resolve({ data: JSON.parse(body), status: res.statusCode, statusText: 'OK' });
+            } catch (_e) {
+              reject({ data: null, status: res.statusCode, statusText: 'parse error' });
+            }
+          } else {
+            reject({ data: body, status: res.statusCode, statusText: res.statusMessage || '' });
           }
-        } else {
-          reject({ data: body, status: res.statusCode, statusText: res.statusMessage || '' });
-        }
+        });
+      })
+      .on('error', function () {
+        reject({ data: null, status: 0, statusText: '' });
       });
-    }).on('error', function () {
-      reject({ data: null, status: 0, statusText: '' });
-    });
   });
 }
 

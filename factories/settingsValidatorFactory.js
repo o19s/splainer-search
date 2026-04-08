@@ -143,4 +143,3 @@ export function SettingsValidatorFactory(fieldSpecSvc, searchSvc, utilsSvc) {
   // Return factory object
   return Validator;
 }
-

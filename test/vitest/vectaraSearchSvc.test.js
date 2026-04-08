@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createFetchClient } from '../../services/httpClient.js';
 import { MockHttpBackend } from './helpers/mockHttpBackend.js';
-import {
-  getSearchSvc,
-  getFieldSpecSvc,
-} from './helpers/serviceFactory.js';
+import { getSearchSvc, getFieldSpecSvc } from './helpers/serviceFactory.js';
 
 describe('searchSvc: Vectara', () => {
   var searchSvc;
@@ -15,39 +12,43 @@ describe('searchSvc: Vectara', () => {
   var mockVectaraUrl = 'https://api.vectara.io:443/v1/query';
   var mockQueryText = 'test';
   var mockVectaraParam = {
-    query: [{
-      query: '#$query##',
-      numResults: 10,
-      corpusKey: [{ corpusId: 1 }]
-    }]
+    query: [
+      {
+        query: '#$query##',
+        numResults: 10,
+        corpusKey: [{ corpusId: 1 }],
+      },
+    ],
   };
 
   var mockVectaraResults = {
-    responseSet: [{
-      response: [],
-      status: [],
-      document: [
-        {
-          id: '1',
-          metadata: [
-            { name: 'field1', value: '1--field1 value' },
-            { name: 'field2', value: '1--field2 value' }
-          ]
-        },
-        {
-          id: '2',
-          metadata: [
-            { name: 'field1', value: '2--field1 value' },
-            { name: 'field2', value: '2--field2 value' }
-          ]
-        },
-      ],
-      generated: [],
-      summary: [],
-      futureId: 1
-    }],
+    responseSet: [
+      {
+        response: [],
+        status: [],
+        document: [
+          {
+            id: '1',
+            metadata: [
+              { name: 'field1', value: '1--field1 value' },
+              { name: 'field2', value: '1--field2 value' },
+            ],
+          },
+          {
+            id: '2',
+            metadata: [
+              { name: 'field1', value: '2--field1 value' },
+              { name: 'field2', value: '2--field2 value' },
+            ],
+          },
+        ],
+        generated: [],
+        summary: [],
+        futureId: 1,
+      },
+    ],
     status: [],
-    metrics: null
+    metrics: null,
   };
 
   beforeEach(() => {
@@ -69,7 +70,7 @@ describe('searchSvc: Vectara', () => {
         mockVectaraParam,
         mockQueryText,
         {},
-        'vectara'
+        'vectara',
       );
     });
 
@@ -77,16 +78,15 @@ describe('searchSvc: Vectara', () => {
       mockBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
 
       var called = 0;
-      await searcher.search()
-        .then(function() {
-          var docs = searcher.docs;
-          expect(docs.length).toEqual(2);
-          expect(docs[0].field1).toEqual('1--field1 value');
-          expect(docs[0].field2).toEqual('1--field2 value');
-          expect(docs[1].field1).toEqual('2--field1 value');
-          expect(docs[1].field2).toEqual('2--field2 value');
-          called++;
-        });
+      await searcher.search().then(function () {
+        var docs = searcher.docs;
+        expect(docs.length).toEqual(2);
+        expect(docs[0].field1).toEqual('1--field1 value');
+        expect(docs[0].field2).toEqual('1--field2 value');
+        expect(docs[1].field1).toEqual('2--field1 value');
+        expect(docs[1].field2).toEqual('2--field2 value');
+        called++;
+      });
 
       mockBackend.verifyNoOutstandingExpectation();
       expect(called).toEqual(1);
@@ -96,11 +96,10 @@ describe('searchSvc: Vectara', () => {
       mockBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
 
       var called = 0;
-      await searcher.search()
-        .then(function() {
-          expect(searcher.numFound).toEqual(2);
-          called++;
-        });
+      await searcher.search().then(function () {
+        expect(searcher.numFound).toEqual(2);
+        called++;
+      });
       expect(called).toEqual(1);
     });
 
@@ -108,34 +107,32 @@ describe('searchSvc: Vectara', () => {
       var emptyResponse = {
         responseSet: [],
         status: [],
-        metrics: null
+        metrics: null,
       };
       mockBackend.expectPOST(mockVectaraUrl).respond(200, emptyResponse);
 
       var called = 0;
-      await searcher.search()
-        .then(function() {
-          expect(searcher.docs.length).toEqual(0);
-          expect(searcher.numFound).toEqual(0);
-          called++;
-        });
+      await searcher.search().then(function () {
+        expect(searcher.docs.length).toEqual(0);
+        expect(searcher.numFound).toEqual(0);
+        called++;
+      });
       expect(called).toEqual(1);
     });
 
     it('handles missing responseSet', async () => {
       var noResponseSet = {
         status: [],
-        metrics: null
+        metrics: null,
       };
       mockBackend.expectPOST(mockVectaraUrl).respond(200, noResponseSet);
 
       var called = 0;
-      await searcher.search()
-        .then(function() {
-          expect(searcher.docs.length).toEqual(0);
-          expect(searcher.numFound).toEqual(0);
-          called++;
-        });
+      await searcher.search().then(function () {
+        expect(searcher.docs.length).toEqual(0);
+        expect(searcher.numFound).toEqual(0);
+        called++;
+      });
       expect(called).toEqual(1);
     });
 
@@ -143,14 +140,16 @@ describe('searchSvc: Vectara', () => {
       mockBackend.expectPOST(mockVectaraUrl).respond(500, { error: 'Internal Server Error' });
 
       var errorCalled = 0;
-      await searcher.search()
-        .then(function() {
+      await searcher.search().then(
+        function () {
           errorCalled--;
-        }, function(msg) {
+        },
+        function (msg) {
           expect(msg.searchError).toContain('Error with Vectara query');
           expect(searcher.inError).toBe(true);
           errorCalled++;
-        });
+        },
+      );
       expect(errorCalled).toEqual(1);
     });
 
@@ -162,16 +161,20 @@ describe('searchSvc: Vectara', () => {
         mockVectaraParam,
         mockQueryText,
         { customHeaders: custom },
-        'vectara'
+        'vectara',
       );
 
-      mockBackend.expectPOST(mockVectaraUrl, undefined, function(headers) {
-        return headers['X-Custom-Header'] === 'integration-test' ||
-          headers['x-custom-header'] === 'integration-test';
-      }).respond(200, mockVectaraResults);
+      mockBackend
+        .expectPOST(mockVectaraUrl, undefined, function (headers) {
+          return (
+            headers['X-Custom-Header'] === 'integration-test' ||
+            headers['x-custom-header'] === 'integration-test'
+          );
+        })
+        .respond(200, mockVectaraResults);
 
       var called = 0;
-      await configuredSearcher.search().then(function() {
+      await configuredSearcher.search().then(function () {
         expect(configuredSearcher.docs.length).toBe(2);
         called++;
       });
@@ -192,7 +195,7 @@ describe('searchSvc: Vectara', () => {
         mockVectaraParamWithPager,
         mockQueryText,
         {},
-        'vectara'
+        'vectara',
       );
     });
 
@@ -202,20 +205,19 @@ describe('searchSvc: Vectara', () => {
       for (var i = 0; i < 10; i++) {
         manyDocsResponse.responseSet[0].document.push({
           id: '' + i,
-          metadata: [{ name: 'field1', value: 'val' + i }]
+          metadata: [{ name: 'field1', value: 'val' + i }],
         });
       }
 
       mockBackend.expectPOST(mockVectaraUrl).respond(200, manyDocsResponse);
 
       var called = 0;
-      await searcher.search()
-        .then(function() {
-          var pagerSearcher = searcher.pager();
-          expect(pagerSearcher).not.toBeNull();
-          expect(pagerSearcher).toBeDefined();
-          called++;
-        });
+      await searcher.search().then(function () {
+        var pagerSearcher = searcher.pager();
+        expect(pagerSearcher).not.toBeNull();
+        expect(pagerSearcher).toBeDefined();
+        called++;
+      });
       expect(called).toEqual(1);
     });
 
@@ -223,12 +225,11 @@ describe('searchSvc: Vectara', () => {
       mockBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
 
       var called = 0;
-      await searcher.search()
-        .then(function() {
-          var pagerSearcher = searcher.pager();
-          expect(pagerSearcher).toBeNull();
-          called++;
-        });
+      await searcher.search().then(function () {
+        var pagerSearcher = searcher.pager();
+        expect(pagerSearcher).toBeNull();
+        called++;
+      });
       expect(called).toEqual(1);
     });
   });
@@ -241,7 +242,7 @@ describe('searchSvc: Vectara', () => {
         mockVectaraParam,
         mockQueryText,
         {},
-        'vectara'
+        'vectara',
       );
     });
 

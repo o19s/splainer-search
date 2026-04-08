@@ -3,4 +3,3 @@
 export var defaultVectaraConfig = {
   apiMethod: 'POST',
 };
-

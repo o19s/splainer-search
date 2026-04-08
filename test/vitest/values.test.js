@@ -15,9 +15,14 @@ describe('defaultSolrConfig', () => {
   });
 
   it('has exactly the expected keys', () => {
-    expect(Object.keys(defaultSolrConfig).sort()).toEqual(
-      ['apiMethod', 'debug', 'escapeQuery', 'highlight', 'numberOfRows', 'sanitize']
-    );
+    expect(Object.keys(defaultSolrConfig).sort()).toEqual([
+      'apiMethod',
+      'debug',
+      'escapeQuery',
+      'highlight',
+      'numberOfRows',
+      'sanitize',
+    ]);
   });
 });
 
@@ -33,9 +38,15 @@ describe('defaultESConfig', () => {
   });
 
   it('has exactly the expected keys', () => {
-    expect(Object.keys(defaultESConfig).sort()).toEqual(
-      ['apiMethod', 'debug', 'escapeQuery', 'highlight', 'numberOfRows', 'sanitize', 'version']
-    );
+    expect(Object.keys(defaultESConfig).sort()).toEqual([
+      'apiMethod',
+      'debug',
+      'escapeQuery',
+      'highlight',
+      'numberOfRows',
+      'sanitize',
+      'version',
+    ]);
   });
 });
 

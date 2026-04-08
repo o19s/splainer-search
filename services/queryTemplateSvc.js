@@ -175,4 +175,3 @@ export function queryTemplateSvcConstructor() {
     return hydrate(args, qt, hydrateConfig);
   }
 }
-

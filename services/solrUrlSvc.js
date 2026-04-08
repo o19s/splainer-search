@@ -177,4 +177,3 @@ export function solrUrlSvcConstructor(utilsSvc) {
     return warnings;
   };
 }
-

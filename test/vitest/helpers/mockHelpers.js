@@ -8,7 +8,7 @@ export function parseUrlParams(queryString) {
   }
   var queryParams = queryString.split('&');
   var parsedParams = {};
-  queryParams.forEach(function(queryParam) {
+  queryParams.forEach(function (queryParam) {
     var qpSplit = queryParam.split(/=(.*)/);
     var param = qpSplit[0];
     var value = qpSplit[1];
@@ -21,22 +21,26 @@ export function parseUrlParams(queryString) {
 }
 
 export function arrayContains(list, value) {
-  if (!list) { return false; }
+  if (!list) {
+    return false;
+  }
   return list.indexOf(value) !== -1;
 }
 
 export function urlContainsParams(url, params) {
   return {
-    test: function(requestedUrl) {
-      if (requestedUrl.indexOf(url) !== 0) { return false; }
+    test: function (requestedUrl) {
+      if (requestedUrl.indexOf(url) !== 0) {
+        return false;
+      }
       var missingParam = false;
       var urlEncodedArgs = requestedUrl.substr(url.length);
       var parsedParams = parseUrlParams(urlEncodedArgs);
       if (params) {
-        Object.keys(params).forEach(function(param) {
+        Object.keys(params).forEach(function (param) {
           var values = params[param];
           if (values instanceof Array) {
-            values.forEach(function(value) {
+            values.forEach(function (value) {
               if (!arrayContains(parsedParams[param], value)) {
                 missingParam = true;
               }
@@ -47,22 +51,24 @@ export function urlContainsParams(url, params) {
         });
       }
       return !missingParam;
-    }
+    },
   };
 }
 
 export function urlMissingParams(url, params) {
   return {
-    test: function(requestedUrl) {
-      if (requestedUrl.indexOf(url) !== 0) { return false; }
+    test: function (requestedUrl) {
+      if (requestedUrl.indexOf(url) !== 0) {
+        return false;
+      }
       var found = false;
       var urlEncodedArgs = requestedUrl.substr(url.length);
       var parsedParams = parseUrlParams(urlEncodedArgs);
       if (params) {
-        Object.keys(params).forEach(function(param) {
+        Object.keys(params).forEach(function (param) {
           var values = params[param];
           if (values instanceof Array) {
-            values.forEach(function(value) {
+            values.forEach(function (value) {
               if (arrayContains(parsedParams[param], value)) {
                 found = true;
               }
@@ -71,32 +77,32 @@ export function urlMissingParams(url, params) {
         });
       }
       return !found;
-    }
+    },
   };
 }
 
 export function urlHasBasicAuth() {
   return {
-    test: function(requestedUrl) {
+    test: function (requestedUrl) {
       try {
         var uri = new URL(requestedUrl);
         return uri.username !== '' && uri.password !== '';
       } catch (_error) {
         return false;
       }
-    }
+    },
   };
 }
 
 export function urlHasNoBasicAuth() {
   return {
-    test: function(requestedUrl) {
+    test: function (requestedUrl) {
       try {
         var uri = new URL(requestedUrl);
         return uri.username === '' && uri.password === '';
       } catch (_error) {
         return false;
       }
-    }
+    },
   };
 }

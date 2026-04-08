@@ -60,7 +60,10 @@ function assertDemoSearchShape(searcher, label, pageSize, idKind) {
   assert.strictEqual(searcher.inError, false, label + ': searcher.inError should be false');
   assert.ok(searcher.numFound > 0, label + ': numFound should be > 0');
   assert.ok(searcher.docs.length >= 1, label + ': at least one doc in the page');
-  assert.ok(searcher.docs.length <= pageSize, label + ': docs length should not exceed numberOfRows');
+  assert.ok(
+    searcher.docs.length <= pageSize,
+    label + ': docs length should not exceed numberOfRows',
+  );
   assert.ok(
     searcher.numFound >= searcher.docs.length,
     label + ': numFound should be at least the returned page size',
@@ -74,7 +77,11 @@ function assertDemoSearchShape(searcher, label, pageSize, idKind) {
       label + ': first ES/OS doc should have _id on the hit',
     );
   }
-  assert.strictEqual(activeQueries.count, 0, label + ': activeQueries should be balanced after search');
+  assert.strictEqual(
+    activeQueries.count,
+    0,
+    label + ': activeQueries should be balanced after search',
+  );
 }
 
 async function runSolrDemo(searchSvc, fieldSpecSvc) {
@@ -97,16 +104,14 @@ async function runEsDemo(searchSvc, fieldSpecSvc) {
   activeQueries.count = 0;
   var fieldSpec = fieldSpecSvc.createFieldSpec('id:_id title:title');
   var matchAll = { query: { match_all: {} } };
-  var searcher = searchSvc.createSearcher(
-    fieldSpec,
-    DEMO_ES_URL,
-    {},
-    matchAll,
-    liteEsConfig,
+  var searcher = searchSvc.createSearcher(fieldSpec, DEMO_ES_URL, {}, matchAll, liteEsConfig, 'es');
+  await searcher.search();
+  assertDemoSearchShape(
+    searcher,
+    'Elasticsearch (Quepid TMDB demo)',
+    liteEsConfig.numberOfRows,
     'es',
   );
-  await searcher.search();
-  assertDemoSearchShape(searcher, 'Elasticsearch (Quepid TMDB demo)', liteEsConfig.numberOfRows, 'es');
 }
 
 async function runOsDemo(searchSvc, fieldSpecSvc) {
@@ -116,14 +121,7 @@ async function runOsDemo(searchSvc, fieldSpecSvc) {
   var osConfig = Object.assign({}, liteEsConfig, {
     basicAuthCredential: 'reader:reader',
   });
-  var searcher = searchSvc.createSearcher(
-    fieldSpec,
-    DEMO_OS_URL,
-    {},
-    matchAll,
-    osConfig,
-    'os',
-  );
+  var searcher = searchSvc.createSearcher(fieldSpec, DEMO_OS_URL, {}, matchAll, osConfig, 'os');
   await searcher.search();
   assertDemoSearchShape(searcher, 'OpenSearch (Quepid TMDB demo)', liteEsConfig.numberOfRows, 'es');
 }

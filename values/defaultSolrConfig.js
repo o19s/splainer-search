@@ -8,4 +8,3 @@ export var defaultSolrConfig = {
   escapeQuery: true,
   apiMethod: 'JSONP',
 };
-

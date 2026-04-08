@@ -187,4 +187,3 @@ export function fieldSpecSvcConstructor(utilsSvc) {
     return new FieldSpec(fieldSpecStr);
   };
 }
-

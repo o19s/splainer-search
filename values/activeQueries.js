@@ -3,4 +3,3 @@
 export var activeQueries = {
   count: 0,
 };
-

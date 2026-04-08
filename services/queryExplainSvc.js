@@ -268,4 +268,3 @@ export function queryExplainSvcConstructor(baseExplainSvc, vectorSvc, simExplain
     };
   };
 }
-

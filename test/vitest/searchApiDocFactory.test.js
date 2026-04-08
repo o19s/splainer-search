@@ -3,7 +3,7 @@ import { getSearchApiDocConstructor } from './helpers/serviceFactory.js';
 
 var SearchApiDocFactory = getSearchApiDocConstructor();
 
-var makeDoc = function(rawDoc, options) {
+var makeDoc = function (rawDoc, options) {
   options = options || {};
   return new SearchApiDocFactory(rawDoc, options);
 };
@@ -17,7 +17,7 @@ describe('SearchApiDocFactory', () => {
     it('copies fields from doc to instance', () => {
       var rawDoc = {
         _source: { title: 'Test', author: 'John' },
-        id: '123'
+        id: '123',
       };
       var doc = makeDoc(rawDoc);
       expect(doc.id).toEqual('123');
@@ -26,7 +26,7 @@ describe('SearchApiDocFactory', () => {
     it('flattens single-element arrays', () => {
       var rawDoc = {
         title: ['Only Title'],
-        tags: ['tag1', 'tag2']
+        tags: ['tag1', 'tag2'],
       };
       var doc = makeDoc(rawDoc);
       expect(doc.title).toEqual('Only Title');

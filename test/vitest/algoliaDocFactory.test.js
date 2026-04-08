@@ -13,7 +13,7 @@ describe('AlgoliaDocFactory', () => {
       objectID: 'test123',
       title: ['Single Title'],
       description: 'Regular string',
-      tags: ['tag1', 'tag2', 'tag3']
+      tags: ['tag1', 'tag2', 'tag3'],
     };
     var doc = new AlgoliaDocFactory(mockDoc, {});
     expect(doc.title).toEqual('Single Title');
@@ -30,8 +30,10 @@ describe('AlgoliaDocFactory', () => {
 
   it('should handle undefined field values without error', () => {
     var mockDoc = {
-      objectID: 'test123', title: undefined,
-      description: 'Regular string', tags: ['single tag']
+      objectID: 'test123',
+      title: undefined,
+      description: 'Regular string',
+      tags: ['single tag'],
     };
     var doc = new AlgoliaDocFactory(mockDoc, {});
     expect(doc.title).toBeUndefined();
@@ -42,9 +44,12 @@ describe('AlgoliaDocFactory', () => {
   it('should handle mixed field types including undefined', () => {
     var mockDoc = {
       objectID: 'test123',
-      title: ['Single Title'], description: undefined,
-      price: null, tags: ['tag1', 'tag2'],
-      category: 'Electronics', inStock: true
+      title: ['Single Title'],
+      description: undefined,
+      price: null,
+      tags: ['tag1', 'tag2'],
+      category: 'Electronics',
+      inStock: true,
     };
     var doc = new AlgoliaDocFactory(mockDoc, {});
     expect(doc.title).toEqual('Single Title');
@@ -67,7 +72,7 @@ describe('AlgoliaDocFactory', () => {
       objectID: 'test123',
       title: ['Single Title'],
       metadata: { author: 'John Doe', year: 2023 },
-      scores: [42]
+      scores: [42],
     };
     var doc = new AlgoliaDocFactory(mockDoc, {});
     expect(doc.title).toEqual('Single Title');

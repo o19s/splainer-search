@@ -91,11 +91,11 @@ describe('esUrlSvc', () => {
     it('understands when template endpoint used', () => {
       var templateEsParams = {
         id: 'tmdb-title-search-template',
-        params: { search_query: 'star' }
+        params: { search_query: 'star' },
       };
 
       var mockEsParams = {
-        query: { match: { title: "#$query##" } }
+        query: { match: { title: '#$query##' } },
       };
 
       expect(esUrlSvc.isTemplateCall(templateEsParams)).toBe(true);

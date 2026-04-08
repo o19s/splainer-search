@@ -9,7 +9,7 @@ describe('queryExplainSvc (via explainSvc)', () => {
       var explJson = {
         value: 2.5,
         description: 'weight(text:foo in 1234) [DefaultSimilarity], result of:',
-        details: []
+        details: [],
       };
       var expl = explainSvc.createExplain(explJson);
       expect(expl.hasMatch()).toBe(true);
@@ -21,16 +21,24 @@ describe('queryExplainSvc (via explainSvc)', () => {
         value: 1.0,
         description: 'weight(text:bar in 5678) [DefaultSimilarity], product of:',
         details: [
-          { value: 0.5, description: 'fieldWeight in 0, product of:', details: [
-            { value: 1.0, description: 'tf(freq=1.0), with freq of:', details: [
-              { value: 1.0, description: 'termFreq=1.0', details: [] }
-            ]},
-            { value: 0.5, description: 'idf(docFreq=10, maxDocs=100)', details: [] }
-          ]},
-          { value: 2.0, description: 'queryWeight, product of:', details: [
-            { value: 1.0, description: 'idf(docFreq=10, maxDocs=100)', details: [] }
-          ]}
-        ]
+          {
+            value: 0.5,
+            description: 'fieldWeight in 0, product of:',
+            details: [
+              {
+                value: 1.0,
+                description: 'tf(freq=1.0), with freq of:',
+                details: [{ value: 1.0, description: 'termFreq=1.0', details: [] }],
+              },
+              { value: 0.5, description: 'idf(docFreq=10, maxDocs=100)', details: [] },
+            ],
+          },
+          {
+            value: 2.0,
+            description: 'queryWeight, product of:',
+            details: [{ value: 1.0, description: 'idf(docFreq=10, maxDocs=100)', details: [] }],
+          },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var explanation = expl.explanation();
@@ -42,8 +50,12 @@ describe('queryExplainSvc (via explainSvc)', () => {
         value: 3.0,
         description: 'weight(title:test in 100) [BM25Similarity], result of:',
         details: [
-          { value: 3.0, description: 'score(freq=1.0), computed as boost * idf * tf from:', details: [] }
-        ]
+          {
+            value: 3.0,
+            description: 'score(freq=1.0), computed as boost * idf * tf from:',
+            details: [],
+          },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var details = expl.matchDetails();
@@ -73,12 +85,13 @@ describe('queryExplainSvc (via explainSvc)', () => {
   describe('SumExplain', () => {
     it('returns influencers sorted by score descending', () => {
       var explJson = {
-        value: 3.0, description: 'sum of',
+        value: 3.0,
+        description: 'sum of',
         details: [
           { value: 0.5, description: 'low', details: [] },
           { value: 2.0, description: 'high', details: [] },
-          { value: 0.5, description: 'also low', details: [] }
-        ]
+          { value: 0.5, description: 'also low', details: [] },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var infl = expl.influencers();
@@ -89,14 +102,19 @@ describe('queryExplainSvc (via explainSvc)', () => {
 
     it('flattens nested sum explains', () => {
       var explJson = {
-        value: 3.0, description: 'sum of',
+        value: 3.0,
+        description: 'sum of',
         details: [
-          { value: 2.0, description: 'inner sum of', details: [
-            { value: 1.2, description: 'inner a', details: [] },
-            { value: 0.8, description: 'inner b', details: [] }
-          ]},
-          { value: 1.0, description: 'outer', details: [] }
-        ]
+          {
+            value: 2.0,
+            description: 'inner sum of',
+            details: [
+              { value: 1.2, description: 'inner a', details: [] },
+              { value: 0.8, description: 'inner b', details: [] },
+            ],
+          },
+          { value: 1.0, description: 'outer', details: [] },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var infl = expl.influencers();
@@ -105,11 +123,12 @@ describe('queryExplainSvc (via explainSvc)', () => {
 
     it('vectorizes as sum of child vectors', () => {
       var explJson = {
-        value: 3.0, description: 'sum of',
+        value: 3.0,
+        description: 'sum of',
         details: [
           { value: 1.0, description: 'match A', details: [] },
-          { value: 2.0, description: 'match B', details: [] }
-        ]
+          { value: 2.0, description: 'match B', details: [] },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var vec = expl.vectorize();
@@ -121,11 +140,12 @@ describe('queryExplainSvc (via explainSvc)', () => {
   describe('ProductExplain', () => {
     it('returns influencers sorted by score descending', () => {
       var explJson = {
-        value: 6.0, description: 'product of:',
+        value: 6.0,
+        description: 'product of:',
         details: [
           { value: 2.0, description: 'factor a', details: [] },
-          { value: 3.0, description: 'factor b', details: [] }
-        ]
+          { value: 3.0, description: 'factor b', details: [] },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var infl = expl.influencers();
@@ -136,11 +156,12 @@ describe('queryExplainSvc (via explainSvc)', () => {
 
     it('vectorizes with cross-multiplication scaling', () => {
       var explJson = {
-        value: 6.0, description: 'product of:',
+        value: 6.0,
+        description: 'product of:',
         details: [
           { value: 2.0, description: 'factor a', details: [] },
-          { value: 3.0, description: 'factor b', details: [] }
-        ]
+          { value: 3.0, description: 'factor b', details: [] },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var vec = expl.vectorize();
@@ -152,11 +173,12 @@ describe('queryExplainSvc (via explainSvc)', () => {
   describe('DismaxExplain', () => {
     it('takes the winner (highest score)', () => {
       var explJson = {
-        value: 5.0, description: 'max of',
+        value: 5.0,
+        description: 'max of',
         details: [
           { value: 5.0, description: 'winner', details: [] },
-          { value: 2.0, description: 'loser', details: [] }
-        ]
+          { value: 2.0, description: 'loser', details: [] },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var infl = expl.influencers();
@@ -165,11 +187,12 @@ describe('queryExplainSvc (via explainSvc)', () => {
 
     it('vectorizes to winner only', () => {
       var explJson = {
-        value: 5.0, description: 'max of',
+        value: 5.0,
+        description: 'max of',
         details: [
           { value: 5.0, description: 'winner field', details: [] },
-          { value: 2.0, description: 'loser field', details: [] }
-        ]
+          { value: 2.0, description: 'loser field', details: [] },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var vec = expl.vectorize();
@@ -188,11 +211,12 @@ describe('queryExplainSvc (via explainSvc)', () => {
   describe('DismaxTieExplain', () => {
     it('uses tie factor for non-winners', () => {
       var explJson = {
-        value: 5.3, description: 'max plus 0.1 times others of',
+        value: 5.3,
+        description: 'max plus 0.1 times others of',
         details: [
           { value: 5.0, description: 'winner', details: [] },
-          { value: 3.0, description: 'second', details: [] }
-        ]
+          { value: 3.0, description: 'second', details: [] },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var vec = expl.vectorize();
@@ -211,11 +235,12 @@ describe('queryExplainSvc (via explainSvc)', () => {
   describe('MinExplain', () => {
     it('vectorizes to the minimum child', () => {
       var explJson = {
-        value: 2.0, description: 'Math.min of',
+        value: 2.0,
+        description: 'Math.min of',
         details: [
           { value: 2.0, description: 'lower', details: [] },
-          { value: 100.0, description: 'maxBoost', details: [] }
-        ]
+          { value: 100.0, description: 'maxBoost', details: [] },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       var vec = expl.vectorize();
@@ -234,13 +259,16 @@ describe('queryExplainSvc (via explainSvc)', () => {
   describe('CoordExplain', () => {
     it('scales vectors by coord factor', () => {
       var explJson = {
-        value: 1.5, description: 'product of:',
+        value: 1.5,
+        description: 'product of:',
         details: [
-          { value: 2.0, description: 'sum of', details: [
-            { value: 2.0, description: 'match X', details: [] }
-          ]},
-          { value: 0.75, description: 'coord(1/2)', details: [] }
-        ]
+          {
+            value: 2.0,
+            description: 'sum of',
+            details: [{ value: 2.0, description: 'match X', details: [] }],
+          },
+          { value: 0.75, description: 'coord(1/2)', details: [] },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       expect(expl.explanation()).toContain('Punished');
@@ -266,10 +294,15 @@ describe('queryExplainSvc (via explainSvc)', () => {
   describe('EsFieldFunctionQueryExplain', () => {
     it('extracts field name from function description', () => {
       var explJson = {
-        value: 0.5, description: 'Function for field popularity:',
+        value: 0.5,
+        description: 'Function for field popularity:',
         details: [
-          { value: 0.5, description: 'exp(-0.5 * pow(MAX[0.0, |1.0 - 5.0|],2.0) * 1.0)', details: [] }
-        ]
+          {
+            value: 0.5,
+            description: 'exp(-0.5 * pow(MAX[0.0, |1.0 - 5.0|],2.0) * 1.0)',
+            details: [],
+          },
+        ],
       };
       var expl = explainSvc.createExplain(explJson);
       expect(expl.explanation()).toContain('f(popularity)');

@@ -34,4 +34,3 @@ export function tryParseObject(jsonString) {
     return { ok: false, headers: {} };
   }
 }
-

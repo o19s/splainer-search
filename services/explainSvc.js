@@ -170,4 +170,3 @@ export function explainSvcConstructor(baseExplainSvc, queryExplainSvc, simExplai
     return createExplain(explJson);
   };
 }
-

@@ -15,12 +15,12 @@ describe('vectaraSearcherPreprocessorSvc', () => {
           {
             query: '#$query##',
             numResults: 10,
-            corpusKey: [{ corpusId: 1 }]
-          }
-        ]
+            corpusKey: [{ corpusId: 1 }],
+          },
+        ],
       },
       queryText: 'from test',
-      config: undefined
+      config: undefined,
     };
     vectaraSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.config.apiMethod).toBe('POST');
@@ -33,12 +33,12 @@ describe('vectaraSearcherPreprocessorSvc', () => {
           {
             query: '#$query##',
             numResults: 10,
-            corpusKey: [{ corpusId: 1 }]
-          }
-        ]
+            corpusKey: [{ corpusId: 1 }],
+          },
+        ],
       },
       queryText: 'vectaraQuery',
-      config: { qOption: 'query' }
+      config: { qOption: 'query' },
     };
     vectaraSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.queryDsl.query[0].query).toBe('vectaraQuery');
@@ -48,7 +48,7 @@ describe('vectaraSearcherPreprocessorSvc', () => {
     var searcher = {
       args: { query: [{ query: '#$query##', numResults: 5, corpusKey: [] }] },
       queryText: 'q',
-      config: { apiMethod: 'POST', qOption: 'query', extraOption: true }
+      config: { apiMethod: 'POST', qOption: 'query', extraOption: true },
     };
     vectaraSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.config.apiMethod).toBe('POST');

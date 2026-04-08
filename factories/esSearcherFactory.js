@@ -476,4 +476,3 @@ export function EsSearcherFactory(
   // Return factory object
   return Searcher;
 }
-

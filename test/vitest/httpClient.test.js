@@ -65,7 +65,11 @@ describe('createFetchClient', function () {
       var fetchFn = mockFetch(200, { result: 'ok' });
       var client = createFetchClient(fetchFn);
 
-      var result = await client.post('http://example.com/search', { query: 'test' }, { headers: {} });
+      var result = await client.post(
+        'http://example.com/search',
+        { query: 'test' },
+        { headers: {} },
+      );
 
       expect(result.data).toEqual({ result: 'ok' });
       expect(result.status).toBe(200);
@@ -145,24 +149,22 @@ describe('createFetchClient', function () {
       var fetchFn = mockFetch(403, { error: 'forbidden' }, 'Forbidden');
       var client = createFetchClient(fetchFn);
 
-      await expect(client.get('http://example.com/api', { headers: {} }))
-        .rejects.toEqual({
-          data: { error: 'forbidden' },
-          status: 403,
-          statusText: 'Forbidden',
-        });
+      await expect(client.get('http://example.com/api', { headers: {} })).rejects.toEqual({
+        data: { error: 'forbidden' },
+        status: 403,
+        statusText: 'Forbidden',
+      });
     });
 
     it('rejects with { data, status, statusText } on 5xx', async function () {
       var fetchFn = mockFetch(500, { error: 'internal' }, 'Internal Server Error');
       var client = createFetchClient(fetchFn);
 
-      await expect(client.post('http://example.com/api', {}, { headers: {} }))
-        .rejects.toEqual({
-          data: { error: 'internal' },
-          status: 500,
-          statusText: 'Internal Server Error',
-        });
+      await expect(client.post('http://example.com/api', {}, { headers: {} })).rejects.toEqual({
+        data: { error: 'internal' },
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
     });
 
     it('rejection object is mutable (callers add searchError)', async function () {
@@ -185,21 +187,25 @@ describe('createFetchClient', function () {
       var fetchFn = networkErrorFetch();
       var client = createFetchClient(fetchFn);
 
-      await expect(client.get('http://unreachable.example.com', { headers: {} }))
-        .rejects.toMatchObject({
-          data: null,
-          status: 0,
-          statusText: '',
-        });
+      await expect(
+        client.get('http://unreachable.example.com', { headers: {} }),
+      ).rejects.toMatchObject({
+        data: null,
+        status: 0,
+        statusText: '',
+      });
     });
 
     it('preserves the original error as `cause` for debugging', async function () {
       var underlying = new TypeError('Failed to fetch');
-      var fetchFn = function () { return Promise.reject(underlying); };
+      var fetchFn = function () {
+        return Promise.reject(underlying);
+      };
       var client = createFetchClient(fetchFn);
 
-      await expect(client.get('http://unreachable.example.com', { headers: {} }))
-        .rejects.toMatchObject({ cause: underlying });
+      await expect(
+        client.get('http://unreachable.example.com', { headers: {} }),
+      ).rejects.toMatchObject({ cause: underlying });
     });
   });
 

@@ -17,4 +17,3 @@ export function esExplainExtractorSvcConstructor(normalDocsSvc, utilsSvc) {
     return parsedDocs;
   }
 }
-

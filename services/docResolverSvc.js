@@ -6,4 +6,3 @@ export function docResolverSvcConstructor(ResolverFactory) {
     return new ResolverFactory(ids, settings, chunkSize);
   };
 }
-

@@ -10,13 +10,16 @@ describe('queryTemplateSvc', () => {
     it('parses solr style GET params correctly', () => {
       var queryTemplateSvc = createQueryTemplateSvc();
       var queryText = 'rambo movie';
-      var template  = { "query": "#$query##" };
+      var template = { query: '#$query##' };
       template = JSON.stringify(template);
 
-      var replaced = queryTemplateSvc.hydrate(template, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
+      var replaced = queryTemplateSvc.hydrate(template, queryText, {
+        encodeURI: false,
+        defaultKw: '\\"\\"',
+      });
       replaced = JSON.parse(replaced);
 
-      var expectedReplaced = { query: "rambo movie" };
+      var expectedReplaced = { query: 'rambo movie' };
       expect(replaced).toEqual(expectedReplaced);
     });
 
@@ -28,43 +31,54 @@ describe('queryTemplateSvc', () => {
         customerId: 123456789,
         corpusId: 1,
         dims: [
-          { name: "customDim1", weight: 0.8 },
-          { name: "customDim2", weight: 0.6 }
-        ]
+          { name: 'customDim1', weight: 0.8 },
+          { name: 'customDim2', weight: 0.6 },
+        ],
       };
 
       var template = {
-        "query": [
+        query: [
           {
-            "query": "#$query##",
-            "start": 0,
-            "numResults": 10,
-            "corpusKey": [{
-              "customerId": "#$qOption.customerId##",
-              "corpusId": "#$qOption.corpusId##",
-              "lexicalInterpolationConfig": { "lambda": 0.025 },
-              "dim": "#$qOption.dims##"
-            }]
-          }
-        ]
+            query: '#$query##',
+            start: 0,
+            numResults: 10,
+            corpusKey: [
+              {
+                customerId: '#$qOption.customerId##',
+                corpusId: '#$qOption.corpusId##',
+                lexicalInterpolationConfig: { lambda: 0.025 },
+                dim: '#$qOption.dims##',
+              },
+            ],
+          },
+        ],
       };
 
-      var replaced = queryTemplateSvc.hydrate(template, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
+      var replaced = queryTemplateSvc.hydrate(template, queryText, {
+        qOption: qOption,
+        encodeURI: false,
+        defaultKw: '\\"\\"',
+      });
 
       var expectedReplaced = {
-        "query": [
+        query: [
           {
-            "query": "rambo movie",
-            "start": 0,
-            "numResults": 10,
-            "corpusKey": [{
-              "customerId": 123456789,
-              "corpusId": 1,
-              "lexicalInterpolationConfig": { "lambda": 0.025 },
-              "dim": [{ name: "customDim1", weight: 0.8 }, { name: "customDim2", weight: 0.6 }]
-            }]
-          }
-        ]
+            query: 'rambo movie',
+            start: 0,
+            numResults: 10,
+            corpusKey: [
+              {
+                customerId: 123456789,
+                corpusId: 1,
+                lexicalInterpolationConfig: { lambda: 0.025 },
+                dim: [
+                  { name: 'customDim1', weight: 0.8 },
+                  { name: 'customDim2', weight: 0.6 },
+                ],
+              },
+            ],
+          },
+        ],
       };
 
       expect(replaced).toEqual(expectedReplaced);
@@ -72,22 +86,26 @@ describe('queryTemplateSvc', () => {
 
     it('passes through arrays', () => {
       var queryTemplateSvc = createQueryTemplateSvc();
-      const queryText = "test query";
+      const queryText = 'test query';
       const qOption = {
-        "complexDoc": { "doc_id": 1, "prefix": "doc" }
+        complexDoc: { doc_id: 1, prefix: 'doc' },
       };
       const template = {
-        "query": {
-          "query": "#$query##",
-          "docs": ["#$qOption.complexDoc##", "doc2", "doc3"]
-        }
+        query: {
+          query: '#$query##',
+          docs: ['#$qOption.complexDoc##', 'doc2', 'doc3'],
+        },
       };
-      const replaced = queryTemplateSvc.hydrate(template, queryText, { qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
+      const replaced = queryTemplateSvc.hydrate(template, queryText, {
+        qOption: qOption,
+        encodeURI: false,
+        defaultKw: '\\"\\"',
+      });
       var expectedReplaced = {
         query: {
-          query: "test query",
-          docs: [ { "doc_id": 1, "prefix": "doc" }, "doc2", "doc3"]
-        }
+          query: 'test query',
+          docs: [{ doc_id: 1, prefix: 'doc' }, 'doc2', 'doc3'],
+        },
       };
       expect(replaced).toEqual(expectedReplaced);
     });
@@ -98,37 +116,41 @@ describe('queryTemplateSvc', () => {
 
       var qOption = {
         category: 123456789,
-        from: 10
+        from: 10,
       };
 
       var template = {
-        "query": {
-          "query": "#$query##",
-          "filter": "filter: #$filter##",
-          "size": "#$qOption.size##",
-          "category": "#$qOption.category##",
-          "sort": "#$qOption.sort|score##",
-          "from": "from #$qOption.from##"
+        query: {
+          query: '#$query##',
+          filter: 'filter: #$filter##',
+          size: '#$qOption.size##',
+          category: '#$qOption.category##',
+          sort: '#$qOption.sort|score##',
+          from: 'from #$qOption.from##',
         },
-        "other": {
-          "param": "#$unknown.object.path##"
-        }
+        other: {
+          param: '#$unknown.object.path##',
+        },
       };
 
-      var replaced = queryTemplateSvc.hydrate(template, queryText, {qOption: qOption, encodeURI: false, defaultKw: '\\"\\"'});
+      var replaced = queryTemplateSvc.hydrate(template, queryText, {
+        qOption: qOption,
+        encodeURI: false,
+        defaultKw: '\\"\\"',
+      });
 
       var expectedReplaced = {
-        "query": {
-          "query": "rambo movie",
-          "filter": "filter: #$filter##",
-          "size": "#$qOption.size##",
-          "category": 123456789,
-          "sort": "score",
-          "from": "from 10"
+        query: {
+          query: 'rambo movie',
+          filter: 'filter: #$filter##',
+          size: '#$qOption.size##',
+          category: 123456789,
+          sort: 'score',
+          from: 'from 10',
         },
-        "other": {
-          "param": "#$unknown.object.path##"
-        }
+        other: {
+          param: '#$unknown.object.path##',
+        },
       };
 
       expect(replaced).toEqual(expectedReplaced);
@@ -137,13 +159,16 @@ describe('queryTemplateSvc', () => {
     it('supports old keywords parameters, 0-index based array access and default values', () => {
       var queryTemplateSvc = createQueryTemplateSvc();
       var queryText = 'rambo movie';
-      var template = { "query": "#$keyword1## and #$keyword.1## and #$keyword3|other##" };
+      var template = { query: '#$keyword1## and #$keyword.1## and #$keyword3|other##' };
       template = JSON.stringify(template);
 
-      var replaced = queryTemplateSvc.hydrate(template, queryText, {encodeURI: false, defaultKw: '\\"\\"'});
+      var replaced = queryTemplateSvc.hydrate(template, queryText, {
+        encodeURI: false,
+        defaultKw: '\\"\\"',
+      });
       replaced = JSON.parse(replaced);
 
-      var expectedReplaced = { query: "rambo and movie and other" };
+      var expectedReplaced = { query: 'rambo and movie and other' };
       expect(replaced).toEqual(expectedReplaced);
     });
 
@@ -166,7 +191,7 @@ describe('queryTemplateSvc', () => {
       var queryText = 'test';
       var template = {
         sort: '#$qOption.sortField|relevance##',
-        limit: '#$qOption.limit|10##'
+        limit: '#$qOption.limit|10##',
       };
       var config = { encodeURI: false, qOption: {} };
       var result = queryTemplateSvc.hydrate(template, queryText, config);
@@ -208,7 +233,7 @@ describe('queryTemplateSvc', () => {
         second: '#$keyword2##',
         third: '#$keyword3##',
         fourth: '#$keyword4##',
-        fifth: '#$keyword5|default##'
+        fifth: '#$keyword5|default##',
       };
       template = JSON.stringify(template);
       var result = queryTemplateSvc.hydrate(template, queryText, { encodeURI: false });
@@ -235,7 +260,7 @@ describe('queryTemplateSvc', () => {
         query: '#$query##',
         rows: 10,
         debug: true,
-        score: 0.5
+        score: 0.5,
       };
       var result = queryTemplateSvc.hydrate(template, queryText, { encodeURI: false });
       expect(result.rows).toBe(10);
@@ -257,10 +282,13 @@ describe('queryTemplateSvc', () => {
       var qOption = { items: ['alpha', 'beta'] };
       var template = {
         outer: {
-          inner: ['#$qOption.items##', 'static']
-        }
+          inner: ['#$qOption.items##', 'static'],
+        },
       };
-      var result = queryTemplateSvc.hydrate(template, queryText, { encodeURI: false, qOption: qOption });
+      var result = queryTemplateSvc.hydrate(template, queryText, {
+        encodeURI: false,
+        qOption: qOption,
+      });
       expect(result.outer.inner[0]).toEqual(['alpha', 'beta']);
       expect(result.outer.inner[1]).toEqual('static');
     });
