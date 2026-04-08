@@ -36,7 +36,7 @@ The ESM subpath **`splainer-search/wired.js`** is the supported pre-wired graph 
 
 ### Release Process
 
-We use NP to publish splainer-search to npmjs.org.  
+We use [`np`](https://github.com/sindresorhus/np) to publish splainer-search to npmjs.org.  
 
 1. You need to update the
 `CHANGELOG.md` with your new version and the date, but you don't need to touch `package.json`,
@@ -56,6 +56,6 @@ np --no-2fa
 ```
 
 4. This will also pop open a browser window on GitHub to create a new release for the project.
-Use the "Generate Release Notes" button on Github to make the template, and then paste in the contents of `CHANGELOG.md` into the _Whats Changed_ section.
+Use the "Generate Release Notes" button on GitHub to make the template, and then paste the contents of `CHANGELOG.md` into the _What's Changed_ section.
 
 **IIFE bundles in the tarball:** `dist/splainer-search.js` / `dist/splainer-search-wired.js` and their **`.map`** files are **not** committed to git but **are** listed in `package.json` `"files"` for the npm pack. **`prepublishOnly`** runs `npm run build` automatically on `npm publish` (and `npm pack`), so the tarball includes them unless scripts are disabled (e.g. `npm publish --ignore-scripts`). Run **`npm run pack:check`** before a release to confirm the dry-run pack lists those files. Run `npm run build` locally anytime to verify the bundles; CI also runs the build after `test:ci` (see [.circleci/config.yml](.circleci/config.yml)).

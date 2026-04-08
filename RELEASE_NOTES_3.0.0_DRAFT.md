@@ -12,9 +12,10 @@ the Appendix of correctness fixes shipped on `splainer-rewrite`.
 - **No AngularJS dependency.** `angular`, `$http`, `$q`, `$timeout`, `$log`, `$sce`, and `angular.module('o19s.splainer-search')` registration are gone.
 - **Native HTTP via `fetch`.** All transports route through `createFetchClient()` (GET/POST = `fetch`, JSONP = dynamic `<script>` tag).
 - **Native `Promise`.** `$q.defer` / `$q()` / `$q.reject` replaced with `new Promise` / `throw`. No digest cycles.
-- **Vitest + ESM tests.** Karma, Grunt, Jasmine specs, and the export-stripping preprocessor are gone. `npm test` runs Vitest; **`npm run test:ci`** adds ESLint and the chunked-resolver integration script. Test and file counts drift — run **`npm test`** for current totals.
-- **esbuild IIFE bundles.** `npm run build` writes **`dist/splainer-search.js`** (`globalThis.SplainerSearch`, 48 named exports) and **`dist/splainer-search-wired.js`** (`globalThis.SplainerSearchWired`, same surface as ESM **`wired.js`**).
-- **`AbortSignal` support.** Pass **`config.signal`** into `createSearcher` options (or `get`/`post` / `createFetchClient` defaults) to cancel in-flight GET/POST; JSONP honours `signal` by removing the script and rejecting with **`AbortError`**. BULK `_msearch` merges batched signals when **`AbortSignal.any`** is available (see **Environment / `AbortSignal.any`** below).
+- **Vitest + ESM tests.** Karma, Grunt, Jasmine specs, and the export-stripping preprocessor are gone. `npm test` runs Vitest; **`npm run test:ci`** runs ESLint, Vitest, and **`npm run test:integration`** (chunked resolver fetch). Release checks and current totals: **Validation** (below).
+- **Pre-wired ESM entry.** Import **`splainer-search/wired.js`** (or **`splainer-search/wired`**) for **`createWiredServices`**, **`createSearcher`**, **`createFieldSpec`**, **`createNormalDoc`**, and the lazy **`wired`** namespace — same graph as **`test/vitest/helpers/serviceFactory.js`** / **`wired/wiring.js`**. Use the root **`splainer-search`** entry when you wire constructors yourself.
+- **esbuild IIFE bundles.** `npm run build` writes **`dist/splainer-search.js`** (`globalThis.SplainerSearch`, barrel from **`index.js`**, ~50 named exports) and **`dist/splainer-search-wired.js`** (`globalThis.SplainerSearchWired`, same surface as ESM **`wired.js`**).
+- **`AbortSignal` support.** Pass **`config.signal`** into `createSearcher` options (or `get`/`post` / `createFetchClient` defaults) to cancel in-flight GET/POST; JSONP honors `signal` by removing the script and rejecting with **`AbortError`**. BULK `_msearch` merges batched signals when **`AbortSignal.any`** is available (see **Environment / `AbortSignal.any`** below). The package exports **`isAbortError`** and **`transportRequestOpts`** so `.catch` handlers can tell user aborts from HTTP/search failures.
 
 ## Breaking changes
 
@@ -23,20 +24,21 @@ the Appendix of correctness fixes shipped on `splainer-rewrite`.
 | Topic | Before (2.36.x) | After (3.0.0) |
 |---|---|---|
 | `package.json` `main` | `splainer-search.js` (concat IIFE) | `index.js` (**ESM**) |
-| `exports` | none | `"."` → `index.js`, `"./splainer-search.js"` → `dist/splainer-search.js` (IIFE), `"./splainer-search-wired.js"` → `dist/splainer-search-wired.js` (IIFE) |
-| Module type | CommonJS-compatible | `"type": "module"` — **no CJS build shipped**; `require('splainer-search')` is unsupported |
+| `exports` | none | `"."` → `index.js`; **`"./wired"` / `"./wired.js"`** → **`wired.js`**; `"./splainer-search.js"` → `dist/splainer-search.js` (IIFE); `"./splainer-search-wired.js"` → `dist/splainer-search-wired.js` (IIFE); `"./package.json"` for tooling |
+| Module type | CommonJS-compatible | `"type": "module"` — **no CJS build shipped**; `require('splainer-search')` is unsupported in older Node (Node **22.12+** may load this package via **`require(esm)`** if your app uses that path) |
 | AngularJS | Required peer; registered services on `o19s.splainer-search` | **Removed**. No `angular.module(...)` registration anywhere |
-| Browser global (IIFE) | Angular module registration | **`globalThis.SplainerSearch`** namespace object |
+| Browser global (IIFE) | Angular module registration | **`globalThis.SplainerSearch`** (barrel / manual wiring) and **`globalThis.SplainerSearchWired`** (pre-wired graph; build **`dist/splainer-search-wired.js`**) |
 | URI.js | Bundled via Angular dep graph | **Must be loaded first** so `globalThis.URI` exists before the IIFE (see `shims/urijs-global.js`) |
 | Node engines | unspecified | `>=18` |
 
 ### Consumer migration
 
 - **Angular apps**: `angular.module('o19s.splainer-search')` no longer exists.
-  Import the named ESM exports (`SolrSearcherFactory`, `EsSearcherFactory`,
-  `DocFactory`, `createFetchClient`, `defaultSolrConfig`, …) from
-  `splainer-search` and wire them into your DI container yourself, or load the
-  IIFE and read off `globalThis.SplainerSearch`.
+  For a Splainer/Quepid-style pre-wired graph, import from **`splainer-search/wired.js`**
+  (`createWiredServices`, `createSearcher`, …). Otherwise import named ESM exports
+  (`SolrSearcherFactory`, `EsSearcherFactory`, `DocFactory`, `createFetchClient`,
+  `defaultSolrConfig`, …) from **`splainer-search`** and wire them into your DI
+  container yourself, or load the IIFE and read off `globalThis.SplainerSearch`.
 - **`<script>` consumers**: load `urijs` first, then **`dist/splainer-search.js`**
   from a local build or **`node_modules/splainer-search/dist/splainer-search.js`**
   when installed from npm. Use `window.SplainerSearch.<Name>` instead of any prior
@@ -61,6 +63,24 @@ the Appendix of correctness fixes shipped on `splainer-rewrite`.
   `target: ['es2020']`, which means modern Edge/Chrome/Firefox/Safari only —
   no IE11, no pre-2020 Safari. Source maps are emitted next to the bundles under
   **`dist/`** to make debugging the IIFEs feasible.
+
+### Splainer, Quepid, importmap, and SPA wiring
+
+These notes apply to **[Splainer](https://github.com/o19s/splainer)** and **[Quepid](https://github.com/o19s/quepid)** and to any app that mirrors their integration style.
+
+#### Wired vs barrel IIFE:
+
+If you vendor a single file for **importmap** or `<script>`, prefer **`dist/splainer-search-wired.js`** / **`globalThis.SplainerSearchWired`** (or ESM **`splainer-search/wired.js`**) when you need **`createWiredServices`**, **`createSearcher`**, **`createFieldSpec`**, **`createNormalDoc`**, and the same service graph as **`test/vitest/helpers/serviceFactory.js`**. The barrel **`dist/splainer-search.js`** / **`globalThis.SplainerSearch`** exposes **constructor-level** exports only — you must wire dependencies yourself.
+
+#### One wiring graph:
+
+Import from **`splainer-search/wired.js`** in a **single bootstrap module** (e.g. `createFetchClient` → `createWiredServices` → export `api.*`). **Do not** copy **`wired/wiring.js`** into your application; extend behavior with a **wrapped `fetch`** (CSRF, tracing, tests), not a forked DI graph.
+
+
+- **Avoid duplicate builds:** Do not maintain a **second** custom esbuild (or similar) of splainer-search beside the published package — dependency order will drift from what **`npm test`** exercises.
+- **Try / search cancellation:** Thread the same **`AbortController`** (or **`AbortSignal`**) your UI uses to cancel work into **`createSearcher`** options as **`config.signal`** so engine traffic aborts with the user action (see **Highlights** and **Environment / `AbortSignal.any`** above). In **Quepid**, that usually means the same controller feeds **`fetchTryConfig`** (or your equivalent try-fetch path) **and** the searcher **`config.signal`**.
+- **Regression focus after upgrade:** Re-run automated and manual checks on **proxy**, **basic auth**, **custom headers**, **snapshots**, and **explain**; keep **Splainer 2** and **Quepid** (or sibling apps) on **compatible splainer-search** versions and on **one** wired integration surface each. **Legacy Splainer (Angular)** can stay on **2.x** until you migrate that track.
+- **Lazy explain / snapshots:** When explain is loaded lazily, some paths may parse more than raw JSON strictly requires — expect minor **snapshot** or **explain** churn compared to “JSON only” assumptions; still validate explain UI after upgrades.
 
 ### Promise rejection contract
 
@@ -120,10 +140,14 @@ POST bodies that are non-string are `JSON.stringify`'d.
 
 Bulk `_msearch` uses **`AbortSignal.any(signals)`** when the runtime provides it (e.g. **Safari 16.4+**, **Chromium 113+**, **Firefox 124+**, **Node 20+**). When `AbortSignal.any` is missing, the library falls back to a **composite `AbortController`** that listens for `abort` on each batched signal, so cancellation still works on older browsers at the cost of a small polyfill-style shim.
 
+Use **`isAbortError(err)`** (and optionally **`transportRequestOpts(config)`**) from **`splainer-search`** or **`splainer-search/wired.js`** in shared error handlers so **`AbortError`** is not mistaken for a normal HTTP failure.
+
 ## Correctness fixes (independent of Angular removal)
 
 The `splainer-rewrite` branch also contains behavior-changing bug fixes that
-ship in 3.0.0. Re-validate the following areas against your fixtures:
+ship in 3.0.0. Re-validate the following areas against your fixtures (apps such
+as **Splainer** and **Quepid** should pay particular attention to **explain UI**,
+**snapshots**, and **edge-case Solr/Elasticsearch queries**):
 
 - Field / highlight handling
 - `explainOther` side effects and promise completion
@@ -173,7 +197,7 @@ See `MIGRATION_CHANGES.md` Appendix and the commits referenced there
 
 ## Pointers
 
-- Short integrator checklist: **`MIGRATION_CHANGES.md`** (section **3.0 integrator checklist**)
-- Phase-by-phase change log: `MIGRATION_CHANGES.md`
-- Migration plan / sign-off checklist: `MIGRATION_PREP.md`
+- Integrator checklist (with pointers back here for promise contract and **Validation**): **`MIGRATION_CHANGES.md`** → **3.0 integrator checklist**
+- Splainer / Quepid **repository path map** (which files call which APIs): **`INTEGRATOR_SPLAINER_QUEPID.md`**
+- Phase-by-phase change log: `MIGRATION_CHANGES.md` (includes historical branch notes at the top)
 - Future direction (CORS / JSONP deprecation): `FUTURE.md`

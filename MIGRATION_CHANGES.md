@@ -1,10 +1,19 @@
 # Migration Changes Log
 
 Tracks behavioral and structural changes introduced during the AngularJS removal
-migration (branch `splainer-rewrite`). Complements `MIGRATION_PREP.md` which
-describes the plan; this file records what actually shipped. The **Appendix**
-lists separate **correctness fixes** on the same branch that can change
-observable behavior independent of Angular removal.
+migration. The work **landed on branch `splainer-rewrite`** (forked from `main` at
+v2.36.4 when the migration started). The **Appendix** lists separate **correctness
+fixes** on that branch that can change observable behavior independent of Angular
+removal.
+
+**Historical branches:** Do **not** use **`vanilla-simplify`** as a source of truth for
+validation, diffs, or copying code or tests. It was an earlier full-stack experiment
+(ES modules, `fetch`, Vitest, Playwright) and is mentioned only as historical context.
+
+For **semver and the public surface**, treat `package.json` **`exports`** and the
+**3.0 integrator checklist** below as canonical; ship breaking changes only in a
+**semver-major** release with notes in **`RELEASE_NOTES_3.0.0_DRAFT.md`** (or the
+published release notes once 3.0.0 ships).
 
 ---
 
@@ -20,11 +29,9 @@ Use this list before and after upgrading. Semver-major narrative and breaking-ch
 
 4. **Cancellation** — Pass **`signal`** on the searcher **`config`** (5th argument to `createSearcher`). Optional default: **`createFetchClient({ signal })`**. In `.catch`, use **`isAbortError(err)`** (from **`splainer-search`** or **`splainer-search/wired.js`**) to distinguish user abort from search errors.
 
-5. **Promise contract** — **`explain`**, **`explainOther`**, **`renderTemplate`**, and resolver **doc-fetch** paths **reject** on failure instead of resolving with an error-shaped value. Use **`.catch`**, **`try`/`await`**, or `isAbortError` as needed.
+5. **Promise contract** — **`explain`**, **`explainOther`**, **`renderTemplate`**, and resolver **doc-fetch** paths **reject** on failure instead of resolving with an error-shaped value. Use **`.catch`**, **`try`/`await`**, or `isAbortError` as needed. Expanded examples: **`RELEASE_NOTES_3.0.0_DRAFT.md`** → **Promise rejection contract**.
 
-6. **Validate locally** — Run **`npm run test:ci`**. Before publish, run **`npm run pack:check`** to confirm the tarball would include **`dist/*.js`** and maps (catches `--ignore-scripts` / `files` mistakes).
-
-Test and file counts change over time; use **`npm test`** for current Vitest totals, not numbers copied from older docs.
+6. **Validate locally** — Run **`npm run test:ci`** and **`npm run pack:check`** before release; IIFE smoke steps and why **`pack:check`** matters: **`RELEASE_NOTES_3.0.0_DRAFT.md`** → **Validation**. For current Vitest totals, run **`npm test`** (do not copy counts from older docs).
 
 ---
 
@@ -307,7 +314,7 @@ Response shapes and status handling were kept aligned with `$http` (`{ data, sta
 | JSON POST bodies | `$http` serialized objects | Non-string bodies are passed through `JSON.stringify` in `createFetchClient` (same practical effect for plain objects) |
 | Error object identity | Digest-linked `$q` | Native `Promise` rejection; no `$rootScope` digest (irrelevant once Angular is gone) |
 | Network failures | `$http` rejection shape varies by adapter | Rejections still use `{ data: null, status: 0, statusText: '' }`; **`cause`** may carry the underlying error for debugging |
-| **`customHeaders` JSON** | Invalid JSON could surface as a hard failure depending on call path | **`customHeadersJson.tryParseObject`** logs a **console warning** and uses **empty headers** so the request may proceed → watch for sudden **401s** if config JSON is wrong (see `INTEGRATOR_SPLAINER_QUEPID.md`) |
+| **`customHeaders` JSON** | Invalid JSON could surface as a hard failure depending on call path | **`customHeadersJson.tryParseObject`** logs a **console warning** and uses **empty headers** so the request may proceed → watch for sudden **401s** if config JSON is wrong (see **`customHeaders` JSON parsing** in `RELEASE_NOTES_3.0.0_DRAFT.md`) |
 | **Request cancellation** | Apps could cancel in-flight `$http` in some patterns | **As of 3.0.0:** pass **`config.signal`** on `createSearcher` options (and optional **`createFetchClient({ signal })`**); see **AbortSignal / cancellable search (post–Phase 4)** below. |
 
 JSONP still uses a dynamic `<script>` tag (same class of behavior as Angular’s JSONP), so cross-origin Solr without CORS remains supported.
@@ -435,7 +442,7 @@ Removed the legacy toolchain (Grunt concat, Karma, Jasmine specs under `test/spe
 |-------|--------|
 | **npm / Node consumers** | Default entry is **`index.js` (ESM)**. Import named exports (`import { createFetchClient } from 'splainer-search'`, etc.). CommonJS `require()` of this package is **not** supported unless you add a separate CJS build (none shipped here). |
 | **Browser `<script>` consumers** | Run `npm run build` (or use prebuilt IIFEs in published `files`). **`dist/splainer-search.js`** → **`globalThis.SplainerSearch`** (constructors / manual wiring). **`dist/splainer-search-wired.js`** → **`globalThis.SplainerSearchWired`** (`createWiredServices`, `createFetchClient`, …). **URI.js** must be loaded first so `globalThis.URI` exists (see `shims/urijs-global.js`). Package subpaths **`splainer-search/splainer-search.js`** and **`splainer-search/splainer-search-wired.js`** still resolve via `exports`. |
-| **Splainer / Quepid-style apps** | Prefer ESM **`import … from 'splainer-search/wired.js'`** (or **`'splainer-search/wired'`**) — same graph as `test/vitest/helpers/serviceFactory.js` / `wired/wiring.js`. Documented in **`INTEGRATOR_SPLAINER_QUEPID.md`**. |
+| **Splainer / Quepid-style apps** | Prefer ESM **`import … from 'splainer-search/wired.js'`** (or **`'splainer-search/wired'`**) — same graph as `test/vitest/helpers/serviceFactory.js` / `wired/wiring.js`. See **`RELEASE_NOTES_3.0.0_DRAFT.md`** (**Splainer, Quepid, importmap, and SPA wiring**); repo file paths in **`INTEGRATOR_SPLAINER_QUEPID.md`**. |
 | **Compared to pre-migration Grunt bundle** | No runtime `export` stripping; ESM sources are first-class. IIFE shape is esbuild-generated (namespace object) rather than hand-concat — verify any code that reached into globals. |
 | **Tests / CI** | No Chrome/Karma; CI is Node + Vitest + jsdom where needed + integration script. |
 

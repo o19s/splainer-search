@@ -8,7 +8,7 @@
  * These were originally thin shims over Angular's `forEach`, `copy`, and `merge`.
  * They now use native JS — no Angular dependency required.
  *
- * @see MIGRATION_PREP.md §5 Introduce Shim Layer
+ * @see MIGRATION_CHANGES.md (Angular removal / shim migration)
  */
 export function utilsSvcFactory() {
   /**
