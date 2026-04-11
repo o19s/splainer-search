@@ -211,6 +211,47 @@ describe('normalDocsSvc', () => {
       var snips2 = normalDoc.subSnippets('<b>', '</b>');
       expect(snips1).toBe(snips2);
     });
+
+    it('does not truncate array-wrapped fields in the fallback path (matches 2024 Angular behavior)', () => {
+      // Regression test. Multi-valued Solr fields come back from the
+      // backend as single-element arrays like `["long text..."]`. When
+      // highlighting is absent (q=*:* or hl=false), getHighlightSnippet
+      // takes the fallback path. Historically this was
+      //   snip = escapeHtml(subFieldValue.slice(0, 200));
+      // which is a NO-OP for single-element arrays because Array.slice
+      // respects array length, and escapeHtml stringifies via String().
+      // A later refactor pre-wrapped in String(subFieldValue), which made
+      // .slice(0, 200) a real char truncation — breaking long overview/
+      // description fields mid-sentence. Splainer.io's cross-version
+      // audit caught this; see splainer/e2e/audit.spec.js.
+      var longText =
+        'An American reporter covering a civil war in Nicaragua discovers ' +
+        'that four soldiers he used to know during World War II are there ' +
+        'and they are actual vampires fighting their own personal war ' +
+        'against an evil Nicaraguan general and his own army of vampires.';
+      expect(longText.length).toBeGreaterThan(200);
+      var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId sub:overview');
+      var origin = { myId: '1', overview: [longText] };
+      var doc = mockDocWithHighlight(origin, {});
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc);
+      var snips = normalDoc.subSnippets('<em>', '</em>');
+      expect(snips.overview).toContain('vampires.');
+      expect(snips.overview.length).toBeGreaterThan(200);
+    });
+
+    it('truncates plain-string fallback fields at 200 chars (complement to the array case)', () => {
+      // Sibling of the array test above. Plain-string fallback values
+      // still cap at 200 chars — only the array shape bypasses the cap,
+      // by virtue of Array.slice ignoring the count when it exceeds
+      // array length.
+      var longText = 'x'.repeat(500);
+      var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId sub:desc');
+      var origin = { myId: '1', desc: longText };
+      var doc = mockDocWithHighlight(origin, {});
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc);
+      var snips = normalDoc.subSnippets('<em>', '</em>');
+      expect(snips.desc.length).toBe(200);
+    });
   });
 
   describe('explainable (explain features)', () => {
