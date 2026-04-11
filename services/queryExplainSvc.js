@@ -24,11 +24,32 @@ export function queryExplainSvcConstructor(baseExplainSvc, vectorSvc, simExplain
   };
 
   this.WeightExplain = function (explJson) {
-    // take weight(text:foo in 1234), extract text:foo in 1234 for
-    // explanation() / matchDetails keys — shorter than the full Solr line.
-    // Skip FunctionScoreQuery so those nodes keep the full description (else branch).
-    // Inner capture must exist: match[1] is undefined if the group is missing.
-    var weightRegex = /^weight\(((?!FunctionScoreQuery).*)\)/;
+    // Take `weight(text:foo in 1234) [DefaultSimilarity], result of:` and
+    // extract `text:foo` for explanation() / matchDetails keys — the human-
+    // readable "what term matched" label that splainer's stacked chart and
+    // detailed explain views render. Dropping the ` in <docId>` tail is
+    // load-bearing: the docId is an internal Lucene doc number, meaningless
+    // to users and redundant with the doc row's own id column.
+    //
+    // The `\s+in\s+\d+?\)` anchor is doing TWO jobs at once:
+    //   (1) It strips the `in <N>` tail that Lucene always appends.
+    //   (2) It makes the regex fail to match shapes that DON'T have a docId
+    //       (e.g. top-level `weight(FunctionScoreQuery(...))`), causing
+    //       them to fall through to the else branch and keep their full
+    //       description as the label. This is structurally correct — no
+    //       hardcoded exception class needed.
+    //
+    // History: commit 72367c2 (2023-07-05) replaced this regex with a
+    // broken `/^weight\((?!FunctionScoreQuery).*/` that had no capture
+    // group at all, silently routing every weight explain through the
+    // else branch. Commit eb2e09d (2026-04-03) partially fixed it with
+    // `/^weight\(((?!FunctionScoreQuery).*)\)/` but the greedy `.*` also
+    // captured the ` in <N>` tail — the load-bearing anchor was gone.
+    // Downstream splainer.io's cross-version audit caught this as the
+    // `text_all:batman in 2508`-style leak and traced it back here.
+    // `.cursor/rules/GENERAL.md` explicitly asks us to flag any divergence
+    // from the Angular version of Splainer; this restores that parity.
+    var weightRegex = /^weight\((.*?)\s+in\s+\d+\)/;
     var description = explJson.description;
 
     var match = description.match(weightRegex);

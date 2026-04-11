@@ -13,7 +13,67 @@ describe('queryExplainSvc (via explainSvc)', () => {
       };
       var expl = explainSvc.createExplain(explJson);
       expect(expl.hasMatch()).toBe(true);
-      expect(expl.explanation()).toEqual('text:foo in 1234');
+      // explanation() must strip the ` in <docId>` suffix — the docId is
+      // a Lucene internal and leaking it into user-facing labels produces
+      // noise like `text_all:batman in 2508` instead of `text_all:batman`.
+      // See queryExplainSvc.js WeightExplain for the full history.
+      expect(expl.explanation()).toEqual('text:foo');
+    });
+
+    it('strips the ` in <docId>` suffix across multiple doc ids and field shapes', () => {
+      // Regression guard for the 2023 → 2026 splainer-rewrite regression
+      // where the weight regex lost its `\s+in\s+\d+` anchor and started
+      // emitting labels that included the Lucene docId. Each case here
+      // corresponds to a real-world Solr weight description shape the
+      // splainer.io cross-version audit caught mid-refactor.
+      var cases = [
+        {
+          description: 'weight(text_all:batman in 2508) [DefaultSimilarity], result of:',
+          expected: 'text_all:batman',
+        },
+        {
+          description: 'weight(text_all:batman in 46651) [SchemaSimilarity], result of:',
+          expected: 'text_all:batman',
+        },
+        {
+          description: 'weight(title:test in 100) [BM25Similarity], result of:',
+          expected: 'title:test',
+        },
+        {
+          description:
+            'weight(technicalDescriptionClean_text_de_mv:70 in 0) [DefaultSimilarity], result of:',
+          expected: 'technicalDescriptionClean_text_de_mv:70',
+        },
+      ];
+      for (var i = 0; i < cases.length; i++) {
+        var c = cases[i];
+        var expl = explainSvc.createExplain({
+          value: 1.0,
+          description: c.description,
+          details: [],
+        });
+        expect(expl.explanation()).toEqual(c.expected);
+      }
+    });
+
+    it('falls through to the full description when no docId is present', () => {
+      // Top-level `weight(FunctionScoreQuery(...))` nodes reach WeightExplain
+      // when details.length !== 1 (see explainSvc.js dispatch). They have no
+      // `in <N>` tail, so the regex structurally rejects them and the else
+      // branch keeps the full description — no hardcoded FunctionScoreQuery
+      // exception needed.
+      var explJson = {
+        value: 1.0,
+        description:
+          'weight(FunctionScoreQuery(text_all:rambo, scored by boost(sum(int(vote_count),const(0))))), result of:',
+        details: [
+          { value: 0.5, description: 'child-a', details: [] },
+          { value: 0.5, description: 'child-b', details: [] },
+        ],
+      };
+      var expl = explainSvc.createExplain(explJson);
+      expect(expl.explanation()).toContain('FunctionScoreQuery');
+      expect(expl.explanation()).toContain('text_all:rambo');
     });
 
     it('strips trailing product-of from realExplanation', () => {
