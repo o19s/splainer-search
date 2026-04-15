@@ -12,6 +12,29 @@ export function EsSearcherFactory(
   transportSvc,
   utilsSvc,
 ) {
+  /**
+   * Lines shown when fetch fails (status 0 / -1). ES and OpenSearch share this factory but use
+   * different product names and config filenames in operator-facing hints.
+   *
+   * @param {string|undefined} engineType - `es` or `os` (from Searcher.type)
+   */
+  function networkErrorCorsHelpLines(engineType) {
+    var isOs = engineType === 'os';
+    var product = isOs ? 'OpenSearch' : 'Elasticsearch';
+    var yml = isOs ? 'opensearch.yml' : 'elasticsearch.yml';
+    var errorMsg = '';
+    errorMsg += 'Network Error! (host not found)\n';
+    errorMsg += '\n';
+    errorMsg += 'or CORS needs to be configured for your ' + product + '\n';
+    errorMsg += '\n';
+    errorMsg += 'Enable CORS in ' + yml + ':\n';
+    errorMsg += '\n';
+    errorMsg +=
+      'http.cors.allow-origin: "/https?:\\\\/\\\\/(.*?\\\\.)?(quepid\\\\.com|splainer\\\\.io)/"\n';
+    errorMsg += 'http.cors.enabled: true\n';
+    return errorMsg;
+  }
+
   var Searcher = function (options) {
     SearcherFactory.call(this, options, esSearcherPreprocessorSvc);
   };
@@ -181,15 +204,7 @@ export function EsSearcherFactory(
             }
           }
         } else if (msg.status === -1 || msg.status === 0) {
-          errorMsg += 'Network Error! (host not found)\n';
-          errorMsg += '\n';
-          errorMsg += 'or CORS needs to be configured for your Elasticsearch\n';
-          errorMsg += '\n';
-          errorMsg += 'Enable CORS in elasticsearch.yml:\n';
-          errorMsg += '\n';
-          errorMsg +=
-            'http.cors.allow-origin: "/https?:\\\\/\\\\/(.*?\\\\.)?(quepid\\\\.com|splainer\\\\.io)/"\n';
-          errorMsg += 'http.cors.enabled: true\n';
+          errorMsg += networkErrorCorsHelpLines(self.type);
         }
         msg.searchError = errorMsg;
       }
@@ -431,15 +446,7 @@ export function EsSearcherFactory(
             }
           }
         } else if (msg.status === -1 || msg.status === 0) {
-          errorMsg += 'Network Error! (host not found)\n';
-          errorMsg += '\n';
-          errorMsg += 'or CORS needs to be configured for your Elasticsearch\n';
-          errorMsg += '\n';
-          errorMsg += 'Enable CORS in elasticsearch.yml:\n';
-          errorMsg += '\n';
-          errorMsg +=
-            'http.cors.allow-origin: "/https?:\\\\/\\\\/(.*?\\\\.)?(quepid\\\\.com|splainer\\\\.io)/"\n';
-          errorMsg += 'http.cors.enabled: true\n';
+          errorMsg += networkErrorCorsHelpLines(self.type);
         }
         msg.searchError = errorMsg;
       }

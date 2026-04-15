@@ -186,6 +186,37 @@ describe('searchSvc: ElasticSearch', () => {
           function (msg) {
             expect(msg.searchError.indexOf('Network Error')).toBeGreaterThan(-1);
             expect(msg.searchError.indexOf('CORS')).toBeGreaterThan(-1);
+            expect(msg.searchError).toContain('your Elasticsearch');
+            expect(msg.searchError).toContain('elasticsearch.yml');
+            errorCalled++;
+          },
+        );
+        mockBackend.verifyNoOutstandingExpectation();
+        expect(errorCalled).toEqual(1);
+      });
+
+      it('network or CORS error uses OpenSearch wording when engine is os', async () => {
+        var osSearcher = searchSvc.createSearcher(
+          mockFieldSpec,
+          mockEsUrl,
+          mockEsParams,
+          mockQueryText,
+          {},
+          'os',
+        );
+        mockBackend.expectPOST(mockEsUrl).respond(-1);
+        var errorCalled = 0;
+        await osSearcher.search().then(
+          function () {
+            errorCalled--;
+          },
+          function (msg) {
+            expect(msg.searchError.indexOf('Network Error')).toBeGreaterThan(-1);
+            expect(msg.searchError.indexOf('CORS')).toBeGreaterThan(-1);
+            expect(msg.searchError).toContain('your OpenSearch');
+            expect(msg.searchError).toContain('opensearch.yml');
+            expect(msg.searchError.indexOf('your Elasticsearch')).toBe(-1);
+            expect(msg.searchError.indexOf('elasticsearch.yml')).toBe(-1);
             errorCalled++;
           },
         );
@@ -1152,7 +1183,38 @@ describe('searchSvc: ElasticSearch', () => {
         function (msg) {
           expect(msg.searchError).toContain('Network Error');
           expect(msg.searchError).toContain('CORS');
+          expect(msg.searchError).toContain('your Elasticsearch');
+          expect(msg.searchError).toContain('elasticsearch.yml');
           expect(searcher.inError).toBe(true);
+          errorCalled++;
+        },
+      );
+      mockBackend.verifyNoOutstandingExpectation();
+      expect(errorCalled).toEqual(1);
+    });
+
+    it('rejects with OpenSearch CORS hint for os on template render network error', async () => {
+      var templateQueryParams = {
+        id: 'tmdb-title-search-template',
+        params: { search_query: 'star', from: 0, size: 2 },
+      };
+      var osSearcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        templateQueryParams,
+        mockQueryText,
+        {},
+        'os',
+      );
+      mockBackend.expectPOST('http://localhost:9200/_render/template').respond(-1);
+      var errorCalled = 0;
+      await osSearcher.renderTemplate().then(
+        function () {
+          errorCalled--;
+        },
+        function (msg) {
+          expect(msg.searchError).toContain('your OpenSearch');
+          expect(msg.searchError).toContain('opensearch.yml');
           errorCalled++;
         },
       );
