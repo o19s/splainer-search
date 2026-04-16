@@ -6,6 +6,8 @@ Do not treat the older **`vanilla-simplify`** branch as canonical for validation
 
 For semver and the public API surface, treat `package.json` `exports` and the **3.0 integrator checklist** below as the contract. Breaking changes belong in a major release; user-facing upgrade notes live in [RELEASE_NOTES_3.0.0_DRAFT.md](RELEASE_NOTES_3.0.0_DRAFT.md) (or the published 3.0.0 notes once they exist).
 
+**Current commands (3.0):** `npm test` runs Vitest (`vitest run`). `npm run test:coverage` runs Vitest with coverage. `npm run test:ci` runs Prettier check, ESLint, Vitest, and the chunked resolver integration script. Older migration text sometimes mentioned `npm run test:vitest`; that script does not exist on 3.0—use `npm test`.
+
 ---
 
 ## 3.0 integrator checklist
@@ -72,7 +74,7 @@ Services picked up a `Constructor` suffix so the export name does not collide wi
 
 ### Build pipeline changes (Phase 2 — superseded by Phase 4b)
 
-At this point in history, Grunt concat stripped `export` from the big `splainer-search.js` bundle; Karma used the same strip step on `services/`, `factories/`, and `values/`; coverage and debug Karma configs chained that preprocessor; `package.json` gained Vitest and `test:vitest`, and `test:ci` started calling Vitest; `.eslintrc.cjs` treated those trees as modules; the chunked resolver integration script stripped `export` before `eval()`.
+At this point in history, Grunt concat stripped `export` from the big `splainer-search.js` bundle; Karma used the same strip step on `services/`, `factories/`, and `values/`; coverage and debug Karma configs chained that preprocessor; `package.json` gained Vitest (some mid-migration branches used a dedicated Vitest npm script alongside Karma), and `test:ci` started calling Vitest; `.eslintrc.cjs` treated those trees as modules; the chunked resolver integration script stripped `export` before `eval()`.
 
 Phase 4b later **deleted** Grunt, Karma, and export stripping—the shipped IIFE comes from **esbuild** (`build.js`) now. See Phase 4b for the current story.
 
@@ -197,10 +199,12 @@ This phase was mostly plumbing so transports could target one abstraction:
 
 ### Dual runner counts (approximate, post Phase 3c–d)
 
+*Historical:* Until Phase 4b, Karma owned `npm test`. **As of 3.0, `npm test` is Vitest**—see **Current commands** at the top of this file.
+
 | Runner | Count (approx.) |
 |--------|------------------|
-| Karma (`npm test`) | ~620 tests |
-| Vitest (`npm run test:vitest`) | 70 tests in 8 files under `test/vitest/` |
+| Karma | ~620 tests |
+| Vitest (parallel suite under `test/vitest/`) | ~70 tests in 8 files |
 
 ---
 
@@ -257,10 +261,12 @@ Karma suites picked up `MockHttpBackend` (`expectGET` / `expectPOST` / `expectJS
 
 ### Dual runner counts (post Phase 3e–f, pre–Phase 4b)
 
+*Historical:* Karma was still `npm test` here; Vitest ran as a second script. **Today:** only Vitest remains via `npm test`.
+
 | Runner | Count (approx.) |
 |--------|------------------|
-| Karma (`npm test`) | ~620 tests (0 failures) — runner **removed** in Phase 4b |
-| Vitest (`npm run test:vitest`) | ~70 tests in 8 files — suite **expanded** in Phase 4b |
+| Karma | ~620 tests (0 failures) — runner **removed** in Phase 4b |
+| Vitest | ~70 tests in 8 files — suite **expanded** in Phase 4b |
 | Integration (`npm run test:integration`) | Chunked resolver fetch OK |
 
 ---
@@ -302,9 +308,9 @@ Karma/Jasmine still expected the Angular module to exist, so **`npm test` (Karma
 
 | Runner | Count |
 |--------|-------|
-| Vitest (`npm run test:vitest`) | Growing suite (see Phase 4b) |
+| Vitest | Growing suite (see Phase 4b) |
 | Integration (`npm run test:integration`) | Chunked resolver fetch OK |
-| Karma (`npm test`) | **Failed** — no Angular module |
+| Karma | **Failed** — no Angular module |
 
 ---
 
@@ -318,7 +324,7 @@ Grunt concat, Karma, the Jasmine suite under `test/spec/`, and Karma helpers und
 
 - **Removed:** `Gruntfile.cjs`, the three Karma configs, `scripts/karma-strip-exports.cjs`, `scripts/karma-chrome-bin.js`, all of `test/spec/`, all of `test/mock/`.
 - **Added:** `build.js` (esbuild emits `dist/splainer-search.js` as `globalThis.SplainerSearch` and `dist/splainer-search-wired.js` as `globalThis.SplainerSearchWired`), `index.js` barrel, `wired.js` for the pre-wired Splainer/Quepid graph, `shims/urijs-global.js` so the IIFE can expose `globalThis.URI` from the `urijs` import.
-- **`package.json`:** `"type": "module"`, `main` → `index.js`, full `exports` map (root, `wired`, both IIFE subpaths), Angular dropped from dependencies, `npm test` → `vitest run`, `test:ci` → ESLint + Vitest + integration.
+- **`package.json`:** `"type": "module"`, `main` → `index.js`, full `exports` map (root, `wired`, both IIFE subpaths), Angular dropped from dependencies, `npm test` → `vitest run`, `test:ci` → Prettier check + ESLint + Vitest + integration.
 - **Vitest:** Karma coverage was ported into `test/vitest/`; counts drift—use `npm test` for current totals.
 - **Stryker:** stays on `@stryker-mutator/vitest-runner`.
 

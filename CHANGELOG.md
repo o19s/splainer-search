@@ -2,6 +2,7 @@ Version numbers correspond to `package.json` version. Follows the _major.minor.b
 
 # 3.0.0 (unreleased)
 - Network/CORS troubleshooting text for fetch failures (status 0 / -1) now says **OpenSearch** / **`opensearch.yml`** when the searcher `type` is **`os`**, since the Elasticsearch-compatible factory is shared with OpenSearch.
+- **Breaking:** Invalid `customHeaders` JSON no longer throws; the library logs a console warning and drops custom headers. Auth or tracing can appear to break without an exception—see [RELEASE_NOTES_3.0.0_DRAFT](RELEASE_NOTES_3.0.0_DRAFT.md) → **`customHeaders` JSON parsing** for exact warning text and migration guidance.
 - This is a major version: AngularJS is gone, the package is native ESM, and browser bundles moved. Step-by-step upgrade notes, tables, and edge cases live in [MIGRATION_CHANGES](MIGRATION_CHANGES.md) and [RELEASE_NOTES_3.0.0_DRAFT](RELEASE_NOTES_3.0.0_DRAFT.md).
 - **Breaking:** The big single-file script you may have pointed at in a git clone used to sit at the repo root as `splainer-search.js`. It now lives under `dist/` after you run `npm run build`, or under `node_modules/splainer-search/dist/` when installed from npm. The package also exposes stable subpaths (`splainer-search/splainer-search.js` and the wired variant) if you prefer those.
 - **Breaking:** We only ship ES modules. `require('splainer-search')` is not supported on older Node; use `import` instead, or a newer Node that can load this package via `require(esm)` if that fits your app.

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getSolrSearcherPreprocessorSvc } from './helpers/serviceFactory.js';
+import { deepMerge } from './helpers/utilsSvcStub.js';
 
 describe('solrSearcherPreprocessorSvc', () => {
   var solrSearcherPreprocessorSvc;
@@ -40,25 +41,8 @@ describe('solrSearcherPreprocessorSvc', () => {
       HIGHLIGHTING_PRE: 'PRE',
       HIGHLIGHTING_POST: 'POST',
     };
-    // Deep merge partial overrides
-    function testDeepMerge(target, source) {
-      Object.keys(source).forEach(function (key) {
-        if (
-          source[key] &&
-          typeof source[key] === 'object' &&
-          !Array.isArray(source[key]) &&
-          target[key] &&
-          typeof target[key] === 'object' &&
-          !Array.isArray(target[key])
-        ) {
-          testDeepMerge(target[key], source[key]);
-        } else {
-          target[key] = source[key];
-        }
-      });
-      return target;
-    }
-    return testDeepMerge(structuredClone(o), overrides || {});
+    // Same deepMerge semantics as services/utilsSvc.js (see utilsSvcStub).
+    return deepMerge(structuredClone(o), overrides || {});
   }
 
   it('merges default Solr config when config is partially specified', () => {

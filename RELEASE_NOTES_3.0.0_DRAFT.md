@@ -78,7 +78,18 @@ This is deliberate (turning fake successes into real rejections is the right Pro
 
 ### `customHeaders` JSON parsing
 
-**Breaking:** In 2.x, bad `customHeaders` JSON (in `searchSvc`, `esUrlSvc`, or `vectaraUrlSvc`) blew up the search with a `SyntaxError`. In 3.0.0, `customHeadersJson.tryParseObject` logs a `console.warn`, drops the bad value, and sends the request with no custom headers instead of throwing. If auth suddenly starts failing after upgrade, open devtools and look for `splainer-search: invalid customHeaders JSON`.
+**Breaking:** In 2.x, a bad `customHeaders` string could surface as a **`SyntaxError`** during search setup or URL/header construction. Call sites include `searchSvc` (merging `config.customHeaders` with basic auth), `esUrlSvc.getHeaders`, `vectaraUrlSvc.getHeaders`, and any factory that passes `config.customHeaders` through those helpers.
+
+In 3.0.0, **`customHeadersJson.tryParseObject` never throws.** It returns `{ ok, headers }` where `headers` is a plain object used as the header map. If the string is empty or missing, you get `{ ok: true, headers: {} }`.
+
+**When parsing fails or the JSON is not a plain object:**
+
+- **Invalid JSON** — `console.warn('splainer-search: invalid customHeaders JSON; using empty headers.', err)` and `headers` is `{}`.
+- **Valid JSON that is not a plain object** (for example an array, or a string primitive) — `console.warn('splainer-search: customHeaders must be a JSON object; using empty headers.')` and `headers` is `{}`.
+
+The library continues and sends the request **without** your custom header map—only whatever still applies (for example `Authorization` merged from `basicAuthCredential` in `searchSvc`). There is **no thrown error**, so upgrades can show up as **401/403**, missing trace headers, or proxy failures. **Check the browser or Node console** for the warnings above.
+
+**What to do:** Ensure `customHeaders` is a **stringified JSON object**, e.g. `JSON.stringify({ 'X-Api-Key': 'secret' })`. If you relied on parse failures to catch typos in development, add validation in your app; the library will not fail the call for bad JSON anymore.
 
 ### Response shape (unchanged on purpose)
 
