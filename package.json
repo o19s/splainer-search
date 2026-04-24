@@ -1,12 +1,21 @@
 {
   "name": "splainer-search",
-  "version": "2.36.4",
-  "main": "splainer-search.js",
-  "authors": [
+  "version": "3.0.0",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./wired": "./wired.js",
+    "./wired.js": "./wired.js",
+    "./splainer-search.js": "./dist/splainer-search.js",
+    "./splainer-search-wired.js": "./dist/splainer-search-wired.js",
+    "./package.json": "./package.json"
+  },
+  "contributors": [
     "Doug Turnbull <dturnbull@opensourceconnections.com>",
     "Youssef Chaker <ychaker@opensourceconnections.com>"
   ],
-  "description": "Angular JS Solr and Elasticsearch and OpenSearch Diagnostic Search Services",
+  "description": "Solr, Elasticsearch, and OpenSearch Diagnostic Search Services",
   "homepage": "https://github.com/o19s/splainer-search",
   "bugs": {
     "url": "https://github.com/o19s/splainer-search/issues"
@@ -19,48 +28,48 @@
     "relevancy search"
   ],
   "license": "Apache-2.0",
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "test",
-    "tests",
-    "coverage",
-    "factories",
-    "pages",
-    "services",
-    "values",
-    "Gruntfile.js",
+  "files": [
     "index.js",
-    "index.html",
-    "karma.conf.js",
-    "karma.debug.conf.js",
-    "module.js"
+    "wired.js",
+    "wired/",
+    "services/",
+    "factories/",
+    "values/",
+    "dist/splainer-search.js",
+    "dist/splainer-search.js.map",
+    "dist/splainer-search-wired.js",
+    "dist/splainer-search-wired.js.map"
   ],
   "dependencies": {
-    "angular": "1.8.3",
     "urijs": "^1.19.7"
   },
   "devDependencies": {
-    "angular-mocks": "^1.8.3",
-    "grunt": "^1.5.3",
-    "grunt-contrib-concat": "^2.1.0",
-    "grunt-contrib-jshint": "^3.2.0",
-    "grunt-contrib-uglify": "^5.2.2",
-    "grunt-karma": "^4.0.2",
-    "jasmine-core": "^5.0.0",
-    "karma": "^6.4.0",
-    "karma-chrome-launcher": "^3.1.1",
-    "karma-jasmine": "^5.1.0",
-    "puppeteer": "^24.0.0"
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/vitest-runner": "^9.6.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "esbuild": "^0.25.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "jsdom": "^24.1.3",
+    "prettier": "^3.5.3",
+    "vitest": "^4.1.2"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=20.12.0"
   },
   "scripts": {
-    "test": "grunt karma:unit",
-    "build": "grunt",
-    "build:dev": "grunt build"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "node test/integration/chunked-resolver-fetch.integration.js",
+    "test:integration:demo": "node test/integration/quepid-demo-endpoints.integration.js",
+    "lint": "eslint 'index.js' 'wired.js' 'build.js' 'wired/**/*.js' 'services/**/*.js' 'factories/**/*.js' 'values/**/*.js' 'shims/**/*.js' 'test/**/*.js' 'vitest.config.js'",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:ci": "npm run format:check && npm run lint && npm run test && npm run test:integration",
+    "stryker": "stryker run",
+    "build": "node build.js",
+    "pack:check": "npm run build && npm pack --dry-run",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",

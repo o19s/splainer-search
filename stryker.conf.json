@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutation-test library sources with Vitest (same stack as npm test). Run: npm run stryker. ignoreStatic skips load-time-only mutants.",
+  "packageManager": "npm",
+  "testRunner": "vitest",
+  "concurrency": 4,
+  "maxTestRunnerReuse": 40,
+  "coverageAnalysis": "perTest",
+  "ignoreStatic": true,
+  "warnings": {
+    "slow": false
+  },
+  "reporters": ["clear-text", "progress", "html", "json"],
+  "vitest": {
+    "configFile": "vitest.config.js"
+  },
+  "mutate": ["services/**/*.js", "factories/**/*.js", "values/**/*.js"]
+}

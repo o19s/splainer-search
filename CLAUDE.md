@@ -1,0 +1,1 @@
+Read through the files in .cursor for instructions.

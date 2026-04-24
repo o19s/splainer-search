@@ -1,30 +1,23 @@
 'use strict';
 
-/*jslint latedef:false*/
+export function HttpGetTransportFactory(TransportFactory, httpClient) {
+  var Transport = function (options) {
+    TransportFactory.call(this, options);
+  };
 
-(function() {
-  angular.module('o19s.splainer-search')
-    .factory('HttpGetTransportFactory', [
-      'TransportFactory',
-      '$http',
-      HttpGetTransportFactory
-    ]);
+  Transport.prototype = Object.create(TransportFactory.prototype);
+  Transport.prototype.constructor = Transport;
 
-  function HttpGetTransportFactory(TransportFactory, $http) {
-    var Transport = function(options) {
-      TransportFactory.call(this, options);
-    };
+  Transport.prototype.query = query;
 
-    Transport.prototype = Object.create(TransportFactory.prototype);
-    Transport.prototype.constructor = Transport;
-
-    Transport.prototype.query = query;
-
-    function query(url, payload, headers) {
-      var requestConfig = { headers: headers };
-      return $http.get(url, requestConfig);
+  function query(url, payload, headers, requestOpts) {
+    requestOpts = requestOpts || {};
+    var requestConfig = { headers: headers };
+    if (requestOpts.signal !== undefined && requestOpts.signal !== null) {
+      requestConfig.signal = requestOpts.signal;
     }
-
-    return Transport;
+    return httpClient.get(url, requestConfig);
   }
-})();
+
+  return Transport;
+}

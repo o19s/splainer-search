@@ -1,39 +1,32 @@
 'use strict';
 
-/*jslint latedef:false*/
+export function SearcherFactory() {
+  var Searcher = function (options, preprocessor) {
+    var self = this;
 
-(function() {
-  angular.module('o19s.splainer-search')
-    .factory('SearcherFactory', [SearcherFactory]);
+    // Methods that we expect all engines to provide
+    self.fieldList = options.fieldList;
+    self.hlFieldList = options.hlFieldList;
+    self.url = options.url;
+    self.args = options.args;
+    self.queryText = options.queryText;
+    self.config = options.config;
+    self.type = options.type;
+    self.customHeaders = options.customHeaders;
 
-  function SearcherFactory() {
-    var Searcher = function(options, preprocessor) {
-      var self                = this;
+    self.docs = [];
+    self.grouped = {};
+    self.numFound = 0;
+    self.inError = false;
+    self.othersExplained = {};
+    self.parsedQueryDetails = {};
 
-      // Methods that we expect all engines to provide
-      self.fieldList          = options.fieldList;
-      self.hlFieldList        = options.hlFieldList;
-      self.url                = options.url;
-      self.args               = options.args;
-      self.queryText          = options.queryText;
-      self.config             = options.config;
-      self.type               = options.type;
-      self.customHeaders      = options.customHeaders;
+    self.HIGHLIGHTING_PRE = options.HIGHLIGHTING_PRE;
+    self.HIGHLIGHTING_POST = options.HIGHLIGHTING_POST;
 
-      self.docs               = [];
-      self.grouped            = {};
-      self.numFound           = 0;
-      self.inError            = false;
-      self.othersExplained    = {};
-      self.parsedQueryDetails = {};
+    preprocessor.prepare(self);
+  };
 
-      self.HIGHLIGHTING_PRE   = options.HIGHLIGHTING_PRE;
-      self.HIGHLIGHTING_POST  = options.HIGHLIGHTING_POST;
-
-      preprocessor.prepare(self);
-    };
-
-    // Return factory object
-    return Searcher;
-  }
-})();
+  // Return factory object
+  return Searcher;
+}

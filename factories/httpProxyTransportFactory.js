@@ -1,36 +1,25 @@
 'use strict';
 
-/*jslint latedef:false*/
+export function HttpProxyTransportFactory(TransportFactory, HttpJsonpTransportFactory) {
+  var Transport = function (options) {
+    TransportFactory.call(this, options);
+  };
 
-(function() {
-  angular.module('o19s.splainer-search')
-    .factory('HttpProxyTransportFactory', [
-      'TransportFactory',
-      'HttpJsonpTransportFactory',
-      HttpProxyTransportFactory
-    ]);
+  Transport.prototype = Object.create(TransportFactory.prototype);
+  Transport.prototype.constructor = Transport;
 
-  function HttpProxyTransportFactory(TransportFactory, HttpJsonpTransportFactory) {
-    var Transport = function(options) {
-      TransportFactory.call(this, options);
-    };
+  Transport.prototype.query = query;
 
-    Transport.prototype = Object.create(TransportFactory.prototype);
-    Transport.prototype.constructor = Transport;
+  function query(url, payload, headers, requestOpts) {
+    var transport = this.options().transport;
 
-    Transport.prototype.query = query;
-
-    function query(url, payload, headers) {
-      var transport = this.options().transport;
-      
-      // It doesn't make sense to use JSONP instead of GET with a proxy
-      if (transport instanceof HttpJsonpTransportFactory) {
-        throw new Error('It does not make sense to proxy a JSONP connection, use GET instead.');
-      }
-      url = this.options().proxyUrl + url;
-      return transport.query(url, payload, headers);
+    // It doesn't make sense to use JSONP instead of GET with a proxy
+    if (transport instanceof HttpJsonpTransportFactory) {
+      throw new Error('It does not make sense to proxy a JSONP connection, use GET instead.');
     }
-
-    return Transport;
+    url = this.options().proxyUrl + url;
+    return transport.query(url, payload, headers, requestOpts);
   }
-})();
+
+  return Transport;
+}

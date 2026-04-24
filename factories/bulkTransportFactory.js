@@ -1,157 +1,273 @@
 'use strict';
 
-/*jslint latedef:false*/
+/**
+ * Headers for Elasticsearch `_msearch` (NDJSON) POST bodies.
+ * Sets `Content-Type: application/x-ndjson` when the caller did not supply
+ * any Content-Type (case-insensitive), matching ES multi-search requirements.
+ *
+ * @param {Object} [incoming]
+ * @returns {Object}
+ */
+function headersForMsearchBody(incoming) {
+  var h = Object.assign({}, incoming);
+  var hasContentType = Object.keys(h).some(function (key) {
+    return key.toLowerCase() === 'content-type';
+  });
+  if (!hasContentType) {
+    h['Content-Type'] = 'application/x-ndjson';
+  }
+  return h;
+}
 
-(function() {
-  angular.module('o19s.splainer-search')
-    .factory('BulkTransportFactory', [
-      'TransportFactory',
-      '$http',
-      '$q',
-      '$timeout',
-      '$log',
-      BulkTransportFactory
-    ]);
+/**
+ * True when `data` looks like an Elasticsearch `_msearch` JSON body: a plain object
+ * with a `responses` array whose length matches the number of in-flight queries in
+ * this batch (the queue may already hold newly enqueued items for the next batch).
+ *
+ * @param {*} data - `httpResp.data` from the POST
+ * @param {number} expectedResponseCount - number of `inFlight` entries for this POST
+ * @returns {boolean}
+ */
+function isSaneMsearchBody(data, expectedResponseCount) {
+  if (data === null || data === undefined) {
+    return false;
+  }
+  if (typeof data !== 'object' || Array.isArray(data)) {
+    return false;
+  }
+  if (!Object.hasOwn(data, 'responses')) {
+    return false;
+  }
+  if (!Array.isArray(data.responses)) {
+    return false;
+  }
+  if (data.responses.length !== expectedResponseCount) {
+    return false;
+  }
+  return true;
+}
 
-
-  function BulkTransportFactory(TransportFactory, $http, $q, $timeout, $log) {
-    var Transport = function(options) {
-      TransportFactory.call(this, options);
-      this.batchSender = null;
-    };
-
-    Transport.prototype = Object.create(TransportFactory.prototype);
-    Transport.prototype.constructor = Transport;
-
-    Transport.prototype.query = query;
-
-
-
-    var BatchSender = function(url, headers) {
-      /* Use Elasticsearch's _msearch API to send
-       * batches of searches one batch at a time
-       * */
-
-      var requestConfig = {headers: headers};
-      var self = this;
-      self.enqueue = enqueue;
-      self.url = getUrl;
-      var queue = [];
-      var pendingHttp = null;
-
-      function finishBatch(batchSize) {
-        pendingHttp = null;
-        queue = queue.slice(batchSize);
+export function BulkTransportFactory(TransportFactory, httpClient, utilsSvc) {
+  /**
+   * @param {AbortSignal[]} signals
+   * @returns {AbortSignal|undefined}
+   */
+  function combineAbortSignals(signals) {
+    var filtered = signals.filter(function (s) {
+      return s !== undefined && s !== null;
+    });
+    if (filtered.length === 0) {
+      return undefined;
+    }
+    if (filtered.length === 1) {
+      return filtered[0];
+    }
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.any === 'function') {
+      return AbortSignal.any(filtered);
+    }
+    var composite = new AbortController();
+    utilsSvc.safeForEach(filtered, function (sig) {
+      if (sig.aborted) {
+        composite.abort();
+        return;
       }
+      sig.addEventListener(
+        'abort',
+        function () {
+          composite.abort();
+        },
+        { once: true },
+      );
+    });
+    return composite.signal;
+  }
 
-      function multiSearchSuccess(httpResp) {
-        // Examine the responses and dequeue the corresponding
-        // searches
-        var bulkHttpResp = httpResp.data;
-        if (bulkHttpResp.hasOwnProperty('responses'))  {
-          var respLen = bulkHttpResp.responses.length;
-          dequeuePendingSearches(bulkHttpResp);
-          finishBatch(respLen);
-        } else {
-          multiSearchFailed(bulkHttpResp);
-        }
-      }
+  var Transport = function (options) {
+    TransportFactory.call(this, options);
+    this.batchSender = null;
+  };
 
-      function multiSearchFailed(bulkHttpResp) {
-        // Handle HTTP failure, which should fail all in flight searches
-        var numInFlight = 0;
-        angular.forEach(queue, function(pendingQuery) {
-          if (pendingQuery.inFlight) {
-            pendingQuery.defered.reject(bulkHttpResp);
-            numInFlight++;
-          }
-        });
-        finishBatch(numInFlight);
-      }
+  Transport.prototype = Object.create(TransportFactory.prototype);
+  Transport.prototype.constructor = Transport;
 
-      function buildMultiSearch() {
-        // Batch queued searches into one message using MultiSearch API
-        // https://www.elastic.co/guide/en/elasticsearch/reference/1.4/search-multi-search.html
-        var sharedHeader = JSON.stringify({});
-        var queryLines = [];
-        angular.forEach(queue, function(pendingQuery) {
-          queryLines.push(sharedHeader);
-          pendingQuery.inFlight = true;
-          queryLines.push(JSON.stringify(pendingQuery.payload));
-        });
-        var data = queryLines.join('\n') + '\n';
-        return data;
-      }
+  Transport.prototype.query = query;
 
-      function dequeuePendingSearches(bulkHttpResp) {
-        // Examine the responses and dequeue the corresponding
-        // searches
-        var queueIdx = 0;
-        angular.forEach(bulkHttpResp.responses, function(resp) {
-          var currRequest = queue[queueIdx];
-          if (resp.hasOwnProperty('error')) {
-            currRequest.defered.reject(resp);
-            // individual query failure
-          } else {
-            // make the response look like standard response
-            currRequest.defered.resolve({'data': resp});
-          }
+  var BatchSender = function (url, headers) {
+    /* Use Elasticsearch's _msearch API to send
+     * batches of searches one batch at a time
+     * */
 
-          queueIdx++;
-        });
-      }
+    var requestConfig = { headers: headersForMsearchBody(headers) };
+    var self = this;
+    self.enqueue = enqueue;
+    self.url = getUrl;
+    var queue = [];
+    var pendingHttp = null;
 
-      function sendMultiSearch() {
-        if (!pendingHttp && queue.length > 0) {
-          // Implementation of Elasticsearch's _msearch ("Multi Search") API
-          var payload = buildMultiSearch();
-          pendingHttp = $http.post(url, payload, requestConfig);
-          pendingHttp.then(multiSearchSuccess, multiSearchFailed)
-            .catch(function(response) {
-              $log.debug('Failed to do multi search');
-              return response;
-            });
-        }
-      }
-
-      function enqueue(query) {
-        var defered = $q.defer();
-
-        var pendingQuery = {
-          defered: defered,
-          inFlight: false,
-          payload: query,
-        };
-        queue.push(pendingQuery);
-        return defered.promise;
-      }
-
-      function timerTick() {
-        sendMultiSearch();
-        $timeout(timerTick, 100);
-      }
-
-      function getUrl() {
-        return url;
-      }
-
-      $timeout(timerTick, 100);
-
-
-    };
-
-    function query(url, payload, headers) {
-      var self = this;
-      if (!self.batchSender) {
-        self.batchSender = new BatchSender(url, headers);
-      }
-      else if (self.batchSender.url() !== url) {
-        self.batchSender = new BatchSender(url, headers);
-      }
-      return self.batchSender.enqueue(payload);
-
+    function finishBatch(batchSize) {
+      pendingHttp = null;
+      queue = queue.slice(batchSize);
     }
 
-    return Transport;
+    function countInFlight() {
+      var n = 0;
+      utilsSvc.safeForEach(queue, function (pendingQuery) {
+        if (pendingQuery.inFlight) {
+          n++;
+        }
+      });
+      return n;
+    }
+
+    function multiSearchSuccess(httpResp) {
+      var bulkHttpResp = httpResp && httpResp.data;
+      var batchSize = countInFlight();
+      if (!isSaneMsearchBody(bulkHttpResp, batchSize)) {
+        multiSearchFailed(bulkHttpResp !== undefined ? bulkHttpResp : httpResp);
+        return;
+      }
+      dequeuePendingSearches(bulkHttpResp);
+      finishBatch(bulkHttpResp.responses.length);
+    }
+
+    function multiSearchFailed(bulkHttpResp) {
+      // Handle HTTP failure, which should fail all in flight searches
+      var numInFlight = 0;
+      utilsSvc.safeForEach(queue, function (pendingQuery) {
+        if (pendingQuery.inFlight) {
+          pendingQuery.reject(bulkHttpResp);
+          numInFlight++;
+        }
+      });
+      finishBatch(numInFlight);
+    }
+
+    function buildMultiSearch() {
+      // Batch queued searches into one message using MultiSearch API
+      // https://www.elastic.co/guide/en/elasticsearch/reference/1.4/search-multi-search.html
+      var sharedHeader = JSON.stringify({});
+      var queryLines = [];
+      utilsSvc.safeForEach(queue, function (pendingQuery) {
+        queryLines.push(sharedHeader);
+        pendingQuery.inFlight = true;
+        queryLines.push(JSON.stringify(pendingQuery.payload));
+      });
+      var data = queryLines.join('\n') + '\n';
+      return data;
+    }
+
+    function dequeuePendingSearches(bulkHttpResp) {
+      // Examine the responses and dequeue the corresponding
+      // searches
+      var queueIdx = 0;
+      utilsSvc.safeForEach(bulkHttpResp.responses, function (resp) {
+        var currRequest = queue[queueIdx];
+        if (
+          resp !== null &&
+          resp !== undefined &&
+          typeof resp === 'object' &&
+          Object.hasOwn(resp, 'error')
+        ) {
+          currRequest.reject(resp);
+          // individual query failure
+        } else {
+          // make the response look like standard response
+          currRequest.resolve({ data: resp });
+        }
+
+        queueIdx++;
+      });
+    }
+
+    function sendMultiSearch() {
+      if (!pendingHttp && queue.length > 0) {
+        // Implementation of Elasticsearch's _msearch ("Multi Search") API
+        var payload = buildMultiSearch();
+        var signals = [];
+        utilsSvc.safeForEach(queue, function (pendingQuery) {
+          if (pendingQuery.signal) {
+            signals.push(pendingQuery.signal);
+          }
+        });
+        var combinedSignal = combineAbortSignals(signals);
+        var postConfig = Object.assign({}, requestConfig);
+        if (combinedSignal) {
+          postConfig.signal = combinedSignal;
+        }
+        pendingHttp = httpClient.post(url, payload, postConfig);
+        pendingHttp.then(multiSearchSuccess, multiSearchFailed).catch(function (err) {
+          console.debug('Failed to do multi search');
+          multiSearchFailed(err);
+        });
+      }
+    }
+
+    function enqueue(queryPayload, requestOpts) {
+      requestOpts = requestOpts || {};
+      var resolve, reject;
+      var promise = new Promise(function (res, rej) {
+        resolve = res;
+        reject = rej;
+      });
+
+      var pendingQuery = {
+        resolve: resolve,
+        reject: reject,
+        inFlight: false,
+        payload: queryPayload,
+        signal: requestOpts.signal,
+      };
+      queue.push(pendingQuery);
+      ensureTimer();
+      return promise;
+    }
+
+    var timerId = null;
+
+    function timerTick() {
+      sendMultiSearch();
+      if (queue.length > 0) {
+        timerId = setTimeout(timerTick, 100);
+      } else {
+        timerId = null;
+      }
+    }
+
+    function ensureTimer() {
+      if (timerId === null) {
+        timerId = setTimeout(timerTick, 100);
+      }
+    }
+
+    /**
+     * Stops the batching timer only. Any `httpClient.post` already in flight is not
+     * aborted; when it settles, `multiSearchSuccess` / `multiSearchFailed` still run
+     * on this BatchSender’s closure.
+     */
+    function cancel() {
+      if (timerId !== null) {
+        clearTimeout(timerId);
+        timerId = null;
+      }
+    }
+
+    self.cancel = cancel;
+
+    function getUrl() {
+      return url;
+    }
+  };
+
+  function query(url, payload, headers, requestOpts) {
+    var self = this;
+    if (!self.batchSender) {
+      self.batchSender = new BatchSender(url, headers);
+    } else if (self.batchSender.url() !== url) {
+      self.batchSender.cancel();
+      self.batchSender = new BatchSender(url, headers);
+    }
+    return self.batchSender.enqueue(payload, requestOpts || {});
   }
-})();
+
+  return Transport;
+}

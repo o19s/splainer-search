@@ -7,7 +7,8 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: cimg/node:20.2.0-browsers
+    # Vitest 4 / Rolldown require util.styleText (Node >= 20.12); pin a current LTS for CI.
+    - image: cimg/node:22.14
 
 jobs:
   test-build:
@@ -15,24 +16,26 @@ jobs:
     steps:
       - checkout
 
-      # Seem to be getting issues with Chrome
-      #- restore_cache:
-      #    keys:
-      #      - v1-dependencies-{{ checksum "package.json" }}
-      #      - v1-dependencies-
+      - restore_cache:
+          keys:
+            - v2-dependencies-{{ checksum "package-lock.json" }}
+            - v2-dependencies-
 
-      - run: npm install
       - run:
-          name: Run tests
-          command: npm test
-      - run:
-          name: Run build
-          command: npm run build
+          name: Install dependencies
+          command: npm install
 
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+          key: v2-dependencies-{{ checksum "package-lock.json" }}
+
+      - run:
+          name: Format check, lint, unit tests, and local integration test
+          command: npm run test:ci
+      - run:
+          name: Run build
+          command: npm run build
 
       - persist_to_workspace:
           root: ~/repo

@@ -1,13 +1,34 @@
-Version numbers correspond to `package.json` version.  Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
+Version numbers correspond to `package.json` version. Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
+
+# 3.0.0 (unreleased)
+- Network/CORS troubleshooting text for fetch failures (status 0 / -1) now says **OpenSearch** / **`opensearch.yml`** when the searcher `type` is **`os`**, since the Elasticsearch-compatible factory is shared with OpenSearch.
+- **Breaking:** Invalid `customHeaders` JSON no longer throws; the library logs a console warning and drops custom headers. Auth or tracing can appear to break without an exception—see [RELEASE_NOTES_3.0.0_DRAFT](RELEASE_NOTES_3.0.0_DRAFT.md) → **`customHeaders` JSON parsing** for exact warning text and migration guidance.
+- This is a major version: AngularJS is gone, the package is native ESM, and browser bundles moved. Step-by-step upgrade notes, tables, and edge cases live in [MIGRATION_CHANGES](MIGRATION_CHANGES.md) and [RELEASE_NOTES_3.0.0_DRAFT](RELEASE_NOTES_3.0.0_DRAFT.md).
+- **Breaking:** The big single-file script you may have pointed at in a git clone used to sit at the repo root as `splainer-search.js`. It now lives under `dist/` after you run `npm run build`, or under `node_modules/splainer-search/dist/` when installed from npm. The package also exposes stable subpaths (`splainer-search/splainer-search.js` and the wired variant) if you prefer those.
+- **Breaking:** We only ship ES modules. `require('splainer-search')` is not supported on older Node; use `import` instead, or a newer Node that can load this package via `require(esm)` if that fits your app.
+- **Breaking:** There is no Angular module, `$http`, or `$q` anymore. Import named exports from `splainer-search`, or load the built IIFE and use the `SplainerSearch` browser global. Regular GET/POST traffic goes through the Fetch API; JSONP still uses a dynamic script tag where that path applies.
+- **Breaking:** Explain, explain-other, render-template, and document-resolver fetch used to sometimes “succeed” with an object that really meant an error. They now fail the promise instead, which matches normal async expectations but will break code that only looked at `resp.error` inside `.then`. Use `.catch` / `try`–`await` for failures.
+- **Breaking:** We no longer publish `splainer-search.min.js`. Use `dist/splainer-search.js`, the package subpath, or your own minifier.
+- Unit tests run with Vitest (`npm test`) instead of Karma and Grunt. Release builds use esbuild and write `dist/splainer-search.js`, which exposes a `SplainerSearch` global with the same named surface as the module entry.
+- **Breaking (declared engines):** **`package.json` `engines.node`** is **`>=20.12.0`** (was `>=18`). Vitest 4 bundles Rolldown, which imports `util.styleText` from `node:util`; that export exists only from Node 20.12 onward, so older Node versions fail before tests start. Install with `engine-strict=true` also rejects older Node even for browser-only consumption.
+- **CircleCI** uses **`cimg/node:22.14`** instead of **`cimg/node:20.2.0`** so `npm run test:ci` runs on a Node that satisfies the above. **`.nvmrc`** is **`22`** for local alignment.
+- There is a dedicated wired entry (`splainer-search/wired` and `splainer-search/wired.js`) for the pre-built service graph Quepid- and Splainer-style apps expect, plus `dist/splainer-search-wired.js` / `SplainerSearchWired` when you want that graph from a single script file.
+- You can set default fetch credentials (for example to send cookies on cross-origin GET/POST) when creating the fetch client, and override per request if needed. JSONP does not use fetch, so that behavior is unchanged there.
+- In-flight search and fetch can be cancelled with `AbortSignal`; batched bulk requests combine signals when the runtime supports it. We export `isAbortError` and `transportRequestOpts` so you can treat user cancellation separately from HTTP errors.
+- Besides the Angular and packaging work, a lot of small correctness fixes landed—so explain trees, snapshots, highlighting, Solr/Elasticsearch URLs, and a few engine-specific edge cases may look slightly different even if your integration pattern is the same. Worth re-checking explain UI, snapshot compare, and anything sensitive to URL encoding or field display.
+  - Elasticsearch GET search URLs now encode the query string properly; if you were pre-encoding `queryText` yourself, stop or you may double-encode. Solr encoding is smarter about percent-escaped bytes. JSONP basic auth in the URL now splits username and password only on the first colon, so passwords can contain colons.
+  - Explain labels and trees behave more correctly (including `weight(...)` cleanup and typos that used to prevent matches). `unabridged:` in field specs actually applies now. Missing or null field values show as empty text instead of the words "null" or "undefined" in the UI.
+  - Algolia bulk object fetch now reports result counts consistently. Empty Elasticsearch result sets and Vectara docs without metadata are handled more safely. Document “origin” objects are cloned so mutating them does not corrupt the stored doc.
+  - Multiple Solr searchers no longer share one mutable copy of default pagination settings. Explain-other restores its arguments after a failed call. Bulk `_msearch` scheduling no longer leaks timers when the queue drains or the target URL changes.
 
 # 2.36.4 (2026-02-23)
-- Custom Search API should be better at handling when an array of filed values is provided.  https://github.com/o19s/splainer-search/pull/158 by @epugh.
-- 
+- Custom Search API should be better at handling when an array of field values is provided.  https://github.com/o19s/splainer-search/pull/158 by @epugh.
+
 # 2.36.2 (2026-01-08)
 - Custom Search API should respect the number of results setting, so if we ask for 20 results, and the custom search api is returning 30, then only return the first 20!  https://github.com/o19s/splainer-search/pull/157 by @epugh.
 
 # 2.36.1 (2025-12-30)
-- Handle Custom Search API that have extra query parameters.  Previously we would generate `http://mycompany.com/endpoints/search?status=active&param=x?query=shirt`!  https://github.com/o19s/splainer-search/pull/156 by @epugh.
+- Handle Custom Search APIs that have extra query parameters.  Previously we would generate `http://mycompany.com/endpoints/search?status=active&param=x?query=shirt`!  https://github.com/o19s/splainer-search/pull/156 by @epugh.
 - Split out developer docs into DEVELOPER_GUIDE.md, plus version bumps. https://github.com/o19s/splainer-search/pull/155 by @epugh. 
 
 # 2.35.1 (2025-07-22)
@@ -30,7 +51,7 @@ Thanks @atarora for opening https://github.com/o19s/quepid/issues/1245 and @davi
 
 
 # 2.31.0 (2024-02-05)
-- When using Solr and proxing through Quepid, we require you to use a GET.  However, when doing a doc lookup (to power snapshot compare) it falls back to JSONP, instead of using the specified GET.  https://github.com/o19s/splainer-search/pull/146 by @epugh.
+- When using Solr and proxying through Quepid, we require you to use a GET.  However, when doing a doc lookup (to power snapshot compare) it falls back to JSONP, instead of using the specified GET.  https://github.com/o19s/splainer-search/pull/146 by @epugh.
 
 - POTENTIALLY BREAKING CHANGE!  Splainer-search has some logic around escaping queries.  For example `OR` becomes `\\OR`...  It is rather unclear if this is actually a fully baked set of logic, and has created some bugs like https://github.com/o19s/quepid/issues/910.   We've commented out the escaping in Splainer-search, added logging about it, but will leave the code, tagged with `SUSS_USE_OF_ESCAPING`.  Going to ship this in the next version of Quepid and get feedback from community on if there are regressions that warrant restoring some sort of escaping.  https://github.com/o19s/splainer-search/pull/147 by @epugh.
 

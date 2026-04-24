@@ -1,51 +1,45 @@
 'use strict';
 
-angular.module('o19s.splainer-search')
-  .service('transportSvc', [
-    'HttpPostTransportFactory',
-    'HttpGetTransportFactory',
-    'HttpJsonpTransportFactory',
-    'BulkTransportFactory',
-    'HttpProxyTransportFactory',
-    function transportSvc(
-      HttpPostTransportFactory,
-      HttpGetTransportFactory,
-      HttpJsonpTransportFactory,
-      BulkTransportFactory,
-      HttpProxyTransportFactory
-    ) {
-      var self = this;
+export function transportSvcConstructor(
+  HttpPostTransportFactory,
+  HttpGetTransportFactory,
+  HttpJsonpTransportFactory,
+  BulkTransportFactory,
+  HttpProxyTransportFactory,
+) {
+  var self = this;
 
-      // functions
-      self.getTransport = getTransport;
+  // functions
+  self.getTransport = getTransport;
 
-      var bulkTransport     = new BulkTransportFactory({});
-      var httpPostTransport = new HttpPostTransportFactory({});
-      var httpGetTransport  = new HttpGetTransportFactory({});
-      var httpJsonpTransport  = new HttpJsonpTransportFactory({});
+  var bulkTransport = new BulkTransportFactory({});
+  var httpPostTransport = new HttpPostTransportFactory({});
+  var httpGetTransport = new HttpGetTransportFactory({});
+  var httpJsonpTransport = new HttpJsonpTransportFactory({});
 
-      function getTransport(options) {
-        var apiMethod = options.apiMethod;
-        if (apiMethod !== undefined) {
-          apiMethod = apiMethod.toUpperCase();
-        }
-        let transport = null;
-        if (apiMethod === 'BULK') {
-          transport = bulkTransport;
-        } else if (apiMethod === 'JSONP') {
-          transport = httpJsonpTransport;
-        } else if (apiMethod === 'GET') {
-          transport = httpGetTransport;
-        } else {
-          transport = httpPostTransport;
-        }
-      
-        var proxyUrl = options.proxyUrl; 
-        if (proxyUrl !== undefined) {
-          transport = new HttpProxyTransportFactory({proxyUrl: proxyUrl, transport: transport});
-          //transport = proxyTransport;
-        }
-        return transport;
-      }
+  function getTransport(options) {
+    var apiMethod = options.apiMethod;
+    if (apiMethod !== undefined) {
+      apiMethod = apiMethod.toUpperCase();
     }
-  ]);
+    let transport = null;
+    if (apiMethod === 'BULK') {
+      transport = bulkTransport;
+    } else if (apiMethod === 'JSONP') {
+      transport = httpJsonpTransport;
+    } else if (apiMethod === 'GET') {
+      transport = httpGetTransport;
+    } else {
+      transport = httpPostTransport;
+    }
+
+    var proxyUrl = options.proxyUrl;
+    if (proxyUrl !== undefined) {
+      transport = new HttpProxyTransportFactory({
+        proxyUrl: proxyUrl,
+        transport: transport,
+      });
+    }
+    return transport;
+  }
+}

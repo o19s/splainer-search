@@ -1,5 +1,5 @@
-# complied package shouldnt be checked in
-splainer-search.js
+# esbuild IIFE output (npm run build / prepublishOnly)
+dist/
 # generic (system) files/extensions we don't want
 *.seed
 *.log
@@ -21,6 +21,10 @@ bower_components
 
 # karma's coverage reporting
 coverage
+
+# Stryker mutation testing (instrumented copies and temp output)
+.stryker-tmp
+reports/mutation
 
 #vim
 *.swp

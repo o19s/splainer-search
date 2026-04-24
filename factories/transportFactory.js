@@ -1,23 +1,16 @@
 'use strict';
 
-/*jslint latedef:false*/
+export function TransportFactory() {
+  var Transporter = function (opts) {
+    var self = this;
 
-(function() {
-  angular.module('o19s.splainer-search')
-    .factory('TransportFactory', [TransportFactory]);
+    self.options = options;
 
-  function TransportFactory() {
-    var Transporter = function(opts) {
-      var self = this;
+    function options() {
+      return opts;
+    }
+  };
 
-      self.options = options;
-
-      function options() {
-        return opts;
-      }
-    };
-
-    // Return factory object
-    return Transporter;
-  }
-})();
+  // Return factory object
+  return Transporter;
+}

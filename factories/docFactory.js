@@ -1,66 +1,58 @@
 'use strict';
 
-/*jslint latedef:false*/
+export function DocFactory(utilsSvc) {
+  var Doc = function (doc, opts) {
+    var self = this;
+    utilsSvc.copyOnto(self, doc);
+    self.doc = doc;
+    self.opts = opts;
+  };
 
-(function() {
-  angular.module('o19s.splainer-search')
-    .factory('DocFactory', [DocFactory]);
+  Doc.prototype = {};
+  Doc.prototype.groupedBy = groupedBy;
+  Doc.prototype.group = group;
+  Doc.prototype.options = options;
+  Doc.prototype.version = version;
+  Doc.prototype.fieldsAttrName = fieldsAttrName;
+  Doc.prototype.fieldsProperty = fieldsProperty;
 
-  function DocFactory() {
-    var Doc = function(doc, opts) {
-      var self = this;
-      angular.copy(doc, self);
-      self.doc = doc;
-      self.opts = opts;
-    };
-
-    Doc.prototype = {};
-    Doc.prototype.groupedBy = groupedBy;
-    Doc.prototype.group = group;
-    Doc.prototype.options = options;
-    Doc.prototype.version = version;
-    Doc.prototype.fieldsAttrName = fieldsAttrName;
-    Doc.prototype.fieldsProperty = fieldsProperty;
-
-    function groupedBy() {
-      if (this.opts.groupedBy === undefined) {
-        return null;
-      } else {
-        return this.opts.groupedBy;
-      }
+  function groupedBy() {
+    if (this.opts.groupedBy === undefined) {
+      return null;
+    } else {
+      return this.opts.groupedBy;
     }
-
-    function options() {
-      return this.opts;
-    }
-
-    function group() {
-      if (this.opts.group === undefined) {
-        return null;
-      } else {
-        return this.opts.group;
-      }
-    }
-
-    function version() {
-      if (this.opts.version === undefined) {
-        return null;
-      } else {
-        return this.opts.version;
-      }
-    }
-
-    function fieldsAttrName() {
-      return '_source';
-    }
-
-    function fieldsProperty() {
-      /*jslint validthis:true*/
-      var self = this;
-      return self[self.fieldsAttrName()];
-    }
-
-    // Return factory object
-    return Doc;
   }
-})();
+
+  function options() {
+    return this.opts;
+  }
+
+  function group() {
+    if (this.opts.group === undefined) {
+      return null;
+    } else {
+      return this.opts.group;
+    }
+  }
+
+  function version() {
+    if (this.opts.version === undefined) {
+      return null;
+    } else {
+      return this.opts.version;
+    }
+  }
+
+  function fieldsAttrName() {
+    return '_source';
+  }
+
+  function fieldsProperty() {
+    var self = this;
+    return self[self.fieldsAttrName()];
+  }
+
+  // Return factory object
+  return Doc;
+}
