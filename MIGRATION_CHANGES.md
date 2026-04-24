@@ -4,7 +4,7 @@ This file is the long-form log of the AngularJS removal migration: what changed 
 
 Do not treat the older **`vanilla-simplify`** branch as canonical for validation, diffs, or copying code or tests—it was an early experiment (ESM, `fetch`, Vitest, Playwright) and is only historical context.
 
-For semver and the public API surface, treat `package.json` `exports` and the **3.0 integrator checklist** below as the contract. Breaking changes belong in a major release; user-facing upgrade notes live in [RELEASE_NOTES_3.0.0_DRAFT.md](RELEASE_NOTES_3.0.0_DRAFT.md) (or the published 3.0.0 notes once they exist).
+For semver and the public API surface, treat `package.json` `exports` and the **3.0 integrator checklist** below as the contract. Breaking changes belong in a major release; user-facing upgrade notes live in [RELEASE_NOTES_3.0.0.md](RELEASE_NOTES_3.0.0.md).
 
 **Current commands (3.0):** `npm test` runs Vitest (`vitest run`). `npm run test:coverage` runs Vitest with coverage. `npm run test:ci` runs Prettier check, ESLint, Vitest, and the chunked resolver integration script. Older migration text sometimes mentioned `npm run test:vitest`; that script does not exist on 3.0—use `npm test`.
 
@@ -12,7 +12,7 @@ For semver and the public API surface, treat `package.json` `exports` and the **
 
 ## 3.0 integrator checklist
 
-Walk this before and after you bump the dependency. Story-style breaking changes and tables: [RELEASE_NOTES_3.0.0_DRAFT.md](RELEASE_NOTES_3.0.0_DRAFT.md). File-by-file and phase detail: the rest of *this* document.
+Walk this before and after you bump the dependency. Story-style breaking changes and tables: [RELEASE_NOTES_3.0.0.md](RELEASE_NOTES_3.0.0.md). File-by-file and phase detail: the rest of *this* document.
 
 1. **IIFE / `<script>` paths** — Built bundles sit under `dist/`. If you used a repo-root `splainer-search.js` from a git checkout, use `dist/splainer-search.js` after `npm run build`, or `node_modules/splainer-search/dist/splainer-search.js` from npm, or the stable subpaths `splainer-search/splainer-search.js` and `splainer-search/splainer-search-wired.js` from `exports`. Load URI.js before the IIFE.
 
@@ -22,7 +22,7 @@ Walk this before and after you bump the dependency. Story-style breaking changes
 
 4. **Cancellation** — Put `signal` on the searcher `config` (fifth argument to `createSearcher`), or default it with `createFetchClient({ signal })`. In `.catch`, use `isAbortError(err)` from `splainer-search` or `splainer-search/wired.js` so user cancel does not look like a search failure.
 
-5. **Promise contract** — `explain`, `explainOther`, `renderTemplate`, and resolver doc-fetch **reject** on failure instead of resolving with an error-shaped object. Use `.catch`, `try`/`await`, or `isAbortError` as appropriate. Examples: [RELEASE_NOTES_3.0.0_DRAFT.md](RELEASE_NOTES_3.0.0_DRAFT.md) → **Promise rejection contract**.
+5. **Promise contract** — `explain`, `explainOther`, `renderTemplate`, and resolver doc-fetch **reject** on failure instead of resolving with an error-shaped object. Use `.catch`, `try`/`await`, or `isAbortError` as appropriate. Examples: [RELEASE_NOTES_3.0.0.md](RELEASE_NOTES_3.0.0.md) → **Promise rejection contract**.
 
 6. **Validate locally** — Run `npm run test:ci` and `npm run pack:check` before you ship. Why `pack:check` and a quick IIFE smoke path: same release notes → **Validation**. For an up-to-date Vitest count, run `npm test`; do not paste totals from old docs.
 
@@ -227,7 +227,7 @@ Successful responses still look like `$http`: `{ data, status, statusText }`, JS
 - **JSON POST bodies** — Non-string bodies go through `JSON.stringify` inside `createFetchClient`, matching typical `$http` behavior for plain objects.
 - **Promise / digest linkage** — Rejections are native promises, not `$q`; no `$rootScope` digest (only matters while Angular was still booted).
 - **Network failures** — Rejections keep `{ data: null, status: 0, statusText: '' }`; the underlying error may appear on **`cause`** for debugging.
-- **`customHeaders` JSON** — Bad JSON now warns in the console and drops custom headers instead of always throwing, which can surface as surprise **401s**; see **`customHeaders` JSON parsing** in [RELEASE_NOTES_3.0.0_DRAFT.md](RELEASE_NOTES_3.0.0_DRAFT.md).
+- **`customHeaders` JSON** — Bad JSON now warns in the console and drops custom headers instead of always throwing, which can surface as surprise **401s**; see **`customHeaders` JSON parsing** in [RELEASE_NOTES_3.0.0.md](RELEASE_NOTES_3.0.0.md).
 - **Cancellation** — Use `config.signal` on `createSearcher` (and optionally `createFetchClient({ signal })`); full detail under **AbortSignal / cancellable search (post–Phase 4)** below.
 
 JSONP remains a script-tag transport, so the “no CORS, still talk to Solr” story survives.
@@ -332,7 +332,7 @@ Grunt concat, Karma, the Jasmine suite under `test/spec/`, and Karma helpers und
 
 - **Node / bundlers** — Default entry is ESM (`index.js`). Use named imports such as `import { createFetchClient } from 'splainer-search'`. There is no published CommonJS build, so plain `require()` will not work unless your runtime adds its own ESM bridge.
 - **`<script>` tags** — Run `npm run build` (or rely on published `dist/`). `dist/splainer-search.js` attaches the barrel as `globalThis.SplainerSearch`; `dist/splainer-search-wired.js` attaches the wired API as `globalThis.SplainerSearchWired`. Load URI.js first so `globalThis.URI` exists (`shims/urijs-global.js`). Stable npm subpaths still point at both IIFEs via `exports`.
-- **Splainer / Quepid-style wiring** — Prefer `import … from 'splainer-search/wired.js'` (or `'splainer-search/wired'`), matching `test/vitest/helpers/serviceFactory.js` / `wired/wiring.js`. Narrative + importmap notes: [RELEASE_NOTES_3.0.0_DRAFT.md](RELEASE_NOTES_3.0.0_DRAFT.md) → **Splainer, Quepid, importmap, and SPA wiring**; file-level map: [INTEGRATOR_SPLAINER_QUEPID.md](INTEGRATOR_SPLAINER_QUEPID.md).
+- **Splainer / Quepid-style wiring** — Prefer `import … from 'splainer-search/wired.js'` (or `'splainer-search/wired'`), matching `test/vitest/helpers/serviceFactory.js` / `wired/wiring.js`. Narrative + importmap notes: [RELEASE_NOTES_3.0.0.md](RELEASE_NOTES_3.0.0.md) → **Splainer, Quepid, importmap, and SPA wiring**.
 - **Versus the old Grunt bundle** — Sources are real ESM (no runtime export stripping). The IIFE layout is esbuild’s namespace object, not hand-concat—double-check anything that poked at globals assuming the old shape.
 - **CI** — Node-only: Vitest, jsdom where needed, plus the Node integration script (no Chrome/Karma). Run **Node ≥ 20.12** locally and in CI (`.circleci/config.yml` pins `cimg/node:22.14`; Vitest 4 / Rolldown require `util.styleText` from `node:util`).
 
@@ -379,6 +379,6 @@ Angular’s `$sce` layer is gone from JSONP. URLs are plain strings from the fac
 
 `splainer-rewrite` also carries plain bug fixes compared to older tagged releases—see the branch history (for example `0803b0c`, `b1ea256`, `10ad14b`, `eb2e09d`, `d3adade`, `7446e52`). Expect differences in field highlighting, timed query arrays, `explainOther` timing and side effects, empty Elasticsearch responses, bulk transport timers, JSON header parsing, URL encoding, and JSONP basic-auth URLs (userinfo now splits on the **first** `:` only, so passwords may contain `:`). None of that requires Angular to be involved: upgrading for 3.x can still change snapshots, explain trees, or resolver output, so re-check those areas alongside the packaging work.
 
-The item-by-item checklist for QA lives in [RELEASE_NOTES_3.0.0_DRAFT.md](RELEASE_NOTES_3.0.0_DRAFT.md) under **Correctness fixes (independent of Angular removal)**. This appendix stays thematic; the hashes above are breadcrumbs into git when you need provenance.
+The item-by-item checklist for QA lives in [RELEASE_NOTES_3.0.0.md](RELEASE_NOTES_3.0.0.md) under **Correctness fixes (independent of Angular removal)**. This appendix stays thematic; the hashes above are breadcrumbs into git when you need provenance.
 
 ---

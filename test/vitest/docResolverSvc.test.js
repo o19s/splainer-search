@@ -376,14 +376,12 @@ describe('docResolverSvc', () => {
         expect(called).toBe(1);
       });
 
-      it('with chunkSize 0 performs no requests and yields empty docs', async () => {
-        resolver = docResolverSvc.createResolver(docIds, mockSettings, 0);
-        var called = 0;
-        await resolver.fetchDocs().then(function () {
-          called++;
-          expect(resolver.docs.length).toBe(0);
-        });
-        expect(called).toBe(1);
+      it('rejects fetchDocs when chunkSize is not a positive integer', async () => {
+        for (const bad of [0, -1, 2.5, Number.NaN]) {
+          await expect(
+            docResolverSvc.createResolver(docIds, mockSettings, bad).fetchDocs(),
+          ).rejects.toThrow(/chunkSize must be a positive integer/);
+        }
         mockBackend.verifyNoOutstandingExpectation();
       });
 
