@@ -122,20 +122,29 @@ export function ResolverFactory(searchSvc, solrUrlSvc, normalDocsSvc, utilsSvc) 
             throw response;
           });
       } else {
-        var sliceIds = function (ids, chunkSize) {
-          if (chunkSize > 0) {
-            // chunkSize = chunkSize | 0;
-            var slices = [];
-            for (var i = 0; i < ids.length; i += chunkSize) {
-              slices.push(ids.slice(i, i + chunkSize));
-            }
-            return slices;
+        // Reject non-positive / non-integer chunkSize (otherwise sliceIds produced no slices and Promise.all([]) "succeeded" with no docs).
+        var chunkN = Number(chunkSize);
+        if (!Number.isFinite(chunkN) || chunkN <= 0 || Math.floor(chunkN) !== chunkN) {
+          return Promise.reject(
+            new RangeError(
+              'splainer-search: chunkSize must be a positive integer (got ' +
+                String(chunkSize) +
+                ')',
+            ),
+          );
+        }
+
+        var sliceIds = function (idList, size) {
+          var slices = [];
+          for (var i = 0; i < idList.length; i += size) {
+            slices.push(idList.slice(i, i + size));
           }
+          return slices;
         };
 
         var promises = [];
 
-        utilsSvc.safeForEach(sliceIds(ids, chunkSize), function (sliceOfIds) {
+        utilsSvc.safeForEach(sliceIds(ids, chunkN), function (sliceOfIds) {
           var resolver = new Resolver(sliceOfIds, settings);
           promises.push(resolver.fetchDocs());
         });
