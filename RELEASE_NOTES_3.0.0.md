@@ -128,12 +128,11 @@ For themes, commit hashes, and migration-appendix context, see [MIGRATION_CHANGE
 ## Validation
 
 - Use **Node.js 20.12 or newer** for installs and tests (`package.json` `engines`; Vitest 4’s Rolldown stack needs `util.styleText`). [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) has setup notes; **`.nvmrc`** is `22`. CircleCI uses **`cimg/node:22.14`** so CI matches that baseline.
-- `npm run test:ci` runs ESLint, Vitest, and the chunked resolver integration script. Test counts drift—do not trust numbers copied from old docs; run `npm test` locally when you need the current Vitest total.
+- `npm run test:ci` runs Prettier (`format:check`), ESLint, Vitest, and the chunked resolver integration script. Test counts drift—do not trust numbers copied from old docs; run `npm test` locally when you need the current Vitest total.
 - `npm run pack:check` runs a production build, then `npm pack --dry-run`, so you can see that `dist/splainer-search.js`, `dist/splainer-search-wired.js`, and their `.map` files would actually ship. That catches a bad `files` list or publishing with scripts skipped.
 - Quick IIFE sanity check: run `node build.js`, load URI.js, then load `dist/splainer-search.js` in a browser or harness—you should get `globalThis.SplainerSearch` with exports such as `createFetchClient`, `SolrSearcherFactory`, `EsSearcherFactory`, `DocFactory`, and `defaultSolrConfig`.
 
 ## Pointers
 
 - [MIGRATION_CHANGES.md](MIGRATION_CHANGES.md) — phase-by-phase log, historical branch notes at the top, and the **3.0 integrator checklist** (it links back here for the promise contract and **Validation**).
-- [INTEGRATOR_SPLAINER_QUEPID.md](INTEGRATOR_SPLAINER_QUEPID.md) — which Splainer / Quepid files touch which APIs.
 - [FUTURE.md](FUTURE.md) — planned direction (e.g. CORS / JSONP deprecation).
