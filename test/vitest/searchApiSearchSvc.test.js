@@ -288,7 +288,7 @@ describe('searchSvc: SearchApi', () => {
     expect(called).toEqual(1);
   });
 
-  it('pager is a stub and returns null', () => {
+  it('pager returns null without a nextPageArgsMapper', () => {
     var options = { apiMethod: 'GET' };
     options.docsMapper = function (data) {
       return data.map(function (d) {
@@ -308,6 +308,87 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     expect(searcher.pager()).toBeNull();
+  });
+
+  it('pager returns null when nextPageArgsMapper reports no more pages', () => {
+    var options = {
+      apiMethod: 'GET',
+      numberOfRows: 10,
+      nextPageArgsMapper: function () {
+        return null;
+      },
+    };
+
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSearchApiUrl,
+      mockSearchApiParams,
+      mockQueryText,
+      options,
+      'searchapi',
+    );
+    expect(searcher.pager()).toBeNull();
+  });
+
+  it('pager builds a new searcher from nextPageArgsMapper', async () => {
+    // POST, not GET: prepareGetRequest bakes the querystring into searcher.url in place
+    // (see searchApiSearcherPreprocessorSvc.js), so a GET searcher's .url is no longer the
+    // pristine base URL by the time pager() reads self.url for the next page - a
+    // pre-existing limitation pager() shares with esSearcherFactory's own pager(), not
+    // something introduced here. Real mapper-based engines paginating today (Vespa) are
+    // POST-only, where this doesn't apply: preparePostRequest never touches searcher.url.
+    var options = {
+      apiMethod: 'POST',
+      numberOfRows: 10,
+      nextPageArgsMapper: function (args, numberOfRows) {
+        return Object.assign({}, args, {
+          hits: String(numberOfRows),
+          offset: String((args.offset ? parseInt(args.offset, 10) : 0) + numberOfRows),
+        });
+      },
+    };
+
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSearchApiUrl,
+      { query: '#$query##', offset: '0' },
+      mockQueryText,
+      options,
+      'searchapi',
+    );
+
+    var nextSearcher = searcher.pager();
+    expect(nextSearcher).not.toBeNull();
+    expect(nextSearcher.args).toEqual({ query: '#$query##', hits: '10', offset: '10' });
+
+    mockBackend
+      .expectPOST(mockSearchApiUrl, { query: mockQueryText, offset: '10', hits: '10' })
+      .respond(200, mockSearchApiResults);
+    await nextSearcher.search();
+    mockBackend.verifyNoOutstandingExpectation();
+  });
+
+  it('pager surfaces a thrown nextPageArgsMapper as a MapperError', () => {
+    var options = {
+      apiMethod: 'GET',
+      numberOfRows: 10,
+      nextPageArgsMapper: function () {
+        throw new Error('boom');
+      },
+    };
+
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSearchApiUrl,
+      mockSearchApiParams,
+      mockQueryText,
+      options,
+      'searchapi',
+    );
+
+    expect(function () {
+      searcher.pager();
+    }).toThrow(/MapperError/);
   });
 
   it('addDocToGroup is callable (stub implementation)', () => {

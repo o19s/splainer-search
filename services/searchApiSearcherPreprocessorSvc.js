@@ -40,7 +40,33 @@ export function searchApiSearcherPreprocessorSvcConstructor(queryTemplateSvc, ut
     searcher.queryDsl = queryDsl;
   };
 
+  // Solr/ES default their own fixed-name page-size param (rows/size) from
+  // config.numberOfRows in their preprocessors - Search API can't hardcode a name since
+  // that's whatever the target API/mapper calls it, so the caller names the two params via
+  // config.paginationHitsParam/paginationOffsetParam (left unset, this is a no-op - an
+  // engine that doesn't paginate has nothing to default). Only fills in what the caller's
+  // own args don't already set, so an explicit value in a hand-written query template still
+  // wins.
+  var applyPaginationDefaults = function (searcher) {
+    var hitsParam = searcher.config.paginationHitsParam;
+    var offsetParam = searcher.config.paginationOffsetParam;
+
+    if (!hitsParam || !offsetParam) {
+      return;
+    }
+
+    if (searcher.args[hitsParam] === undefined) {
+      searcher.args[hitsParam] = String(searcher.config.numberOfRows);
+    }
+
+    if (searcher.args[offsetParam] === undefined) {
+      searcher.args[offsetParam] = '0';
+    }
+  };
+
   function prepare(searcher) {
+    applyPaginationDefaults(searcher);
+
     if (searcher.config.apiMethod === 'POST') {
       preparePostRequest(searcher);
     } else if (searcher.config.apiMethod === 'GET') {

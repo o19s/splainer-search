@@ -27,11 +27,57 @@ export function SearchApiSearcherFactory(
   }
 
   // Other factories return a new searcher for the next page, or null when there is no
-  // next page (see esSearcherFactory, solrSearcherFactory, algoliaSearchFactory). Search
-  // API has no pager implementation yet; return null for the same contract.
+  // next page (see esSearcherFactory, solrSearcherFactory, algoliaSearchFactory). Unlike
+  // those, Search API has no fixed pagination convention (offset, cursor, ...) across
+  // arbitrary target APIs, so this defers to a caller-supplied
+  // config.nextPageArgsMapper(args, numberOfRows) - the same mapper-on-config pattern as
+  // docsMapper/numberOfResultsMapper below, just for "what are the next page's args"
+  // instead of "how do I read this response". No mapper configured, or the mapper itself
+  // reporting there's no more (a falsy return), both mean null - same contract as every
+  // other factory's pager().
+  //
+  // GET note (shared with esSearcherFactory's own pager()): prepareGetRequest bakes the
+  // querystring into searcher.url in place rather than leaving it pristine like
+  // solr/esSearcherPreprocessorSvc do, so a GET searcher's self.url is no longer the base
+  // URL by the time a second pager() call reads it - the next page's params get appended
+  // on top of the first page's instead of replacing them. POST is unaffected
+  // (preparePostRequest never touches searcher.url).
   function pager() {
-    console.log('Pager');
-    return null;
+    var self = this;
+
+    if (typeof self.config.nextPageArgsMapper !== 'function') {
+      return null;
+    }
+
+    var nextArgs;
+    try {
+      nextArgs = self.config.nextPageArgsMapper(
+        utilsSvc.deepClone(self.args),
+        self.config.numberOfRows,
+      );
+    } catch (error) {
+      const errMsg = 'Attempting to run nextPageArgsMapper failed: ' + error;
+      console.error(errMsg);
+      throw new Error('MapperError: ' + errMsg);
+    }
+
+    if (!nextArgs) {
+      return null; // no more results, per the mapper
+    }
+
+    var options = {
+      fieldList: self.fieldList,
+      hlFieldList: self.hlFieldList,
+      url: self.url,
+      args: nextArgs,
+      queryText: self.queryText,
+      config: self.config,
+      type: self.type,
+      HIGHLIGHTING_PRE: self.HIGHLIGHTING_PRE,
+      HIGHLIGHTING_POST: self.HIGHLIGHTING_POST,
+    };
+
+    return new Searcher(options);
   }
 
   // search (execute the query) and produce results
