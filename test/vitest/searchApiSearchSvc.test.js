@@ -288,7 +288,7 @@ describe('searchSvc: SearchApi', () => {
     expect(called).toEqual(1);
   });
 
-  it('pager is a stub and returns null', () => {
+  it('pager returns null without a nextPageArgsMapper', () => {
     var options = { apiMethod: 'GET' };
     options.docsMapper = function (data) {
       return data.map(function (d) {
@@ -308,6 +308,118 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     expect(searcher.pager()).toBeNull();
+  });
+
+  it('pager returns null when nextPageArgsMapper reports no more pages', () => {
+    var options = {
+      apiMethod: 'GET',
+      numberOfRows: 10,
+      nextPageArgsMapper: function () {
+        return null;
+      },
+    };
+
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSearchApiUrl,
+      mockSearchApiParams,
+      mockQueryText,
+      options,
+      'searchapi',
+    );
+    expect(searcher.pager()).toBeNull();
+  });
+
+  it('pager builds a new searcher from nextPageArgsMapper', async () => {
+    var options = {
+      apiMethod: 'POST',
+      numberOfRows: 10,
+      nextPageArgsMapper: function (args, numberOfRows) {
+        return Object.assign({}, args, {
+          hits: String(numberOfRows),
+          offset: String((args.offset ? parseInt(args.offset, 10) : 0) + numberOfRows),
+        });
+      },
+    };
+
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSearchApiUrl,
+      { query: '#$query##', offset: '0' },
+      mockQueryText,
+      options,
+      'searchapi',
+    );
+
+    var nextSearcher = searcher.pager();
+    expect(nextSearcher).not.toBeNull();
+    expect(nextSearcher.args).toEqual({ query: '#$query##', hits: '10', offset: '10' });
+
+    mockBackend
+      .expectPOST(mockSearchApiUrl, { query: mockQueryText, offset: '10', hits: '10' })
+      .respond(200, mockSearchApiResults);
+    await nextSearcher.search();
+    mockBackend.verifyNoOutstandingExpectation();
+  });
+
+  it("pager builds each GET page from the pristine base URL, not the previous page's built querystring", () => {
+    // Regression test: prepareGetRequest (searchApiSearcherPreprocessorSvc.js) bakes the
+    // querystring into searcher.url in place, so pager() must build the next page from
+    // self.originalUrl (searcherFactory.js), not self.url - otherwise each page's params
+    // pile up on top of every previous page's, instead of replacing them.
+    var options = {
+      apiMethod: 'GET',
+      numberOfRows: 10,
+      nextPageArgsMapper: function (args, numberOfRows) {
+        return Object.assign({}, args, {
+          hits: String(numberOfRows),
+          offset: String((args.offset ? parseInt(args.offset, 10) : 0) + numberOfRows),
+        });
+      },
+    };
+
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSearchApiUrl,
+      { query: '#$query##', offset: '0' },
+      mockQueryText,
+      options,
+      'searchapi',
+    );
+
+    var page2 = searcher.pager();
+    expect(page2.url.match(/\?/g)).toHaveLength(1);
+    expect(page2.url.match(/query=/g)).toHaveLength(1);
+    expect(page2.url).toContain('offset=10');
+    expect(page2.url).toContain('hits=10');
+
+    var page3 = page2.pager();
+    expect(page3.url.match(/\?/g)).toHaveLength(1);
+    expect(page3.url.match(/query=/g)).toHaveLength(1);
+    expect(page3.url).toContain('offset=20');
+  });
+
+  it('pager surfaces a thrown nextPageArgsMapper as a MapperError', () => {
+    var options = {
+      apiMethod: 'GET',
+      numberOfRows: 10,
+      nextPageArgsMapper: function () {
+        throw new Error('boom');
+      },
+    };
+
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSearchApiUrl,
+      mockSearchApiParams,
+      mockQueryText,
+      options,
+      'searchapi',
+    );
+
+    expect(function () {
+      searcher.pager();
+    }).toThrow(/MapperError/);
   });
 
   it('addDocToGroup is callable (stub implementation)', () => {

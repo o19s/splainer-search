@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getSearchApiSearcherPreprocessorSvc } from './helpers/serviceFactory.js';
 
 describe('searchApiSearcherPreprocessorSvc', () => {
@@ -111,5 +111,78 @@ describe('searchApiSearcherPreprocessorSvc', () => {
     expect(function () {
       searchApiSearcherPreprocessorSvc.prepare(searcher);
     }).toThrow();
+  });
+
+  it('defaults hits/offset from numberOfRows when paginationHitsParam/paginationOffsetParam are configured', () => {
+    var searcher = {
+      config: {
+        apiMethod: 'POST',
+        qOption: null,
+        numberOfRows: 10,
+        paginationHitsParam: 'hits',
+        paginationOffsetParam: 'offset',
+      },
+      args: { yql: 'select * from sources *' },
+      queryText: 'plain',
+      url: 'http://example.com/api',
+    };
+    searchApiSearcherPreprocessorSvc.prepare(searcher);
+    expect(searcher.queryDsl).toEqual({
+      yql: 'select * from sources *',
+      hits: '10',
+      offset: '0',
+    });
+  });
+
+  it('does not override hits/offset already present in args', () => {
+    var searcher = {
+      config: {
+        apiMethod: 'POST',
+        qOption: null,
+        numberOfRows: 10,
+        paginationHitsParam: 'hits',
+        paginationOffsetParam: 'offset',
+      },
+      args: { yql: 'select * from sources *', hits: '2', offset: '20' },
+      queryText: 'plain',
+      url: 'http://example.com/api',
+    };
+    searchApiSearcherPreprocessorSvc.prepare(searcher);
+    expect(searcher.queryDsl).toEqual({
+      yql: 'select * from sources *',
+      hits: '2',
+      offset: '20',
+    });
+  });
+
+  it('leaves args untouched when paginationHitsParam/paginationOffsetParam are not configured', () => {
+    var searcher = {
+      config: { apiMethod: 'POST', qOption: null, numberOfRows: 10 },
+      args: { yql: 'select * from sources *' },
+      queryText: 'plain',
+      url: 'http://example.com/api',
+    };
+    searchApiSearcherPreprocessorSvc.prepare(searcher);
+    expect(searcher.queryDsl).toEqual({ yql: 'select * from sources *' });
+  });
+
+  it('warns and leaves args untouched when only one of paginationHitsParam/paginationOffsetParam is configured', () => {
+    var warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    var searcher = {
+      config: {
+        apiMethod: 'POST',
+        qOption: null,
+        numberOfRows: 10,
+        paginationHitsParam: 'hits',
+        // paginationOffsetParam intentionally omitted
+      },
+      args: { yql: 'select * from sources *' },
+      queryText: 'plain',
+      url: 'http://example.com/api',
+    };
+    searchApiSearcherPreprocessorSvc.prepare(searcher);
+    expect(searcher.queryDsl).toEqual({ yql: 'select * from sources *' });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    warnSpy.mockRestore();
   });
 });
