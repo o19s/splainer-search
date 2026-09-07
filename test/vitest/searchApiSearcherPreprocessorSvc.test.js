@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getSearchApiSearcherPreprocessorSvc } from './helpers/serviceFactory.js';
 
 describe('searchApiSearcherPreprocessorSvc', () => {
@@ -164,5 +164,25 @@ describe('searchApiSearcherPreprocessorSvc', () => {
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.queryDsl).toEqual({ yql: 'select * from sources *' });
+  });
+
+  it('warns and leaves args untouched when only one of paginationHitsParam/paginationOffsetParam is configured', () => {
+    var warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    var searcher = {
+      config: {
+        apiMethod: 'POST',
+        qOption: null,
+        numberOfRows: 10,
+        paginationHitsParam: 'hits',
+        // paginationOffsetParam intentionally omitted
+      },
+      args: { yql: 'select * from sources *' },
+      queryText: 'plain',
+      url: 'http://example.com/api',
+    };
+    searchApiSearcherPreprocessorSvc.prepare(searcher);
+    expect(searcher.queryDsl).toEqual({ yql: 'select * from sources *' });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    warnSpy.mockRestore();
   });
 });

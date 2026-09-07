@@ -36,12 +36,13 @@ export function SearchApiSearcherFactory(
   // reporting there's no more (a falsy return), both mean null - same contract as every
   // other factory's pager().
   //
-  // GET note (shared with esSearcherFactory's own pager()): prepareGetRequest bakes the
-  // querystring into searcher.url in place rather than leaving it pristine like
-  // solr/esSearcherPreprocessorSvc do, so a GET searcher's self.url is no longer the base
-  // URL by the time a second pager() call reads it - the next page's params get appended
-  // on top of the first page's instead of replacing them. POST is unaffected
-  // (preparePostRequest never touches searcher.url).
+  // GET note: prepareGetRequest bakes the querystring into searcher.url in place (rather
+  // than leaving it pristine like solr/esSearcherPreprocessorSvc do), so building the next
+  // page's Searcher from self.url would append the new page's params onto the current
+  // page's already-querystring'd URL instead of replacing them. self.originalUrl
+  // (searcherFactory.js) is the pre-request URL from construction, unaffected by that
+  // mutation, so the next page always starts from a clean base. POST is unaffected either
+  // way (preparePostRequest never touches searcher.url).
   function pager() {
     var self = this;
 
@@ -68,7 +69,7 @@ export function SearchApiSearcherFactory(
     var options = {
       fieldList: self.fieldList,
       hlFieldList: self.hlFieldList,
-      url: self.url,
+      url: self.originalUrl,
       args: nextArgs,
       queryText: self.queryText,
       config: self.config,

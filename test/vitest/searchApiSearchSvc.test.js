@@ -331,12 +331,6 @@ describe('searchSvc: SearchApi', () => {
   });
 
   it('pager builds a new searcher from nextPageArgsMapper', async () => {
-    // POST, not GET: prepareGetRequest bakes the querystring into searcher.url in place
-    // (see searchApiSearcherPreprocessorSvc.js), so a GET searcher's .url is no longer the
-    // pristine base URL by the time pager() reads self.url for the next page - a
-    // pre-existing limitation pager() shares with esSearcherFactory's own pager(), not
-    // something introduced here. Real mapper-based engines paginating today (Vespa) are
-    // POST-only, where this doesn't apply: preparePostRequest never touches searcher.url.
     var options = {
       apiMethod: 'POST',
       numberOfRows: 10,
@@ -366,6 +360,43 @@ describe('searchSvc: SearchApi', () => {
       .respond(200, mockSearchApiResults);
     await nextSearcher.search();
     mockBackend.verifyNoOutstandingExpectation();
+  });
+
+  it("pager builds each GET page from the pristine base URL, not the previous page's built querystring", () => {
+    // Regression test: prepareGetRequest (searchApiSearcherPreprocessorSvc.js) bakes the
+    // querystring into searcher.url in place, so pager() must build the next page from
+    // self.originalUrl (searcherFactory.js), not self.url - otherwise each page's params
+    // pile up on top of every previous page's, instead of replacing them.
+    var options = {
+      apiMethod: 'GET',
+      numberOfRows: 10,
+      nextPageArgsMapper: function (args, numberOfRows) {
+        return Object.assign({}, args, {
+          hits: String(numberOfRows),
+          offset: String((args.offset ? parseInt(args.offset, 10) : 0) + numberOfRows),
+        });
+      },
+    };
+
+    var searcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSearchApiUrl,
+      { query: '#$query##', offset: '0' },
+      mockQueryText,
+      options,
+      'searchapi',
+    );
+
+    var page2 = searcher.pager();
+    expect(page2.url.match(/\?/g)).toHaveLength(1);
+    expect(page2.url.match(/query=/g)).toHaveLength(1);
+    expect(page2.url).toContain('offset=10');
+    expect(page2.url).toContain('hits=10');
+
+    var page3 = page2.pager();
+    expect(page3.url.match(/\?/g)).toHaveLength(1);
+    expect(page3.url.match(/query=/g)).toHaveLength(1);
+    expect(page3.url).toContain('offset=20');
   });
 
   it('pager surfaces a thrown nextPageArgsMapper as a MapperError', () => {

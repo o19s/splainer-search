@@ -8,6 +8,12 @@ export function SearcherFactory() {
     self.fieldList = options.fieldList;
     self.hlFieldList = options.hlFieldList;
     self.url = options.url;
+    // Preserved separately because some preprocessors (e.g.
+    // searchApiSearcherPreprocessorSvc's prepareGetRequest) mutate self.url in place into the
+    // full request URL - callers that need the pristine, pre-request URL (e.g.
+    // searchApiSearcherFactory's pager(), building the next page from a clean base rather than
+    // one already carrying the current page's querystring) should use this instead.
+    self.originalUrl = options.url;
     self.args = options.args;
     self.queryText = options.queryText;
     self.config = options.config;
