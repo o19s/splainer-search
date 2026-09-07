@@ -1,6 +1,12 @@
 Version numbers correspond to `package.json` version. Follows the _major.minor.bugfix_ naming pattern as of 2.8.0.
 
-# 3.0.0 (unreleased)
+# 3.1.0 (2026-09-07)
+- Custom Search API pagination: `pager()` is no longer a no-op stub. Provide a `nextPageArgsMapper(args, numberOfRows)` function on `config` (alongside `docsMapper`/`numberOfResultsMapper`) and `pager()` builds the next page's args from it, returning a new `Searcher` or `null` when there's no more - the same contract every other engine's `pager()` already follows. This is what powers Quepid's Vespa/mapper-based search engine support. https://github.com/o19s/splainer-search/pull/162 by @epugh.
+- Custom Search API page-1 sizing: a Custom Search API can't hardcode a page-size param name the way Solr (`rows`) and Elasticsearch (`size`) do, so `config.paginationHitsParam`/`paginationOffsetParam` name the two params for your target API, and get defaulted from `config.numberOfRows` on the first page the same way the other engines already default their own. Only fills in what your own args don't already set, so an explicit value in a hand-written query template still wins.
+- Fixed: a GET-based Custom Search API paginating past page 1 would append each new page's params onto the *previous* page's already-built querystring instead of replacing them, since the preprocessor bakes the querystring into the searcher's URL in place. `pager()` now builds each new page from a preserved, pristine base URL instead, so this only ever affects the current request.
+- Custom Search API now logs a console warning (instead of silently doing nothing) if only one of `paginationHitsParam`/`paginationOffsetParam` is configured - both are required together to default hits/offset.
+
+# 3.0.0 (2026-04-24)
 - Network/CORS troubleshooting text for fetch failures (status 0 / -1) now says **OpenSearch** / **`opensearch.yml`** when the searcher `type` is **`os`**, since the Elasticsearch-compatible factory is shared with OpenSearch.
 - **Breaking:** Invalid `customHeaders` JSON no longer throws; the library logs a console warning and drops custom headers. Auth or tracing can appear to break without an exception—see [RELEASE_NOTES_3.0.0_DRAFT](RELEASE_NOTES_3.0.0_DRAFT.md) → **`customHeaders` JSON parsing** for exact warning text and migration guidance.
 - This is a major version: AngularJS is gone, the package is native ESM, and browser bundles moved. Step-by-step upgrade notes, tables, and edge cases live in [MIGRATION_CHANGES](MIGRATION_CHANGES.md) and [RELEASE_NOTES_3.0.0_DRAFT](RELEASE_NOTES_3.0.0_DRAFT.md).
