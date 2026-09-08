@@ -85,7 +85,10 @@ export function SearchApiSearcherFactory(
   // to the returned future
   function search() {
     const self = this;
-    var apiMethod = self.config.apiMethod;
+    // self.apiMethod is the per-instance method resolved by the preprocessor when
+    // config.apiMethod is 'AUTO' (see searchApiSearcherPreprocessorSvc.js); config.apiMethod
+    // itself is used directly for the fixed 'GET'/'POST' cases.
+    var apiMethod = self.apiMethod || self.config.apiMethod;
     var proxyUrl = self.config.proxyUrl;
     var url = self.url;
     var uri = esUrlSvc.parseUrl(self.url);

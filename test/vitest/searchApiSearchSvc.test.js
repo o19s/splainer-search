@@ -11,9 +11,9 @@ describe('searchSvc: SearchApi', () => {
   var mockFieldSpec;
   var mockSearchApiUrl = 'http://example.com:1234/api/search';
   var mockSearchApiParams = { query: '#$query##' };
-  var expectedParams = structuredClone(mockSearchApiParams);
   var mockQueryText = 'rambo movie';
-  expectedParams.query = encodeURIComponent(mockQueryText);
+  // GET values are URL-encoded (values only, not keys); POST bodies are sent as-is.
+  var expectedGetUrl = 'http://example.com:1234/api/search?query=' + encodeURIComponent(mockQueryText);
 
   var expectedPayload = { query: mockQueryText };
   var mockSearchApiResults = [
@@ -43,7 +43,7 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     mockBackend
-      .expectGET('http://example.com:1234/api/search?query=rambo movie')
+      .expectGET(expectedGetUrl)
       .respond(200, mockSearchApiResults);
     await searcher.search();
     mockBackend.verifyNoOutstandingExpectation();
@@ -65,6 +65,35 @@ describe('searchSvc: SearchApi', () => {
     mockBackend.verifyNoOutstandingExpectation();
   });
 
+  it('AUTO picks GET for a short query and POST for a long one', async () => {
+    var shortSearcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSearchApiUrl,
+      mockSearchApiParams,
+      mockQueryText,
+      { apiMethod: 'AUTO', maxGetUrlLength: 100 },
+      'searchapi',
+    );
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
+    await shortSearcher.search();
+    mockBackend.verifyNoOutstandingExpectation();
+
+    var longQueryText = 'a'.repeat(200);
+    var longSearcher = searchSvc.createSearcher(
+      mockFieldSpec,
+      mockSearchApiUrl,
+      mockSearchApiParams,
+      longQueryText,
+      { apiMethod: 'AUTO', maxGetUrlLength: 100 },
+      'searchapi',
+    );
+    mockBackend
+      .expectPOST(mockSearchApiUrl, { query: longQueryText })
+      .respond(200, mockSearchApiResults);
+    await longSearcher.search();
+    mockBackend.verifyNoOutstandingExpectation();
+  });
+
   it('returns number found', async () => {
     var options = { apiMethod: 'GET' };
     options.numberOfResultsMapper = function () {
@@ -80,7 +109,7 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     mockBackend
-      .expectGET('http://example.com:1234/api/search?query=rambo movie')
+      .expectGET(expectedGetUrl)
       .respond(200, mockSearchApiResults);
 
     await searcher.search();
@@ -107,7 +136,7 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     mockBackend
-      .expectGET('http://example.com:1234/api/search?query=rambo movie')
+      .expectGET(expectedGetUrl)
       .respond(200, mockSearchApiResults);
 
     var called = 0;
@@ -143,7 +172,7 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     mockBackend
-      .expectGET('http://example.com:1234/api/search?query=rambo movie')
+      .expectGET(expectedGetUrl)
       .respond(200, mockSearchApiResults);
 
     var called = 0;
@@ -210,7 +239,7 @@ describe('searchSvc: SearchApi', () => {
     );
     var initialCount = activeQueries.count;
     mockBackend
-      .expectGET('http://example.com:1234/api/search?query=rambo movie')
+      .expectGET(expectedGetUrl)
       .respond(200, mockSearchApiResults);
     await searcher.search();
     expect(activeQueries.count).toEqual(initialCount);
@@ -227,7 +256,7 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     mockBackend
-      .expectGET('http://example.com:1234/api/search?query=rambo movie')
+      .expectGET(expectedGetUrl)
       .respond(200, mockSearchApiResults);
 
     var called = 0;
@@ -255,7 +284,7 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     mockBackend
-      .expectGET('http://example.com:1234/api/search?query=rambo movie')
+      .expectGET(expectedGetUrl)
       .respond(200, mockSearchApiResults);
 
     var called = 0;
@@ -276,7 +305,7 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     mockBackend
-      .expectGET('http://example.com:1234/api/search?query=rambo movie')
+      .expectGET(expectedGetUrl)
       .respond(200, mockSearchApiResults);
 
     var called = 0;
@@ -455,7 +484,7 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     mockBackend
-      .expectGET('http://example.com:1234/api/search?query=rambo movie')
+      .expectGET(expectedGetUrl)
       .respond(200, mockSearchApiResults);
 
     var called = 0;
@@ -485,7 +514,7 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     mockBackend
-      .expectGET('http://example.com:1234/api/search?query=rambo movie')
+      .expectGET(expectedGetUrl)
       .respond(200, mockSearchApiResults);
 
     var called = 0;
