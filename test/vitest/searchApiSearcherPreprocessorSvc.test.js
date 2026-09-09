@@ -77,7 +77,10 @@ describe('searchApiSearcherPreprocessorSvc', () => {
     expect(searcher.queryDsl).toBe(dsl);
   });
 
-  it('escapes backslashes and double quotes in string queryText before POST hydration', () => {
+  it('leaves backslashes and double quotes in string queryText untouched before POST hydration', () => {
+    // queryDsl is JSON.stringify'd wholesale at the transport layer (httpClient.js), which
+    // already escapes string values correctly - hydrating with escapeQuery: false here avoids
+    // double-escaping on top of that (see replaceQuery above).
     var searcher = {
       config: { apiMethod: 'POST', qOption: null },
       args: { q: '#$query##' },
@@ -85,7 +88,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       url: 'http://example.com/api',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
-    expect(searcher.queryDsl).toEqual({ q: 'a\\\\b\\"c' });
+    expect(searcher.queryDsl).toEqual({ q: 'a\\b"c' });
   });
 
   it('GET with null queryText still builds params from template object', () => {
@@ -191,7 +194,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       searchApiSearcherPreprocessorSvc.prepare(searcher);
       expect(searcher.apiMethod).toBe('POST');
       expect(searcher.queryDsl).toEqual({
-        yql: 'select * from movies where title contains \\"a long query that will not fit\\"',
+        yql: 'select * from movies where title contains "a long query that will not fit"',
       });
       expect(searcher.url).toBe('http://example.com/search');
     });

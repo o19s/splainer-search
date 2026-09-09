@@ -1641,6 +1641,74 @@ describe('searchSvc: Solr', () => {
       mockBackend.verifyNoOutstandingExpectation();
     });
 
+    it('does not double-escape quotes/backslashes in the query text', async () => {
+      // Regression test: hydrateSearchQuery used to backslash-escape `"`/`\` by default, then
+      // JSON.stringify (httpClient.js) escaped the *result* again when building the wire body -
+      // so a literal `"` in the query text arrived at Solr as a literal backslash-quote instead
+      // of a quote. Compare against the raw wire body (via a body matcher), not just the parsed
+      // JS object, since JSON.parse in the mock backend's default matching would silently undo
+      // a single level of that double-escaping and mask the bug.
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        'say "hi"',
+        { apiMethod: 'POST', jsonQueryDsl: true },
+      );
+      mockBackend
+        .expectPOST(mockSolrUrl, function (rawBody) {
+          return rawBody === JSON.stringify({
+            query: 'title:say "hi"',
+            fields: expectedFields,
+            limit: 10,
+          });
+        })
+        .respond(200, mockResults);
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('forces POST even when apiMethod defaults to JSONP', async () => {
+      // Regression test: JSONP (and GET) can't carry a body at all - see
+      // httpJsonpTransportFactory.js, which takes a payload argument and never uses it - so
+      // jsonQueryDsl alone, with no explicit apiMethod, used to silently send an empty request.
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { jsonQueryDsl: true },
+      );
+      mockBackend
+        .expectPOST(mockSolrUrl, {
+          query: 'title:' + mockQueryText,
+          fields: expectedFields,
+          limit: 10,
+        })
+        .respond(200, mockResults);
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('forces POST even when apiMethod is explicitly GET', async () => {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { apiMethod: 'GET', jsonQueryDsl: true },
+      );
+      mockBackend
+        .expectPOST(mockSolrUrl, {
+          query: 'title:' + mockQueryText,
+          fields: expectedFields,
+          limit: 10,
+        })
+        .respond(200, mockResults);
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
     it('pages using limit/offset instead of rows/start', async () => {
       var fullResp = { response: { numFound: 21, docs: [{ id: 'doc1' }, { id: 'doc2' }] } };
       var searcher = searchSvc.createSearcher(

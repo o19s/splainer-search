@@ -73,10 +73,18 @@ export function solrSearcherPreprocessorSvcConstructor(
     var fieldList = searcher.fieldList;
     var config = searcher.config;
 
+    // escapeQuery: false - hydrateSearchQuery's default backslash/quote escaping is a leftover
+    // from when args here was a raw JSON string built by text interpolation, so escaping was
+    // needed to keep the result parseable. args is a parsed object now: this searcher.queryDsl
+    // is JSON.stringify'd wholesale at the transport layer (httpClient.js), which escapes
+    // string values correctly on its own - the manual escaping here only double-escapes on top
+    // of that (e.g. a literal `"` survives hydration as `\"`, then becomes `\\\"` once
+    // JSON.stringify'd, so Solr receives a literal backslash-quote instead of a quote).
     var hydratedArgs = queryTemplateSvc.hydrateSearchQuery(
       config.qOption,
       searcher.args,
       searcher.queryText,
+      { escapeQuery: false },
     );
 
     if (!hydratedArgs.fields && fieldList) {
@@ -90,6 +98,13 @@ export function solrSearcherPreprocessorSvcConstructor(
     searcher.queryDsl = hydratedArgs;
     searcher.callUrl = searcher.url;
     searcher.linkUrl = searcher.url;
+
+    // Resolved onto the searcher instance, not searcher.config (a shared reference reused
+    // across paginated instances - see solrSearcherFactory.js's buildPagerOptions). JSONP and
+    // GET can't carry a body at all (httpJsonpTransportFactory.js takes a payload argument and
+    // never uses it), so a JSON DSL request has exactly one viable transport regardless of how
+    // apiMethod is configured.
+    searcher.apiMethod = 'POST';
   };
 
   function prepare(searcher) {

@@ -247,10 +247,11 @@ export function SolrSearcherFactory(
       return {};
     };
 
-    var apiMethod = defaultSolrConfig.apiMethod; // Solr defaults to JSONP
-    if (self.config && self.config.apiMethod) {
-      apiMethod = self.config.apiMethod;
-    }
+    // self.apiMethod is the per-instance method the preprocessor resolves when config.apiMethod
+    // can't be trusted as-is (see solrSearcherPreprocessorSvc.js's prepareJsonQueryDslRequest,
+    // which forces POST for a JSON DSL body regardless of the configured/default apiMethod);
+    // config.apiMethod is used directly otherwise, defaulting to Solr's JSONP.
+    var apiMethod = self.apiMethod || (self.config && self.config.apiMethod) || defaultSolrConfig.apiMethod;
 
     let uri = esUrlSvc.parseUrl(url);
     var headers = esUrlSvc.getHeaders(uri, self.config.customHeaders);
