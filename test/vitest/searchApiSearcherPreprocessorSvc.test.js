@@ -223,6 +223,43 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       expect(searcher.apiMethod).toBe('GET');
     });
 
+    it('accounts for the proxy URL prefix when deciding GET vs POST', () => {
+      // Regression test: httpProxyTransportFactory.js prepends config.proxyUrl onto the
+      // request URL at query time, after this AUTO decision is made - a request whose
+      // unprefixed URL fits under maxGetUrlLength can still be too long once proxied.
+      // getUrl here is 'http://example.com/search?yql=abc' (33 chars); proxyUrl adds 20
+      // more (53 total), which exceeds maxGetUrlLength even though getUrl alone doesn't.
+      var searcher = {
+        config: {
+          apiMethod: 'AUTO',
+          qOption: null,
+          maxGetUrlLength: 35,
+          proxyUrl: 'http://proxy.local/p',
+        },
+        args: { yql: '#$query##' },
+        queryText: 'abc',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('POST');
+    });
+
+    it('still picks GET when the proxy-prefixed URL fits within maxGetUrlLength', () => {
+      var searcher = {
+        config: {
+          apiMethod: 'AUTO',
+          qOption: null,
+          maxGetUrlLength: 60,
+          proxyUrl: 'http://proxy.local/p',
+        },
+        args: { yql: '#$query##' },
+        queryText: 'abc',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('GET');
+    });
+
     it('URL-encodes GET param values', () => {
       var searcher = {
         config: { apiMethod: 'GET', qOption: null },
