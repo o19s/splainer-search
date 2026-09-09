@@ -16,6 +16,7 @@ export function esUrlSvcConstructor(customHeadersJson, utilsSvc) {
   self.stripBasicAuth = stripBasicAuth;
   self.isBulkCall = isBulkCall;
   self.isTemplateCall = isTemplateCall;
+  self.escapeUserQuery = escapeUserQuery;
 
   /**
    *
@@ -205,5 +206,48 @@ export function esUrlSvcConstructor(customHeadersJson, utilsSvc) {
     } else {
       return false;
     }
+  }
+
+  // Escapes Elasticsearch/OpenSearch query_string/simple_query_string reserved characters
+  // (https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#_reserved_characters)
+  // in user-typed query text, e.g. "title: law" -> "title\: law" - mirrors
+  // solrUrlSvc.escapeUserQuery, just with ES's own (slightly larger) reserved-char set. Only
+  // meaningful where the caller's query template feeds the text into a query_string/
+  // simple_query_string clause; a match/term/multi_match clause doesn't parse syntax at all,
+  // so escaping there is the caller's call to make (via config.escapeQuery), not this
+  // function's.
+  function escapeUserQuery(queryText) {
+    var escapeChars = [
+      '+',
+      '-',
+      '=',
+      '&',
+      '|',
+      '>',
+      '<',
+      '!',
+      '(',
+      ')',
+      '{',
+      '}',
+      '[',
+      ']',
+      '^',
+      '"',
+      '~',
+      '*',
+      '?',
+      ':',
+      '\\',
+      '/',
+    ];
+    var regexp = new RegExp('(\\' + escapeChars.join('|\\') + ')', 'g');
+    var symsRepl = queryText.replace(regexp, '\\$1');
+    var regexpAnd = new RegExp('(^|\\s+)(and)($|\\s+)', 'g');
+    var andRepl = symsRepl.replace(regexpAnd, '$1\\\\$2$3');
+    var regexOr = new RegExp('(^|\\s+)(or)($|\\s+)', 'g');
+    var orRepl = andRepl.replace(regexOr, '$1\\\\$2$3');
+    var regexNot = new RegExp('(^|\\s+)(not)($|\\s+)', 'g');
+    return orRepl.replace(regexNot, '$1\\\\$2$3');
   }
 }

@@ -1648,6 +1648,8 @@ describe('searchSvc: Solr', () => {
       // of a quote. Compare against the raw wire body (via a body matcher), not just the parsed
       // JS object, since JSON.parse in the mock backend's default matching would silently undo
       // a single level of that double-escaping and mask the bug.
+      // escapeQuery: false - isolates this from config.escapeQuery's own (correct, single)
+      // Lucene-syntax escaping, which is covered separately.
       var searcher = searchSvc.createSearcher(
         mockFieldSpec,
         mockSolrUrl,

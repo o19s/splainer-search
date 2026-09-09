@@ -228,4 +228,25 @@ describe('esUrlSvc', () => {
       expect(returnedUrl).toBe('https://example.com');
     });
   });
+
+  describe('escape user query', () => {
+    it('escapes query_string/simple_query_string reserved characters', () => {
+      var escaped = esUrlSvc.escapeUserQuery('+-=&|><!(){}[]^"~*?:\\/');
+      expect(escaped).toBe(
+        '\\+\\-\\=\\&\\|\\>\\<\\!\\(\\)\\{\\}\\[\\]\\^\\"\\~\\*\\?\\:\\\\\\/',
+      );
+    });
+
+    it('escapes boolean operators (AND/OR/NOT)', () => {
+      var escaped = esUrlSvc.escapeUserQuery('the best and or not the worst');
+      expect(escaped).toBe('the best \\\\and \\\\or \\\\not the worst');
+      escaped = esUrlSvc.escapeUserQuery('the bestand orthe worst');
+      expect(escaped).toBe('the bestand orthe worst');
+    });
+
+    it('escapes a field:value query, matching the "disable if you use query syntax" tooltip', () => {
+      var escaped = esUrlSvc.escapeUserQuery('title:law');
+      expect(escaped).toBe('title\\:law');
+    });
+  });
 });

@@ -138,6 +138,7 @@ export function createWiredServices(httpClient) {
 
   function esSearcherPreprocessorSvc() {
     return new esSearcherPreprocessorSvcConstructor(
+      esUrlSvc(),
       queryTemplateSvc(),
       defaultESConfig,
       utilsSvc(),
