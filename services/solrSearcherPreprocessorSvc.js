@@ -66,24 +66,36 @@ export function solrSearcherPreprocessorSvcConstructor(
 
   // Solr's JSON Query DSL (https://solr.apache.org/guide/solr/latest/query-guide/json-query-dsl.html) -
   // a JSON POST body submitted to the same endpoint URL, instead of classic q=...&fq=...
-  // querystring params. Unlike classic mode, debug/wt/highlight params aren't auto-injected
-  // here - Solr expects those embedded in the body itself (e.g. under "params"), so beyond
-  // the fields/limit defaults below, the caller's own args JSON is trusted as-is.
+  // querystring params. wt isn't relevant here (the JSON API always responds JSON), but
+  // debug/highlight are the same caller-facing toggles as classic mode, just expressed as
+  // JSON body values under "params" (like explainOther() in solrSearcherFactory.js) instead
+  // of classic query-string params - see below.
   var prepareJsonQueryDslRequest = function (searcher) {
     var fieldList = searcher.fieldList;
+    var hlFieldList = searcher.hlFieldList || [];
     var config = searcher.config;
+    var queryText = searcher.queryText;
 
-    // escapeQuery: false - hydrateSearchQuery's default backslash/quote escaping is a leftover
-    // from when args here was a raw JSON string built by text interpolation, so escaping was
-    // needed to keep the result parseable. args is a parsed object now: this searcher.queryDsl
-    // is JSON.stringify'd wholesale at the transport layer (httpClient.js), which escapes
-    // string values correctly on its own - the manual escaping here only double-escapes on top
-    // of that (e.g. a literal `"` survives hydration as `\"`, then becomes `\\\"` once
-    // JSON.stringify'd, so Solr receives a literal backslash-quote instead of a quote).
+    // config.escapeQuery escapes Solr query-syntax reserved chars (same as classic mode, via
+    // solrUrlSvc.escapeUserQuery) - a caller opt-in, since whether the #$query## placeholder
+    // even lands inside a syntax-parsed clause (e.g. edismax "query") depends on the caller's
+    // own JSON template.
+    if (config.escapeQuery && typeof queryText === 'string') {
+      queryText = solrUrlSvc.escapeUserQuery(queryText);
+    }
+
+    // escapeQuery: false (hydrateSearchQuery's own option, unrelated to the above) -
+    // hydrateSearchQuery's default backslash/quote escaping is a leftover from when args here
+    // was a raw JSON string built by text interpolation, so escaping was needed to keep the
+    // result parseable. args is a parsed object now: this searcher.queryDsl is JSON.stringify'd
+    // wholesale at the transport layer (httpClient.js), which escapes string values correctly
+    // on its own - the manual escaping here only double-escapes on top of that (e.g. a literal
+    // `"` survives hydration as `\"`, then becomes `\\\"` once JSON.stringify'd, so Solr
+    // receives a literal backslash-quote instead of a quote).
     var hydratedArgs = queryTemplateSvc.hydrateSearchQuery(
       config.qOption,
       searcher.args,
-      searcher.queryText,
+      queryText,
       { escapeQuery: false },
     );
 
@@ -93,6 +105,21 @@ export function solrSearcherPreprocessorSvcConstructor(
 
     if (hydratedArgs.limit === undefined) {
       hydratedArgs.limit = config.numberOfRows;
+    }
+
+    if (config.debug) {
+      hydratedArgs.params = hydratedArgs.params || {};
+      hydratedArgs.params.debug = true;
+      hydratedArgs.params['debug.explain.structured'] = true;
+    }
+
+    if (config.highlight && hlFieldList.length > 0) {
+      hydratedArgs.params = hydratedArgs.params || {};
+      hydratedArgs.params.hl = true;
+      hydratedArgs.params['hl.method'] = 'unified'; // work around issues parsing dates and numbers
+      hydratedArgs.params['hl.fl'] = hlFieldList.join(' ');
+      hydratedArgs.params['hl.simple.pre'] = searcher.HIGHLIGHTING_PRE;
+      hydratedArgs.params['hl.simple.post'] = searcher.HIGHLIGHTING_POST;
     }
 
     searcher.queryDsl = hydratedArgs;

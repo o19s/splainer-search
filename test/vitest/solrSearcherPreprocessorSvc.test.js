@@ -112,7 +112,10 @@ describe('solrSearcherPreprocessorSvc', () => {
     // config.jsonQueryDsl is a required, explicit signal - no shape-based inference - so
     // every test here sets it directly rather than relying on args' shape to imply it.
     it('builds a queryDsl body instead of a callUrl querystring when jsonQueryDsl is true', () => {
-      var searcher = baseSearcher({ queryText: 'uniqueToken', config: { jsonQueryDsl: true } });
+      var searcher = baseSearcher({
+        queryText: 'uniqueToken',
+        config: { jsonQueryDsl: true, highlight: false },
+      });
       searcher.args = { query: 'title:#$query##' };
       solrSearcherPreprocessorSvc.prepare(searcher);
       expect(searcher.queryDsl).toEqual({
@@ -137,6 +140,97 @@ describe('solrSearcherPreprocessorSvc', () => {
       solrSearcherPreprocessorSvc.prepare(searcher);
       expect(searcher.queryDsl.fields).toBe('id');
       expect(searcher.queryDsl.limit).toBe(5);
+    });
+
+    describe('config.escapeQuery', () => {
+      it('escapes Solr query-syntax reserved characters when true', () => {
+        var searcher = baseSearcher({
+          queryText: 'title:law',
+          config: { jsonQueryDsl: true, escapeQuery: true },
+        });
+        searcher.args = { query: '#$query##' };
+        solrSearcherPreprocessorSvc.prepare(searcher);
+        expect(searcher.queryDsl.query).toBe('title\\:law');
+      });
+
+      it('leaves the query text untouched when false', () => {
+        var searcher = baseSearcher({
+          queryText: 'title:law',
+          config: { jsonQueryDsl: true, escapeQuery: false },
+        });
+        searcher.args = { query: '#$query##' };
+        solrSearcherPreprocessorSvc.prepare(searcher);
+        expect(searcher.queryDsl.query).toBe('title:law');
+      });
+    });
+
+    describe('config.debug', () => {
+      it('adds debug params nested under "params" when true', () => {
+        // Regression test: config.debug used to be a silent no-op in DSL mode - see
+        // prepareJsonQueryDslRequest's header comment.
+        var searcher = baseSearcher({
+          config: { jsonQueryDsl: true, debug: true, highlight: false },
+        });
+        searcher.args = { query: '#$query##' };
+        solrSearcherPreprocessorSvc.prepare(searcher);
+        expect(searcher.queryDsl.params).toEqual({
+          debug: true,
+          'debug.explain.structured': true,
+        });
+      });
+
+      it('does not add a "params" key when false', () => {
+        var searcher = baseSearcher({
+          config: { jsonQueryDsl: true, debug: false, highlight: false },
+        });
+        searcher.args = { query: '#$query##' };
+        solrSearcherPreprocessorSvc.prepare(searcher);
+        expect(searcher.queryDsl.params).toBeUndefined();
+      });
+    });
+
+    describe('config.highlight', () => {
+      it('adds highlight params nested under "params" when on and hlFieldList is non-empty', () => {
+        // Regression test: config.highlight used to be a silent no-op in DSL mode - see
+        // prepareJsonQueryDslRequest's header comment.
+        var searcher = baseSearcher({ config: { jsonQueryDsl: true, highlight: true, debug: false } });
+        searcher.args = { query: '#$query##' };
+        solrSearcherPreprocessorSvc.prepare(searcher);
+        expect(searcher.queryDsl.params).toEqual({
+          hl: true,
+          'hl.method': 'unified',
+          'hl.fl': 'title',
+          'hl.simple.pre': 'PRE',
+          'hl.simple.post': 'POST',
+        });
+      });
+
+      it('does not add highlight params when hlFieldList is empty', () => {
+        // Built directly rather than via baseSearcher(): deepMerge (matching utilsSvc.js
+        // semantics) merges arrays by index, so an empty-array override can't clear an
+        // already-populated default array.
+        var searcher = {
+          fieldList: ['id', 'title'],
+          hlFieldList: [],
+          url: 'http://localhost:8983/solr/core/select',
+          args: { query: '#$query##' },
+          queryText: 'findme',
+          config: { jsonQueryDsl: true, highlight: true, debug: false, numberOfRows: 10 },
+          HIGHLIGHTING_PRE: 'PRE',
+          HIGHLIGHTING_POST: 'POST',
+        };
+        solrSearcherPreprocessorSvc.prepare(searcher);
+        expect(searcher.queryDsl.params).toBeUndefined();
+      });
+
+      it('merges into params already present in the caller template instead of overwriting them', () => {
+        var searcher = baseSearcher({ config: { jsonQueryDsl: true, debug: true, highlight: true } });
+        searcher.args = { query: '#$query##', params: { explainOther: ['doc1'] } };
+        solrSearcherPreprocessorSvc.prepare(searcher);
+        expect(searcher.queryDsl.params.explainOther).toEqual(['doc1']);
+        expect(searcher.queryDsl.params.debug).toBe(true);
+        expect(searcher.queryDsl.params.hl).toBe(true);
+      });
     });
 
     describe('config.jsonQueryDsl (explicit signal, not inferred)', () => {

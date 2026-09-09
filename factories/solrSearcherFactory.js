@@ -52,6 +52,8 @@ export function SolrSearcherFactory(
     pageConfig.sanitize = false;
     pageConfig.escapeQuery = self.config.escapeQuery;
     pageConfig.apiMethod = self.config.apiMethod;
+    pageConfig.debug = self.config.debug;
+    pageConfig.highlight = self.config.highlight;
     // Required (see solrSearcherPreprocessorSvc.js's prepare()) - without carrying it over,
     // the next page would silently default back to classic (defaultSolrConfig's false) even
     // when this page is JSON Query DSL.

@@ -1628,7 +1628,7 @@ describe('searchSvc: Solr', () => {
         mockSolrUrl,
         mockJsonDslParams,
         mockQueryText,
-        { apiMethod: 'POST', jsonQueryDsl: true },
+        { apiMethod: 'POST', jsonQueryDsl: true, debug: false, highlight: false },
       );
       mockBackend
         .expectPOST(mockSolrUrl, {
@@ -1653,7 +1653,7 @@ describe('searchSvc: Solr', () => {
         mockSolrUrl,
         mockJsonDslParams,
         'say "hi"',
-        { apiMethod: 'POST', jsonQueryDsl: true },
+        { apiMethod: 'POST', jsonQueryDsl: true, escapeQuery: false, debug: false, highlight: false },
       );
       mockBackend
         .expectPOST(mockSolrUrl, function (rawBody) {
@@ -1677,7 +1677,7 @@ describe('searchSvc: Solr', () => {
         mockSolrUrl,
         mockJsonDslParams,
         mockQueryText,
-        { jsonQueryDsl: true },
+        { jsonQueryDsl: true, debug: false, highlight: false },
       );
       mockBackend
         .expectPOST(mockSolrUrl, {
@@ -1696,7 +1696,7 @@ describe('searchSvc: Solr', () => {
         mockSolrUrl,
         mockJsonDslParams,
         mockQueryText,
-        { apiMethod: 'GET', jsonQueryDsl: true },
+        { apiMethod: 'GET', jsonQueryDsl: true, debug: false, highlight: false },
       );
       mockBackend
         .expectPOST(mockSolrUrl, {
@@ -1716,7 +1716,7 @@ describe('searchSvc: Solr', () => {
         mockSolrUrl,
         mockJsonDslParams,
         mockQueryText,
-        { apiMethod: 'POST', jsonQueryDsl: true },
+        { apiMethod: 'POST', jsonQueryDsl: true, debug: false, highlight: false },
       );
       mockBackend
         .expectPOST(mockSolrUrl, {
@@ -1765,7 +1765,7 @@ describe('searchSvc: Solr', () => {
         mockSolrUrl,
         mockJsonDslParams,
         mockQueryText,
-        { apiMethod: 'POST', jsonQueryDsl: true },
+        { apiMethod: 'POST', jsonQueryDsl: true, debug: false, highlight: false },
       );
 
       mockBackend
