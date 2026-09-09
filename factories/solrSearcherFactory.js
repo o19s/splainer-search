@@ -351,7 +351,15 @@ export function SolrSearcherFactory(
 
     var originalArgs = self.args;
     self.args = utilsSvc.deepClone(self.args);
-    self.args.explainOther = [otherQuery];
+    if (self.config.jsonQueryDsl) {
+      // Solr's JSON Request API only accepts a fixed set of top-level keys (query, filter,
+      // params, etc.) and rejects unknown ones - classic request params like explainOther
+      // must be nested under "params" instead of set at the top level.
+      self.args.params = self.args.params || {};
+      self.args.params.explainOther = [otherQuery];
+    } else {
+      self.args.explainOther = [otherQuery];
+    }
     solrSearcherPreprocessorSvc.prepare(self);
 
     // First query carries out the explainOther

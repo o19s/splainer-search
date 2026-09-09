@@ -1754,5 +1754,39 @@ describe('searchSvc: Solr', () => {
       searcher.numFound = 5;
       expect(searcher.pager()).toBe(null);
     });
+
+    it('sends explainOther nested under "params" instead of as a top-level key', async () => {
+      // Regression test: Solr's JSON Request API only accepts a fixed set of top-level
+      // keys and rejects unknown ones - explainOther (a classic request param) must be
+      // nested under "params" here, not set at the top level like classic mode does -
+      // see solrSearcherFactory.js's explainOther().
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { apiMethod: 'POST', jsonQueryDsl: true },
+      );
+
+      mockBackend
+        .expectPOST(mockSolrUrl, {
+          query: 'title:' + mockQueryText,
+          params: { explainOther: ['doc1'] },
+          fields: expectedFields,
+          limit: 10,
+        })
+        .respond(200, mockResults);
+      // The second, metadata-fetch query always runs in classic mode (see
+      // solrSearcherFactory.js's explainOther() - otherSearcherOptions never carries
+      // jsonQueryDsl), independent of the original searcher's own mode.
+      mockBackend
+        .expectJSONP(urlContainsParams(mockSolrUrl, { q: ['doc1'] }))
+        .respond(200, mockResults);
+
+      await searcher.explainOther('doc1', mockFieldSpec);
+
+      expect(searcher.docs.length).toBe(2);
+      mockBackend.verifyNoOutstandingExpectation();
+    });
   });
 });
