@@ -798,7 +798,8 @@ describe('searchSvc: Solr', () => {
       var params = {
         q: ['#$query##'],
         fq: ['field:value', 'field1:value', 'field2:#$query##'],
-        wt: 'xml',
+        // Array-wrapped, matching what SolrArgParser (Rack-style) actually produces.
+        wt: ['xml'],
       };
       var searcher = searchSvc.createSearcher(
         fieldSpecWithScore,
@@ -1610,6 +1611,72 @@ describe('searchSvc: Solr', () => {
 
       expect(searcher.docs.length).toBe(2);
       mockBackend.verifyNoOutstandingExpectation();
+    });
+  });
+
+  describe('JSON Query DSL', () => {
+    var mockJsonDslParams = { query: 'title:#$query##' };
+    var expectedFields;
+
+    beforeEach(() => {
+      expectedFields = mockFieldSpec.fieldList().join(',');
+    });
+
+    it('POSTs a JSON body instead of a JSONP/GET querystring', async () => {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { apiMethod: 'POST', jsonQueryDsl: true },
+      );
+      mockBackend
+        .expectPOST(mockSolrUrl, { query: 'title:' + mockQueryText, fields: expectedFields, limit: 10 })
+        .respond(200, mockResults);
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('pages using limit/offset instead of rows/start', async () => {
+      var fullResp = { response: { numFound: 21, docs: [{ id: 'doc1' }, { id: 'doc2' }] } };
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { apiMethod: 'POST', jsonQueryDsl: true },
+      );
+      mockBackend
+        .expectPOST(mockSolrUrl, { query: 'title:' + mockQueryText, fields: expectedFields, limit: 10 })
+        .respond(200, fullResp);
+      await searcher.search();
+
+      var nextSearcher = searcher.pager();
+      mockBackend
+        .expectPOST(mockSolrUrl, {
+          // limit/offset land before fields here: pager() sets them on nextArgs before
+          // prepare() re-hydrates, whereas page 1 only had fields to add after the fact - the
+          // mock backend's body match is key-order-sensitive (Solr itself doesn't care).
+          query: 'title:' + mockQueryText,
+          limit: 10,
+          offset: 10,
+          fields: expectedFields,
+        })
+        .respond(200, fullResp);
+      await nextSearcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('pager returns null once offset reaches numFound', async () => {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { apiMethod: 'POST', jsonQueryDsl: true },
+      );
+      searcher.numFound = 5;
+      expect(searcher.pager()).toBe(null);
     });
   });
 });

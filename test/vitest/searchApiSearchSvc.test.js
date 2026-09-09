@@ -13,7 +13,8 @@ describe('searchSvc: SearchApi', () => {
   var mockSearchApiParams = { query: '#$query##' };
   var mockQueryText = 'rambo movie';
   // GET values are URL-encoded (values only, not keys); POST bodies are sent as-is.
-  var expectedGetUrl = 'http://example.com:1234/api/search?query=' + encodeURIComponent(mockQueryText);
+  var expectedGetUrl =
+    'http://example.com:1234/api/search?query=' + encodeURIComponent(mockQueryText);
 
   var expectedPayload = { query: mockQueryText };
   var mockSearchApiResults = [
@@ -42,9 +43,7 @@ describe('searchSvc: SearchApi', () => {
       { apiMethod: 'GET' },
       'searchapi',
     );
-    mockBackend
-      .expectGET(expectedGetUrl)
-      .respond(200, mockSearchApiResults);
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
     await searcher.search();
     mockBackend.verifyNoOutstandingExpectation();
   });
@@ -108,9 +107,7 @@ describe('searchSvc: SearchApi', () => {
       options,
       'searchapi',
     );
-    mockBackend
-      .expectGET(expectedGetUrl)
-      .respond(200, mockSearchApiResults);
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
 
     await searcher.search();
     mockBackend.verifyNoOutstandingExpectation();
@@ -135,9 +132,7 @@ describe('searchSvc: SearchApi', () => {
       options,
       'searchapi',
     );
-    mockBackend
-      .expectGET(expectedGetUrl)
-      .respond(200, mockSearchApiResults);
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
 
     var called = 0;
     await searcher.search().then(function () {
@@ -171,9 +166,7 @@ describe('searchSvc: SearchApi', () => {
       options,
       'searchapi',
     );
-    mockBackend
-      .expectGET(expectedGetUrl)
-      .respond(200, mockSearchApiResults);
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
 
     var called = 0;
     await searcher.search().then(function () {
@@ -238,9 +231,7 @@ describe('searchSvc: SearchApi', () => {
       'searchapi',
     );
     var initialCount = activeQueries.count;
-    mockBackend
-      .expectGET(expectedGetUrl)
-      .respond(200, mockSearchApiResults);
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
     await searcher.search();
     expect(activeQueries.count).toEqual(initialCount);
   });
@@ -255,9 +246,7 @@ describe('searchSvc: SearchApi', () => {
       options,
       'searchapi',
     );
-    mockBackend
-      .expectGET(expectedGetUrl)
-      .respond(200, mockSearchApiResults);
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
 
     var called = 0;
     await searcher.search().then(function () {
@@ -283,9 +272,7 @@ describe('searchSvc: SearchApi', () => {
       options,
       'searchapi',
     );
-    mockBackend
-      .expectGET(expectedGetUrl)
-      .respond(200, mockSearchApiResults);
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
 
     var called = 0;
     await searcher.search().then(function () {
@@ -304,9 +291,7 @@ describe('searchSvc: SearchApi', () => {
       { apiMethod: 'GET' },
       'searchapi',
     );
-    mockBackend
-      .expectGET(expectedGetUrl)
-      .respond(200, mockSearchApiResults);
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
 
     var called = 0;
     await searcher.search().then(function () {
@@ -483,9 +468,7 @@ describe('searchSvc: SearchApi', () => {
       options,
       'searchapi',
     );
-    mockBackend
-      .expectGET(expectedGetUrl)
-      .respond(200, mockSearchApiResults);
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
 
     var called = 0;
     await searcher.search().then(function () {
@@ -513,9 +496,7 @@ describe('searchSvc: SearchApi', () => {
       options,
       'searchapi',
     );
-    mockBackend
-      .expectGET(expectedGetUrl)
-      .respond(200, mockSearchApiResults);
+    mockBackend.expectGET(expectedGetUrl).respond(200, mockSearchApiResults);
 
     var called = 0;
     await searcher.search().then(function () {

@@ -42,20 +42,6 @@ export function searchApiSearcherPreprocessorSvcConstructor(queryTemplateSvc, ut
     return url + separator + paramsString;
   };
 
-  // AUTO picks GET when the fully hydrated query fits comfortably in a URL, else POST -
-  // lets callers author nicer bare-text queries (e.g. YQL) for the common case while still
-  // working once the query grows past what a GET URL can reliably carry.
-  var resolveApiMethod = function (searcher, configuredMethod, queryDsl) {
-    if (configuredMethod !== 'AUTO') {
-      return configuredMethod;
-    }
-
-    var maxGetUrlLength = searcher.config.maxGetUrlLength || DEFAULT_MAX_GET_URL_LENGTH;
-    var candidateUrl = appendParamsToUrl(searcher.url, buildGetParamsString(queryDsl));
-
-    return candidateUrl.length <= maxGetUrlLength ? 'GET' : 'POST';
-  };
-
   // Solr/ES default their own fixed-name page-size param (rows/size) from
   // config.numberOfRows in their preprocessors - Search API can't hardcode a name since
   // that's whatever the target API/mapper calls it, so the caller names the two params via
@@ -103,12 +89,28 @@ export function searchApiSearcherPreprocessorSvcConstructor(queryTemplateSvc, ut
     // a shared reference reused across paginated Searcher instances (see pager() in
     // searchApiSearcherFactory.js), so mutating it here would leak one page's AUTO decision
     // onto every other page regardless of that page's own query length.
-    searcher.apiMethod = resolveApiMethod(searcher, configuredMethod, queryDsl);
+    if (configuredMethod === 'POST') {
+      searcher.apiMethod = 'POST';
+      searcher.queryDsl = queryDsl;
+      return;
+    }
+
+    // GET and AUTO both need the candidate GET URL - AUTO to measure it, GET to use it
+    // outright - so it's built once here and reused, instead of once to measure and again
+    // to apply.
+    var getUrl = appendParamsToUrl(searcher.url, buildGetParamsString(queryDsl));
+
+    if (configuredMethod === 'AUTO') {
+      var maxGetUrlLength = searcher.config.maxGetUrlLength || DEFAULT_MAX_GET_URL_LENGTH;
+      searcher.apiMethod = getUrl.length <= maxGetUrlLength ? 'GET' : 'POST';
+    } else {
+      searcher.apiMethod = 'GET';
+    }
 
     if (searcher.apiMethod === 'POST') {
       searcher.queryDsl = queryDsl;
     } else {
-      searcher.url = appendParamsToUrl(searcher.url, buildGetParamsString(queryDsl));
+      searcher.url = getUrl;
     }
   }
 }

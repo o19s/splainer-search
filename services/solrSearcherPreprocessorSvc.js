@@ -64,12 +64,46 @@ export function solrSearcherPreprocessorSvcConstructor(
     return baseUrl;
   };
 
+  // Solr's JSON Query DSL (https://solr.apache.org/guide/solr/latest/query-guide/json-query-dsl.html) -
+  // a JSON POST body submitted to the same endpoint URL, instead of classic q=...&fq=...
+  // querystring params. Unlike classic mode, debug/wt/highlight params aren't auto-injected
+  // here - Solr expects those embedded in the body itself (e.g. under "params"), so beyond
+  // the fields/limit defaults below, the caller's own args JSON is trusted as-is.
+  var prepareJsonQueryDslRequest = function (searcher) {
+    var fieldList = searcher.fieldList;
+    var config = searcher.config;
+
+    var hydratedArgs = queryTemplateSvc.hydrateSearchQuery(
+      config.qOption,
+      searcher.args,
+      searcher.queryText,
+    );
+
+    if (!hydratedArgs.fields && fieldList) {
+      hydratedArgs.fields = fieldList === '*' ? '*' : fieldList.join(',');
+    }
+
+    if (hydratedArgs.limit === undefined) {
+      hydratedArgs.limit = config.numberOfRows;
+    }
+
+    searcher.queryDsl = hydratedArgs;
+    searcher.callUrl = searcher.url;
+    searcher.linkUrl = searcher.url;
+  };
+
   function prepare(searcher) {
     utilsSvc.mergeSearcherConfig(searcher, defaultSolrConfig);
 
-    searcher.callUrl = buildCallUrl(searcher);
+    // config.jsonQueryDsl is a required, explicit signal - no shape-based inference - and
+    // defaults to false, so every caller that doesn't set it explicitly gets classic behavior.
+    if (searcher.config.jsonQueryDsl) {
+      prepareJsonQueryDslRequest(searcher);
+    } else {
+      searcher.callUrl = buildCallUrl(searcher);
 
-    searcher.linkUrl = searcher.callUrl.replace('wt=xml', 'wt=json');
-    searcher.linkUrl = searcher.linkUrl + '&indent=true&echoParams=all';
+      searcher.linkUrl = searcher.callUrl.replace('wt=xml', 'wt=json');
+      searcher.linkUrl = searcher.linkUrl + '&indent=true&echoParams=all';
+    }
   }
 }

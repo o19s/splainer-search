@@ -12,6 +12,7 @@ describe('defaultSolrConfig', () => {
     expect(defaultSolrConfig.numberOfRows).toBe(10);
     expect(defaultSolrConfig.escapeQuery).toBe(true);
     expect(defaultSolrConfig.apiMethod).toBe('JSONP');
+    expect(defaultSolrConfig.jsonQueryDsl).toBe(false);
   });
 
   it('has exactly the expected keys', () => {
@@ -20,6 +21,7 @@ describe('defaultSolrConfig', () => {
       'debug',
       'escapeQuery',
       'highlight',
+      'jsonQueryDsl',
       'numberOfRows',
       'sanitize',
     ]);
