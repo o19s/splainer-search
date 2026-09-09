@@ -97,7 +97,8 @@ describe('searchApiSearcherPreprocessorSvc', () => {
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.url.indexOf('http://example.com/api?')).toBe(0);
-    expect(searcher.url).toContain('query=#$query##');
+    // GET param values are URL-encoded; #$query## (unsubstituted, since queryText is null) encodes to this.
+    expect(searcher.url).toContain('query=%23%24query%23%23');
     expect(searcher.url).toContain('rows=10');
   });
 
@@ -164,6 +165,74 @@ describe('searchApiSearcherPreprocessorSvc', () => {
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.queryDsl).toEqual({ yql: 'select * from sources *' });
+  });
+
+  describe('AUTO apiMethod', () => {
+    it('picks GET when the hydrated query fits within maxGetUrlLength', () => {
+      var searcher = {
+        config: { apiMethod: 'AUTO', qOption: null, maxGetUrlLength: 100 },
+        args: { yql: '#$query##' },
+        queryText: 'select * from movies where true',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('GET');
+      expect(searcher.url).toContain('yql=');
+      expect(searcher.queryDsl).toBeUndefined();
+    });
+
+    it('picks POST when the hydrated query exceeds maxGetUrlLength', () => {
+      var searcher = {
+        config: { apiMethod: 'AUTO', qOption: null, maxGetUrlLength: 20 },
+        args: { yql: '#$query##' },
+        queryText: 'select * from movies where title contains "a long query that will not fit"',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('POST');
+      expect(searcher.queryDsl).toEqual({
+        yql: 'select * from movies where title contains \\"a long query that will not fit\\"',
+      });
+      expect(searcher.url).toBe('http://example.com/search');
+    });
+
+    it('falls back to the default max length when maxGetUrlLength is not configured', () => {
+      var searcher = {
+        config: { apiMethod: 'AUTO', qOption: null },
+        args: { yql: '#$query##' },
+        queryText: 'select * from movies where true',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('GET');
+    });
+
+    it('does not mutate searcher.config when resolving AUTO', () => {
+      var config = { apiMethod: 'AUTO', qOption: null, maxGetUrlLength: 100 };
+      var searcher = {
+        config: config,
+        args: { yql: '#$query##' },
+        queryText: 'select * from movies where true',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(config.apiMethod).toBe('AUTO');
+      expect(searcher.apiMethod).toBe('GET');
+    });
+
+    it('URL-encodes GET param values', () => {
+      var searcher = {
+        config: { apiMethod: 'GET', qOption: null },
+        args: { yql: '#$query##' },
+        queryText: 'title contains matrix and year > 1990',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.url).toBe(
+        'http://example.com/search?yql=' +
+          encodeURIComponent('title contains matrix and year > 1990'),
+      );
+    });
   });
 
   it('warns and leaves args untouched when only one of paginationHitsParam/paginationOffsetParam is configured', () => {

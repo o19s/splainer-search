@@ -47,14 +47,52 @@ export function SolrSearcherFactory(
     found.docs.push(solrDoc);
   }
 
-  // return a new searcher that will give you
-  // the next page upon search(). To get the subsequent
-  // page, call pager on that searcher ad infinidum
-  function pager() {
-    var self = this;
+  var buildPagerOptions = function (self, nextArgs) {
+    var pageConfig = utilsSvc.deepClone(defaultSolrConfig);
+    pageConfig.sanitize = false;
+    pageConfig.escapeQuery = self.config.escapeQuery;
+    pageConfig.apiMethod = self.config.apiMethod;
+    // Required (see solrSearcherPreprocessorSvc.js's prepare()) - without carrying it over,
+    // the next page would silently default back to classic (defaultSolrConfig's false) even
+    // when this page is JSON Query DSL.
+    pageConfig.jsonQueryDsl = self.config.jsonQueryDsl;
+    if (self.config && self.config.signal !== undefined) {
+      pageConfig.signal = self.config.signal;
+    }
+
+    return {
+      fieldList: self.fieldList,
+      hlFieldList: self.hlFieldList,
+      url: self.url,
+      args: nextArgs,
+      queryText: self.queryText,
+      config: pageConfig,
+      type: self.type,
+      HIGHLIGHTING_PRE: self.HIGHLIGHTING_PRE,
+      HIGHLIGHTING_POST: self.HIGHLIGHTING_POST,
+    };
+  };
+
+  // JSON Query DSL pages by limit/offset (scalar values), not classic Solr's rows/start
+  // (array-wrapped) - self.queryDsl is only set by solrSearcherPreprocessorSvc's
+  // prepareJsonQueryDslRequest, so it's a reliable way to tell which shape self.args is in.
+  var jsonQueryDslPager = function (self, nextArgs) {
+    var limit = typeof nextArgs.limit === 'number' ? nextArgs.limit : self.config.numberOfRows;
+    var offset = typeof nextArgs.offset === 'number' ? nextArgs.offset + limit : limit;
+
+    if (offset >= self.numFound) {
+      return null; // no more results
+    }
+
+    nextArgs.limit = limit;
+    nextArgs.offset = offset;
+
+    return new Searcher(buildPagerOptions(self, nextArgs));
+  };
+
+  var classicPager = function (self, nextArgs) {
     var start = 0;
     var rows = self.config.numberOfRows;
-    var nextArgs = utilsSvc.deepClone(self.args);
 
     if (Object.hasOwn(nextArgs, 'rows') && nextArgs.rows !== null) {
       rows = parseInt(nextArgs.rows);
@@ -72,29 +110,20 @@ export function SolrSearcherFactory(
 
     nextArgs.rows = ['' + rows];
     nextArgs.start = ['' + start];
-    var pageConfig = utilsSvc.deepClone(defaultSolrConfig);
-    pageConfig.sanitize = false;
-    pageConfig.escapeQuery = self.config.escapeQuery;
-    pageConfig.apiMethod = self.config.apiMethod;
-    if (self.config && self.config.signal !== undefined) {
-      pageConfig.signal = self.config.signal;
-    }
 
-    var options = {
-      fieldList: self.fieldList,
-      hlFieldList: self.hlFieldList,
-      url: self.url,
-      args: nextArgs,
-      queryText: self.queryText,
-      config: pageConfig,
-      type: self.type,
-      HIGHLIGHTING_PRE: self.HIGHLIGHTING_PRE,
-      HIGHLIGHTING_POST: self.HIGHLIGHTING_POST,
-    };
+    return new Searcher(buildPagerOptions(self, nextArgs));
+  };
 
-    var nextSearcher = new Searcher(options);
+  // return a new searcher that will give you
+  // the next page upon search(). To get the subsequent
+  // page, call pager on that searcher ad infinidum
+  function pager() {
+    var self = this;
+    var nextArgs = utilsSvc.deepClone(self.args);
 
-    return nextSearcher;
+    return self.queryDsl !== undefined
+      ? jsonQueryDslPager(self, nextArgs)
+      : classicPager(self, nextArgs);
   }
 
   // search (execute the query) and produce results
@@ -231,9 +260,15 @@ export function SolrSearcherFactory(
 
     var transport = transportSvc.getTransport({ apiMethod: apiMethod, proxyUrl: proxyUrl });
 
+    // Classic mode bakes everything into the URL's querystring and sends no body (even when
+    // apiMethod is 'POST' - Solr accepts params via the URL regardless of HTTP verb). JSON
+    // Query DSL mode (solrSearcherPreprocessorSvc's prepareJsonQueryDslRequest) sets
+    // self.queryDsl instead, which needs to actually go out as the request body.
+    var payload = self.queryDsl !== undefined ? self.queryDsl : null;
+
     activeQueries.count++;
     return transport
-      .query(url, null, headers, transportRequestOpts(self.config))
+      .query(url, payload, headers, transportRequestOpts(self.config))
       .then(
         function success(resp) {
           var solrResp = resp.data;

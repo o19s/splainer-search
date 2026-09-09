@@ -14,6 +14,7 @@ describe('solrSearcherPreprocessorSvc', () => {
     numberOfRows: 10,
     escapeQuery: true,
     apiMethod: 'JSONP',
+    jsonQueryDsl: false,
   };
 
   beforeEach(() => {
@@ -105,5 +106,64 @@ describe('solrSearcherPreprocessorSvc', () => {
     solrSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.linkUrl).toContain('indent=true');
     expect(searcher.linkUrl).toContain('echoParams=all');
+  });
+
+  describe('JSON Query DSL', () => {
+    // config.jsonQueryDsl is a required, explicit signal - no shape-based inference - so
+    // every test here sets it directly rather than relying on args' shape to imply it.
+    it('builds a queryDsl body instead of a callUrl querystring when jsonQueryDsl is true', () => {
+      var searcher = baseSearcher({ queryText: 'uniqueToken', config: { jsonQueryDsl: true } });
+      searcher.args = { query: 'title:#$query##' };
+      solrSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.queryDsl).toEqual({
+        query: 'title:uniqueToken',
+        fields: 'id,title',
+        limit: 10,
+      });
+      expect(searcher.callUrl).toBe('http://localhost:8983/solr/core/select');
+      expect(searcher.linkUrl).toBe('http://localhost:8983/solr/core/select');
+    });
+
+    it('hydrates the query wherever it appears, including nested objects', () => {
+      var searcher = baseSearcher({ queryText: 'findme', config: { jsonQueryDsl: true } });
+      searcher.args = { query: { edismax: { query: 'title:#$query##' } } };
+      solrSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.queryDsl.query).toEqual({ edismax: { query: 'title:findme' } });
+    });
+
+    it('does not override an explicit fields or limit already in query_params', () => {
+      var searcher = baseSearcher({ config: { jsonQueryDsl: true } });
+      searcher.args = { query: '#$query##', fields: 'id', limit: 5 };
+      solrSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.queryDsl.fields).toBe('id');
+      expect(searcher.queryDsl.limit).toBe(5);
+    });
+
+    describe('config.jsonQueryDsl (explicit signal, not inferred)', () => {
+      it('true always takes the JSON DSL path, regardless of args shape', () => {
+        var searcher = baseSearcher({ config: { jsonQueryDsl: true } });
+        searcher.args = { q: ['#$query##'] };
+        solrSearcherPreprocessorSvc.prepare(searcher);
+        expect(searcher.queryDsl).toBeDefined();
+        expect(searcher.callUrl).toBe('http://localhost:8983/solr/core/select');
+      });
+
+      it('false always takes the classic path, regardless of args shape', () => {
+        var searcher = baseSearcher({ config: { jsonQueryDsl: false } });
+        searcher.args = { query: '#$query##' };
+        solrSearcherPreprocessorSvc.prepare(searcher);
+        expect(searcher.queryDsl).toBeUndefined();
+        expect(searcher.callUrl).toContain('http://localhost:8983/solr/core/select?');
+      });
+
+      it('defaults to the classic path (false) when left unset', () => {
+        var searcher = baseSearcher();
+        searcher.args = { q: ['#$query##'] };
+        solrSearcherPreprocessorSvc.prepare(searcher);
+        expect(searcher.config.jsonQueryDsl).toBe(false);
+        expect(searcher.queryDsl).toBeUndefined();
+        expect(searcher.callUrl).toContain('http://localhost:8983/solr/core/select?');
+      });
+    });
   });
 });
