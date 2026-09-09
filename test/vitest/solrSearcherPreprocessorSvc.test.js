@@ -115,7 +115,11 @@ describe('solrSearcherPreprocessorSvc', () => {
       var searcher = baseSearcher({ queryText: 'uniqueToken', config: { jsonQueryDsl: true } });
       searcher.args = { query: 'title:#$query##' };
       solrSearcherPreprocessorSvc.prepare(searcher);
-      expect(searcher.queryDsl).toEqual({ query: 'title:uniqueToken', fields: 'id,title', limit: 10 });
+      expect(searcher.queryDsl).toEqual({
+        query: 'title:uniqueToken',
+        fields: 'id,title',
+        limit: 10,
+      });
       expect(searcher.callUrl).toBe('http://localhost:8983/solr/core/select');
       expect(searcher.linkUrl).toBe('http://localhost:8983/solr/core/select');
     });

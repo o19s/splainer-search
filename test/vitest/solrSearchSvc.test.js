@@ -1631,7 +1631,11 @@ describe('searchSvc: Solr', () => {
         { apiMethod: 'POST', jsonQueryDsl: true },
       );
       mockBackend
-        .expectPOST(mockSolrUrl, { query: 'title:' + mockQueryText, fields: expectedFields, limit: 10 })
+        .expectPOST(mockSolrUrl, {
+          query: 'title:' + mockQueryText,
+          fields: expectedFields,
+          limit: 10,
+        })
         .respond(200, mockResults);
       await searcher.search();
       mockBackend.verifyNoOutstandingExpectation();
@@ -1647,7 +1651,11 @@ describe('searchSvc: Solr', () => {
         { apiMethod: 'POST', jsonQueryDsl: true },
       );
       mockBackend
-        .expectPOST(mockSolrUrl, { query: 'title:' + mockQueryText, fields: expectedFields, limit: 10 })
+        .expectPOST(mockSolrUrl, {
+          query: 'title:' + mockQueryText,
+          fields: expectedFields,
+          limit: 10,
+        })
         .respond(200, fullResp);
       await searcher.search();
 
