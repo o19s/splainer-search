@@ -124,7 +124,19 @@ export function solrSearcherPreprocessorSvcConstructor(
 
     searcher.queryDsl = hydratedArgs;
     searcher.callUrl = searcher.url;
-    searcher.linkUrl = searcher.url;
+
+    // A JSON DSL request is a POST body, so callUrl alone (used for the actual request) has
+    // nothing to click through to. Solr also accepts the JSON body as a "json" query
+    // parameter (https://solr.apache.org/guide/solr/latest/query-guide/json-request-api.html)
+    // - equivalent to the POST body - so linkUrl (display-only, e.g. Quepid's "open in Solr"
+    // affordance) embeds the query there instead of losing it.
+    var linkUrlSeparator = searcher.url.indexOf('?') === -1 ? '?' : '&';
+    searcher.linkUrl =
+      searcher.url +
+      linkUrlSeparator +
+      'json=' +
+      encodeURIComponent(JSON.stringify(hydratedArgs)) +
+      '&indent=true&echoParams=all';
 
     // Resolved onto the searcher instance, not searcher.config (a shared reference reused
     // across paginated instances - see solrSearcherFactory.js's buildPagerOptions). JSONP and

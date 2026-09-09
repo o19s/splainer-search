@@ -124,7 +124,27 @@ describe('solrSearcherPreprocessorSvc', () => {
         limit: 10,
       });
       expect(searcher.callUrl).toBe('http://localhost:8983/solr/core/select');
-      expect(searcher.linkUrl).toBe('http://localhost:8983/solr/core/select');
+    });
+
+    it('embeds the full JSON body as a "json" query param in linkUrl instead of a bare endpoint URL', () => {
+      // Regression test: linkUrl (Quepid's "open in Solr" affordance - see queriesSvc.js)
+      // used to be set to the bare endpoint URL in DSL mode, losing the query entirely -
+      // Solr accepts the JSON body as a "json" query parameter, equivalent to the POST body
+      // (https://solr.apache.org/guide/solr/latest/query-guide/json-request-api.html), so
+      // embed it there instead.
+      var searcher = baseSearcher({
+        queryText: 'findme',
+        config: { jsonQueryDsl: true, debug: true, highlight: false },
+      });
+      searcher.args = { query: 'title:#$query##' };
+      solrSearcherPreprocessorSvc.prepare(searcher);
+
+      expect(searcher.callUrl).toBe('http://localhost:8983/solr/core/select');
+      var linkUrl = new URL(searcher.linkUrl);
+      expect(linkUrl.origin + linkUrl.pathname).toBe('http://localhost:8983/solr/core/select');
+      expect(linkUrl.searchParams.get('indent')).toBe('true');
+      expect(linkUrl.searchParams.get('echoParams')).toBe('all');
+      expect(JSON.parse(linkUrl.searchParams.get('json'))).toEqual(searcher.queryDsl);
     });
 
     it('hydrates the query wherever it appears, including nested objects', () => {
