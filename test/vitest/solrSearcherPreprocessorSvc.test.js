@@ -213,7 +213,9 @@ describe('solrSearcherPreprocessorSvc', () => {
       it('adds highlight params nested under "params" when on and hlFieldList is non-empty', () => {
         // Regression test: config.highlight used to be a silent no-op in DSL mode - see
         // prepareJsonQueryDslRequest's header comment.
-        var searcher = baseSearcher({ config: { jsonQueryDsl: true, highlight: true, debug: false } });
+        var searcher = baseSearcher({
+          config: { jsonQueryDsl: true, highlight: true, debug: false },
+        });
         searcher.args = { query: '#$query##' };
         solrSearcherPreprocessorSvc.prepare(searcher);
         expect(searcher.queryDsl.params).toEqual({
@@ -244,7 +246,9 @@ describe('solrSearcherPreprocessorSvc', () => {
       });
 
       it('merges into params already present in the caller template instead of overwriting them', () => {
-        var searcher = baseSearcher({ config: { jsonQueryDsl: true, debug: true, highlight: true } });
+        var searcher = baseSearcher({
+          config: { jsonQueryDsl: true, debug: true, highlight: true },
+        });
         searcher.args = { query: '#$query##', params: { explainOther: ['doc1'] } };
         solrSearcherPreprocessorSvc.prepare(searcher);
         expect(searcher.queryDsl.params.explainOther).toEqual(['doc1']);

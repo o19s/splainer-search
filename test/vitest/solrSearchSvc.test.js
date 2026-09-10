@@ -1655,15 +1655,24 @@ describe('searchSvc: Solr', () => {
         mockSolrUrl,
         mockJsonDslParams,
         'say "hi"',
-        { apiMethod: 'POST', jsonQueryDsl: true, escapeQuery: false, debug: false, highlight: false },
+        {
+          apiMethod: 'POST',
+          jsonQueryDsl: true,
+          escapeQuery: false,
+          debug: false,
+          highlight: false,
+        },
       );
       mockBackend
         .expectPOST(mockSolrUrl, function (rawBody) {
-          return rawBody === JSON.stringify({
-            query: 'title:say "hi"',
-            fields: expectedFields,
-            limit: 10,
-          });
+          return (
+            rawBody ===
+            JSON.stringify({
+              query: 'title:say "hi"',
+              fields: expectedFields,
+              limit: 10,
+            })
+          );
         })
         .respond(200, mockResults);
       await searcher.search();

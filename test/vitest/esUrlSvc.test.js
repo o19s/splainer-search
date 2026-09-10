@@ -232,9 +232,7 @@ describe('esUrlSvc', () => {
   describe('escape user query', () => {
     it('escapes query_string/simple_query_string reserved characters', () => {
       var escaped = esUrlSvc.escapeUserQuery('+-=&|><!(){}[]^"~*?:\\/');
-      expect(escaped).toBe(
-        '\\+\\-\\=\\&\\|\\>\\<\\!\\(\\)\\{\\}\\[\\]\\^\\"\\~\\*\\?\\:\\\\\\/',
-      );
+      expect(escaped).toBe('\\+\\-\\=\\&\\|\\>\\<\\!\\(\\)\\{\\}\\[\\]\\^\\"\\~\\*\\?\\:\\\\\\/');
     });
 
     it('escapes boolean operators (AND/OR/NOT)', () => {
