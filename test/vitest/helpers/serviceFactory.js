@@ -188,14 +188,6 @@ export function getSearchSvc(httpClient) {
   return wiredFor(httpClient).searchSvc;
 }
 
-export function getSettingsValidatorFactory(httpClient) {
-  return wiredFor(httpClient).settingsValidatorFactory;
-}
-
-export function getResolverFactory(httpClient) {
-  return wiredFor(httpClient).resolverFactory;
-}
-
 export function getDocResolverSvc(httpClient) {
   return wiredFor(httpClient).docResolverSvc;
 }

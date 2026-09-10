@@ -21,6 +21,8 @@ export function VectaraSearcherFactory(
   Searcher.prototype.addDocToGroup = addDocToGroup;
   Searcher.prototype.pager = pager;
   Searcher.prototype.search = search;
+  Searcher.prototype.fetchDocs = fetchDocs;
+  Searcher.prototype._extractSourceDoc = extractSourceDoc;
 
   function addDocToGroup(groupedBy, group, vectaraDoc) {
     const self = this;
@@ -153,6 +155,29 @@ export function VectaraSearcherFactory(
         throw response;
       });
   } // end of search()
+
+  // Vectara has no endpoint to retrieve documents directly by id - querying with empty args
+  // appears to behave (see docResolverSvc.js history), so every requested id normalizes to a
+  // "Missing Doc" placeholder via _normalizeFetchedDocs unless it happens to come back anyway.
+  function fetchDocs(ids, fieldSpec, chunkSize) {
+    var self = this;
+
+    if (chunkSize !== undefined) {
+      return self._fetchDocsChunked(ids, fieldSpec, chunkSize);
+    }
+
+    return self._fetchOneOffDocs(ids, fieldSpec, {});
+  }
+
+  // Vectara returns doc properties in a metadata array of {name, value} pairs rather than a
+  // flat object - flatten it for validateUrl()'s field discovery.
+  function extractSourceDoc(doc) {
+    var fieldsFromDocumentMetadata = doc.doc.metadata.reduce(function (map, obj) {
+      map[obj.name] = obj.value;
+      return map;
+    }, {});
+    return Object.assign({ id: doc.doc.id }, fieldsFromDocumentMetadata);
+  }
 
   // Return factory object
   return Searcher;

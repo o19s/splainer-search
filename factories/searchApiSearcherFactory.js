@@ -21,6 +21,7 @@ export function SearchApiSearcherFactory(
   Searcher.prototype.addDocToGroup = addDocToGroup;
   Searcher.prototype.pager = pager;
   Searcher.prototype.search = search;
+  Searcher.prototype.fetchDocs = fetchDocs;
 
   function addDocToGroup(_groupedBy, _group, _searchApiDoc) {
     console.log('addDocToGroup');
@@ -179,6 +180,23 @@ export function SearchApiSearcherFactory(
         throw response;
       });
   } // end of search()
+
+  // A generic Search API endpoint has no standard way to look documents up directly by id -
+  // querying with empty args appears to behave (see docResolverSvc.js history), so every
+  // requested id normalizes to a "Missing Doc" placeholder via _normalizeFetchedDocs unless it
+  // happens to come back anyway.
+  function fetchDocs(ids, fieldSpec, chunkSize) {
+    var self = this;
+
+    if (chunkSize !== undefined) {
+      return self._fetchDocsChunked(ids, fieldSpec, chunkSize);
+    }
+
+    // self.url may already have a querystring baked into it in place (see pager()'s comment
+    // above - prepareGetRequest does this for GET/AUTO) - self.originalUrl is the pristine,
+    // pre-request URL, so the resolver's own args aren't appended onto a stale querystring.
+    return self._fetchOneOffDocs(ids, fieldSpec, {}, null, self.originalUrl);
+  }
 
   // Return factory object
   return Searcher;

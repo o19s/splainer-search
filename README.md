@@ -381,6 +381,26 @@ explainSearcher.explainOther('id:63148');
 
 The `explainOther()` function returns the same promise as the `search()` function so you can retrieve the results in the same way.
 
+## Validating a search endpoint
+
+Before wiring up a real query, it's often useful to check that a URL/settings combination actually works and to discover what fields come back - this is what powers the "test this endpoint" step in tools like Quepid's Create-a-Case wizard.
+
+`searchSvc.createValidator(settings)` returns a searcher pre-configured with a sensible default query for the given `settings.searchEngine` (Solr: `q=*:*`; Elasticsearch/OpenSearch: match everything; Vectara: a sample query against `corpusKey: 1`; anything else uses `settings.args` as-is, if provided). Call `validateUrl()` on it, then inspect `.fields` (every field seen across the returned docs) and `.idFields` (fields present on every doc - candidates for a unique id field):
+
+```js
+var validator = searchSvc.createValidator({
+  searchEngine: 'solr',
+  searchUrl: 'http://localhost:8983/solr/select',
+});
+
+validator.validateUrl().then(function () {
+  console.log('Available fields:', validator.fields);
+  console.log('Candidate id fields:', validator.idFields);
+});
+```
+
+`validator.fields`/`validator.idFields` start out as empty arrays as soon as `createValidator()` returns, so it's safe to read them even before `validateUrl()` resolves - or without ever calling it at all, for example if a user opts to skip validation.
+
 ## Normalizing docs with normalDocs/fieldSpec
 
 This library was originally written for dealing with debug tools such as [Quepid](http://quepid.com) and [Splainer](http://splainer.io). As such, it provides a lot of help taking a user specified list of fields and associated roles, then once search is done turning the raw docs out of the Solr searcher into something more normalized based on that config (a normalDoc).
@@ -434,6 +454,39 @@ searcher.search()
   }
 });
 ```
+
+## Resolving documents by ID
+
+Given a case/report built independently of live search results (for example, a saved snapshot, or a list of previously-rated document ids), you often need to fetch just those specific documents back from the search engine to redisplay them. `docResolverSvc` does that lookup and returns the same NormalDocs described above.
+
+```js
+var resolver = docResolverSvc.createResolver(
+  ['doc1', 'doc2', 'doc3'],
+  {
+    searchEngine: 'solr',
+    searchUrl: 'http://localhost:8983/solr/select',
+    createFieldSpec: function () {
+      return fieldSpecSvc.createFieldSpec('id title body');
+    },
+  },
+);
+
+resolver.fetchDocs().then(function () {
+  for (const doc of resolver.docs) {
+    console.log(doc.id, doc.title);
+  }
+});
+```
+
+Any id that isn't found comes back as a placeholder "Missing Doc" stub instead of being silently dropped, so the result always has exactly one entry per requested id, in the order requested.
+
+Pass a `chunkSize` as the third argument to split a large id list into parallel batched requests instead of one huge query:
+
+```js
+resolver = docResolverSvc.createResolver(hundredsOfIds, settings, 50); // 50 ids per request
+```
+
+Not every search engine supports looking documents up directly by id - Vectara and a generic Custom Search API endpoint don't have a standard way to do this, so every requested id comes back as a placeholder stub for those two engines.
 
 ## Specifying search engine version number
 

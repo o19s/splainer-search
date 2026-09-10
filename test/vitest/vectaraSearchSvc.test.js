@@ -323,4 +323,26 @@ describe('searchSvc: Vectara', () => {
       expect(searcher.grouped.category[1].value).toEqual('groupB');
     });
   });
+
+  describe('validateUrl / _extractSourceDoc', () => {
+    beforeEach(() => {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockVectaraUrl,
+        mockVectaraParam,
+        mockQueryText,
+        {},
+        'vectara',
+      );
+    });
+
+    it('flattens the metadata array into a field map for field discovery', async () => {
+      mockBackend.expectPOST(mockVectaraUrl).respond(200, mockVectaraResults);
+
+      await searcher.validateUrl();
+
+      expect(searcher.fields.sort()).toEqual(['field1', 'field2', 'id']);
+      expect(searcher.idFields).toEqual(['id', 'field1', 'field2']);
+    });
+  });
 });

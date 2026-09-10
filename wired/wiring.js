@@ -42,8 +42,6 @@ import { HttpPostTransportFactory } from '../factories/httpPostTransportFactory.
 import { HttpJsonpTransportFactory } from '../factories/httpJsonpTransportFactory.js';
 import { HttpProxyTransportFactory } from '../factories/httpProxyTransportFactory.js';
 import { BulkTransportFactory } from '../factories/bulkTransportFactory.js';
-import { SettingsValidatorFactory } from '../factories/settingsValidatorFactory.js';
-import { ResolverFactory } from '../factories/resolverFactory.js';
 import { SolrSearcherFactory } from '../factories/solrSearcherFactory.js';
 import { EsSearcherFactory } from '../factories/esSearcherFactory.js';
 import { VectaraSearcherFactory } from '../factories/vectaraSearcherFactory.js';
@@ -171,7 +169,7 @@ export function createWiredServices(httpClient) {
   }
 
   var transportConstructor = TransportFactory();
-  var searcherConstructor = SearcherFactory();
+  var searcherConstructor = SearcherFactory(normalDocsSvc(), utilsSvc());
   var docConstructor = DocFactory(utilsSvc());
   var esDocConstructor = EsDocFactory(esUrlSvc(), docConstructor, utilsSvc());
   var solrDocConstructor = SolrDocFactory(docConstructor, solrUrlSvc(), utilsSvc());
@@ -255,13 +253,10 @@ export function createWiredServices(httpClient) {
     defaultSolrConfig,
     customHeadersJson(),
     utilsSvc(),
+    fieldSpecSvc(),
   );
 
-  var settingsValidatorFactory = SettingsValidatorFactory(fieldSpecSvc(), searchSvc, utilsSvc());
-
-  var resolverFactory = ResolverFactory(searchSvc, solrUrlSvc(), normalDocsSvc(), utilsSvc());
-
-  var docResolverSvc = new docResolverSvcConstructor(resolverFactory);
+  var docResolverSvc = new docResolverSvcConstructor(searchSvc, utilsSvc());
 
   var utilsSvcInst = utilsSvc();
   var customHeadersJsonInst = customHeadersJson();
@@ -307,8 +302,6 @@ export function createWiredServices(httpClient) {
     searchApiSearcherPreprocessorSvc: searchApiSearcherPreprocessorSvcInst,
     transportSvc: transportSvc,
     searchSvc: searchSvc,
-    settingsValidatorFactory: settingsValidatorFactory,
-    resolverFactory: resolverFactory,
     docResolverSvc: docResolverSvc,
     transportConstructor: transportConstructor,
     searcherConstructor: searcherConstructor,

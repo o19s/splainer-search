@@ -137,4 +137,50 @@ describe('searchSvc', () => {
       expect(searcher.config.customHeaders).toBeUndefined();
     });
   });
+
+  describe('createValidator', () => {
+    it('defaults Solr to a match-all query, ignoring settings.args', () => {
+      var validator = searchSvc.createValidator({
+        searchEngine: 'solr',
+        searchUrl: 'http://localhost:8983/solr/core/select',
+        args: { q: ['should be ignored'] },
+      });
+      expect(validator.args).toEqual({ q: ['*:*'] });
+    });
+
+    it('defaults Vectara to a sample corpus query, ignoring settings.args', () => {
+      var validator = searchSvc.createValidator({
+        searchEngine: 'vectara',
+        searchUrl: 'https://api.vectara.io:443/v1/query',
+        args: { should: 'be ignored' },
+      });
+      expect(validator.args.query[0].corpusKey[0].corpusId).toBe(1);
+    });
+
+    it('requests every field (fields: "*") for engines other than ES/OS', () => {
+      var validator = searchSvc.createValidator({
+        searchEngine: 'solr',
+        searchUrl: 'http://localhost:8983/solr/core/select',
+      });
+      expect(validator.fieldList).toBe('*');
+    });
+
+    it('honors explicit settings.args for ES/OS and SearchAPI/Algolia', () => {
+      var esValidator = searchSvc.createValidator({
+        searchEngine: 'es',
+        searchUrl: mockEsUrl,
+        args: { query: { match_all: {} } },
+      });
+      expect(esValidator.args).toEqual({ query: { match_all: {} } });
+    });
+
+    it('starts with empty fields/idFields before validateUrl runs (Skip Validation flow)', () => {
+      var validator = searchSvc.createValidator({
+        searchEngine: 'solr',
+        searchUrl: 'http://localhost:8983/solr/core/select',
+      });
+      expect(validator.fields).toEqual([]);
+      expect(validator.idFields).toEqual([]);
+    });
+  });
 });

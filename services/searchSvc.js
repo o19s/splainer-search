@@ -1,5 +1,36 @@
 'use strict';
 
+// createValidator()'s per-engine default smoke-test args, for engines that need a
+// non-empty query to return any real docs (an empty {} args wouldn't). Always used
+// regardless of settings.args - a caller-supplied args wouldn't necessarily produce a
+// representative field list either. Engines not listed here use settings.args (or {})
+// as-is.
+var VALIDATOR_ARGS_BY_ENGINE = {
+  solr: { q: ['*:*'] },
+  // When we have a caseOptions or engineOptions hash available, then this could look
+  // like "corpusId: '#$searchOptions['corpusId]##"
+  vectara: {
+    query: [
+      {
+        query: '#$query##',
+        numResults: 10,
+        corpusKey: [
+          {
+            corpusId: 1,
+          },
+        ],
+      },
+    ],
+  },
+};
+
+// createValidator()'s per-engine fieldSpec fields string. Only ES/OS need '*' overridden
+// to null; everything else uses the default '*' (all fields).
+var VALIDATOR_FIELDS_BY_ENGINE = {
+  es: null,
+  os: null,
+};
+
 // Executes a generic search and returns
 // a set of generic documents
 export function searchSvcConstructor(
@@ -12,6 +43,7 @@ export function searchSvcConstructor(
   defaultSolrConfig,
   customHeadersJson,
   utilsSvc,
+  fieldSpecSvc,
 ) {
   var svc = this;
 
@@ -90,6 +122,29 @@ export function searchSvcConstructor(
     }
 
     return searcher;
+  };
+
+  // Creates a searcher pre-configured to run a smoke-test query against `settings` and (via
+  // its inherited validateUrl()) discover the fields/candidate id fields it returns. Each
+  // engine defaults to a sensible "give me some real docs" query when settings.args wasn't
+  // explicitly provided.
+  this.createValidator = function (settings) {
+    var searchEngine = settings.searchEngine;
+    var args = Object.hasOwn(VALIDATOR_ARGS_BY_ENGINE, searchEngine)
+      ? VALIDATOR_ARGS_BY_ENGINE[searchEngine]
+      : settings.args || {};
+    var fields = Object.hasOwn(VALIDATOR_FIELDS_BY_ENGINE, searchEngine)
+      ? VALIDATOR_FIELDS_BY_ENGINE[searchEngine]
+      : '*';
+
+    return svc.createSearcher(
+      fieldSpecSvc.createFieldSpec(fields),
+      settings.searchUrl,
+      args,
+      '',
+      settings,
+      searchEngine,
+    );
   };
 
   this.activeQueries = function () {

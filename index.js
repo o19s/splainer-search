@@ -41,8 +41,6 @@ export { HttpPostTransportFactory } from './factories/httpPostTransportFactory.j
 export { HttpJsonpTransportFactory } from './factories/httpJsonpTransportFactory.js';
 export { HttpProxyTransportFactory } from './factories/httpProxyTransportFactory.js';
 export { BulkTransportFactory } from './factories/bulkTransportFactory.js';
-export { SettingsValidatorFactory } from './factories/settingsValidatorFactory.js';
-export { ResolverFactory } from './factories/resolverFactory.js';
 export { SolrSearcherFactory } from './factories/solrSearcherFactory.js';
 export { EsSearcherFactory } from './factories/esSearcherFactory.js';
 export { VectaraSearcherFactory } from './factories/vectaraSearcherFactory.js';

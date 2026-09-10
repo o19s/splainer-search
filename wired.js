@@ -103,6 +103,5 @@ function defineLazyWiredProp(name) {
   'explainSvc',
   'vectorSvc',
   'queryTemplateSvc',
-  'settingsValidatorFactory',
   'transportSvc',
 ].forEach(defineLazyWiredProp);

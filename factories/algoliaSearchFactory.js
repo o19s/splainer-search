@@ -22,6 +22,7 @@ export function AlgoliaSearcherFactory(
   Searcher.prototype.pager = pager;
   Searcher.prototype.search = search;
   Searcher.prototype.getTransportParameters = getTransportParameters;
+  Searcher.prototype.fetchDocs = fetchDocs;
 
   function addDocToGroup(_groupedBy, _group, _algoliaDoc) {
     console.log('addDocToGroup');
@@ -216,6 +217,18 @@ export function AlgoliaSearcherFactory(
         throw response;
       });
   } // end of search()
+
+  // Fetches documents from Algolia by their IDs via the objects endpoint, with optional
+  // chunking (see SearcherFactory.prototype._fetchDocsChunked).
+  function fetchDocs(ids, fieldSpec, chunkSize) {
+    var self = this;
+
+    if (chunkSize !== undefined) {
+      return self._fetchDocsChunked(ids, fieldSpec, chunkSize);
+    }
+
+    return self._fetchOneOffDocs(ids, fieldSpec, { objectIds: ids, retrieveObjects: true });
+  }
 
   // Return factory object
   return Searcher;

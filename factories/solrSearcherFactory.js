@@ -23,6 +23,7 @@ export function SolrSearcherFactory(
   Searcher.prototype.pager = pager;
   Searcher.prototype.search = search;
   Searcher.prototype.explainOther = explainOther;
+  Searcher.prototype.fetchDocs = fetchDocs;
   Searcher.prototype.queryDetails = {};
 
   function addDocToGroup(groupedBy, group, solrDoc) {
@@ -422,6 +423,24 @@ export function SolrSearcherFactory(
         console.debug('Failed to run explainOther');
         throw response;
       });
+  }
+
+  // Fetches documents from Solr by their IDs, with optional chunking (see
+  // SearcherFactory.prototype._fetchDocsChunked).
+  function fetchDocs(ids, fieldSpec, chunkSize) {
+    var self = this;
+
+    if (chunkSize !== undefined) {
+      return self._fetchDocsChunked(ids, fieldSpec, chunkSize);
+    }
+
+    var queryText = fieldSpec.id + ':(' + ids.join(' OR ') + ')';
+    return self._fetchOneOffDocs(
+      ids,
+      fieldSpec,
+      { defType: ['lucene'], rows: [ids.length], q: ['#$query##'] },
+      queryText,
+    );
   }
 
   // Return factory object

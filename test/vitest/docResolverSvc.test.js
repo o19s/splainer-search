@@ -637,10 +637,18 @@ describe('docResolverSvc', () => {
       };
     });
 
-    it('creates a resolver that sets no args for vectara (no direct doc fetch)', () => {
+    it('queries with no args (no direct doc fetch support) and stubs every requested id', async () => {
       var resolver = docResolverSvc.createResolver(['id-1', 'id-2'], mockVectaraSettings);
-      expect(resolver.searcher).toBeDefined();
-      expect(resolver.searcher.type).toBe('vectara');
+
+      mockBackend.expectPOST(mockVectaraUrl).respond(200, {
+        responseSet: [{ document: [] }],
+      });
+
+      await resolver.fetchDocs();
+
+      expect(resolver.docs.map((d) => d.id)).toEqual(['id-1', 'id-2']);
+      expect(resolver.docs[0].title).toBe('Missing Doc: id-1');
+      mockBackend.verifyNoOutstandingExpectation();
     });
   });
 
@@ -659,10 +667,16 @@ describe('docResolverSvc', () => {
       };
     });
 
-    it('creates a resolver that sets no args for searchapi (no direct doc fetch)', () => {
+    it('queries with no args (no direct doc fetch support) and stubs every requested id', async () => {
       var resolver = docResolverSvc.createResolver(['id-1', 'id-2'], mockSearchApiSettings);
-      expect(resolver.searcher).toBeDefined();
-      expect(resolver.searcher.type).toBe('searchapi');
+
+      mockBackend.expectGET(/^http:\/\/example\.com\/api\/search/).respond(200, {});
+
+      await resolver.fetchDocs();
+
+      expect(resolver.docs.map((d) => d.id)).toEqual(['id-1', 'id-2']);
+      expect(resolver.docs[0].title).toBe('Missing Doc: id-1');
+      mockBackend.verifyNoOutstandingExpectation();
     });
   });
 
@@ -687,25 +701,47 @@ describe('docResolverSvc', () => {
 
   describe('Resolver config propagation', () => {
     var mockSolrUrl = 'http://example.com:1234/collection1/select';
+    var mockSolrResp = { response: { numFound: 1, docs: [{ id: 'doc1', field1: 'title1' }] } };
 
-    it('propagates optional settings (version, proxyUrl, customHeaders) into config', () => {
+    it('propagates proxyUrl by prefixing the outbound request URL', async () => {
       var settings = {
         createFieldSpec: function () {
           return mockFieldSpec;
         },
         searchUrl: mockSolrUrl,
-        version: '8.0',
         proxyUrl: 'http://proxy.example.com/',
-        customHeaders: '{"X-Test": "value"}',
         apiMethod: 'GET',
       };
       var resolver = docResolverSvc.createResolver(['doc1'], settings);
-      expect(resolver.config.version).toBe('8.0');
-      expect(resolver.config.proxyUrl).toBe('http://proxy.example.com/');
-      expect(resolver.config.apiMethod).toBe('GET');
+
+      mockBackend.expectGET(/^http:\/\/proxy\.example\.com\//).respond(200, mockSolrResp);
+
+      await resolver.fetchDocs();
+      mockBackend.verifyNoOutstandingExpectation();
     });
 
-    it('propagates basicAuthCredential and merges it into customHeaders', () => {
+    it('propagates customHeaders onto the outbound request', async () => {
+      var settings = {
+        createFieldSpec: function () {
+          return mockFieldSpec;
+        },
+        searchUrl: mockSolrUrl,
+        customHeaders: JSON.stringify({ 'X-Test': 'value' }),
+        apiMethod: 'GET',
+      };
+      var resolver = docResolverSvc.createResolver(['doc1'], settings);
+
+      mockBackend
+        .expectGET(new RegExp('^' + mockSolrUrl.replace(/[.]/g, '\\.')), function (headers) {
+          return headers['X-Test'] === 'value' || headers['x-test'] === 'value';
+        })
+        .respond(200, mockSolrResp);
+
+      await resolver.fetchDocs();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('propagates basicAuthCredential as an Authorization header', async () => {
       var settings = {
         createFieldSpec: function () {
           return mockFieldSpec;
@@ -715,20 +751,16 @@ describe('docResolverSvc', () => {
         apiMethod: 'GET',
       };
       var resolver = docResolverSvc.createResolver(['doc1'], settings);
-      expect(resolver.config.basicAuthCredential).toBe('user:pass');
-    });
 
-    it('does not set optional config keys when they are undefined in settings', () => {
-      var settings = {
-        createFieldSpec: function () {
-          return mockFieldSpec;
-        },
-        searchUrl: mockSolrUrl,
-      };
-      var resolver = docResolverSvc.createResolver(['doc1'], settings);
-      expect(resolver.config.version).toBeUndefined();
-      expect(resolver.config.proxyUrl).toBeUndefined();
-      expect(resolver.config.customHeaders).toBeUndefined();
+      mockBackend
+        .expectGET(new RegExp('^' + mockSolrUrl.replace(/[.]/g, '\\.')), function (headers) {
+          var expected = 'Basic ' + btoa('user:pass');
+          return headers['Authorization'] === expected || headers['authorization'] === expected;
+        })
+        .respond(200, mockSolrResp);
+
+      await resolver.fetchDocs();
+      mockBackend.verifyNoOutstandingExpectation();
     });
   });
 });

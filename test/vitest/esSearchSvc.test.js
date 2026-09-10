@@ -1286,4 +1286,40 @@ describe('searchSvc: ElasticSearch', () => {
       expect(called).toEqual(1);
     });
   });
+
+  describe('validateUrl / _extractSourceDoc', () => {
+    beforeEach(() => {
+      searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        mockEsParams,
+        mockQueryText,
+        {},
+        'es',
+      );
+    });
+
+    it('folds _id into the extracted field map and reports it as always present', async () => {
+      mockBackend.expectPOST(mockEsUrl).respond(200, mockES7Results);
+
+      await searcher.validateUrl();
+
+      expect(searcher.fields).toContain('_id');
+      expect(searcher.fields).toContain('field');
+      expect(searcher.idFields).toContain('_id');
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('still reports _id even when the validation search returns zero hits', async () => {
+      mockBackend.expectPOST(mockEsUrl).respond(200, {
+        hits: { total: { value: 0, relation: 'eq' }, max_score: null, hits: [] },
+      });
+
+      await searcher.validateUrl();
+
+      expect(searcher.fields).toEqual(['_id']);
+      expect(searcher.idFields).toEqual(['_id']);
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+  });
 });

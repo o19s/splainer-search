@@ -50,6 +50,11 @@ export function EsSearcherFactory(
   Searcher.prototype.majorVersion = majorVersion;
   Searcher.prototype.isTemplateCall = isTemplateCall;
   Searcher.prototype.renderTemplate = renderTemplate;
+  Searcher.prototype.fetchDocs = fetchDocs;
+  Searcher.prototype._extractSourceDoc = extractSourceDoc;
+  // ES/OS documents always have an _id, even if a validation search happens to return zero
+  // hits to discover it from via _extractSourceDoc.
+  Searcher.prototype._alwaysPresentFields = ['_id'];
 
   function addDocToGroup(groupedBy, group, solrDoc) {
     var self = this;
@@ -478,6 +483,33 @@ export function EsSearcherFactory(
         console.debug('Failed to render template');
         throw response;
       });
+  }
+
+  // Fetches documents from Elasticsearch/OpenSearch by their IDs, with optional chunking (see
+  // SearcherFactory.prototype._fetchDocsChunked).
+  function fetchDocs(ids, fieldSpec, chunkSize) {
+    var self = this;
+
+    if (chunkSize !== undefined) {
+      return self._fetchDocsChunked(ids, fieldSpec, chunkSize);
+    }
+
+    // self.url may already have a querystring baked into it in place for GET requests (see
+    // esSearcherPreprocessorSvc.js's prepareGetRequest) - self.originalUrl is the pristine,
+    // pre-request URL, so the resolver's own args aren't appended onto a stale querystring.
+    return self._fetchOneOffDocs(
+      ids,
+      fieldSpec,
+      { query: { terms: { [fieldSpec.id]: ids } }, size: ids.length },
+      null,
+      self.originalUrl,
+    );
+  }
+
+  // ES/OS documents always carry their own _id outside of _source - fold it into the returned
+  // field map for validateUrl()'s field discovery.
+  function extractSourceDoc(doc) {
+    return Object.assign({ _id: doc.doc._id }, doc.doc._source);
   }
 
   // Return factory object

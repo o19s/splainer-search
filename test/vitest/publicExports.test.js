@@ -42,8 +42,6 @@ var ROOT_EXPORT_NAMES = [
   'HttpJsonpTransportFactory',
   'HttpProxyTransportFactory',
   'BulkTransportFactory',
-  'SettingsValidatorFactory',
-  'ResolverFactory',
   'SolrSearcherFactory',
   'EsSearcherFactory',
   'VectaraSearcherFactory',
