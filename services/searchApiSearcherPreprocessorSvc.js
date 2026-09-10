@@ -105,7 +105,10 @@ export function searchApiSearcherPreprocessorSvcConstructor(queryTemplateSvc, ut
     var getUrl = appendParamsToUrl(searcher.url, buildGetParamsString(queryDsl));
 
     if (configuredMethod === 'AUTO') {
-      var maxGetUrlLength = searcher.config.maxGetUrlLength || DEFAULT_MAX_GET_URL_LENGTH;
+      var maxGetUrlLength =
+        searcher.config.maxGetUrlLength !== undefined
+          ? searcher.config.maxGetUrlLength
+          : DEFAULT_MAX_GET_URL_LENGTH;
       // httpProxyTransportFactory.js prepends config.proxyUrl onto the request URL at query
       // time, after this decision is made - measure that prefix too, or a proxied request
       // that's actually too long for a GET still goes out as one.

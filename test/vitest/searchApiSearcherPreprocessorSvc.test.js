@@ -74,7 +74,11 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       url: 'http://example.com/api',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
-    expect(searcher.queryDsl).toBe(dsl);
+    expect(searcher.queryDsl).toEqual(dsl);
+    // Not the same reference: queryDsl is caller-owned (e.g. reused across searches), and
+    // this preprocessor's own callers (e.g. pager()) add fields onto the returned value -
+    // that must not mutate the caller's original dsl object.
+    expect(searcher.queryDsl).not.toBe(dsl);
   });
 
   it('leaves backslashes and double quotes in string queryText untouched before POST hydration', () => {
@@ -208,6 +212,17 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       };
       searchApiSearcherPreprocessorSvc.prepare(searcher);
       expect(searcher.apiMethod).toBe('GET');
+    });
+
+    it('honors an explicit maxGetUrlLength of 0 instead of treating it as unset', () => {
+      var searcher = {
+        config: { apiMethod: 'AUTO', qOption: null, maxGetUrlLength: 0 },
+        args: { yql: '#$query##' },
+        queryText: 'select * from movies where true',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('POST');
     });
 
     it('does not mutate searcher.config when resolving AUTO', () => {
