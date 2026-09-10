@@ -47,9 +47,15 @@ describe('esSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'POST', numberOfRows: 10, qOption: 'query' },
     };
     esSearcherPreprocessorSvc.prepare(searcher);
-    expect(searcher.queryDsl).toBe(dsl);
-    expect(dsl.explain).toBe(true);
-    expect(dsl.profile).toBe(true);
+    expect(searcher.queryDsl).toEqual(
+      expect.objectContaining({ query: { match_all: {} }, explain: true, profile: true }),
+    );
+    // Not the same reference: queryDsl is caller-owned (e.g. reused across searches), and
+    // preparePostRequest adds explain/profile/highlight onto the returned value - that must
+    // not mutate the caller's original dsl object.
+    expect(searcher.queryDsl).not.toBe(dsl);
+    expect(dsl.explain).toBeUndefined();
+    expect(dsl.profile).toBeUndefined();
   });
 
   it('POST: omits _id from highlight fields when _source lists _id', () => {
@@ -70,10 +76,46 @@ describe('esSearcherPreprocessorSvc', () => {
       url: 'http://localhost:9200/i/_search',
       args: {},
       queryText: 'foo',
-      config: { apiMethod: 'GET', numberOfRows: 15 },
+      config: { apiMethod: 'GET', numberOfRows: 15, escapeQuery: false },
     };
     esSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.url.indexOf('q=foo')).not.toBe(-1);
     expect(searcher.url.indexOf('size=15')).not.toBe(-1);
+  });
+
+  describe('config.escapeQuery', () => {
+    it('POST: escapes query_string-reserved characters by default', () => {
+      var searcher = {
+        fieldList: ['a'],
+        args: { query: { query_string: { query: '#$query##' } } },
+        queryText: 'title:law',
+        config: { apiMethod: 'POST', qOption: 'query', numberOfRows: 10 },
+      };
+      esSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.queryDsl.query.query_string.query).toBe('title\\:law');
+    });
+
+    it('POST: leaves the query text untouched when escapeQuery is false', () => {
+      var searcher = {
+        fieldList: ['a'],
+        args: { query: { query_string: { query: '#$query##' } } },
+        queryText: 'title:law',
+        config: { apiMethod: 'POST', qOption: 'query', numberOfRows: 10, escapeQuery: false },
+      };
+      esSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.queryDsl.query.query_string.query).toBe('title:law');
+    });
+
+    it('GET: escapes query_string-reserved characters in the ?q= param by default', () => {
+      var searcher = {
+        fieldList: null,
+        url: 'http://localhost:9200/i/_search',
+        args: {},
+        queryText: 'title:law',
+        config: { apiMethod: 'GET', numberOfRows: 15 },
+      };
+      esSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.url).toContain('q=' + encodeURIComponent('title\\:law'));
+    });
   });
 });

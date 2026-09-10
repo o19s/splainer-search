@@ -1,43 +1,49 @@
 'use strict';
 
+// Used when config.apiMethod is 'AUTO' and config.maxGetUrlLength isn't set.
+var DEFAULT_MAX_GET_URL_LENGTH = 2000;
+
 export function searchApiSearcherPreprocessorSvcConstructor(queryTemplateSvc, utilsSvc) {
   var self = this;
   self.prepare = prepare;
 
   var replaceQuery = function (qOption, args, queryText) {
-    return queryTemplateSvc.hydrateSearchQuery(qOption, args, queryText);
+    // escapeQuery: false - see solrSearcherPreprocessorSvc.js's prepareJsonQueryDslRequest for
+    // why: args is a parsed object, JSON.stringify'd wholesale at the transport layer, which
+    // already escapes string values correctly - hydrateSearchQuery's own escaping only
+    // double-escapes on top of that.
+    return queryTemplateSvc.hydrateSearchQuery(qOption, args, queryText, { escapeQuery: false });
   };
 
-  var prepareGetRequest = function (searcher) {
-    var queryDsl = replaceQuery(searcher.config.qOption, searcher.args, searcher.queryText);
+  var buildGetParamsString = function (queryDsl) {
     var paramsAsStrings = [];
 
     if (typeof queryDsl === 'object' && queryDsl !== null) {
+      // queryDsl is a {key: value, ...} map (e.g. from JSON args like {yql: "..."}) - encode
+      // each value, since it's caller-supplied content that may contain reserved URL chars.
       utilsSvc.safeForEach(queryDsl, function (value, key) {
-        paramsAsStrings.push(key + '=' + value);
+        paramsAsStrings.push(key + '=' + encodeURIComponent(value));
       });
     } else {
-      var queryDslAsQueryString = queryDsl.toString();
-      paramsAsStrings.push(queryDslAsQueryString);
+      // queryDsl is already a fully-formed query string fragment (e.g. Solr-style raw
+      // query_params like 'q=foo&fq=bar'), not a single value - the caller owns its
+      // formatting/escaping, so it's passed through as-is rather than encoded wholesale.
+      paramsAsStrings.push(queryDsl.toString());
     }
-    var finalUrl = searcher.url;
-    var hasQuery = finalUrl.indexOf('?') !== -1;
-    var endsWithQuestion = finalUrl.substring(finalUrl.length - 1) === '?';
+
+    return paramsAsStrings.join('&');
+  };
+
+  var appendParamsToUrl = function (url, paramsString) {
+    var hasQuery = url.indexOf('?') !== -1;
+    var endsWithQuestion = url.substring(url.length - 1) === '?';
     var separator = '?';
 
     if (hasQuery) {
       separator = endsWithQuestion ? '' : '&';
     }
 
-    finalUrl += separator + paramsAsStrings.join('&');
-
-    searcher.url = finalUrl;
-  };
-
-  var preparePostRequest = function (searcher) {
-    var queryDsl = replaceQuery(searcher.config.qOption, searcher.args, searcher.queryText);
-
-    searcher.queryDsl = queryDsl;
+    return url + separator + paramsString;
   };
 
   // Solr/ES default their own fixed-name page-size param (rows/size) from
@@ -75,10 +81,47 @@ export function searchApiSearcherPreprocessorSvcConstructor(queryTemplateSvc, ut
   function prepare(searcher) {
     applyPaginationDefaults(searcher);
 
-    if (searcher.config.apiMethod === 'POST') {
-      preparePostRequest(searcher);
-    } else if (searcher.config.apiMethod === 'GET') {
-      prepareGetRequest(searcher);
+    var configuredMethod = searcher.config.apiMethod;
+
+    if (configuredMethod !== 'POST' && configuredMethod !== 'GET' && configuredMethod !== 'AUTO') {
+      return;
+    }
+
+    var queryDsl = replaceQuery(searcher.config.qOption, searcher.args, searcher.queryText);
+
+    // Resolved onto the searcher instance, never written back onto searcher.config: config is
+    // a shared reference reused across paginated Searcher instances (see pager() in
+    // searchApiSearcherFactory.js), so mutating it here would leak one page's AUTO decision
+    // onto every other page regardless of that page's own query length.
+    if (configuredMethod === 'POST') {
+      searcher.apiMethod = 'POST';
+      searcher.queryDsl = queryDsl;
+      return;
+    }
+
+    // GET and AUTO both need the candidate GET URL - AUTO to measure it, GET to use it
+    // outright - so it's built once here and reused, instead of once to measure and again
+    // to apply.
+    var getUrl = appendParamsToUrl(searcher.url, buildGetParamsString(queryDsl));
+
+    if (configuredMethod === 'AUTO') {
+      var maxGetUrlLength =
+        searcher.config.maxGetUrlLength !== undefined
+          ? searcher.config.maxGetUrlLength
+          : DEFAULT_MAX_GET_URL_LENGTH;
+      // httpProxyTransportFactory.js prepends config.proxyUrl onto the request URL at query
+      // time, after this decision is made - measure that prefix too, or a proxied request
+      // that's actually too long for a GET still goes out as one.
+      var proxyUrl = searcher.config.proxyUrl || '';
+      searcher.apiMethod = proxyUrl.length + getUrl.length <= maxGetUrlLength ? 'GET' : 'POST';
+    } else {
+      searcher.apiMethod = 'GET';
+    }
+
+    if (searcher.apiMethod === 'POST') {
+      searcher.queryDsl = queryDsl;
+    } else {
+      searcher.url = getUrl;
     }
   }
 }

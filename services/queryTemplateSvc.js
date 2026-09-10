@@ -1,6 +1,6 @@
 'use strict';
 
-export function queryTemplateSvcConstructor() {
+export function queryTemplateSvcConstructor(utilsSvc) {
   var self = this;
   self.hydrate = hydrate;
   self.hydrateSearchQuery = hydrateSearchQuery;
@@ -117,7 +117,11 @@ export function queryTemplateSvcConstructor() {
     }
 
     if (queryText === null || queryText === undefined) {
-      return template;
+      // Clone before returning: template is caller-owned (e.g. searcher.args), and callers
+      // of hydrate/hydrateSearchQuery (solrSearcherPreprocessorSvc's prepareJsonQueryDslRequest)
+      // add their own defaults (fields, limit, params) onto the returned value. Without a
+      // clone here, that mutates the caller's own template object in place.
+      return utilsSvc.deepClone(template);
     }
 
     const parameters = Object.create(null);
@@ -154,7 +158,11 @@ export function queryTemplateSvcConstructor() {
     const useEscape = templateOptions.escapeQuery !== false;
 
     if (useObjectOverride && queryText instanceof Object) {
-      return queryText;
+      // Clone before returning: queryText here is a caller-owned full-DSL override (e.g. a
+      // shared/reused args object), and callers add their own defaults onto the returned
+      // value (see the hydrate() null/undefined branch above for the same concern). Without
+      // a clone, that mutates the caller's object in place instead of a fresh copy.
+      return utilsSvc.deepClone(queryText);
     }
 
     var qt = queryText;

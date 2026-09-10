@@ -74,10 +74,17 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       url: 'http://example.com/api',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
-    expect(searcher.queryDsl).toBe(dsl);
+    expect(searcher.queryDsl).toEqual(dsl);
+    // Not the same reference: queryDsl is caller-owned (e.g. reused across searches), and
+    // this preprocessor's own callers (e.g. pager()) add fields onto the returned value -
+    // that must not mutate the caller's original dsl object.
+    expect(searcher.queryDsl).not.toBe(dsl);
   });
 
-  it('escapes backslashes and double quotes in string queryText before POST hydration', () => {
+  it('leaves backslashes and double quotes in string queryText untouched before POST hydration', () => {
+    // queryDsl is JSON.stringify'd wholesale at the transport layer (httpClient.js), which
+    // already escapes string values correctly - hydrating with escapeQuery: false here avoids
+    // double-escaping on top of that (see replaceQuery above).
     var searcher = {
       config: { apiMethod: 'POST', qOption: null },
       args: { q: '#$query##' },
@@ -85,7 +92,7 @@ describe('searchApiSearcherPreprocessorSvc', () => {
       url: 'http://example.com/api',
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
-    expect(searcher.queryDsl).toEqual({ q: 'a\\\\b\\"c' });
+    expect(searcher.queryDsl).toEqual({ q: 'a\\b"c' });
   });
 
   it('GET with null queryText still builds params from template object', () => {
@@ -97,7 +104,8 @@ describe('searchApiSearcherPreprocessorSvc', () => {
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.url.indexOf('http://example.com/api?')).toBe(0);
-    expect(searcher.url).toContain('query=#$query##');
+    // GET param values are URL-encoded; #$query## (unsubstituted, since queryText is null) encodes to this.
+    expect(searcher.url).toContain('query=%23%24query%23%23');
     expect(searcher.url).toContain('rows=10');
   });
 
@@ -164,6 +172,122 @@ describe('searchApiSearcherPreprocessorSvc', () => {
     };
     searchApiSearcherPreprocessorSvc.prepare(searcher);
     expect(searcher.queryDsl).toEqual({ yql: 'select * from sources *' });
+  });
+
+  describe('AUTO apiMethod', () => {
+    it('picks GET when the hydrated query fits within maxGetUrlLength', () => {
+      var searcher = {
+        config: { apiMethod: 'AUTO', qOption: null, maxGetUrlLength: 100 },
+        args: { yql: '#$query##' },
+        queryText: 'select * from movies where true',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('GET');
+      expect(searcher.url).toContain('yql=');
+      expect(searcher.queryDsl).toBeUndefined();
+    });
+
+    it('picks POST when the hydrated query exceeds maxGetUrlLength', () => {
+      var searcher = {
+        config: { apiMethod: 'AUTO', qOption: null, maxGetUrlLength: 20 },
+        args: { yql: '#$query##' },
+        queryText: 'select * from movies where title contains "a long query that will not fit"',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('POST');
+      expect(searcher.queryDsl).toEqual({
+        yql: 'select * from movies where title contains "a long query that will not fit"',
+      });
+      expect(searcher.url).toBe('http://example.com/search');
+    });
+
+    it('falls back to the default max length when maxGetUrlLength is not configured', () => {
+      var searcher = {
+        config: { apiMethod: 'AUTO', qOption: null },
+        args: { yql: '#$query##' },
+        queryText: 'select * from movies where true',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('GET');
+    });
+
+    it('honors an explicit maxGetUrlLength of 0 instead of treating it as unset', () => {
+      var searcher = {
+        config: { apiMethod: 'AUTO', qOption: null, maxGetUrlLength: 0 },
+        args: { yql: '#$query##' },
+        queryText: 'select * from movies where true',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('POST');
+    });
+
+    it('does not mutate searcher.config when resolving AUTO', () => {
+      var config = { apiMethod: 'AUTO', qOption: null, maxGetUrlLength: 100 };
+      var searcher = {
+        config: config,
+        args: { yql: '#$query##' },
+        queryText: 'select * from movies where true',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(config.apiMethod).toBe('AUTO');
+      expect(searcher.apiMethod).toBe('GET');
+    });
+
+    it('accounts for the proxy URL prefix when deciding GET vs POST', () => {
+      // Regression test: httpProxyTransportFactory.js prepends config.proxyUrl onto the
+      // request URL at query time, after this AUTO decision is made - a request whose
+      // unprefixed URL fits under maxGetUrlLength can still be too long once proxied.
+      // getUrl here is 'http://example.com/search?yql=abc' (33 chars); proxyUrl adds 20
+      // more (53 total), which exceeds maxGetUrlLength even though getUrl alone doesn't.
+      var searcher = {
+        config: {
+          apiMethod: 'AUTO',
+          qOption: null,
+          maxGetUrlLength: 35,
+          proxyUrl: 'http://proxy.local/p',
+        },
+        args: { yql: '#$query##' },
+        queryText: 'abc',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('POST');
+    });
+
+    it('still picks GET when the proxy-prefixed URL fits within maxGetUrlLength', () => {
+      var searcher = {
+        config: {
+          apiMethod: 'AUTO',
+          qOption: null,
+          maxGetUrlLength: 60,
+          proxyUrl: 'http://proxy.local/p',
+        },
+        args: { yql: '#$query##' },
+        queryText: 'abc',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.apiMethod).toBe('GET');
+    });
+
+    it('URL-encodes GET param values', () => {
+      var searcher = {
+        config: { apiMethod: 'GET', qOption: null },
+        args: { yql: '#$query##' },
+        queryText: 'title contains matrix and year > 1990',
+        url: 'http://example.com/search',
+      };
+      searchApiSearcherPreprocessorSvc.prepare(searcher);
+      expect(searcher.url).toBe(
+        'http://example.com/search?yql=' +
+          encodeURIComponent('title contains matrix and year > 1990'),
+      );
+    });
   });
 
   it('warns and leaves args untouched when only one of paginationHitsParam/paginationOffsetParam is configured', () => {

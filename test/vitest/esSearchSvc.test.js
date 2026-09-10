@@ -629,7 +629,16 @@ describe('searchSvc: ElasticSearch', () => {
     it('replaces vars no URI encode', async () => {
       var qt = 'taco&burrito';
       var params = { query: { term: { text: '#$query##' } } };
-      var searcher = searchSvc.createSearcher(mockFieldSpec, mockEsUrl, params, qt, {}, 'es');
+      // escapeQuery: false - a term clause does no syntax parsing, so escaping its value would
+      // be wrong; this test is about var substitution, not escaping.
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        params,
+        qt,
+        { escapeQuery: false },
+        'es',
+      );
       mockBackend
         .expectPOST(mockEsUrl, function (data) {
           var esQuery = JSON.parse(data);
@@ -643,7 +652,15 @@ describe('searchSvc: ElasticSearch', () => {
     it('replaces keywords vars', async () => {
       var qt = 'taco&burrito purina headphone';
       var params = { query: { term: { text: '#$keyword1## #$query## #$keyword2##' } } };
-      var searcher = searchSvc.createSearcher(mockFieldSpec, mockEsUrl, params, qt, {}, 'es');
+      // escapeQuery: false - see 'replaces vars no URI encode' above.
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockEsUrl,
+        params,
+        qt,
+        { escapeQuery: false },
+        'es',
+      );
       mockBackend
         .expectPOST(mockEsUrl, function (data) {
           var esQuery = JSON.parse(data);

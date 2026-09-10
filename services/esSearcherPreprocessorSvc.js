@@ -1,6 +1,11 @@
 'use strict';
 
-export function esSearcherPreprocessorSvcConstructor(queryTemplateSvc, defaultESConfig, utilsSvc) {
+export function esSearcherPreprocessorSvcConstructor(
+  esUrlSvc,
+  queryTemplateSvc,
+  defaultESConfig,
+  utilsSvc,
+) {
   var self = this;
 
   // Attributes
@@ -10,8 +15,19 @@ export function esSearcherPreprocessorSvcConstructor(queryTemplateSvc, defaultES
   // Functions
   self.prepare = prepare;
 
-  var replaceQuery = function (qOption, args, queryText) {
-    return queryTemplateSvc.hydrateSearchQuery(qOption, args, queryText);
+  var replaceQuery = function (qOption, args, queryText, escapeQuery) {
+    // config.escapeQuery escapes ES/OS query_string/simple_query_string reserved chars (see
+    // esUrlSvc.escapeUserQuery) - a caller opt-in, same as Solr's classic mode, since whether a
+    // query_string clause is even in play depends on the caller's own query template.
+    if (escapeQuery && typeof queryText === 'string') {
+      queryText = esUrlSvc.escapeUserQuery(queryText);
+    }
+
+    // escapeQuery: false (hydrateSearchQuery's own option, unrelated to the above) - see
+    // solrSearcherPreprocessorSvc.js's prepareJsonQueryDslRequest for why: args is a parsed
+    // object, JSON.stringify'd wholesale at the transport layer, which already escapes string
+    // values correctly - hydrateSearchQuery's own escaping only double-escapes on top of that.
+    return queryTemplateSvc.hydrateSearchQuery(qOption, args, queryText, { escapeQuery: false });
   };
 
   var prepareHighlighting = function (args, fields) {
@@ -59,7 +75,12 @@ export function esSearcherPreprocessorSvcConstructor(queryTemplateSvc, defaultES
     searcher.pagerArgs = utilsSvc.deepMerge({}, defaultPagerArgs, pagerArgs);
     delete searcher.args.pager;
 
-    var queryDsl = replaceQuery(searcher.config.qOption, searcher.args, searcher.queryText);
+    var queryDsl = replaceQuery(
+      searcher.config.qOption,
+      searcher.args,
+      searcher.queryText,
+      searcher.config.escapeQuery,
+    );
     queryDsl.explain = true;
     queryDsl.profile = true;
 
@@ -77,7 +98,13 @@ export function esSearcherPreprocessorSvcConstructor(queryTemplateSvc, defaultES
   };
 
   var prepareGetRequest = function (searcher) {
-    searcher.url = searcher.url + '?q=' + encodeURIComponent(searcher.queryText);
+    // GET's ?q= is always parsed as query_string syntax (unlike POST, where it depends on the
+    // caller's own query template), so escaping here is unambiguous - same as Solr classic.
+    var queryText =
+      searcher.config.escapeQuery && typeof searcher.queryText === 'string'
+        ? esUrlSvc.escapeUserQuery(searcher.queryText)
+        : searcher.queryText;
+    searcher.url = searcher.url + '?q=' + encodeURIComponent(queryText);
 
     var pagerArgs = utilsSvc.deepClone(searcher.args.pager);
     delete searcher.args.pager;

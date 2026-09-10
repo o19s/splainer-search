@@ -798,7 +798,8 @@ describe('searchSvc: Solr', () => {
       var params = {
         q: ['#$query##'],
         fq: ['field:value', 'field1:value', 'field2:#$query##'],
-        wt: 'xml',
+        // Array-wrapped, matching what SolrArgParser (Rack-style) actually produces.
+        wt: ['xml'],
       };
       var searcher = searchSvc.createSearcher(
         fieldSpecWithScore,
@@ -1607,6 +1608,193 @@ describe('searchSvc: Solr', () => {
         .respond(200, mockSolrResp);
 
       await searcher.explainOther('title:doc1', mockFieldSpec);
+
+      expect(searcher.docs.length).toBe(2);
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+  });
+
+  describe('JSON Query DSL', () => {
+    var mockJsonDslParams = { query: 'title:#$query##' };
+    var expectedFields;
+
+    beforeEach(() => {
+      expectedFields = mockFieldSpec.fieldList().join(',');
+    });
+
+    it('POSTs a JSON body instead of a JSONP/GET querystring', async () => {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { apiMethod: 'POST', jsonQueryDsl: true, debug: false, highlight: false },
+      );
+      mockBackend
+        .expectPOST(mockSolrUrl, {
+          query: 'title:' + mockQueryText,
+          fields: expectedFields,
+          limit: 10,
+        })
+        .respond(200, mockResults);
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('does not double-escape quotes/backslashes in the query text', async () => {
+      // Regression test: hydrateSearchQuery used to backslash-escape `"`/`\` by default, then
+      // JSON.stringify (httpClient.js) escaped the *result* again when building the wire body -
+      // so a literal `"` in the query text arrived at Solr as a literal backslash-quote instead
+      // of a quote. Compare against the raw wire body (via a body matcher), not just the parsed
+      // JS object, since JSON.parse in the mock backend's default matching would silently undo
+      // a single level of that double-escaping and mask the bug.
+      // escapeQuery: false - isolates this from config.escapeQuery's own (correct, single)
+      // Lucene-syntax escaping, which is covered separately.
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        'say "hi"',
+        {
+          apiMethod: 'POST',
+          jsonQueryDsl: true,
+          escapeQuery: false,
+          debug: false,
+          highlight: false,
+        },
+      );
+      mockBackend
+        .expectPOST(mockSolrUrl, function (rawBody) {
+          return (
+            rawBody ===
+            JSON.stringify({
+              query: 'title:say "hi"',
+              fields: expectedFields,
+              limit: 10,
+            })
+          );
+        })
+        .respond(200, mockResults);
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('forces POST even when apiMethod defaults to JSONP', async () => {
+      // Regression test: JSONP (and GET) can't carry a body at all - see
+      // httpJsonpTransportFactory.js, which takes a payload argument and never uses it - so
+      // jsonQueryDsl alone, with no explicit apiMethod, used to silently send an empty request.
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { jsonQueryDsl: true, debug: false, highlight: false },
+      );
+      mockBackend
+        .expectPOST(mockSolrUrl, {
+          query: 'title:' + mockQueryText,
+          fields: expectedFields,
+          limit: 10,
+        })
+        .respond(200, mockResults);
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('forces POST even when apiMethod is explicitly GET', async () => {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { apiMethod: 'GET', jsonQueryDsl: true, debug: false, highlight: false },
+      );
+      mockBackend
+        .expectPOST(mockSolrUrl, {
+          query: 'title:' + mockQueryText,
+          fields: expectedFields,
+          limit: 10,
+        })
+        .respond(200, mockResults);
+      await searcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('pages using limit/offset instead of rows/start', async () => {
+      var fullResp = { response: { numFound: 21, docs: [{ id: 'doc1' }, { id: 'doc2' }] } };
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { apiMethod: 'POST', jsonQueryDsl: true, debug: false, highlight: false },
+      );
+      mockBackend
+        .expectPOST(mockSolrUrl, {
+          query: 'title:' + mockQueryText,
+          fields: expectedFields,
+          limit: 10,
+        })
+        .respond(200, fullResp);
+      await searcher.search();
+
+      var nextSearcher = searcher.pager();
+      mockBackend
+        .expectPOST(mockSolrUrl, {
+          // limit/offset land before fields here: pager() sets them on nextArgs before
+          // prepare() re-hydrates, whereas page 1 only had fields to add after the fact - the
+          // mock backend's body match is key-order-sensitive (Solr itself doesn't care).
+          query: 'title:' + mockQueryText,
+          limit: 10,
+          offset: 10,
+          fields: expectedFields,
+        })
+        .respond(200, fullResp);
+      await nextSearcher.search();
+      mockBackend.verifyNoOutstandingExpectation();
+    });
+
+    it('pager returns null once offset reaches numFound', async () => {
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { apiMethod: 'POST', jsonQueryDsl: true },
+      );
+      searcher.numFound = 5;
+      expect(searcher.pager()).toBe(null);
+    });
+
+    it('sends explainOther nested under "params" instead of as a top-level key', async () => {
+      // Regression test: Solr's JSON Request API only accepts a fixed set of top-level
+      // keys and rejects unknown ones - explainOther (a classic request param) must be
+      // nested under "params" here, not set at the top level like classic mode does -
+      // see solrSearcherFactory.js's explainOther().
+      var searcher = searchSvc.createSearcher(
+        mockFieldSpec,
+        mockSolrUrl,
+        mockJsonDslParams,
+        mockQueryText,
+        { apiMethod: 'POST', jsonQueryDsl: true, debug: false, highlight: false },
+      );
+
+      mockBackend
+        .expectPOST(mockSolrUrl, {
+          query: 'title:' + mockQueryText,
+          params: { explainOther: ['doc1'] },
+          fields: expectedFields,
+          limit: 10,
+        })
+        .respond(200, mockResults);
+      // The second, metadata-fetch query always runs in classic mode (see
+      // solrSearcherFactory.js's explainOther() - otherSearcherOptions never carries
+      // jsonQueryDsl), independent of the original searcher's own mode.
+      mockBackend
+        .expectJSONP(urlContainsParams(mockSolrUrl, { q: ['doc1'] }))
+        .respond(200, mockResults);
+
+      await searcher.explainOther('doc1', mockFieldSpec);
 
       expect(searcher.docs.length).toBe(2);
       mockBackend.verifyNoOutstandingExpectation();

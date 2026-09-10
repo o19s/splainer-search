@@ -95,7 +95,7 @@ export function createWiredServices(httpClient) {
   }
 
   function queryTemplateSvc() {
-    return new queryTemplateSvcConstructor();
+    return new queryTemplateSvcConstructor(utilsSvc());
   }
 
   function baseExplainSvc() {
@@ -138,6 +138,7 @@ export function createWiredServices(httpClient) {
 
   function esSearcherPreprocessorSvc() {
     return new esSearcherPreprocessorSvcConstructor(
+      esUrlSvc(),
       queryTemplateSvc(),
       defaultESConfig,
       utilsSvc(),

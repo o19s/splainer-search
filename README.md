@@ -97,6 +97,32 @@ searcher.search()
 });
 ```
 
+### Solr's JSON Query DSL
+
+By default, Solr requests use classic `q=...&fq=...` query-string parameters. Set **`config.jsonQueryDsl: true`** to instead send a [JSON Query DSL](https://solr.apache.org/guide/solr/latest/query-guide/json-query-dsl.html) request body — useful for nested `bool`/`edismax` queries that don't map cleanly onto flat query-string params.
+
+```js
+var fields = fieldSpecSvc.createFieldSpec('id title');
+var searcher = searchSvc.createSearcher(
+  fields,
+  'http://localhost:8983/solr/select',
+  { query: 'title:#$query##' },
+  'moby dick',
+  { jsonQueryDsl: true }
+);
+
+searcher.search();
+```
+
+A few things behave differently from classic Solr requests:
+
+- **Always POST.** JSONP and GET can't carry a request body, so a JSON DSL request always POSTs regardless of `config.apiMethod`.
+- **`config.escapeQuery`, `config.debug`, and `config.highlight`** work the same as classic mode, just expressed as JSON body values nested under a `"params"` key instead of query-string params — merged into any `params` your own template already defines, rather than overwriting them.
+- **`fields`/`limit`** are defaulted from your field spec / `config.numberOfRows` only if your own template doesn't already set them — an explicit value in a hand-written template always wins.
+- **Paging** uses `limit`/`offset` (scalar values), not classic Solr's `rows`/`start`.
+- **`explainOther()`** nests its `explainOther` param under `params` too, since Solr's JSON Request API only accepts a fixed set of top-level keys and rejects unknown ones.
+- **`searcher.linkUrl`** (the "open in Solr" link) embeds the whole JSON body as Solr's own `json=` query parameter, since a POST body itself has nothing to link to — this returns identical results to the POST request, so it doubles as a shareable debug URL.
+
 ### Elasticsearch and OpenSearch
 
 Splainer-search supports these search engines using the same client code path and the query DSL shape Elasticsearch expects. Pass **`'es'`** or **`'os'`** as the **sixth** argument to `createSearcher` so the library does not default to Solr. OpenSearch uses the same implementation as Elasticsearch; **`'os'`** is mainly for correct labeling and for tooling (for example URL validation) that cares which engine you use.
@@ -244,6 +270,21 @@ var searcher = searchSvc.createSearcher(
   'searchapi'
 );
 ```
+
+#### Automatic GET/POST switching
+
+Custom Search API supports a third **`apiMethod: 'AUTO'`** option, alongside `'GET'`/`'POST'`: splainer-search builds the candidate GET URL and sends it as a GET if it fits within **`config.maxGetUrlLength`** (default **2000** characters), falling back to POST if it doesn't. This is handy when query length varies a lot and you'd rather not always pay POST's extra overhead just to handle the occasional long query.
+
+```js
+var options = {
+  apiMethod: 'AUTO',
+  maxGetUrlLength: 4000, // optional; defaults to 2000
+  numberOfResultsMapper: function(data) { return data.length; },
+  docsMapper: function(data) { /* ... */ },
+};
+```
+
+If you're also proxying requests via **`config.proxyUrl`**, its length is included when deciding GET vs. POST, since that's what actually goes out over the wire.
 
 
 ## Paging
