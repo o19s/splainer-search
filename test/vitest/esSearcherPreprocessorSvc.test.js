@@ -47,9 +47,15 @@ describe('esSearcherPreprocessorSvc', () => {
       config: { apiMethod: 'POST', numberOfRows: 10, qOption: 'query' },
     };
     esSearcherPreprocessorSvc.prepare(searcher);
-    expect(searcher.queryDsl).toBe(dsl);
-    expect(dsl.explain).toBe(true);
-    expect(dsl.profile).toBe(true);
+    expect(searcher.queryDsl).toEqual(
+      expect.objectContaining({ query: { match_all: {} }, explain: true, profile: true }),
+    );
+    // Not the same reference: queryDsl is caller-owned (e.g. reused across searches), and
+    // preparePostRequest adds explain/profile/highlight onto the returned value - that must
+    // not mutate the caller's original dsl object.
+    expect(searcher.queryDsl).not.toBe(dsl);
+    expect(dsl.explain).toBeUndefined();
+    expect(dsl.profile).toBeUndefined();
   });
 
   it('POST: omits _id from highlight fields when _source lists _id', () => {

@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { queryTemplateSvcConstructor } from '../../services/queryTemplateSvc.js';
+import { utilsSvcFactory } from '../../services/utilsSvc.js';
 
 function createQueryTemplateSvc() {
-  return new queryTemplateSvcConstructor();
+  return new queryTemplateSvcConstructor(utilsSvcFactory());
 }
 
 describe('queryTemplateSvc', () => {
@@ -295,12 +296,30 @@ describe('queryTemplateSvc', () => {
   });
 
   describe('hydrateSearchQuery', () => {
-    it('returns object queryText unchanged when objectOverride is default', () => {
+    it('returns object queryText unchanged (but not the same reference) when objectOverride is default', () => {
       var queryTemplateSvc = createQueryTemplateSvc();
       var dsl = { query: { match_all: {} } };
       var args = { q: '#$query##' };
       var out = queryTemplateSvc.hydrateSearchQuery(null, args, dsl);
-      expect(out).toBe(dsl);
+      expect(out).toEqual(dsl);
+      expect(out).not.toBe(dsl);
+    });
+
+    it('does not mutate the caller-owned dsl when the caller adds fields to the result', () => {
+      var queryTemplateSvc = createQueryTemplateSvc();
+      var dsl = { query: { match_all: {} } };
+      var args = { q: '#$query##' };
+      var out = queryTemplateSvc.hydrateSearchQuery(null, args, dsl);
+      out.limit = 10;
+      expect(dsl.limit).toBeUndefined();
+    });
+
+    it('does not mutate the caller-owned args template when queryText is undefined', () => {
+      var queryTemplateSvc = createQueryTemplateSvc();
+      var args = { query: '#$query##' };
+      var out = queryTemplateSvc.hydrateSearchQuery(null, args, undefined);
+      out.limit = 10;
+      expect(args.limit).toBeUndefined();
     });
 
     it('escapes backslashes and quotes then hydrates string queryText', () => {

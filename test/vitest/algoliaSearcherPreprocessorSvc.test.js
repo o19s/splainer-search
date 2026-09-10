@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { algoliaSearcherPreprocessorSvcConstructor } from '../../services/algoliaSearcherPreprocessorSvc.js';
 import { queryTemplateSvcConstructor } from '../../services/queryTemplateSvc.js';
+import { utilsSvcFactory } from '../../services/utilsSvc.js';
 
-var queryTemplateSvc = new queryTemplateSvcConstructor();
+var queryTemplateSvc = new queryTemplateSvcConstructor(utilsSvcFactory());
 
 function createPreprocessorSvc() {
   return new algoliaSearcherPreprocessorSvcConstructor(queryTemplateSvc);
