@@ -202,6 +202,31 @@ describe('normalDocsSvc', () => {
       expect(snips.desc).toEqual('<em>Some</em> long description text');
     });
 
+    it('unwraps a single-fragment highlight array to a plain string (real ES/Algolia shape)', () => {
+      // Real engines (esDocFactory.js, algoliaDocFactory.js) always return an array from
+      // highlight(), even for one match - unlike this file's other mocks, which unrealistically
+      // return a bare string. The host app's snippet display only renders trusted HTML for a
+      // plain string, so a 1-element array needs unwrapping here or highlighting silently
+      // renders as an escaped array/JSON blob instead of real markup.
+      var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId sub:desc');
+      var origin = { myId: '1', desc: 'Some long description text' };
+      var doc = mockDocWithHighlight(origin, { desc: ['<em>Some</em> long description text'] });
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc);
+      var snips = normalDoc.subSnippets('<em>', '</em>');
+      expect(snips.desc).toEqual('<em>Some</em> long description text');
+    });
+
+    it('leaves a genuinely multi-fragment highlight array as an array', () => {
+      var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId sub:desc');
+      var origin = { myId: '1', desc: 'Some long description text' };
+      var doc = mockDocWithHighlight(origin, {
+        desc: ['<em>Some</em> long', 'description <em>text</em>'],
+      });
+      var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, doc);
+      var snips = normalDoc.subSnippets('<em>', '</em>');
+      expect(snips.desc).toEqual(['<em>Some</em> long', 'description <em>text</em>']);
+    });
+
     it('caches sub snippets when hlPre/hlPost unchanged', () => {
       var fieldSpec = fieldSpecSvc.createFieldSpec('id:myId sub:desc');
       var origin = { myId: '1', desc: 'text' };
@@ -494,7 +519,9 @@ describe('normalDocsSvc', () => {
         },
       };
       var normalDoc = normalDocsSvc.createNormalDoc(fieldSpec, solrDoc);
-      expect(normalDoc.explain().explanation()).toContain('no explain');
+      // No user-facing copy baked in here - a host app decides what to say via children.length.
+      expect(normalDoc.explain().explanation()).toEqual('');
+      expect(normalDoc.explain().children.length).toEqual(0);
       expect(normalDoc.explain().contribution()).toBe(0.0);
     });
 

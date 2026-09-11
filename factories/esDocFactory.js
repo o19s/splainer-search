@@ -90,22 +90,7 @@ export function EsDocFactory(esUrlSvc, DocFactory, utilsSvc) {
     var self = this;
     var fieldValue = self.snippet(docId, fieldName);
 
-    if (fieldValue) {
-      var newValue = [];
-      utilsSvc.safeForEach(fieldValue, function (value) {
-        // Doing the naive thing and assuming that the highlight tags
-        // were not overridden in the query DSL.
-        var preRegex = new RegExp('<em>', 'g');
-        var hlPre = value.replace(preRegex, preText);
-        var postRegex = new RegExp('</em>', 'g');
-
-        newValue.push(hlPre.replace(postRegex, postText));
-      });
-
-      return newValue;
-    } else {
-      return null;
-    }
+    return utilsSvc.convertHighlightTags(fieldValue, preText, postText);
   }
 
   return Doc;

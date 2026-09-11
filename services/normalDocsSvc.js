@@ -251,6 +251,15 @@ export function normalDocsSvcConstructor(explainSvc, utilsSvc) {
         // `.slice(0, 200)` across string vs array is load-bearing here.
         snip = escapeHtml(subFieldValue.slice(0, 200));
       }
+    } else if (Array.isArray(snip) && snip.length === 1) {
+      // highlight() always returns an array (an engine can return multiple highlighted
+      // fragments for one field), but the host app's snippet display only renders trusted
+      // HTML for a plain string - any array, including a 1-element one, is otherwise shown
+      // as raw, HTML-escaped JSON instead. Unwrap the common single-fragment case (true for
+      // every Algolia field, and the typical ES/OS config) so the highlight tags actually
+      // render as such. A genuinely multi-fragment result (snip.length > 1) is left as an
+      // array - there's no single unambiguous string to collapse multiple fragments into.
+      snip = snip[0];
     }
 
     return snip;
