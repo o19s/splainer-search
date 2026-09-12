@@ -14,7 +14,9 @@ describe('explainSvc', () => {
     var exp = explainSvc.createExplain(null);
     expect(exp.influencers.length).toEqual(0);
     expect(exp.contribution()).toEqual(0);
-    expect(exp.explanation()).toContain('no explain for doc');
+    // No user-facing copy baked in here - a host app decides what to say via children.length.
+    expect(exp.explanation()).toEqual('');
+    expect(exp.children.length).toEqual(0);
   });
 
   it('handles an empty explain hash', () => {
@@ -22,7 +24,8 @@ describe('explainSvc', () => {
     var exp = explainSvc.createExplain(emptyExplain);
     expect(exp.influencers.length).toEqual(0);
     expect(exp.contribution()).toEqual(0);
-    expect(exp.explanation()).toContain('no explain for doc');
+    expect(exp.explanation()).toEqual('');
+    expect(exp.children.length).toEqual(0);
   });
 
   it('how does it perform', () => {

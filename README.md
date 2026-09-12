@@ -174,7 +174,9 @@ var searcher = searchSvc.createSearcher(
 );
 ```
 
-Use **`apiMethod: 'GET'`** or **`'POST'`** depending on how you want the query sent; the tests cover both. Explain and some other advanced Splainer-search features are not available for Algolia in the same way as for Solr or Elasticsearch.
+Use **`apiMethod: 'GET'`** or **`'POST'`** depending on how you want the query sent; the tests cover both. Highlighting: set **`attributesToHighlight`**/**`attributesToSnippet`** in the request body (an array of field names) and Algolia's own `_highlightResult`/`_snippetResult` response data is used - no extra configuration needed on the searcher itself.
+
+Explain is not available for Algolia in the same way as for Solr or Elasticsearch - Algolia's ranking is an ordered tie-break sequence of criteria (typos, then words, then proximity, etc.), not a single summed/weighted score, so `score()` stays `0` and the bars in a host app's Matches-style UI have nothing meaningful to chart. Set **`getRankingInfo: true`** in the request body, though, and `explain().rawStr()` (or any other reader of `explain().asJson`) does show the record's raw `_rankingInfo` (typo count, word/proximity/filter match info, the record's Custom Ranking `userScore`, etc.) alongside the usual stub fields - it's merged in underneath, not layered into a Lucene-style Explanation tree.
 
 ### Vectara
 

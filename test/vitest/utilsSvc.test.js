@@ -264,4 +264,41 @@ describe('utilsSvc', () => {
       );
     });
   });
+
+  describe('emptyExplain', () => {
+    it('returns the safe neutral explain shape', () => {
+      var utilsSvc = createUtilsSvc();
+      expect(utilsSvc.emptyExplain()).toEqual({
+        details: [],
+        description: '',
+        value: 0.0,
+        match: true,
+      });
+    });
+
+    it('returns a fresh object each call, so callers can safely merge into it', () => {
+      var utilsSvc = createUtilsSvc();
+      var first = utilsSvc.emptyExplain();
+      first.extra = 'mutated';
+      expect(utilsSvc.emptyExplain()).not.toHaveProperty('extra');
+    });
+  });
+
+  describe('convertHighlightTags', () => {
+    it('returns null for null or undefined input', () => {
+      var utilsSvc = createUtilsSvc();
+      expect(utilsSvc.convertHighlightTags(null, '<strong>', '</strong>')).toBeNull();
+      expect(utilsSvc.convertHighlightTags(undefined, '<strong>', '</strong>')).toBeNull();
+    });
+
+    it('converts <em>/</em> tags to the requested pre/post text across every fragment', () => {
+      var utilsSvc = createUtilsSvc();
+      var result = utilsSvc.convertHighlightTags(
+        ['<em>Star</em> Wars', 'no match here'],
+        '<strong>',
+        '</strong>',
+      );
+      expect(result).toEqual(['<strong>Star</strong> Wars', 'no match here']);
+    });
+  });
 });

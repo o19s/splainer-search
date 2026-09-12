@@ -145,6 +145,43 @@ export function utilsSvcFactory() {
     return url;
   }
 
+  /**
+   * A safe, neutral "nothing to explain" shape - shared by explainSvc.js's own fallback (for
+   * malformed/missing explain json) and any docFactory that wants that same safe shape while
+   * still merging its own diagnostic fields on top (see algoliaDocFactory.js's explain()).
+   * `description` must stay a plain, non-matching string - explainSvc.js's createExplain
+   * dispatches on description prefixes/substrings, so a nonsense or absent description would
+   * throw - and carries no user-facing copy on purpose: whether/how to tell the user "no
+   * explanation available" is a host app's call, detected via `explain().children.length === 0`.
+   * Returns a fresh object each call so callers can merge into it without sharing mutable state.
+   *
+   * @returns {{details: Array, description: string, value: number, match: boolean}}
+   */
+  function emptyExplain() {
+    return { details: [], description: '', value: 0.0, match: true };
+  }
+
+  /**
+   * Converts an engine's raw `<em>`/`</em>`-tagged highlight fragments to the caller-supplied
+   * pre/post text. Naively assumes the tags were not overridden in the query (matches
+   * esDocFactory.js's and algoliaDocFactory.js's own long-standing assumption).
+   *
+   * @param {string[]|null|undefined} fieldValues
+   * @param {string} preText
+   * @param {string} postText
+   * @returns {string[]|null}
+   */
+  function convertHighlightTags(fieldValues, preText, postText) {
+    if (!fieldValues) {
+      return null;
+    }
+    var preRegex = new RegExp('<em>', 'g');
+    var postRegex = new RegExp('</em>', 'g');
+    return fieldValues.map(function (value) {
+      return value.replace(preRegex, preText).replace(postRegex, postText);
+    });
+  }
+
   return {
     safeForEach: safeForEach,
     deepClone: deepClone,
@@ -152,5 +189,7 @@ export function utilsSvcFactory() {
     deepMerge: deepMerge,
     mergeSearcherConfig: mergeSearcherConfig,
     ensureUrlHasProtocol: ensureUrlHasProtocol,
+    emptyExplain: emptyExplain,
+    convertHighlightTags: convertHighlightTags,
   };
 }

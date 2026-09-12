@@ -32,17 +32,12 @@ export function explainSvcConstructor(baseExplainSvc, queryExplainSvc, simExplai
     }
   };
 
-  // Use a default json data structure if we have problems with our
-  // explanation json data
+  // utilsSvc.emptyExplain() is the safe, neutral placeholder for missing/empty explanation json -
+  // exists purely so the description-sniffing dispatch below (and every Explain method) has a
+  // well-formed object to work with instead of crashing on a missing `description`/`details`.
   var replaceBadExplanationJson = function (explJson) {
-    var explJsonIfBad = {
-      details: [],
-      description: 'no explain for doc',
-      value: 0.0,
-      match: true,
-    };
     if (!explJson || Object.keys(explJson).length === 0) {
-      return explJsonIfBad;
+      return utilsSvc.emptyExplain();
     } else {
       return explJson;
     }

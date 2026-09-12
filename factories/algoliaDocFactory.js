@@ -44,6 +44,12 @@ export function AlgoliaDocFactory(DocFactory, utilsSvc) {
       }
     });
     delete src.doc;
+    // Algolia's response metadata, copied onto self by DocFactory's copyOnto - not part of
+    // the document itself, so excluded the same way esDocFactory.js excludes its own
+    // engine-specific response metadata (fields/highlight/_explanation) from origin().
+    delete src._highlightResult;
+    delete src._snippetResult;
+    delete src._rankingInfo;
     return src;
   }
 
@@ -52,19 +58,57 @@ export function AlgoliaDocFactory(DocFactory, utilsSvc) {
     return self;
   }
 
+  // Algolia has no per-term score breakdown to explain (see README's Algolia section) - its
+  // ranking is an ordered tie-break sequence of criteria, not a summed/weighted score. Rather
+  // than a separate accessor, its raw `_rankingInfo` (only present when the query set
+  // `getRankingInfo: true` - nbTypos, proximityDistance, userScore, etc.) is merged onto
+  // utilsSvc.emptyExplain() - the same safe defaults every other unsupported engine already
+  // returns - applied last so `_rankingInfo` can never override them, but everything else
+  // survives onto `explain().asJson`, so `explain().rawStr()` shows it all as one raw JSON blob -
+  // the existing debug/detail view "just works" with no other code needing to know Algolia is special.
   function explain() {
-    // no explain functionality implemented
-    return {};
+    var self = this;
+    var rankingInfo = self.doc._rankingInfo;
+
+    if (!rankingInfo) {
+      return {};
+    }
+
+    return Object.assign({}, rankingInfo, utilsSvc.emptyExplain());
   }
 
-  function snippet() {
-    // no snippet functionality implemented
-    return null;
+  // Algolia's _highlightResult/_snippetResult give one {value, matchLevel, ...} object per
+  // scalar field, or an array of those objects per array field (e.g. one per cast member) -
+  // normalize both shapes to a plain array of value strings, matching what
+  // esDocFactory.js's snippet()/highlight() already expect to work with.
+  function extractHighlightValues(highlightField) {
+    if (!highlightField) {
+      return null;
+    }
+    if (Array.isArray(highlightField)) {
+      return highlightField.map(function (entry) {
+        return entry.value;
+      });
+    }
+    return [highlightField.value];
   }
 
-  function highlight() {
-    // no highlighting functionality implemented
-    return null;
+  // Algolia's pre-truncated highlighted fragment for a field, in its own <em>/</em> tags -
+  // unlike ES (which highlight() re-derives from the same source snippet() uses), Algolia
+  // returns this as a separate response key from the full-field highlight below.
+  function snippet(docId, fieldName) {
+    var self = this;
+    var docSnippets = self.doc._snippetResult;
+
+    return extractHighlightValues(docSnippets && docSnippets[fieldName]);
+  }
+
+  function highlight(docId, fieldName, preText, postText) {
+    var self = this;
+    var docHighlights = self.doc._highlightResult;
+    var fieldValue = extractHighlightValues(docHighlights && docHighlights[fieldName]);
+
+    return utilsSvc.convertHighlightTags(fieldValue, preText, postText);
   }
 
   return Doc;

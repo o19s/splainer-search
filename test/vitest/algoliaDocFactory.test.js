@@ -85,23 +85,124 @@ describe('AlgoliaDocFactory', () => {
     expect(doc._url()).toBeNull();
   });
 
-  it('should return empty object for explain method', () => {
+  it('should return empty object for explain when the doc has no _rankingInfo at all', () => {
     var doc = new AlgoliaDocFactory({ objectID: 'test123', title: 'Test' }, {});
     expect(doc.explain()).toEqual({});
   });
 
-  it('should return null for snippet method', () => {
-    var doc = new AlgoliaDocFactory({ objectID: 'test123', title: 'Test' }, {});
-    expect(doc.snippet()).toBeNull();
+  it('should merge _rankingInfo (including userScore) into explain, pinning value/description/details/match', () => {
+    var mockDoc = {
+      objectID: 'test123',
+      title: 'Test',
+      _rankingInfo: {
+        nbTypos: 0,
+        firstMatchedWord: 1000,
+        proximityDistance: 1,
+        userScore: 872104,
+        nbExactWords: 2,
+        words: 2,
+        filters: 0,
+      },
+    };
+    var doc = new AlgoliaDocFactory(mockDoc, {});
+    var explain = doc.explain();
+    // Pinned safe-default fields - identical to explainSvc.js's own placeholder shape, so
+    // doc.score()/a host app's per-term breakdown chart stay unaffected by real _rankingInfo data.
+    expect(explain.value).toEqual(0);
+    expect(explain.description).toEqual('');
+    expect(explain.details).toEqual([]);
+    expect(explain.match).toBe(true);
+    // The full _rankingInfo rides along underneath, for explain().rawStr() to show as-is.
+    expect(explain.userScore).toEqual(872104);
+    expect(explain.nbTypos).toEqual(0);
+    expect(explain.words).toEqual(2);
   });
 
-  it('should return null for highlight method', () => {
-    var doc = new AlgoliaDocFactory({ objectID: 'test123', title: 'Test' }, {});
-    expect(doc.highlight()).toBeNull();
+  it('does not let _rankingInfo fields override the pinned safe-default fields, even if they collide', () => {
+    var mockDoc = {
+      objectID: 'test123',
+      title: 'Test',
+      _rankingInfo: { value: 999, description: 'should not win', details: ['x'], match: false },
+    };
+    var doc = new AlgoliaDocFactory(mockDoc, {});
+    var explain = doc.explain();
+    expect(explain.value).toEqual(0);
+    expect(explain.description).toEqual('');
+    expect(explain.details).toEqual([]);
+    expect(explain.match).toBe(true);
   });
 
-  it('should return origin without function properties', () => {
-    var mockDoc = { objectID: 'test123', title: 'Test Title', description: 'Test Description' };
+  it('should return null for snippet when the doc has no _snippetResult at all', () => {
+    var doc = new AlgoliaDocFactory({ objectID: 'test123', title: 'Test' }, {});
+    expect(doc.snippet('test123', 'title')).toBeNull();
+  });
+
+  it('should return null for highlight when the doc has no _highlightResult at all', () => {
+    var doc = new AlgoliaDocFactory({ objectID: 'test123', title: 'Test' }, {});
+    expect(doc.highlight('test123', 'title', '<strong>', '</strong>')).toBeNull();
+  });
+
+  it('should return null for snippet/highlight when the field has no match', () => {
+    var mockDoc = {
+      objectID: 'test123',
+      title: 'Test',
+      _snippetResult: { overview: { value: 'a match', matchLevel: 'full' } },
+      _highlightResult: { overview: { value: 'a match', matchLevel: 'full' } },
+    };
+    var doc = new AlgoliaDocFactory(mockDoc, {});
+    expect(doc.snippet('test123', 'title')).toBeNull();
+    expect(doc.highlight('test123', 'title', '<strong>', '</strong>')).toBeNull();
+  });
+
+  it('should return the raw <em>-tagged snippet for a scalar field', () => {
+    var mockDoc = {
+      objectID: 'test123',
+      title: 'Star',
+      _snippetResult: { title: { value: '<em>Star</em>', matchLevel: 'full' } },
+    };
+    var doc = new AlgoliaDocFactory(mockDoc, {});
+    expect(doc.snippet('test123', 'title')).toEqual(['<em>Star</em>']);
+  });
+
+  it('should convert <em> tags to the requested pre/post text for a scalar field', () => {
+    var mockDoc = {
+      objectID: 'test123',
+      title: 'Star',
+      _highlightResult: { title: { value: '<em>Star</em>', matchLevel: 'full' } },
+    };
+    var doc = new AlgoliaDocFactory(mockDoc, {});
+    expect(doc.highlight('test123', 'title', '<strong>', '</strong>')).toEqual([
+      '<strong>Star</strong>',
+    ]);
+  });
+
+  it('should handle an array field, extracting .value from each per-entry highlight object', () => {
+    var mockDoc = {
+      objectID: 'test123',
+      cast: ['Tom Hanks', 'Meg Ryan'],
+      _highlightResult: {
+        cast: [
+          { value: '<em>Tom Hanks</em>', matchLevel: 'full' },
+          { value: 'Meg Ryan', matchLevel: 'none' },
+        ],
+      },
+    };
+    var doc = new AlgoliaDocFactory(mockDoc, {});
+    expect(doc.highlight('test123', 'cast', '<strong>', '</strong>')).toEqual([
+      '<strong>Tom Hanks</strong>',
+      'Meg Ryan',
+    ]);
+  });
+
+  it('should return origin without function properties or Algolia response metadata', () => {
+    var mockDoc = {
+      objectID: 'test123',
+      title: 'Test Title',
+      description: 'Test Description',
+      _highlightResult: { title: { value: 'Test Title', matchLevel: 'none' } },
+      _snippetResult: { title: { value: 'Test Title', matchLevel: 'none' } },
+      _rankingInfo: { nbTypos: 0 },
+    };
     var doc = new AlgoliaDocFactory(mockDoc, {});
     var origin = doc.origin();
     expect(origin.title).toEqual('Test Title');
@@ -109,5 +210,8 @@ describe('AlgoliaDocFactory', () => {
     expect(origin._url).toBeUndefined();
     expect(origin.explain).toBeUndefined();
     expect(origin.doc).toBeUndefined();
+    expect(origin._highlightResult).toBeUndefined();
+    expect(origin._snippetResult).toBeUndefined();
+    expect(origin._rankingInfo).toBeUndefined();
   });
 });
